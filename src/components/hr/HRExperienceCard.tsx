@@ -232,8 +232,8 @@ export function HRExperienceCard({ experience }: HRExperienceCardProps) {
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {experience.dates.map((date) => {
-                          const confirmedBookings = date.bookings.filter(
-                            (b) => b.status === "confirmed"
+                         const confirmedBookings = date.bookings.filter(
+                            (b) => ["confirmed", "completed"].includes(b.status)
                           ).length;
                           const fillPercentage = Math.round(
                             (confirmedBookings / date.max_participants) * 100

@@ -138,16 +138,16 @@ export function HRBookingsDialog({
                       })}
                     </p>
                   </div>
-                  <Badge
-                    variant={booking.status === "confirmed" ? "default" : "secondary"}
-                    className={
-                      booking.status === "confirmed"
-                        ? "bg-success/10 text-success border-success/20"
-                        : "bg-destructive/10 text-destructive border-destructive/20"
-                    }
-                  >
-                    {booking.status === "confirmed" ? "Confermato" : "Cancellato"}
-                  </Badge>
+                   <Badge
+                     variant={["confirmed", "completed"].includes(booking.status) ? "default" : "secondary"}
+                     className={
+                       ["confirmed", "completed"].includes(booking.status)
+                         ? "bg-success/10 text-success border-success/20"
+                         : "bg-destructive/10 text-destructive border-destructive/20"
+                     }
+                   >
+                     {booking.status === "confirmed" || booking.status === "completed" ? "Confermato" : booking.status === "cancelled" ? "Annullato" : booking.status === "no_show" ? "Assente" : booking.status}
+                   </Badge>
                 </div>
               ))}
             </div>
