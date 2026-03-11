@@ -919,6 +919,7 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { user_uuid: string }; Returns: boolean }
+      process_completed_events: { Args: never; Returns: number }
       validate_access_code: {
         Args: { p_code: string }
         Returns: {
