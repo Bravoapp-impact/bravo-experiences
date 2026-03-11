@@ -119,7 +119,7 @@ export function FeedbackModal({ open, onClose, onSubmitted, booking }: FeedbackM
               </p>
             </div>
 
-            <div className="px-6 py-5 space-y-6">
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
               {/* Star Rating */}
               <div>
                 <label className="text-sm font-medium text-foreground mb-3 block">
