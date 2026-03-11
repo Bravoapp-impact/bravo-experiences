@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { MapPin, Users, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { MapPin, Users, ChevronLeft, ChevronRight, Loader2, Clock, AlertTriangle } from "lucide-react";
 import { format, isSameMonth, addMonths, subMonths, startOfMonth } from "date-fns";
 import { it } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { BaseCardImage } from "@/components/common/BaseCardImage";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useHourBudget } from "@/hooks/useHourBudget";
 import { SDG_DATA } from "@/lib/sdg-data";
 
 import type { Experience, ExperienceDate } from "@/types/experiences";
