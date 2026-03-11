@@ -102,7 +102,7 @@ export default function Profile() {
         </motion.div>
 
         {/* Hour Budget Widget */}
-        {!budgetLoading && !isUnlimited && (
+        {(budgetLoading || !isUnlimited) && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -115,11 +115,23 @@ export default function Profile() {
                     <Clock className="h-4 w-4 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-muted-foreground">Ore utilizzate</span>
-                      <span className="text-xs font-medium text-foreground">{usedHours} / {budgetHours}</span>
-                    </div>
-                    <Progress value={budgetHours > 0 ? (usedHours / budgetHours) * 100 : 0} className="h-2" />
+                    {budgetLoading ? (
+                      <>
+                        <div className="flex items-center justify-between mb-1">
+                          <Skeleton className="h-3 w-20" />
+                          <Skeleton className="h-3 w-12" />
+                        </div>
+                        <Skeleton className="h-2 w-full rounded-full" />
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-muted-foreground">Ore utilizzate</span>
+                          <span className="text-xs font-medium text-foreground">{usedHours} / {budgetHours}</span>
+                        </div>
+                        <Progress value={budgetHours > 0 ? (usedHours / budgetHours) * 100 : 0} className="h-2" />
+                      </>
+                    )}
                   </div>
                 </div>
               </CardContent>
