@@ -98,10 +98,10 @@ export function FeedbackModal({ open, onClose, onSubmitted, booking }: FeedbackM
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full md:max-w-md bg-background rounded-t-2xl md:rounded-2xl max-h-[90vh] overflow-y-auto"
+            className="w-full h-full md:h-auto md:max-w-md bg-background md:rounded-2xl flex flex-col"
           >
             {/* Header */}
-            <div className="sticky top-0 bg-background z-10 px-6 pt-5 pb-3 border-b border-border/50">
+            <div className="flex-shrink-0 bg-background z-10 px-6 pt-5 pb-3 border-b border-border/50">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-foreground">
                   Com'è andata?
