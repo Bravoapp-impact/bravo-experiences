@@ -21,6 +21,7 @@ export default function Experiences() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
+  const { budgetHours, usedHours, remainingHours, isUnlimited, loading: budgetLoading } = useHourBudget();
 
   const fetchExperiences = async () => {
     setLoading(true);
