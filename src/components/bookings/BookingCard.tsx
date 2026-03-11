@@ -86,6 +86,10 @@ export function BookingCard({
           <Badge variant="secondary" className="text-xs">
             Annullata
           </Badge>
+        ) : booking.status === "no_show" ? (
+          <Badge variant="secondary" className="text-xs">
+            Assente
+          </Badge>
         ) : !hasReview && onFeedback ? (
           <Badge
             className="text-xs cursor-pointer bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"

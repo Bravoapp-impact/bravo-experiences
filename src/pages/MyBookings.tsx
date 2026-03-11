@@ -277,7 +277,7 @@ export default function MyBookings() {
                           hasReview={reviewedBookingIds.has(booking.id)}
                           onCancel={handleCancel}
                           onView={setSelectedBooking}
-                          onFeedback={booking.status === "confirmed" ? setFeedbackBooking : undefined}
+                          onFeedback={["confirmed", "completed"].includes(booking.status) ? setFeedbackBooking : undefined}
                         />
                       ))}
                     </div>

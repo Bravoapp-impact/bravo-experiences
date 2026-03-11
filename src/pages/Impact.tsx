@@ -81,7 +81,7 @@ export default function Impact() {
           )
         `)
         .eq("user_id", user?.id)
-        .eq("status", "confirmed");
+        .in("status", ["confirmed", "completed"]);
 
       if (error) throw error;
 

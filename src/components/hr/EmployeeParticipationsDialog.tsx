@@ -69,7 +69,7 @@ export function EmployeeParticipationsDialog({
           )
         `)
         .eq("user_id", employee.id)
-        .eq("status", "confirmed")
+        .in("status", ["confirmed", "completed"])
         .order("created_at", { ascending: false });
 
       if (error) throw error;

@@ -113,7 +113,7 @@ export default function HREmployeesPage() {
           )
         `)
         .in("user_id", userIds)
-        .eq("status", "confirmed");
+        .in("status", ["confirmed", "completed"]);
 
       if (bookingsError) throw bookingsError;
 
