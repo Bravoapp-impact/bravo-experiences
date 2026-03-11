@@ -116,6 +116,7 @@ export function BookingDetailModal({ booking, onClose, onCancel, isCancelling }:
   
   const hoursUntilEvent = differenceInHours(startDate, new Date());
   const canCancel = hoursUntilEvent > 48 && booking.status === "confirmed";
+  const isPastEvent = hoursUntilEvent <= 0;
 
   const handleOpenMaps = () => {
     const query = encodeURIComponent(
