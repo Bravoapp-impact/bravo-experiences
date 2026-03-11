@@ -98,10 +98,10 @@ export function FeedbackModal({ open, onClose, onSubmitted, booking }: FeedbackM
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full md:max-w-md bg-background rounded-t-2xl md:rounded-2xl max-h-[90vh] overflow-y-auto"
+            className="w-full h-full md:h-auto md:max-w-md bg-background md:rounded-2xl flex flex-col"
           >
             {/* Header */}
-            <div className="sticky top-0 bg-background z-10 px-6 pt-5 pb-3 border-b border-border/50">
+            <div className="flex-shrink-0 bg-background z-10 px-6 pt-5 pb-3 border-b border-border/50">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-foreground">
                   Com'è andata?
@@ -119,7 +119,7 @@ export function FeedbackModal({ open, onClose, onSubmitted, booking }: FeedbackM
               </p>
             </div>
 
-            <div className="px-6 py-5 space-y-6">
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
               {/* Star Rating */}
               <div>
                 <label className="text-sm font-medium text-foreground mb-3 block">
@@ -208,7 +208,10 @@ export function FeedbackModal({ open, onClose, onSubmitted, booking }: FeedbackM
                 />
               </div>
 
-              {/* Submit */}
+            </div>
+
+            {/* Fixed footer with submit button */}
+            <div className="flex-shrink-0 p-5 border-t border-border bg-background">
               <Button
                 onClick={handleSubmit}
                 disabled={!isValid || submitting}

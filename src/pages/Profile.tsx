@@ -1,18 +1,21 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LogOut, Building2, Mail, Loader2 } from "lucide-react";
+import { LogOut, Building2, Mail, Loader2, Clock } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
 import { ProfileAvatarUpload } from "@/components/profile/ProfileAvatarUpload";
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
 import { EnrollMFA } from "@/components/auth/EnrollMFA";
 import { useAuth } from "@/hooks/useAuth";
+import { useHourBudget } from "@/hooks/useHourBudget";
 
 export default function Profile() {
   const { profile, loading, signOut, refreshProfile } = useAuth();
+  const { budgetHours, usedHours, isUnlimited, loading: budgetLoading } = useHourBudget();
   const navigate = useNavigate();
 
   // Redirect admin users to their specific profile pages
@@ -97,6 +100,32 @@ export default function Profile() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Hour Budget Widget */}
+        {!budgetLoading && !isUnlimited && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.17 }}
+          >
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 flex-shrink-0">
+                    <Clock className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-muted-foreground">Ore volontariato utilizzate</span>
+                      <span className="text-xs font-medium text-foreground">{usedHours} / {budgetHours}</span>
+                    </div>
+                    <Progress value={budgetHours > 0 ? (usedHours / budgetHours) * 100 : 0} className="h-2" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Edit Form */}
         <motion.div
