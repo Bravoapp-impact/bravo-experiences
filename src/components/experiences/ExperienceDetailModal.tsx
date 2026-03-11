@@ -350,6 +350,23 @@ export function ExperienceDetailModal({
             </button>
           </div>
 
+          {/* Hour budget banner */}
+          {!isUnlimited && !budgetLoading && (
+            <div className="flex-shrink-0 mx-5 mt-4">
+              {remainingHours <= 0 ? (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 text-destructive text-sm">
+                  <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                  <span>Hai esaurito le {budgetHours} ore disponibili quest'anno</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-muted text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4 flex-shrink-0" />
+                  <span>Ore rimanenti: <strong className="text-foreground">{remainingHours}</strong> / {budgetHours}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Scrollable date slots */}
           <div className="flex-1 overflow-y-auto p-5 space-y-6">
             {loadingDates ? (
