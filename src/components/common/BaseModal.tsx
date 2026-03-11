@@ -44,7 +44,7 @@ export function BaseModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
+        className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-end sm:items-center sm:justify-center sm:p-6"
         onClick={onClose}
       >
         <motion.div
@@ -53,7 +53,7 @@ export function BaseModal({
           exit={{ opacity: 0, y: "100%" }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
           className={cn(
-            "bg-background w-full sm:max-w-lg max-h-[85vh] sm:max-h-[90vh] overflow-hidden rounded-3xl",
+            "bg-background w-full h-full sm:h-auto sm:max-w-lg sm:max-h-[90vh] overflow-hidden sm:rounded-3xl",
             className
           )}
           onClick={(e) => e.stopPropagation()}
