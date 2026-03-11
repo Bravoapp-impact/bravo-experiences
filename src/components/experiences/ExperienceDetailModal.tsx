@@ -36,6 +36,8 @@ export function ExperienceDetailModal({
   const [loadingDates, setLoadingDates] = useState(false);
   const [currentMonth, setCurrentMonth] = useState<Date>(startOfMonth(new Date()));
 
+  const [userBookedDateIds, setUserBookedDateIds] = useState<Set<string>>(new Set());
+
   // Fetch dates when entering the dates step
   useEffect(() => {
     if (!experience || step !== "dates") return;
@@ -53,22 +55,28 @@ export function ExperienceDetailModal({
 
         if (error) throw error;
 
-        // Batch: fetch all confirmed booking counts in a single query
         const dateIds = (data || []).map((d) => d.id);
         const confirmedCountsMap = new Map<string, number>();
+        const bookedByUser = new Set<string>();
 
         if (dateIds.length > 0) {
+          // Fetch all confirmed bookings + check which ones belong to current user
           const { data: confirmedBookings } = await supabase
             .from("bookings")
-            .select("experience_date_id")
+            .select("experience_date_id, user_id")
             .in("experience_date_id", dateIds)
             .eq("status", "confirmed");
 
           (confirmedBookings || []).forEach((b) => {
             const prev = confirmedCountsMap.get(b.experience_date_id) || 0;
             confirmedCountsMap.set(b.experience_date_id, prev + 1);
+            if (b.user_id === user?.id) {
+              bookedByUser.add(b.experience_date_id);
+            }
           });
         }
+
+        setUserBookedDateIds(bookedByUser);
 
         const datesWithCount = (data || []).map((date) => ({
           ...date,
@@ -77,7 +85,6 @@ export function ExperienceDetailModal({
 
         setDates(datesWithCount);
         
-        // Set current month to first available date
         if (datesWithCount.length > 0) {
           setCurrentMonth(startOfMonth(new Date(datesWithCount[0].start_datetime)));
         }
@@ -89,7 +96,7 @@ export function ExperienceDetailModal({
     };
 
     fetchDates();
-  }, [experience, step]);
+  }, [experience, step, user?.id]);
 
   // Group dates by day within current month
   const datesByDay = useMemo(() => {
@@ -193,7 +200,7 @@ export function ExperienceDetailModal({
     >
       {step === "detail" ? (
         /* DETAIL VIEW */
-        <div className="flex flex-col max-h-[95vh] sm:max-h-[90vh]">
+        <div className="flex flex-col max-h-[80vh] sm:max-h-[85vh]">
           {/* Close button overlay */}
           <div className="absolute top-4 right-4 z-10">
             <ModalCloseButton onClick={onClose} />
@@ -319,7 +326,7 @@ export function ExperienceDetailModal({
         </div>
       ) : (
         /* DATE SELECTION VIEW */
-        <div className="flex flex-col max-h-[95vh] sm:max-h-[90vh]">
+        <div className="flex flex-col max-h-[80vh] sm:max-h-[85vh]">
           {/* Month navigation */}
           <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-border">
             <button
@@ -365,12 +372,14 @@ export function ExperienceDetailModal({
                     {dayDates.map((date) => {
                       const availableSpots = date.max_participants - (date.confirmed_count || 0);
                       const isFull = availableSpots <= 0;
+                      const isBookedByUser = userBookedDateIds.has(date.id);
+                      const isDisabled = isFull || isBookedByUser;
                       const isSelected = selectedDateId === date.id;
 
                       return (
                         <button
                           key={date.id}
-                          disabled={isFull}
+                          disabled={isDisabled}
                           onClick={() => setSelectedDateId(date.id)}
                           className={`
                             w-full p-4 rounded-2xl border text-left transition-all
@@ -378,7 +387,7 @@ export function ExperienceDetailModal({
                               ? "border-primary bg-primary/5 ring-1 ring-primary"
                               : "border-border hover:bg-muted/30"
                             }
-                            ${isFull ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                            ${isDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                           `}
                         >
                           <div className="flex items-center justify-between">
@@ -389,10 +398,16 @@ export function ExperienceDetailModal({
                               </p>
                             </div>
                             <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Users className="h-4 w-4" />
-                              <span className={isFull ? "text-destructive font-medium" : ""}>
-                                {isFull ? "Completo" : `${availableSpots} posti`}
-                              </span>
+                              {isBookedByUser ? (
+                                <span className="text-primary font-medium">✓ Già prenotato</span>
+                              ) : (
+                                <>
+                                  <Users className="h-4 w-4" />
+                                  <span className={isFull ? "text-destructive font-medium" : ""}>
+                                    {isFull ? "Completo" : `${availableSpots} posti`}
+                                  </span>
+                                </>
+                              )}
                             </div>
                           </div>
                         </button>

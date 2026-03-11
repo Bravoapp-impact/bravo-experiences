@@ -127,7 +127,7 @@ export function BookingDetailModal({ booking, onClose, onCancel, isCancelling }:
 
   return (
     <BaseModal open={!!booking} onClose={onClose}>
-      <div className="flex flex-col max-h-[95vh] sm:max-h-[90vh]">
+      <div className="flex flex-col max-h-[80vh] sm:max-h-[85vh]">
         {/* Close button overlay */}
         <div className="absolute top-4 right-4 z-10">
           <ModalCloseButton onClick={onClose} />
