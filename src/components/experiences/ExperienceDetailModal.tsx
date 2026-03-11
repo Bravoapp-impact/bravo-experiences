@@ -392,7 +392,9 @@ export function ExperienceDetailModal({
                       const availableSpots = date.max_participants - (date.confirmed_count || 0);
                       const isFull = availableSpots <= 0;
                       const isBookedByUser = userBookedDateIds.has(date.id);
-                      const isDisabled = isFull || isBookedByUser;
+                      const dateHours = Number(date.volunteer_hours) || 0;
+                      const exceedsBudget = !isUnlimited && dateHours > remainingHours;
+                      const isDisabled = isFull || isBookedByUser || exceedsBudget;
                       const isSelected = selectedDateId === date.id;
 
                       return (
