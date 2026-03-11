@@ -30,6 +30,7 @@ export function ExperienceDetailModal({
 }: ExperienceDetailModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { remainingHours, isUnlimited, usedHours, budgetHours, loading: budgetLoading } = useHourBudget();
   const [step, setStep] = useState<ModalStep>("detail");
   const [selectedDateId, setSelectedDateId] = useState<string | null>(null);
   const [isBooking, setIsBooking] = useState(false);
