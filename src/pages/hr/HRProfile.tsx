@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { useHourBudget } from "@/hooks/useHourBudget";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Clock } from "lucide-react";
 
 export default function HRProfile() {
