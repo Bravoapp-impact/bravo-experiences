@@ -101,6 +101,32 @@ export default function Profile() {
           </Card>
         </motion.div>
 
+        {/* Hour Budget Widget */}
+        {!budgetLoading && !isUnlimited && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.17 }}
+          >
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 flex-shrink-0">
+                    <Clock className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-muted-foreground">Ore volontariato utilizzate</span>
+                      <span className="text-xs font-medium text-foreground">{usedHours} / {budgetHours}</span>
+                    </div>
+                    <Progress value={budgetHours > 0 ? (usedHours / budgetHours) * 100 : 0} className="h-2" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Edit Form */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

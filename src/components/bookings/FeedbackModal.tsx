@@ -208,7 +208,10 @@ export function FeedbackModal({ open, onClose, onSubmitted, booking }: FeedbackM
                 />
               </div>
 
-              {/* Submit */}
+            </div>
+
+            {/* Fixed footer with submit button */}
+            <div className="flex-shrink-0 p-5 border-t border-border bg-background">
               <Button
                 onClick={handleSubmit}
                 disabled={!isValid || submitting}

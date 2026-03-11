@@ -328,7 +328,7 @@ export function ExperienceDetailModal({
         </div>
       ) : (
         /* DATE SELECTION VIEW */
-        <div className="flex flex-col h-full sm:max-h-[85vh]">
+        <div className="flex flex-col h-auto max-h-[70vh] sm:max-h-[85vh]">
           {/* Month navigation */}
           <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-border">
             <button
