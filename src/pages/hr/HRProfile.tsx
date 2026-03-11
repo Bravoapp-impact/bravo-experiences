@@ -10,6 +10,9 @@ import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
 import { EnrollMFA } from "@/components/auth/EnrollMFA";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useAuth } from "@/hooks/useAuth";
+import { useHourBudget } from "@/hooks/useHourBudget";
+import { Progress } from "@/components/ui/progress";
+import { Clock } from "lucide-react";
 
 export default function HRProfile() {
   const { profile, signOut, refreshProfile } = useAuth();
