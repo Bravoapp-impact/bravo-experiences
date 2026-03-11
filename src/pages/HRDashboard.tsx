@@ -62,6 +62,18 @@ export default function HRDashboard() {
       const employeesCount = companyProfiles?.length || 0;
       const companyUserIds = new Set(companyProfiles?.map((p) => p.id) || []);
 
+      // Fetch hour budget for company
+      const { data: budgetData } = await supabase
+        .from("hour_budgets")
+        .select("hours_per_employee_year")
+        .eq("company_id", profile.company_id!)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      const budgetHoursPerEmployee = budgetData?.[0]?.hours_per_employee_year
+        ? Number(budgetData[0].hours_per_employee_year)
+        : null;
+
       // Fetch all bookings with related data for this company
       const { data: bookingsData } = await supabase
         .from("bookings")
