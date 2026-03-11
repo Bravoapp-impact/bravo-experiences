@@ -15,6 +15,7 @@ import { useHourBudget } from "@/hooks/useHourBudget";
 
 export default function Profile() {
   const { profile, loading, signOut, refreshProfile } = useAuth();
+  const { budgetHours, usedHours, isUnlimited, loading: budgetLoading } = useHourBudget();
   const navigate = useNavigate();
 
   // Redirect admin users to their specific profile pages
