@@ -189,17 +189,53 @@ export default function CompaniesPage() {
 
         if (error) throw error;
 
+        // Upsert hour budget
+        const [mm, dd] = formData.fiscal_year_start.split("-");
+        const fiscalDate = `2025-${mm}-${dd}`;
+
+        const { data: existingBudget } = await supabase
+          .from("hour_budgets")
+          .select("id")
+          .eq("company_id", selectedCompany.id)
+          .limit(1);
+
+        if (existingBudget && existingBudget.length > 0) {
+          await supabase
+            .from("hour_budgets")
+            .update({
+              hours_per_employee_year: formData.hours_per_employee_year,
+              fiscal_year_start: fiscalDate,
+            })
+            .eq("id", existingBudget[0].id);
+        } else if (formData.hours_per_employee_year > 0) {
+          await supabase.from("hour_budgets").insert({
+            company_id: selectedCompany.id,
+            hours_per_employee_year: formData.hours_per_employee_year,
+            fiscal_year_start: fiscalDate,
+          });
+        }
+
         toast({
           title: "Successo",
           description: "Azienda aggiornata",
         });
       } else {
-        const { error } = await supabase.from("companies").insert({
+        const { data: newCompany, error } = await supabase.from("companies").insert({
           name: formData.name,
           logo_url: formData.logo_url || null,
-        });
+        }).select().single();
 
         if (error) throw error;
+
+        // Create hour budget if configured
+        if (newCompany && formData.hours_per_employee_year > 0) {
+          const [mm, dd] = formData.fiscal_year_start.split("-");
+          await supabase.from("hour_budgets").insert({
+            company_id: newCompany.id,
+            hours_per_employee_year: formData.hours_per_employee_year,
+            fiscal_year_start: `2025-${mm}-${dd}`,
+          });
+        }
 
         toast({
           title: "Successo",
