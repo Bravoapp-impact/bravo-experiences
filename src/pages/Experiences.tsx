@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search } from "lucide-react";
+import { Search, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ExperienceSection } from "@/components/experiences/ExperienceSection";
 import { ExperienceDetailModal } from "@/components/experiences/ExperienceDetailModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { devLog } from "@/lib/logger";
+import { useHourBudget } from "@/hooks/useHourBudget";
 import type { Experience, ExperienceDate } from "@/types/experiences";
 
 interface ExperienceDateRow extends ExperienceDate {
@@ -19,6 +21,7 @@ export default function Experiences() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
+  const { budgetHours, usedHours, remainingHours, isUnlimited, loading: budgetLoading } = useHourBudget();
 
   const fetchExperiences = async () => {
     setLoading(true);
@@ -132,6 +135,29 @@ export default function Experiences() {
           />
         </div>
       </motion.div>
+
+      {/* Hour budget widget */}
+      {!budgetLoading && !isUnlimited && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-6"
+        >
+          <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 flex-shrink-0">
+              <Clock className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-muted-foreground">Ore utilizzate</span>
+                <span className="text-xs font-medium text-foreground">{usedHours} / {budgetHours}</span>
+              </div>
+              <Progress value={budgetHours > 0 ? (usedHours / budgetHours) * 100 : 0} className="h-2" />
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Content */}
       {loading ? (

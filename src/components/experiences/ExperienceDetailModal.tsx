@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { MapPin, Users, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { MapPin, Users, ChevronLeft, ChevronRight, Loader2, Clock, AlertTriangle } from "lucide-react";
 import { format, isSameMonth, addMonths, subMonths, startOfMonth } from "date-fns";
 import { it } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { BaseCardImage } from "@/components/common/BaseCardImage";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useHourBudget } from "@/hooks/useHourBudget";
 import { SDG_DATA } from "@/lib/sdg-data";
 
 import type { Experience, ExperienceDate } from "@/types/experiences";
@@ -29,6 +30,7 @@ export function ExperienceDetailModal({
 }: ExperienceDetailModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { remainingHours, isUnlimited, usedHours, budgetHours, loading: budgetLoading } = useHourBudget();
   const [step, setStep] = useState<ModalStep>("detail");
   const [selectedDateId, setSelectedDateId] = useState<string | null>(null);
   const [isBooking, setIsBooking] = useState(false);
@@ -48,7 +50,7 @@ export function ExperienceDetailModal({
       try {
         const { data, error } = await supabase
           .from("experience_dates")
-          .select("id, start_datetime, end_datetime, max_participants")
+          .select("id, start_datetime, end_datetime, max_participants, volunteer_hours")
           .eq("experience_id", experience.id)
           .gte("start_datetime", new Date().toISOString())
           .order("start_datetime", { ascending: true });
@@ -348,6 +350,23 @@ export function ExperienceDetailModal({
             </button>
           </div>
 
+          {/* Hour budget banner */}
+          {!isUnlimited && !budgetLoading && (
+            <div className="flex-shrink-0 mx-5 mt-4">
+              {remainingHours <= 0 ? (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 text-destructive text-sm">
+                  <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                  <span>Hai esaurito le {budgetHours} ore disponibili quest'anno</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-muted text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4 flex-shrink-0" />
+                  <span>Ore rimanenti: <strong className="text-foreground">{remainingHours}</strong> / {budgetHours}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Scrollable date slots */}
           <div className="flex-1 overflow-y-auto p-5 space-y-6">
             {loadingDates ? (
@@ -373,7 +392,9 @@ export function ExperienceDetailModal({
                       const availableSpots = date.max_participants - (date.confirmed_count || 0);
                       const isFull = availableSpots <= 0;
                       const isBookedByUser = userBookedDateIds.has(date.id);
-                      const isDisabled = isFull || isBookedByUser;
+                      const dateHours = Number(date.volunteer_hours) || 0;
+                      const exceedsBudget = !isUnlimited && dateHours > remainingHours;
+                      const isDisabled = isFull || isBookedByUser || exceedsBudget;
                       const isSelected = selectedDateId === date.id;
 
                       return (
@@ -400,6 +421,8 @@ export function ExperienceDetailModal({
                             <div className="flex items-center gap-1 text-sm text-muted-foreground">
                               {isBookedByUser ? (
                                 <span className="text-primary font-medium">✓ Già prenotato</span>
+                              ) : exceedsBudget ? (
+                                <span className="text-destructive font-medium text-xs">Ore insufficienti</span>
                               ) : (
                                 <>
                                   <Users className="h-4 w-4" />

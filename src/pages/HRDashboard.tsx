@@ -15,6 +15,7 @@ interface DashboardData {
   totalVolunteerHours: number;
   totalBeneficiaries: number;
   totalParticipations: number;
+  budgetHoursPerEmployee: number | null;
   sdgImpacts: { code: string; hours: number }[];
   upcomingEvents: {
     id: string;
@@ -35,6 +36,7 @@ export default function HRDashboard() {
     totalVolunteerHours: 0,
     totalBeneficiaries: 0,
     totalParticipations: 0,
+    budgetHoursPerEmployee: null,
     sdgImpacts: [],
     upcomingEvents: [],
   });
@@ -59,6 +61,18 @@ export default function HRDashboard() {
 
       const employeesCount = companyProfiles?.length || 0;
       const companyUserIds = new Set(companyProfiles?.map((p) => p.id) || []);
+
+      // Fetch hour budget for company
+      const { data: budgetData } = await supabase
+        .from("hour_budgets")
+        .select("hours_per_employee_year")
+        .eq("company_id", profile.company_id!)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      const budgetHoursPerEmployee = budgetData?.[0]?.hours_per_employee_year
+        ? Number(budgetData[0].hours_per_employee_year)
+        : null;
 
       // Fetch all bookings with related data for this company
       const { data: bookingsData } = await supabase
@@ -183,6 +197,7 @@ export default function HRDashboard() {
         totalVolunteerHours,
         totalBeneficiaries,
         totalParticipations: completedBookings.length,
+        budgetHoursPerEmployee,
         sdgImpacts,
         upcomingEvents: eventsWithParticipants,
       });
@@ -216,6 +231,7 @@ export default function HRDashboard() {
           totalVolunteerHours={data.totalVolunteerHours}
           totalBeneficiaries={data.totalBeneficiaries}
           totalParticipations={data.totalParticipations}
+          budgetHoursPerEmployee={data.budgetHoursPerEmployee}
         />
 
         {/* Two column layout: SDG Impact + Upcoming Events */}

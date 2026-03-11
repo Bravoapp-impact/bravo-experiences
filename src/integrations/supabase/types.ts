@@ -888,6 +888,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      check_hour_budget: {
+        Args: { p_experience_date_id: string; p_user_id: string }
+        Returns: boolean
+      }
       get_confirmed_bookings_count: {
         Args: { exp_date_id: string }
         Returns: number
@@ -919,6 +923,10 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { user_uuid: string }; Returns: boolean }
+      make_current_fiscal_year_start: {
+        Args: { p_fiscal_start: string }
+        Returns: string
+      }
       process_completed_events: { Args: never; Returns: number }
       validate_access_code: {
         Args: { p_code: string }

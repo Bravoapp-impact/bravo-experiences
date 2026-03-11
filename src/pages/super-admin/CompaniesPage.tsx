@@ -45,6 +45,11 @@ interface Company {
   _count?: {
     users: number;
   };
+  // Hour budget
+  hourBudget?: {
+    hours_per_employee_year: number;
+    fiscal_year_start: string;
+  } | null;
 }
 
 export default function CompaniesPage() {
@@ -57,6 +62,8 @@ export default function CompaniesPage() {
   const [formData, setFormData] = useState({
     name: "",
     logo_url: "",
+    hours_per_employee_year: 0,
+    fiscal_year_start: "01-01",
   });
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -87,6 +94,22 @@ export default function CompaniesPage() {
         accessCodesCountMap.set(ac.entity_id, current + 1);
       });
 
+      // Fetch hour budgets for all companies
+      const { data: hourBudgetsData } = await supabase
+        .from("hour_budgets")
+        .select("company_id, hours_per_employee_year, fiscal_year_start")
+        .order("created_at", { ascending: false });
+
+      const hourBudgetMap = new Map<string, { hours_per_employee_year: number; fiscal_year_start: string }>();
+      (hourBudgetsData || []).forEach((hb) => {
+        if (!hourBudgetMap.has(hb.company_id)) {
+          hourBudgetMap.set(hb.company_id, {
+            hours_per_employee_year: Number(hb.hours_per_employee_year),
+            fiscal_year_start: hb.fiscal_year_start,
+          });
+        }
+      });
+
       const companiesWithCounts = await Promise.all(
         (companiesData || []).map(async (company) => {
           const { count } = await supabase
@@ -98,6 +121,7 @@ export default function CompaniesPage() {
             ...company,
             access_codes_count: accessCodesCountMap.get(company.id) || 0,
             _count: { users: count || 0 },
+            hourBudget: hourBudgetMap.get(company.id) || null,
           };
         })
       );
@@ -118,15 +142,25 @@ export default function CompaniesPage() {
   const handleOpenDialog = (company?: Company) => {
     if (company) {
       setSelectedCompany(company);
+      const fiscalDate = company.hourBudget?.fiscal_year_start;
+      let fiscalMMDD = "01-01";
+      if (fiscalDate) {
+        const d = new Date(fiscalDate);
+        fiscalMMDD = `${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      }
       setFormData({
         name: company.name,
         logo_url: company.logo_url || "",
+        hours_per_employee_year: company.hourBudget?.hours_per_employee_year || 0,
+        fiscal_year_start: fiscalMMDD,
       });
     } else {
       setSelectedCompany(null);
       setFormData({
         name: "",
         logo_url: "",
+        hours_per_employee_year: 0,
+        fiscal_year_start: "01-01",
       });
     }
     setDialogOpen(true);
@@ -155,17 +189,53 @@ export default function CompaniesPage() {
 
         if (error) throw error;
 
+        // Upsert hour budget
+        const [mm, dd] = formData.fiscal_year_start.split("-");
+        const fiscalDate = `2025-${mm}-${dd}`;
+
+        const { data: existingBudget } = await supabase
+          .from("hour_budgets")
+          .select("id")
+          .eq("company_id", selectedCompany.id)
+          .limit(1);
+
+        if (existingBudget && existingBudget.length > 0) {
+          await supabase
+            .from("hour_budgets")
+            .update({
+              hours_per_employee_year: formData.hours_per_employee_year,
+              fiscal_year_start: fiscalDate,
+            })
+            .eq("id", existingBudget[0].id);
+        } else if (formData.hours_per_employee_year > 0) {
+          await supabase.from("hour_budgets").insert({
+            company_id: selectedCompany.id,
+            hours_per_employee_year: formData.hours_per_employee_year,
+            fiscal_year_start: fiscalDate,
+          });
+        }
+
         toast({
           title: "Successo",
           description: "Azienda aggiornata",
         });
       } else {
-        const { error } = await supabase.from("companies").insert({
+        const { data: newCompany, error } = await supabase.from("companies").insert({
           name: formData.name,
           logo_url: formData.logo_url || null,
-        });
+        }).select().single();
 
         if (error) throw error;
+
+        // Create hour budget if configured
+        if (newCompany && formData.hours_per_employee_year > 0) {
+          const [mm, dd] = formData.fiscal_year_start.split("-");
+          await supabase.from("hour_budgets").insert({
+            company_id: newCompany.id,
+            hours_per_employee_year: formData.hours_per_employee_year,
+            fiscal_year_start: `2025-${mm}-${dd}`,
+          });
+        }
 
         toast({
           title: "Successo",
@@ -352,6 +422,37 @@ export default function CompaniesPage() {
                 onLogoChange={(url) => setFormData({ ...formData, logo_url: url || "" })}
                 bucket="company-logos"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="hours_budget">Budget ore annuale per dipendente</Label>
+              <Input
+                id="hours_budget"
+                type="number"
+                min={0}
+                value={formData.hours_per_employee_year}
+                onChange={(e) =>
+                  setFormData({ ...formData, hours_per_employee_year: Number(e.target.value) })
+                }
+                placeholder="0 = illimitato"
+              />
+              <p className="text-xs text-muted-foreground">
+                Inserisci 0 per budget illimitato
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="fiscal_start">Inizio anno fiscale (MM-GG)</Label>
+              <Input
+                id="fiscal_start"
+                value={formData.fiscal_year_start}
+                onChange={(e) =>
+                  setFormData({ ...formData, fiscal_year_start: e.target.value })
+                }
+                placeholder="01-01"
+                maxLength={5}
+              />
+              <p className="text-xs text-muted-foreground">
+                Formato: MM-GG (es. 01-01 per 1 Gennaio)
+              </p>
             </div>
             {!selectedCompany && (
               <div className="p-3 rounded-lg bg-muted/50 text-sm text-muted-foreground">
