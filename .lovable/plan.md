@@ -19,22 +19,19 @@
 
 ---
 
+## Sprint completati recenti
+
+### ✅ Sprint 3 — Lifecycle booking (rischio medio)
+- Function `process_completed_events()` per transizionare booking passati (confirmed → completed dopo 2h dalla fine)
+- RLS `experience_reviews` aggiornata per accettare status `completed`
+- Frontend retrocompatibile: tutti i filtri accettano sia `confirmed` (passato) che `completed`
+- Utility `src/lib/booking-utils.ts` con costanti e helper per gli stati
+- Badge `no_show` aggiunto nelle card booking
+- **Rollback:** `UPDATE bookings SET status = 'confirmed' WHERE status IN ('completed', 'verified');` + ripristino RLS
+
+---
+
 ## Sprint da fare
-
-### Sprint 3 — Lifecycle booking (rischio medio)
-Espandere gli stati booking da 2 a 5: `confirmed`, `verified`, `completed`, `cancelled`, `no_show`.
-
-**Database:**
-- Function `process_completed_events()` per transizionare booking passati
-- Aggiornare RLS review per accettare anche status `completed`
-
-**Frontend:**
-- Filtrare per `status IN ('confirmed', 'completed')` ovunque si filtra per `confirmed` + data passata
-- Retrocompatibilità: trattare entrambi come "completato"
-
-**Rollback:** `UPDATE bookings SET status = 'confirmed' WHERE status IN ('completed', 'verified')`
-
-### Sprint 4 — Borsellino ore + catalogo
 - Verifica ore residue pre-prenotazione (frontend only)
 - Widget ore in dashboard HR
 - Se `hour_budgets` non esiste → budget illimitato (retrocompatibilità)

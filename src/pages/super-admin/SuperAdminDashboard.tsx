@@ -65,7 +65,7 @@ export default function SuperAdminDashboard() {
             )
           `
           )
-          .eq("status", "confirmed"),
+          .in("status", ["confirmed", "completed"]),
       ]);
 
       // Calculate volunteer hours and beneficiaries from completed bookings

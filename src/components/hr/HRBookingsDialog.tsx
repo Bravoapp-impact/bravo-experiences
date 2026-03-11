@@ -41,7 +41,7 @@ export function HRBookingsDialog({
   dateInfo,
   bookings,
 }: HRBookingsDialogProps) {
-  const confirmedCount = bookings.filter((b) => b.status === "confirmed").length;
+  const confirmedCount = bookings.filter((b) => ["confirmed", "completed"].includes(b.status)).length;
 
   const exportCSV = () => {
     const headers = ["Nome", "Cognome", "Email", "Stato", "Data Prenotazione"];
@@ -49,7 +49,7 @@ export function HRBookingsDialog({
       b.user.first_name || "",
       b.user.last_name || "",
       b.user.email,
-      b.status === "confirmed" ? "Confermato" : "Cancellato",
+      b.status === "confirmed" || b.status === "completed" ? "Confermato" : b.status === "cancelled" ? "Annullato" : b.status === "no_show" ? "Assente" : b.status,
       format(new Date(b.created_at), "dd/MM/yyyy HH:mm"),
     ]);
 
@@ -138,16 +138,16 @@ export function HRBookingsDialog({
                       })}
                     </p>
                   </div>
-                  <Badge
-                    variant={booking.status === "confirmed" ? "default" : "secondary"}
-                    className={
-                      booking.status === "confirmed"
-                        ? "bg-success/10 text-success border-success/20"
-                        : "bg-destructive/10 text-destructive border-destructive/20"
-                    }
-                  >
-                    {booking.status === "confirmed" ? "Confermato" : "Cancellato"}
-                  </Badge>
+                   <Badge
+                     variant={["confirmed", "completed"].includes(booking.status) ? "default" : "secondary"}
+                     className={
+                       ["confirmed", "completed"].includes(booking.status)
+                         ? "bg-success/10 text-success border-success/20"
+                         : "bg-destructive/10 text-destructive border-destructive/20"
+                     }
+                   >
+                     {booking.status === "confirmed" || booking.status === "completed" ? "Confermato" : booking.status === "cancelled" ? "Annullato" : booking.status === "no_show" ? "Assente" : booking.status}
+                   </Badge>
                 </div>
               ))}
             </div>

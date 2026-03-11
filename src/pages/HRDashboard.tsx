@@ -89,13 +89,13 @@ export default function HRDashboard() {
       // Filter bookings by company employees
       const companyBookings = bookingsData?.filter((b) => companyUserIds.has(b.user_id)) || [];
 
-      // Calculate completed bookings (end_datetime < now AND status = confirmed)
+      // Calculate completed bookings (status completed OR confirmed+past)
       const now = new Date();
       const completedBookings = companyBookings.filter(
         (b) =>
-          b.status === "confirmed" &&
+          (b.status === "completed" || (b.status === "confirmed" &&
           b.experience_dates &&
-          new Date(b.experience_dates.end_datetime) < now
+          new Date(b.experience_dates.end_datetime) < now))
       );
 
       // Calculate unique employees who participated

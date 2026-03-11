@@ -116,6 +116,7 @@ export function BookingDetailModal({ booking, onClose, onCancel, isCancelling }:
   
   const hoursUntilEvent = differenceInHours(startDate, new Date());
   const canCancel = hoursUntilEvent > 48 && booking.status === "confirmed";
+  const isPastEvent = hoursUntilEvent <= 0;
 
   const handleOpenMaps = () => {
     const query = encodeURIComponent(
@@ -283,7 +284,7 @@ export function BookingDetailModal({ booking, onClose, onCancel, isCancelling }:
             >
               {isCancelling ? "Annullamento in corso..." : "Annulla prenotazione"}
             </Button>
-          ) : !canCancel && booking.status === "confirmed" && hoursUntilEvent <= 48 ? (
+          ) : !canCancel && ["confirmed", "completed"].includes(booking.status) && !isPastEvent && hoursUntilEvent <= 48 ? (
             <div className="space-y-3">
               <p className="text-xs text-muted-foreground text-center py-2 bg-muted/50 rounded-lg">
                 Non annullabile (meno di 48h all'evento)
