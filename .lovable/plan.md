@@ -1,54 +1,79 @@
-# Piano di Implementazione Fase 1 — Roadmap v3.0
 
-## Sprint completati
 
-### ✅ Sprint 0 — Feedback (già implementato)
-- Tabella `experience_reviews` + RLS + modal feedback + email post-evento
-- Pagina Impact funzionante (booking confirmed + data passata)
+# Sprint 4 — Borsellino Ore (Hour Budget)
 
-### ✅ Sprint 1 — Colonne additive (rischio zero)
-- `experiences`: + `type`, `price_per_participant`, `visibility`, `created_by`
-- `bookings`: + `verified_at`, `verification_method`, `verification_data`
-- `profiles`: + `manager_id`
-- `companies`: + `max_concurrent_absences`
+## Riepilogo
 
-### ✅ Sprint 2 — Nuove tabelle (rischio basso)
-- `company_service_config` con RLS (HR + super admin)
-- `hour_budgets` con RLS (employee read + HR read + super admin full)
-- Triggers `updated_at` su entrambe
+Budget ore gestito **solo dal Super Admin** nel form di modifica azienda. L'HR lo vede in dashboard (sola lettura). Il dipendente viene bloccato se supera il budget.
 
----
+## Modifiche
 
-## Sprint completati recenti
+### 1. Migrazione DB
 
-### ✅ Sprint 3 — Lifecycle booking (rischio medio)
-- Function `process_completed_events()` per transizionare booking passati (confirmed → completed dopo 2h dalla fine)
-- RLS `experience_reviews` aggiornata per accettare status `completed`
-- Frontend retrocompatibile: tutti i filtri accettano sia `confirmed` (passato) che `completed`
-- Utility `src/lib/booking-utils.ts` con costanti e helper per gli stati
-- Badge `no_show` aggiunto nelle card booking
-- **Rollback:** `UPDATE bookings SET status = 'confirmed' WHERE status IN ('completed', 'verified');` + ripristino RLS
+**Funzione `check_hour_budget`** (SECURITY DEFINER, row_security off):
+- Dato `user_id` e `experience_date_id`, recupera `company_id` da `user_tenants`
+- Cerca il record `hour_budgets` per quella company (piu' recente)
+- Se non esiste o `hours_per_employee_year = 0` → ritorna `true` (illimitato)
+- Calcola inizio anno fiscale corrente dal campo `fiscal_year_start`
+- Somma `volunteer_hours` dei bookings confirmed/completed dell'anno fiscale
+- Ritorna `(usate + nuove) <= budget`
 
----
+**Aggiornamento RLS INSERT su bookings**:
+- DROP policy "Users can create bookings"
+- Ricreare con condizione aggiuntiva: `AND check_hour_budget(auth.uid(), experience_date_id)`
 
-## Sprint da fare
-- Verifica ore residue pre-prenotazione (frontend only)
-- Widget ore in dashboard HR
-- Se `hour_budgets` non esiste → budget illimitato (retrocompatibilità)
+**RLS INSERT/UPDATE su `hour_budgets` per Super Admin** (attualmente manca INSERT/UPDATE — solo SELECT esiste per employees e HR):
+- Policy INSERT/UPDATE per `super_admin` (gia' coperta dalla policy ALL esistente — verificare)
 
-### Sprint 5 — "Le mie attività" + notifica manager
-- Nuova pagina `/app/my-activities`
-- Edge Function notifica manager alla prenotazione
-- Check tetto assenze contemporanee
+### 2. Super Admin — form azienda (`CompaniesPage.tsx`)
 
----
+Aggiungere nel dialog di modifica azienda due campi:
+- **Budget ore annuale per dipendente** (input numerico, default 0 = illimitato)
+- **Inizio anno fiscale** (date picker, default 1 gennaio)
 
-## Nota critica: company_id in experience_dates
-NON rimuovere `company_id` da `experience_dates` — tutta la RLS multi-tenant dipende da quel campo. Pianificare come operazione dedicata con test approfonditi.
+Al salvataggio, fare upsert su `hour_budgets` con `company_id`, `hours_per_employee_year`, `fiscal_year_start`.
 
-## Regole di sicurezza
-1. Mai DROP + CREATE RLS in un singolo step
-2. Mai ALTER colonne esistenti — solo ADD COLUMN
-3. Ogni migrazione reversibile
-4. Frontend retrocompatibile con fallback
-5. Test su ambiente Test prima di pubblicare
+### 3. Hook `useHourBudget.ts` (nuovo)
+
+```typescript
+// Ritorna { budgetHours, usedHours, remainingHours, isUnlimited, loading }
+// Query hour_budgets + calcolo ore usate da bookings nell'anno fiscale
+```
+
+Riutilizzabile da dipendente, HR e Super Admin.
+
+### 4. Dipendente — `ExperienceDetailModal.tsx`
+
+Nello step "dates":
+- Usare `useHourBudget` per recuperare ore rimanenti
+- Se budget esaurito: banner arancione + disabilitare conferma
+- Se la data selezionata supera le ore rimanenti: disabilitare conferma con messaggio
+- Se illimitato: nessun cambiamento visivo
+
+### 5. HR Dashboard — sola lettura
+
+In `HRDashboard.tsx`:
+- Fetch `hour_budgets` per la company
+- Passare a `MetricsCards` il budget configurato
+
+In `MetricsCards.tsx`:
+- Aggiungere card "Budget Ore" che mostra il valore configurato (es. "16 ore/anno") o "Illimitato"
+- La card e' informativa, nessun link di modifica
+
+### 6. Dashboard dipendente — widget ore
+
+Nella pagina `Experiences.tsx` (home del dipendente):
+- Se budget configurato, mostrare sotto la search una card compatta con progress bar: "Ore utilizzate: X / Y"
+
+## File coinvolti
+
+| File | Tipo |
+|------|------|
+| Migrazione SQL | `check_hour_budget` + RLS bookings + helper |
+| `src/hooks/useHourBudget.ts` | Nuovo |
+| `src/pages/super-admin/CompaniesPage.tsx` | Modifica — campi budget nel form |
+| `src/components/experiences/ExperienceDetailModal.tsx` | Modifica — banner + blocco |
+| `src/pages/Experiences.tsx` | Modifica — widget ore |
+| `src/pages/HRDashboard.tsx` | Modifica — fetch budget |
+| `src/components/hr/MetricsCards.tsx` | Modifica — card budget |
+
