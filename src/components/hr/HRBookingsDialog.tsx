@@ -41,7 +41,7 @@ export function HRBookingsDialog({
   dateInfo,
   bookings,
 }: HRBookingsDialogProps) {
-  const confirmedCount = bookings.filter((b) => b.status === "confirmed").length;
+  const confirmedCount = bookings.filter((b) => ["confirmed", "completed"].includes(b.status)).length;
 
   const exportCSV = () => {
     const headers = ["Nome", "Cognome", "Email", "Stato", "Data Prenotazione"];
