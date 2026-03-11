@@ -159,9 +159,9 @@ export default function MyBookings() {
     (b) => isPast(new Date(b.experience_dates.start_datetime)) || ["cancelled", "completed", "no_show"].includes(b.status)
   );
 
-  // Count past confirmed bookings without reviews
+  // Count past done bookings without reviews
   const pendingFeedbackCount = pastBookings.filter(
-    (b) => b.status === "confirmed" && !reviewedBookingIds.has(b.id)
+    (b) => ["confirmed", "completed"].includes(b.status) && !reviewedBookingIds.has(b.id)
   ).length;
 
   return (
