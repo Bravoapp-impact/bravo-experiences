@@ -9,6 +9,7 @@ export interface ExperienceDate {
   end_datetime: string;
   max_participants: number;
   confirmed_count?: number;
+  volunteer_hours?: number;
 }
 
 export interface Experience {
