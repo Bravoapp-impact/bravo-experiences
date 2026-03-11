@@ -423,6 +423,37 @@ export default function CompaniesPage() {
                 bucket="company-logos"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="hours_budget">Budget ore annuale per dipendente</Label>
+              <Input
+                id="hours_budget"
+                type="number"
+                min={0}
+                value={formData.hours_per_employee_year}
+                onChange={(e) =>
+                  setFormData({ ...formData, hours_per_employee_year: Number(e.target.value) })
+                }
+                placeholder="0 = illimitato"
+              />
+              <p className="text-xs text-muted-foreground">
+                Inserisci 0 per budget illimitato
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="fiscal_start">Inizio anno fiscale (MM-GG)</Label>
+              <Input
+                id="fiscal_start"
+                value={formData.fiscal_year_start}
+                onChange={(e) =>
+                  setFormData({ ...formData, fiscal_year_start: e.target.value })
+                }
+                placeholder="01-01"
+                maxLength={5}
+              />
+              <p className="text-xs text-muted-foreground">
+                Formato: MM-GG (es. 01-01 per 1 Gennaio)
+              </p>
+            </div>
             {!selectedCompany && (
               <div className="p-3 rounded-lg bg-muted/50 text-sm text-muted-foreground">
                 <p>
