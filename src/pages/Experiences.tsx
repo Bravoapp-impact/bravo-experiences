@@ -80,12 +80,14 @@ export default function Experiences() {
         datesByExperienceId.set(experience_id, list);
       });
 
-      setExperiences(
-        baseExperiences.map((exp) => ({
+      const experiencesWithDates = baseExperiences
+        .map((exp) => ({
           ...exp,
           experience_dates: datesByExperienceId.get(exp.id) ?? [],
-        })),
-      );
+        }))
+        .filter((exp) => exp.experience_dates.length > 0);
+
+      setExperiences(experiencesWithDates);
     } catch (error) {
       devLog.error("Error fetching experiences:", error);
       setExperiences([]);
