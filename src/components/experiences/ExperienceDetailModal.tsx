@@ -199,6 +199,7 @@ export function ExperienceDetailModal({
       showBackButton={step === "dates"}
       onBack={handleBackToDetail}
       title={step === "dates" ? "Seleziona una data" : undefined}
+      className={step === "dates" ? "h-auto max-h-[85vh] rounded-t-2xl sm:rounded-3xl" : undefined}
     >
       {step === "detail" ? (
         /* DETAIL VIEW */
