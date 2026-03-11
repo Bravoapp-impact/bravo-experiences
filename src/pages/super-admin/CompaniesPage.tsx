@@ -45,6 +45,11 @@ interface Company {
   _count?: {
     users: number;
   };
+  // Hour budget
+  hourBudget?: {
+    hours_per_employee_year: number;
+    fiscal_year_start: string;
+  } | null;
 }
 
 export default function CompaniesPage() {
