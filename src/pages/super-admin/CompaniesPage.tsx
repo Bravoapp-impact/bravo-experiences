@@ -62,6 +62,8 @@ export default function CompaniesPage() {
   const [formData, setFormData] = useState({
     name: "",
     logo_url: "",
+    hours_per_employee_year: 0,
+    fiscal_year_start: "01-01",
   });
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
