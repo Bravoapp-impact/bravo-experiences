@@ -15,6 +15,7 @@ interface DashboardData {
   totalVolunteerHours: number;
   totalBeneficiaries: number;
   totalParticipations: number;
+  budgetHoursPerEmployee: number | null;
   sdgImpacts: { code: string; hours: number }[];
   upcomingEvents: {
     id: string;
