@@ -1,54 +1,24 @@
-# Piano di Implementazione Fase 1 — Roadmap v3.0
+# Fix: Modale centrata e diagnostica prenotazione
 
-## Sprint completati
+## Problema 1: Impossibile prenotarsi
 
-### ✅ Sprint 0 — Feedback (già implementato)
-- Tabella `experience_reviews` + RLS + modal feedback + email post-evento
-- Pagina Impact funzionante (booking confirmed + data passata)
+L'utente ha gia' una prenotazione confermata per l'unica data futura disponibile (27 marzo). Il vincolo di unicita' impedisce correttamente una seconda prenotazione per la stessa data. L'errore "23505" viene gestito con il messaggio "Sei gia' prenotato per questa data".
 
-### ✅ Sprint 1 — Colonne additive (rischio zero)
-- `experiences`: + `type`, `price_per_participant`, `visibility`, `created_by`
-- `bookings`: + `verified_at`, `verification_method`, `verification_data`
-- `profiles`: + `manager_id`
-- `companies`: + `max_concurrent_absences`
+Ad ogni modo, nella tab prenotazioni non è neanche possibile cancellare una prenotazione. Forse la modifica alla modale precedente ha cambiato la visualizzazione del pulsante in fondo?  
+  
+Nel caso permettere di fare azioni all'utente mostrando i pulsanti. Ad esempio prima veniva comunque mostrato un pulsante per prenotarsi ma l'app restituiva errore se utente era già prenotato per l'evento
 
-### ✅ Sprint 2 — Nuove tabelle (rischio basso)
-- `company_service_config` con RLS (HR + super admin)
-- `hour_budgets` con RLS (employee read + HR read + super admin full)
-- Triggers `updated_at` su entrambe
+## Problema 2: Modale non centrata su mobile
 
----
+La classe `items-end` nel backdrop posiziona la modale in basso. Va cambiata in `items-center` per centrarla anche su mobile.
 
-## Sprint completati recenti
+## Modifiche
 
-### ✅ Sprint 3 — Lifecycle booking (rischio medio)
-- Function `process_completed_events()` per transizionare booking passati (confirmed → completed dopo 2h dalla fine)
-- RLS `experience_reviews` aggiornata per accettare status `completed`
-- Frontend retrocompatibile: tutti i filtri accettano sia `confirmed` (passato) che `completed`
-- Utility `src/lib/booking-utils.ts` con costanti e helper per gli stati
-- Badge `no_show` aggiunto nelle card booking
-- **Rollback:** `UPDATE bookings SET status = 'confirmed' WHERE status IN ('completed', 'verified');` + ripristino RLS
+### `src/components/common/BaseModal.tsx`
 
----
+- Cambiare `items-end sm:items-center` in `items-center` nel backdrop (riga 47)
 
-## Sprint da fare
-- Verifica ore residue pre-prenotazione (frontend only)
-- Widget ore in dashboard HR
-- Se `hour_budgets` non esiste → budget illimitato (retrocompatibilità)
+### `src/components/experiences/ExperienceDetailModal.tsx`
 
-### Sprint 5 — "Le mie attività" + notifica manager
-- Nuova pagina `/app/my-activities`
-- Edge Function notifica manager alla prenotazione
-- Check tetto assenze contemporanee
-
----
-
-## Nota critica: company_id in experience_dates
-NON rimuovere `company_id` da `experience_dates` — tutta la RLS multi-tenant dipende da quel campo. Pianificare come operazione dedicata con test approfonditi.
-
-## Regole di sicurezza
-1. Mai DROP + CREATE RLS in un singolo step
-2. Mai ALTER colonne esistenti — solo ADD COLUMN
-3. Ogni migrazione reversibile
-4. Frontend retrocompatibile con fallback
-5. Test su ambiente Test prima di pubblicare
+- Nel step "dates", recuperare le prenotazioni esistenti dell'utente per le date disponibili
+- Disabilitare le date gia' prenotate con label "Gia' prenotato" invece di renderle selezionabili
