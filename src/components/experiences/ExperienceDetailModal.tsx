@@ -202,7 +202,7 @@ export function ExperienceDetailModal({
     >
       {step === "detail" ? (
         /* DETAIL VIEW */
-        <div className="flex flex-col h-full sm:max-h-[85vh]">
+        <div className="flex flex-col h-full sm:max-h-[85vh] overflow-hidden">
           {/* Close button overlay */}
           <div className="absolute top-4 right-4 z-10">
             <ModalCloseButton onClick={onClose} />
