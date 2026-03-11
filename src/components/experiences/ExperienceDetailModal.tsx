@@ -372,12 +372,14 @@ export function ExperienceDetailModal({
                     {dayDates.map((date) => {
                       const availableSpots = date.max_participants - (date.confirmed_count || 0);
                       const isFull = availableSpots <= 0;
+                      const isBookedByUser = userBookedDateIds.has(date.id);
+                      const isDisabled = isFull || isBookedByUser;
                       const isSelected = selectedDateId === date.id;
 
                       return (
                         <button
                           key={date.id}
-                          disabled={isFull}
+                          disabled={isDisabled}
                           onClick={() => setSelectedDateId(date.id)}
                           className={`
                             w-full p-4 rounded-2xl border text-left transition-all
@@ -385,7 +387,7 @@ export function ExperienceDetailModal({
                               ? "border-primary bg-primary/5 ring-1 ring-primary"
                               : "border-border hover:bg-muted/30"
                             }
-                            ${isFull ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                            ${isDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                           `}
                         >
                           <div className="flex items-center justify-between">
@@ -396,10 +398,16 @@ export function ExperienceDetailModal({
                               </p>
                             </div>
                             <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Users className="h-4 w-4" />
-                              <span className={isFull ? "text-destructive font-medium" : ""}>
-                                {isFull ? "Completo" : `${availableSpots} posti`}
-                              </span>
+                              {isBookedByUser ? (
+                                <span className="text-primary font-medium">✓ Già prenotato</span>
+                              ) : (
+                                <>
+                                  <Users className="h-4 w-4" />
+                                  <span className={isFull ? "text-destructive font-medium" : ""}>
+                                    {isFull ? "Completo" : `${availableSpots} posti`}
+                                  </span>
+                                </>
+                              )}
                             </div>
                           </div>
                         </button>
