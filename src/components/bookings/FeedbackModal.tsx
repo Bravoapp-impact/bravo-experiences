@@ -82,6 +82,16 @@ export function FeedbackModal({ open, onClose, onSubmitted, booking }: FeedbackM
 
   const isValid = rating > 0 && wouldRecommend !== null;
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
   return (
     <AnimatePresence>
       {open && booking && (
@@ -89,7 +99,7 @@ export function FeedbackModal({ open, onClose, onSubmitted, booking }: FeedbackM
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/50"
+          className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/50"
           onClick={handleClose}
         >
           <motion.div
