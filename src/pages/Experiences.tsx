@@ -1,15 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Clock } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ExperienceSection } from "@/components/experiences/ExperienceSection";
 import { ExperienceDetailModal } from "@/components/experiences/ExperienceDetailModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { devLog } from "@/lib/logger";
-import { useHourBudget } from "@/hooks/useHourBudget";
 import type { Experience, ExperienceDate } from "@/types/experiences";
 
 interface ExperienceDateRow extends ExperienceDate {
