@@ -50,7 +50,7 @@ export function ExperienceDetailModal({
       try {
         const { data, error } = await supabase
           .from("experience_dates")
-          .select("id, start_datetime, end_datetime, max_participants")
+          .select("id, start_datetime, end_datetime, max_participants, volunteer_hours")
           .eq("experience_id", experience.id)
           .gte("start_datetime", new Date().toISOString())
           .order("start_datetime", { ascending: true });
