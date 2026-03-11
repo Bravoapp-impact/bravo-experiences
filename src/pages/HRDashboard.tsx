@@ -197,6 +197,7 @@ export default function HRDashboard() {
         totalVolunteerHours,
         totalBeneficiaries,
         totalParticipations: completedBookings.length,
+        budgetHoursPerEmployee,
         sdgImpacts,
         upcomingEvents: eventsWithParticipants,
       });
