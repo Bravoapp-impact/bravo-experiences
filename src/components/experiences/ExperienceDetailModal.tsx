@@ -36,6 +36,8 @@ export function ExperienceDetailModal({
   const [loadingDates, setLoadingDates] = useState(false);
   const [currentMonth, setCurrentMonth] = useState<Date>(startOfMonth(new Date()));
 
+  const [userBookedDateIds, setUserBookedDateIds] = useState<Set<string>>(new Set());
+
   // Fetch dates when entering the dates step
   useEffect(() => {
     if (!experience || step !== "dates") return;
@@ -53,22 +55,28 @@ export function ExperienceDetailModal({
 
         if (error) throw error;
 
-        // Batch: fetch all confirmed booking counts in a single query
         const dateIds = (data || []).map((d) => d.id);
         const confirmedCountsMap = new Map<string, number>();
+        const bookedByUser = new Set<string>();
 
         if (dateIds.length > 0) {
+          // Fetch all confirmed bookings + check which ones belong to current user
           const { data: confirmedBookings } = await supabase
             .from("bookings")
-            .select("experience_date_id")
+            .select("experience_date_id, user_id")
             .in("experience_date_id", dateIds)
             .eq("status", "confirmed");
 
           (confirmedBookings || []).forEach((b) => {
             const prev = confirmedCountsMap.get(b.experience_date_id) || 0;
             confirmedCountsMap.set(b.experience_date_id, prev + 1);
+            if (b.user_id === user?.id) {
+              bookedByUser.add(b.experience_date_id);
+            }
           });
         }
+
+        setUserBookedDateIds(bookedByUser);
 
         const datesWithCount = (data || []).map((date) => ({
           ...date,
@@ -77,7 +85,6 @@ export function ExperienceDetailModal({
 
         setDates(datesWithCount);
         
-        // Set current month to first available date
         if (datesWithCount.length > 0) {
           setCurrentMonth(startOfMonth(new Date(datesWithCount[0].start_datetime)));
         }
@@ -89,7 +96,7 @@ export function ExperienceDetailModal({
     };
 
     fetchDates();
-  }, [experience, step]);
+  }, [experience, step, user?.id]);
 
   // Group dates by day within current month
   const datesByDay = useMemo(() => {
