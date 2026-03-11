@@ -421,6 +421,8 @@ export function ExperienceDetailModal({
                             <div className="flex items-center gap-1 text-sm text-muted-foreground">
                               {isBookedByUser ? (
                                 <span className="text-primary font-medium">✓ Già prenotato</span>
+                              ) : exceedsBudget ? (
+                                <span className="text-destructive font-medium text-xs">Ore insufficienti</span>
                               ) : (
                                 <>
                                   <Users className="h-4 w-4" />

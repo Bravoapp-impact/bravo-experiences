@@ -231,6 +231,7 @@ export default function HRDashboard() {
           totalVolunteerHours={data.totalVolunteerHours}
           totalBeneficiaries={data.totalBeneficiaries}
           totalParticipations={data.totalParticipations}
+          budgetHoursPerEmployee={data.budgetHoursPerEmployee}
         />
 
         {/* Two column layout: SDG Impact + Upcoming Events */}

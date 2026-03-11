@@ -1,4 +1,4 @@
-import { Users, Clock, Heart, CheckCircle, TrendingUp } from "lucide-react";
+import { Users, Clock, Heart, CheckCircle, TrendingUp, Hourglass } from "lucide-react";
 import { MetricCard } from "@/components/common/MetricCard";
 
 interface MetricsCardsProps {
@@ -7,6 +7,7 @@ interface MetricsCardsProps {
   totalVolunteerHours: number;
   totalBeneficiaries: number;
   totalParticipations: number;
+  budgetHoursPerEmployee?: number | null;
 }
 
 export function MetricsCards({
@@ -15,6 +16,7 @@ export function MetricsCards({
   totalVolunteerHours,
   totalBeneficiaries,
   totalParticipations,
+  budgetHoursPerEmployee,
 }: MetricsCardsProps) {
   const metrics = [
     {
@@ -52,6 +54,15 @@ export function MetricsCards({
       color: "text-bravo-purple",
       bgColor: "bg-bravo-purple/10",
     },
+    {
+      label: "Budget Ore / Dipendente",
+      value: budgetHoursPerEmployee && budgetHoursPerEmployee > 0
+        ? `${budgetHoursPerEmployee} ore/anno`
+        : "Illimitato",
+      icon: Hourglass,
+      color: "text-bravo-orange",
+      bgColor: "bg-bravo-orange/10",
+    },
   ];
 
   const topRow = metrics.slice(0, 3);
@@ -72,7 +83,7 @@ export function MetricsCards({
           />
         ))}
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         {bottomRow.map((metric, index) => (
           <MetricCard
             key={metric.label}
