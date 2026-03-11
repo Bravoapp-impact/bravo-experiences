@@ -200,7 +200,7 @@ export function ExperienceDetailModal({
     >
       {step === "detail" ? (
         /* DETAIL VIEW */
-        <div className="flex flex-col max-h-[80vh] sm:max-h-[85vh]">
+        <div className="flex flex-col h-full sm:max-h-[85vh]">
           {/* Close button overlay */}
           <div className="absolute top-4 right-4 z-10">
             <ModalCloseButton onClick={onClose} />
@@ -326,7 +326,7 @@ export function ExperienceDetailModal({
         </div>
       ) : (
         /* DATE SELECTION VIEW */
-        <div className="flex flex-col max-h-[80vh] sm:max-h-[85vh]">
+        <div className="flex flex-col h-full sm:max-h-[85vh]">
           {/* Month navigation */}
           <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-border">
             <button
