@@ -142,15 +142,25 @@ export default function CompaniesPage() {
   const handleOpenDialog = (company?: Company) => {
     if (company) {
       setSelectedCompany(company);
+      const fiscalDate = company.hourBudget?.fiscal_year_start;
+      let fiscalMMDD = "01-01";
+      if (fiscalDate) {
+        const d = new Date(fiscalDate);
+        fiscalMMDD = `${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      }
       setFormData({
         name: company.name,
         logo_url: company.logo_url || "",
+        hours_per_employee_year: company.hourBudget?.hours_per_employee_year || 0,
+        fiscal_year_start: fiscalMMDD,
       });
     } else {
       setSelectedCompany(null);
       setFormData({
         name: "",
         logo_url: "",
+        hours_per_employee_year: 0,
+        fiscal_year_start: "01-01",
       });
     }
     setDialogOpen(true);
