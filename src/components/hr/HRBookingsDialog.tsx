@@ -49,7 +49,7 @@ export function HRBookingsDialog({
       b.user.first_name || "",
       b.user.last_name || "",
       b.user.email,
-      b.status === "confirmed" ? "Confermato" : "Cancellato",
+      b.status === "confirmed" || b.status === "completed" ? "Confermato" : b.status === "cancelled" ? "Annullato" : b.status === "no_show" ? "Assente" : b.status,
       format(new Date(b.created_at), "dd/MM/yyyy HH:mm"),
     ]);
 
