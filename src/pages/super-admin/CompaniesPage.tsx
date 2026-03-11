@@ -94,6 +94,22 @@ export default function CompaniesPage() {
         accessCodesCountMap.set(ac.entity_id, current + 1);
       });
 
+      // Fetch hour budgets for all companies
+      const { data: hourBudgetsData } = await supabase
+        .from("hour_budgets")
+        .select("company_id, hours_per_employee_year, fiscal_year_start")
+        .order("created_at", { ascending: false });
+
+      const hourBudgetMap = new Map<string, { hours_per_employee_year: number; fiscal_year_start: string }>();
+      (hourBudgetsData || []).forEach((hb) => {
+        if (!hourBudgetMap.has(hb.company_id)) {
+          hourBudgetMap.set(hb.company_id, {
+            hours_per_employee_year: Number(hb.hours_per_employee_year),
+            fiscal_year_start: hb.fiscal_year_start,
+          });
+        }
+      });
+
       const companiesWithCounts = await Promise.all(
         (companiesData || []).map(async (company) => {
           const { count } = await supabase
@@ -105,6 +121,7 @@ export default function CompaniesPage() {
             ...company,
             access_codes_count: accessCodesCountMap.get(company.id) || 0,
             _count: { users: count || 0 },
+            hourBudget: hourBudgetMap.get(company.id) || null,
           };
         })
       );
