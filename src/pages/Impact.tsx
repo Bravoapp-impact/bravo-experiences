@@ -38,7 +38,7 @@ export default function Impact() {
         .from("bookings")
         .select("id, experience_dates(start_datetime)")
         .eq("user_id", user?.id)
-        .eq("status", "confirmed");
+        .in("status", ["confirmed", "completed"]);
 
       const pastBookingIds = (bookings || [])
         .filter((b: any) => new Date(b.experience_dates?.start_datetime) < new Date())
