@@ -1,15 +1,17 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LogOut, Building2, Mail, Loader2 } from "lucide-react";
+import { LogOut, Building2, Mail, Loader2, Clock } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
 import { ProfileAvatarUpload } from "@/components/profile/ProfileAvatarUpload";
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
 import { EnrollMFA } from "@/components/auth/EnrollMFA";
 import { useAuth } from "@/hooks/useAuth";
+import { useHourBudget } from "@/hooks/useHourBudget";
 
 export default function Profile() {
   const { profile, loading, signOut, refreshProfile } = useAuth();
