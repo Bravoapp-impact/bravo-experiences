@@ -16,6 +16,7 @@ import { Clock } from "lucide-react";
 
 export default function HRProfile() {
   const { profile, signOut, refreshProfile } = useAuth();
+  const { budgetHours, usedHours, isUnlimited, loading: budgetLoading } = useHourBudget();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
