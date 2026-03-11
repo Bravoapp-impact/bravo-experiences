@@ -143,7 +143,7 @@ export function HRExperienceCard({ experience }: HRExperienceCardProps) {
                     <Users className="h-2.5 w-2.5" />
                     {experience.dates.reduce(
                       (sum, d) =>
-                        sum + d.bookings.filter((b) => b.status === "confirmed").length,
+                        sum + d.bookings.filter((b) => ["confirmed", "completed"].includes(b.status)).length,
                       0
                     )}{" "}
                     iscritti totali
