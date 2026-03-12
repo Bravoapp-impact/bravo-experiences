@@ -17,6 +17,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { devLog } from "@/lib/logger";
 import { getSDGInfo } from "@/lib/sdg-data";
+import { CreateExperienceDialog } from "@/components/association/CreateExperienceDialog";
 
 interface Experience {
   id: string;
