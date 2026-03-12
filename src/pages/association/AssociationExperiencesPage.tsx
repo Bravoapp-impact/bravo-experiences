@@ -271,6 +271,13 @@ export default function AssociationExperiencesPage() {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* Create Experience Dialog */}
+      <CreateExperienceDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onCreated={fetchExperiences}
+      />
     </AssociationLayout>
   );
 }
