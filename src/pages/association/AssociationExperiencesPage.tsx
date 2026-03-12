@@ -112,11 +112,19 @@ export default function AssociationExperiencesPage() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
+          className="flex items-start justify-between gap-4"
         >
-          <h1 className="text-xl font-bold text-foreground">Esperienze</h1>
-          <p className="text-muted-foreground mt-1 text-[13px]">
-            Le esperienze di volontariato gestite dalla tua associazione
-          </p>
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Esperienze</h1>
+            <p className="text-muted-foreground mt-1 text-[13px]">
+              Le esperienze di volontariato gestite dalla tua associazione
+            </p>
+          </div>
+          <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+            <Plus className="h-4 w-4 mr-1.5" />
+            <span className="hidden sm:inline">Crea esperienza</span>
+            <span className="sm:hidden">Crea</span>
+          </Button>
         </motion.div>
 
         {/* Experiences Grid */}
