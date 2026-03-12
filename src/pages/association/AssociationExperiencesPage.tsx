@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { AssociationLayout } from "@/components/layout/AssociationLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Calendar, MapPin, Tag, Eye, PackageOpen } from "lucide-react";
+import { Loader2, Calendar, MapPin, Tag, Eye, PackageOpen, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { devLog } from "@/lib/logger";
 import { getSDGInfo } from "@/lib/sdg-data";
+import { CreateExperienceDialog } from "@/components/association/CreateExperienceDialog";
 
 interface Experience {
   id: string;
@@ -43,6 +44,7 @@ export default function AssociationExperiencesPage() {
   const [loading, setLoading] = useState(true);
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   useEffect(() => {
     if (profile?.association_id) {
@@ -110,11 +112,19 @@ export default function AssociationExperiencesPage() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
+          className="flex items-start justify-between gap-4"
         >
-          <h1 className="text-xl font-bold text-foreground">Esperienze</h1>
-          <p className="text-muted-foreground mt-1 text-[13px]">
-            Le esperienze di volontariato gestite dalla tua associazione
-          </p>
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Esperienze</h1>
+            <p className="text-muted-foreground mt-1 text-[13px]">
+              Le esperienze di volontariato gestite dalla tua associazione
+            </p>
+          </div>
+          <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+            <Plus className="h-4 w-4 mr-1.5" />
+            <span className="hidden sm:inline">Crea esperienza</span>
+            <span className="sm:hidden">Crea</span>
+          </Button>
         </motion.div>
 
         {/* Experiences Grid */}
@@ -261,6 +271,13 @@ export default function AssociationExperiencesPage() {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* Create Experience Dialog */}
+      <CreateExperienceDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onCreated={fetchExperiences}
+      />
     </AssociationLayout>
   );
 }

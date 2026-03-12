@@ -888,6 +888,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      can_employee_see_experience: {
+        Args: { p_experience_id: string; p_user_id: string }
+        Returns: boolean
+      }
       check_hour_budget: {
         Args: { p_experience_date_id: string; p_user_id: string }
         Returns: boolean
