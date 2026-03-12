@@ -44,6 +44,7 @@ export default function AssociationExperiencesPage() {
   const [loading, setLoading] = useState(true);
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   useEffect(() => {
     if (profile?.association_id) {
