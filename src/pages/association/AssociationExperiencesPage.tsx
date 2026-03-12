@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { AssociationLayout } from "@/components/layout/AssociationLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Calendar, MapPin, Tag, Eye, PackageOpen } from "lucide-react";
+import { Loader2, Calendar, MapPin, Tag, Eye, PackageOpen, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
