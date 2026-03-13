@@ -166,6 +166,7 @@ export function ExperienceForm({
         .upload(path, imageFile);
       if (uploadError) {
         devLog.error("Image upload error:", uploadError);
+        toast.error("Errore nel caricamento dell'immagine");
         return;
       }
       const { data: urlData } = supabase.storage
