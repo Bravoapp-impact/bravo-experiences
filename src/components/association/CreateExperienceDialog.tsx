@@ -49,7 +49,7 @@ export function CreateExperienceDialog({
   const [categoryId, setCategoryId] = useState("");
   const [cityId, setCityId] = useState("");
   const [address, setAddress] = useState("");
-  const [defaultHours, setDefaultHours] = useState<number>(4);
+  const [defaultHours, setDefaultHours] = useState<number | "">("");
   const [maxParticipants, setMaxParticipants] = useState<number | "">("");
   const [participantInfo, setParticipantInfo] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
