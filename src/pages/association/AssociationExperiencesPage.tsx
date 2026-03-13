@@ -58,6 +58,7 @@ export default function AssociationExperiencesPage() {
   const [submitExperience, setSubmitExperience] = useState<Experience | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [archivedOpen, setArchivedOpen] = useState(false);
+  const [manageDatesExperience, setManageDatesExperience] = useState<Experience | null>(null);
 
   const grouped = useMemo(() => ({
     draft: experiences.filter(e => e.status === "draft"),
