@@ -1202,6 +1202,121 @@ export default function ExperiencesPage() {
         onSaved={handleDateSaved}
         companies={companies}
       />
+
+      {/* Publish Confirmation */}
+      <AlertDialog open={!!publishExperience} onOpenChange={(open) => { if (!open) setPublishExperience(null); }}>
+        <AlertDialogContent className="bg-background">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confermi la pubblicazione?</AlertDialogTitle>
+            <AlertDialogDescription>
+              L'esperienza "{publishExperience?.title}" sarà visibile a tutti gli utenti.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={publishing}>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={handlePublish} disabled={publishing}>
+              {publishing ? "Pubblicazione..." : "Pubblica"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reject Dialog */}
+      <Dialog open={!!rejectExperience} onOpenChange={(open) => { if (!open) { setRejectExperience(null); setRejectReason(""); } }}>
+        <DialogContent className="sm:max-w-md bg-background">
+          <DialogHeader>
+            <DialogTitle>Rifiuta esperienza</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-sm text-muted-foreground">
+              L'esperienza "{rejectExperience?.title}" verrà riportata in bozza. L'associazione potrà modificarla e ri-sottometterla.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="reject-reason">Motivo del rifiuto *</Label>
+              <Textarea
+                id="reject-reason"
+                placeholder="Spiega il motivo del rifiuto..."
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setRejectExperience(null); setRejectReason(""); }}>
+              Annulla
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleReject}
+              disabled={rejecting || !rejectReason.trim()}
+            >
+              {rejecting ? "Rifiuto..." : "Rifiuta"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Dialog */}
+      <Dialog open={!!previewExperience} onOpenChange={(open) => { if (!open) setPreviewExperience(null); }}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto bg-background">
+          <DialogHeader>
+            <DialogTitle>{previewExperience?.title}</DialogTitle>
+          </DialogHeader>
+          {previewExperience && (
+            <div className="space-y-4">
+              {previewExperience.image_url && (
+                <img
+                  src={previewExperience.image_url}
+                  alt={previewExperience.title}
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+              )}
+              <div className="flex flex-wrap gap-2">
+                {getStatusBadge(previewExperience.status)}
+                <Badge variant="outline" className="capitalize">
+                  {getCategoryName(previewExperience.category_id, previewExperience.category)}
+                </Badge>
+              </div>
+              <div className="space-y-1 text-sm text-muted-foreground">
+                <p><span className="font-medium text-foreground">Associazione:</span> {getAssociationName(previewExperience.association_id, previewExperience.association_name)}</p>
+                {(previewExperience.city_id || previewExperience.city) && (
+                  <p className="flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5" />
+                    {previewExperience.address && `${previewExperience.address}, `}
+                    {getCityName(previewExperience.city_id, previewExperience.city)}
+                  </p>
+                )}
+                <p><span className="font-medium text-foreground">Creata il:</span> {format(new Date(previewExperience.created_at), "d MMMM yyyy", { locale: it })}</p>
+              </div>
+              {previewExperience.description && (
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-1">Descrizione</p>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{previewExperience.description}</p>
+                </div>
+              )}
+              {previewExperience.participant_info && (
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-1">Info partecipanti</p>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{previewExperience.participant_info}</p>
+                </div>
+              )}
+              {previewExperience.status === "pending_review" && (
+                <div className="flex gap-2 pt-2 border-t border-border">
+                  <Button className="flex-1" onClick={() => { setPreviewExperience(null); setPublishExperience(previewExperience); }}>
+                    <Check className="h-4 w-4 mr-2" />
+                    Pubblica
+                  </Button>
+                  <Button variant="destructive" className="flex-1" onClick={() => { setPreviewExperience(null); setRejectExperience(previewExperience); }}>
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Rifiuta
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </SuperAdminLayout>
   );
 }
