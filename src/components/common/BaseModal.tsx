@@ -10,6 +10,7 @@ interface BaseModalProps {
   showBackButton?: boolean;
   onBack?: () => void;
   title?: string;
+  subtitle?: string;
   showCloseButton?: boolean;
   className?: string;
 }
