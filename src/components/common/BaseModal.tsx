@@ -22,6 +22,7 @@ export function BaseModal({
   showBackButton = false,
   onBack,
   title,
+  subtitle,
   showCloseButton = true,
   className,
 }: BaseModalProps) {
