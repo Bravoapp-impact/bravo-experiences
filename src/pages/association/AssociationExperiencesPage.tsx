@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { AssociationLayout } from "@/components/layout/AssociationLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, MapPin, Eye, PackageOpen, Plus, Pencil, Trash2, Send, FileText, Clock, CheckCircle2, Archive, ChevronRight } from "lucide-react";
+import { Loader2, MapPin, Eye, PackageOpen, Plus, Pencil, Trash2, Send, FileText, Clock, CheckCircle2, Archive, ChevronRight, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BaseCardImage } from "@/components/common/BaseCardImage";
