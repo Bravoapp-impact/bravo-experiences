@@ -79,7 +79,7 @@ export function CreateExperienceDialog({
     setCategoryId("");
     setCityId("");
     setAddress("");
-    setDefaultHours(4);
+    setDefaultHours("");
     setMaxParticipants("");
     setParticipantInfo("");
     setImageFile(null);
