@@ -194,7 +194,7 @@ export default function AssociationExperiencesPage() {
                   icon={<FileText className="h-4 w-4" />}
                   title="Bozze"
                   count={grouped.draft.length}
-                  headerClassName="bg-muted/50 text-foreground"
+                  iconClassName="text-muted-foreground"
                 >
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     {grouped.draft.map((exp, i) => (
