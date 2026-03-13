@@ -78,7 +78,12 @@ export function BaseModal({
               )}
               
               {title && (
-                <h3 className="text-lg font-semibold">{title}</h3>
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold">{title}</h3>
+                  {subtitle && (
+                    <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{subtitle}</p>
+                  )}
+                </div>
               )}
               
               {showCloseButton ? (
