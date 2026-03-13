@@ -282,18 +282,24 @@ export function CreateExperienceDialog({
           {/* Durata e Partecipanti */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="exp-hours">Durata (ore)</Label>
+              <Label htmlFor="exp-hours">Durata (ore) *</Label>
               <Input
                 id="exp-hours"
                 type="number"
                 min={1}
                 max={24}
+                placeholder="Es. 4"
                 value={defaultHours}
-                onChange={(e) => setDefaultHours(Number(e.target.value) || 4)}
+                onChange={(e) =>
+                  setDefaultHours(e.target.value ? Number(e.target.value) : "")
+                }
               />
+              {errors.defaultHours && (
+                <p className="text-sm text-destructive">{errors.defaultHours}</p>
+              )}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="exp-max">Max partecipanti</Label>
+              <Label htmlFor="exp-max">Max partecipanti *</Label>
               <Input
                 id="exp-max"
                 type="number"
@@ -304,6 +310,9 @@ export function CreateExperienceDialog({
                   setMaxParticipants(e.target.value ? Number(e.target.value) : "")
                 }
               />
+              {errors.maxParticipants && (
+                <p className="text-sm text-destructive">{errors.maxParticipants}</p>
+              )}
             </div>
           </div>
 
