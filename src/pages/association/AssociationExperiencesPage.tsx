@@ -27,6 +27,7 @@ import { getSDGInfo } from "@/lib/sdg-data";
 import { CreateExperienceDialog } from "@/components/association/CreateExperienceDialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ManageDatesDialog } from "@/components/association/ManageDatesDialog";
 
 interface Experience {
   id: string;
