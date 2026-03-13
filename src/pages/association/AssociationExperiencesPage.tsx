@@ -458,6 +458,17 @@ export default function AssociationExperiencesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Manage Dates Dialog */}
+      {manageDatesExperience && (
+        <ManageDatesDialog
+          open={!!manageDatesExperience}
+          onOpenChange={(o) => { if (!o) setManageDatesExperience(null); }}
+          experienceId={manageDatesExperience.id}
+          experienceTitle={manageDatesExperience.title}
+          defaultMaxParticipants={null}
+        />
+      )}
     </AssociationLayout>
   );
 }
