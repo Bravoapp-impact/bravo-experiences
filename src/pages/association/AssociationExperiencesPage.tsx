@@ -251,7 +251,7 @@ export default function AssociationExperiencesPage() {
                   icon={<Clock className="h-4 w-4" />}
                   title="In attesa di approvazione"
                   count={grouped.pending_review.length}
-                  headerClassName="bg-amber-50 text-amber-900 dark:bg-amber-950/30 dark:text-amber-200"
+                  iconClassName="text-amber-500"
                 >
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     {grouped.pending_review.map((exp, i) => (
