@@ -195,7 +195,7 @@ export function ExperienceForm({
   };
 
   return (
-    <div className="flex flex-col h-full sm:max-h-[85vh] overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
         {subtitle && (
           <p className="text-sm text-muted-foreground">{subtitle}</p>
