@@ -3,13 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { devLog } from "@/lib/logger";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { BaseModal } from "@/components/common/BaseModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Upload, X } from "lucide-react";
 
 interface Category {
@@ -94,6 +87,11 @@ export function CreateExperienceDialog({
     setErrors({});
   };
 
+  const handleClose = () => {
+    resetForm();
+    onOpenChange(false);
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -123,7 +121,6 @@ export function CreateExperienceDialog({
     try {
       let imageUrl: string | null = null;
 
-      // Upload image if present
       if (imageFile) {
         const ext = imageFile.name.split(".").pop();
         const path = `${profile.association_id}/${crypto.randomUUID()}.${ext}`;
@@ -142,7 +139,6 @@ export function CreateExperienceDialog({
         imageUrl = urlData.publicUrl;
       }
 
-      // Resolve category and city names for legacy fields
       const categoryName = categories.find((c) => c.id === categoryId)?.name || null;
       const cityName = cities.find((c) => c.id === cityId)?.name || null;
 
@@ -182,200 +178,197 @@ export function CreateExperienceDialog({
   };
 
   return (
-    <Dialog
+    <BaseModal
       open={open}
-      onOpenChange={(v) => {
-        if (!v) resetForm();
-        onOpenChange(v);
-      }}
+      onClose={handleClose}
+      title="Nuova esperienza"
     >
-      <DialogContent className="max-w-lg max-h-[90vh] p-0">
-        <DialogHeader className="px-6 pt-6 pb-0">
-          <DialogTitle>Nuova esperienza</DialogTitle>
-          <DialogDescription>
+      <div className="flex flex-col h-full sm:max-h-[85vh] overflow-hidden">
+        {/* Scrollable form content */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <p className="text-sm text-muted-foreground">
             Compila i campi per creare una nuova esperienza di volontariato. Verrà salvata come bozza.
-          </DialogDescription>
-        </DialogHeader>
-        <ScrollArea className="max-h-[70vh] px-6 pb-6">
-          <div className="space-y-4 pt-2 pr-2">
-            {/* Titolo */}
-            <div className="space-y-1.5">
-              <Label htmlFor="exp-title">Titolo *</Label>
-              <Input
-                id="exp-title"
-                placeholder="Es. Pulizia parco cittadino"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                maxLength={200}
-              />
-              {errors.title && (
-                <p className="text-sm text-destructive">{errors.title}</p>
-              )}
-            </div>
+          </p>
 
-            {/* Descrizione */}
-            <div className="space-y-1.5">
-              <Label htmlFor="exp-desc">Descrizione *</Label>
-              <Textarea
-                id="exp-desc"
-                placeholder="Descrivi brevemente cosa faranno i volontari"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                maxLength={2000}
-              />
-              {errors.description && (
-                <p className="text-sm text-destructive">{errors.description}</p>
-              )}
-            </div>
-
-            {/* Categoria */}
-            <div className="space-y-1.5">
-              <Label>Categoria *</Label>
-              <Select value={categoryId} onValueChange={setCategoryId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleziona categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.categoryId && (
-                <p className="text-sm text-destructive">{errors.categoryId}</p>
-              )}
-            </div>
-
-            {/* Città */}
-            <div className="space-y-1.5">
-              <Label>Città *</Label>
-              <Select value={cityId} onValueChange={setCityId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleziona città" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cities.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.cityId && (
-                <p className="text-sm text-destructive">{errors.cityId}</p>
-              )}
-            </div>
-
-            {/* Indirizzo */}
-            <div className="space-y-1.5">
-              <Label htmlFor="exp-address">Indirizzo</Label>
-              <Input
-                id="exp-address"
-                placeholder="Indirizzo specifico del punto di ritrovo"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                maxLength={300}
-              />
-            </div>
-
-            {/* Durata e Partecipanti row */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="exp-hours">Durata (ore)</Label>
-                <Input
-                  id="exp-hours"
-                  type="number"
-                  min={1}
-                  max={24}
-                  value={defaultHours}
-                  onChange={(e) => setDefaultHours(Number(e.target.value) || 4)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="exp-max">Max partecipanti</Label>
-                <Input
-                  id="exp-max"
-                  type="number"
-                  min={1}
-                  placeholder="Es. 15"
-                  value={maxParticipants}
-                  onChange={(e) =>
-                    setMaxParticipants(e.target.value ? Number(e.target.value) : "")
-                  }
-                />
-              </div>
-            </div>
-
-            {/* Participant info */}
-            <div className="space-y-1.5">
-              <Label htmlFor="exp-info">Informazioni per i partecipanti</Label>
-              <Textarea
-                id="exp-info"
-                placeholder="Cosa portare, come vestirsi, dove parcheggiare..."
-                value={participantInfo}
-                onChange={(e) => setParticipantInfo(e.target.value)}
-                rows={2}
-                maxLength={1000}
-              />
-            </div>
-
-            {/* Image upload */}
-            <div className="space-y-1.5">
-              <Label>Immagine di copertina</Label>
-              {imagePreview ? (
-                <div className="relative rounded-lg overflow-hidden border border-border">
-                  <img
-                    src={imagePreview}
-                    alt="Anteprima"
-                    className="w-full h-40 object-cover"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-2 right-2 h-7 w-7"
-                    onClick={removeImage}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
-                  <Upload className="h-6 w-6 text-muted-foreground mb-1" />
-                  <span className="text-sm text-muted-foreground">
-                    Clicca per caricare
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageChange}
-                  />
-                </label>
-              )}
-            </div>
-
-            {/* Submit */}
-            <Button
-              className="w-full"
-              onClick={handleSubmit}
-              disabled={saving}
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Salvataggio...
-                </>
-              ) : (
-                "Crea esperienza"
-              )}
-            </Button>
+          {/* Titolo */}
+          <div className="space-y-1.5">
+            <Label htmlFor="exp-title">Titolo *</Label>
+            <Input
+              id="exp-title"
+              placeholder="Es. Pulizia parco cittadino"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              maxLength={200}
+            />
+            {errors.title && (
+              <p className="text-sm text-destructive">{errors.title}</p>
+            )}
           </div>
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
+
+          {/* Descrizione */}
+          <div className="space-y-1.5">
+            <Label htmlFor="exp-desc">Descrizione *</Label>
+            <Textarea
+              id="exp-desc"
+              placeholder="Descrivi brevemente cosa faranno i volontari"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              maxLength={2000}
+            />
+            {errors.description && (
+              <p className="text-sm text-destructive">{errors.description}</p>
+            )}
+          </div>
+
+          {/* Categoria */}
+          <div className="space-y-1.5">
+            <Label>Categoria *</Label>
+            <Select value={categoryId} onValueChange={setCategoryId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleziona categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.categoryId && (
+              <p className="text-sm text-destructive">{errors.categoryId}</p>
+            )}
+          </div>
+
+          {/* Città */}
+          <div className="space-y-1.5">
+            <Label>Città *</Label>
+            <Select value={cityId} onValueChange={setCityId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleziona città" />
+              </SelectTrigger>
+              <SelectContent>
+                {cities.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.cityId && (
+              <p className="text-sm text-destructive">{errors.cityId}</p>
+            )}
+          </div>
+
+          {/* Indirizzo */}
+          <div className="space-y-1.5">
+            <Label htmlFor="exp-address">Indirizzo</Label>
+            <Input
+              id="exp-address"
+              placeholder="Indirizzo specifico del punto di ritrovo"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              maxLength={300}
+            />
+          </div>
+
+          {/* Durata e Partecipanti */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="exp-hours">Durata (ore)</Label>
+              <Input
+                id="exp-hours"
+                type="number"
+                min={1}
+                max={24}
+                value={defaultHours}
+                onChange={(e) => setDefaultHours(Number(e.target.value) || 4)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="exp-max">Max partecipanti</Label>
+              <Input
+                id="exp-max"
+                type="number"
+                min={1}
+                placeholder="Es. 15"
+                value={maxParticipants}
+                onChange={(e) =>
+                  setMaxParticipants(e.target.value ? Number(e.target.value) : "")
+                }
+              />
+            </div>
+          </div>
+
+          {/* Participant info */}
+          <div className="space-y-1.5">
+            <Label htmlFor="exp-info">Informazioni per i partecipanti</Label>
+            <Textarea
+              id="exp-info"
+              placeholder="Cosa portare, come vestirsi, dove parcheggiare..."
+              value={participantInfo}
+              onChange={(e) => setParticipantInfo(e.target.value)}
+              rows={2}
+              maxLength={1000}
+            />
+          </div>
+
+          {/* Image upload */}
+          <div className="space-y-1.5">
+            <Label>Immagine di copertina</Label>
+            {imagePreview ? (
+              <div className="relative rounded-lg overflow-hidden border border-border">
+                <img
+                  src={imagePreview}
+                  alt="Anteprima"
+                  className="w-full h-40 object-cover"
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2 h-7 w-7"
+                  onClick={removeImage}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+                <Upload className="h-6 w-6 text-muted-foreground mb-1" />
+                <span className="text-sm text-muted-foreground">
+                  Clicca per caricare
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageChange}
+                />
+              </label>
+            )}
+          </div>
+        </div>
+
+        {/* Fixed footer */}
+        <div className="flex-shrink-0 p-5 border-t border-border bg-background">
+          <Button
+            className="w-full h-12 text-base font-medium rounded-xl"
+            onClick={handleSubmit}
+            disabled={saving}
+          >
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Salvataggio...
+              </>
+            ) : (
+              "Crea esperienza"
+            )}
+          </Button>
+        </div>
+      </div>
+    </BaseModal>
   );
 }
