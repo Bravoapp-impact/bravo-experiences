@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { AssociationLayout } from "@/components/layout/AssociationLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, MapPin, Eye, PackageOpen, Plus, Pencil, Trash2, Send } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Loader2, MapPin, Eye, PackageOpen, Plus, Pencil, Trash2, Send, FileText, Clock, CheckCircle2, Archive, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BaseCardImage } from "@/components/common/BaseCardImage";
@@ -12,6 +11,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { BaseModal, ModalCloseButton } from "@/components/common/BaseModal";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DeleteConfirmDialog } from "@/components/crud/DeleteConfirmDialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +26,7 @@ import { devLog } from "@/lib/logger";
 import { getSDGInfo } from "@/lib/sdg-data";
 import { CreateExperienceDialog } from "@/components/association/CreateExperienceDialog";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Experience {
   id: string;
@@ -55,6 +56,14 @@ export default function AssociationExperiencesPage() {
   const [deleting, setDeleting] = useState(false);
   const [submitExperience, setSubmitExperience] = useState<Experience | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [archivedOpen, setArchivedOpen] = useState(false);
+
+  const grouped = useMemo(() => ({
+    draft: experiences.filter(e => e.status === "draft"),
+    pending_review: experiences.filter(e => e.status === "pending_review"),
+    published: experiences.filter(e => e.status === "published"),
+    archived: experiences.filter(e => e.status === "archived"),
+  }), [experiences]);
 
   useEffect(() => {
     if (profile?.association_id) {
@@ -131,21 +140,6 @@ export default function AssociationExperiencesPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "published":
-        return <Badge className="bg-primary/10 text-primary hover:bg-primary/20">Pubblicata</Badge>;
-      case "draft":
-        return <Badge variant="secondary">Bozza</Badge>;
-      case "pending_review":
-        return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200">In revisione</Badge>;
-      case "archived":
-        return <Badge variant="outline" className="text-muted-foreground">Archiviata</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
   if (loading) {
     return (
       <AssociationLayout>
@@ -159,9 +153,12 @@ export default function AssociationExperiencesPage() {
     );
   }
 
+  const hasAny = experiences.length > 0;
+
   return (
     <AssociationLayout>
       <div className="space-y-6">
+        {/* Page header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -180,128 +177,167 @@ export default function AssociationExperiencesPage() {
           </Button>
         </motion.div>
 
-        {experiences.length === 0 ? (
-          <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-              <PackageOpen className="h-12 w-12 text-muted-foreground/50 mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-1">Nessuna esperienza</h3>
-              <p className="text-sm text-muted-foreground max-w-sm">
-                Non ci sono ancora esperienze associate alla tua organizzazione.
-              </p>
-            </CardContent>
-          </Card>
+        {!hasAny ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <PackageOpen className="h-12 w-12 text-muted-foreground/50 mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-1">Nessuna esperienza</h3>
+            <p className="text-sm text-muted-foreground max-w-sm">
+              Non ci sono ancora esperienze associate alla tua organizzazione.
+            </p>
+          </div>
         ) : (
           <TooltipProvider delayDuration={300}>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {experiences.map((experience, index) => (
-                <motion.div
-                  key={experience.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
-                  className="group"
+            <div className="space-y-8">
+              {/* DRAFT */}
+              {grouped.draft.length > 0 && (
+                <StatusSection
+                  icon={<FileText className="h-4 w-4" />}
+                  title="Bozze"
+                  count={grouped.draft.length}
+                  headerClassName="bg-muted/50 text-foreground"
                 >
-                  {/* Square image with status + category badges */}
-                  <div className="relative">
-                    <BaseCardImage
-                      imageUrl={experience.image_url}
-                      alt={experience.title}
-                      aspectRatio="square"
-                      badge={getStatusBadge(experience.status)}
-                      badgePosition="top-left"
-                    />
-                    {(experience.categories?.name || experience.category) && (
-                      <div className="absolute top-3 right-3">
-                        <Badge
-                          variant="secondary"
-                          className="text-[10px] font-medium bg-white/95 text-foreground backdrop-blur-sm rounded-full px-2 py-0.5 shadow-sm"
-                        >
-                          {experience.categories?.name || experience.category}
-                        </Badge>
-                      </div>
-                    )}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {grouped.draft.map((exp, i) => (
+                      <ExperienceCompactCard
+                        key={exp.id}
+                        experience={exp}
+                        index={i}
+                        onPreview={setSelectedExperience}
+                        actions={
+                          <div className="flex items-center gap-0.5">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-green-600" onClick={() => setSubmitExperience(exp)}>
+                                  <Send className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Richiedi pubblicazione</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setSelectedExperience(exp)}>
+                                  <Eye className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Anteprima</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setEditExperience(exp)}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Modifica</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => setDeleteExperience(exp)}>
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Elimina</TooltipContent>
+                            </Tooltip>
+                          </div>
+                        }
+                      />
+                    ))}
                   </div>
+                </StatusSection>
+              )}
 
-                  {/* Content */}
-                  <div className="pt-2 space-y-1">
-                    <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug">
-                      {experience.title}
-                    </h3>
+              {/* PENDING REVIEW */}
+              {grouped.pending_review.length > 0 && (
+                <StatusSection
+                  icon={<Clock className="h-4 w-4" />}
+                  title="In attesa di approvazione"
+                  count={grouped.pending_review.length}
+                  headerClassName="bg-amber-50 text-amber-900 dark:bg-amber-950/30 dark:text-amber-200"
+                >
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {grouped.pending_review.map((exp, i) => (
+                      <ExperienceCompactCard
+                        key={exp.id}
+                        experience={exp}
+                        index={i}
+                        onPreview={setSelectedExperience}
+                        actions={
+                          <div className="flex items-center gap-1.5">
+                            <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200 text-[10px] px-2 py-0">In revisione</Badge>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setSelectedExperience(exp)}>
+                                  <Eye className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Anteprima</TooltipContent>
+                            </Tooltip>
+                          </div>
+                        }
+                      />
+                    ))}
+                  </div>
+                </StatusSection>
+              )}
 
-                    {(experience.cities?.name || experience.city) && (
-                      <div className="flex items-center gap-1 text-[11px] text-muted-foreground font-light">
-                        <MapPin className="h-2.5 w-2.5" />
-                        <span className="truncate">{experience.cities?.name || experience.city}</span>
-                      </div>
-                    )}
+              {/* PUBLISHED */}
+              {grouped.published.length > 0 && (
+                <StatusSection
+                  icon={<CheckCircle2 className="h-4 w-4" />}
+                  title="Pubblicate"
+                  count={grouped.published.length}
+                  headerClassName="bg-green-50 text-green-900 dark:bg-green-950/30 dark:text-green-200"
+                >
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {grouped.published.map((exp, i) => (
+                      <ExperienceCompactCard
+                        key={exp.id}
+                        experience={exp}
+                        index={i}
+                        onPreview={setSelectedExperience}
+                        actions={
+                          <div className="flex items-center gap-0.5">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setSelectedExperience(exp)}>
+                                  <Eye className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Anteprima</TooltipContent>
+                            </Tooltip>
+                          </div>
+                        }
+                      />
+                    ))}
+                  </div>
+                </StatusSection>
+              )}
 
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-0.5 pt-1">
-                      {experience.status === "draft" && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-green-600"
-                              onClick={() => setSubmitExperience(experience)}
-                            >
-                              <Send className="h-3.5 w-3.5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Richiedi pubblicazione</TooltipContent>
-                        </Tooltip>
-                      )}
-
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                            onClick={() => setSelectedExperience(experience)}
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Anteprima</TooltipContent>
-                      </Tooltip>
-
-                      {experience.status === "draft" && (
-                        <>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                                onClick={() => setEditExperience(experience)}
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Modifica</TooltipContent>
-                          </Tooltip>
-
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                onClick={() => setDeleteExperience(experience)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Elimina</TooltipContent>
-                          </Tooltip>
-                        </>
-                      )}
+              {/* ARCHIVED */}
+              {grouped.archived.length > 0 && (
+                <Collapsible open={archivedOpen} onOpenChange={setArchivedOpen}>
+                  <CollapsibleTrigger className="w-full">
+                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-muted text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors">
+                      <Archive className="h-4 w-4" />
+                      <span className="text-sm font-medium">Archiviate ({grouped.archived.length})</span>
+                      <ChevronRight className={cn("h-4 w-4 ml-auto transition-transform", archivedOpen && "rotate-90")} />
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="mt-3 space-y-1.5 pl-2">
+                      {grouped.archived.map((exp) => (
+                        <div
+                          key={exp.id}
+                          className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => setSelectedExperience(exp)}
+                        >
+                          <span className="text-sm text-muted-foreground">{exp.title}</span>
+                          <Eye className="h-3.5 w-3.5 text-muted-foreground/50" />
+                        </div>
+                      ))}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
             </div>
           </TooltipProvider>
         )}
@@ -322,7 +358,6 @@ export default function AssociationExperiencesPage() {
               )}
               <div className="p-5 space-y-4">
                 <div className="flex flex-wrap gap-2">
-                  {getStatusBadge(selectedExperience.status)}
                   {(selectedExperience.categories?.name || selectedExperience.category) && (
                     <Badge variant="outline">
                       {selectedExperience.categories?.name || selectedExperience.category}
@@ -415,5 +450,66 @@ export default function AssociationExperiencesPage() {
         </AlertDialogContent>
       </AlertDialog>
     </AssociationLayout>
+  );
+}
+
+/* ── Sub-components ── */
+
+function StatusSection({ icon, title, count, headerClassName, children }: {
+  icon: React.ReactNode;
+  title: string;
+  count: number;
+  headerClassName: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+      <div className={cn("flex items-center gap-2 px-4 py-2.5 rounded-xl mb-4", headerClassName)}>
+        {icon}
+        <span className="text-sm font-medium">{title} ({count})</span>
+      </div>
+      {children}
+    </motion.div>
+  );
+}
+
+function ExperienceCompactCard({ experience, index, onPreview, actions }: {
+  experience: Experience;
+  index: number;
+  onPreview: (e: Experience) => void;
+  actions: React.ReactNode;
+}) {
+  const categoryName = experience.categories?.name || experience.category;
+  const cityName = experience.cities?.name || experience.city;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
+      className="group"
+    >
+      <BaseCardImage
+        imageUrl={experience.image_url}
+        alt={experience.title}
+        aspectRatio="square"
+      />
+      <div className="pt-2 space-y-1">
+        <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug">
+          {experience.title}
+        </h3>
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
+          {categoryName && <span className="truncate">{categoryName}</span>}
+          {categoryName && cityName && <span>·</span>}
+          {cityName && (
+            <span className="flex items-center gap-0.5 truncate">
+              <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
+              {cityName}
+            </span>
+          )}
+        </div>
+        <div className="pt-0.5">{actions}</div>
+      </div>
+    </motion.div>
   );
 }

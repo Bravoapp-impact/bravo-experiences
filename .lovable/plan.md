@@ -1,80 +1,112 @@
+# Piano di Implementazione Fase 1 — Roadmap v4.0
 
+## Sprint completati
 
-# Redesign: Esperienze raggruppate per stato
+### ✅ Sprint 0 — Feedback (già implementato)
+- Tabella `experience_reviews` + RLS + modal feedback + email post-evento
+- Pagina Impact funzionante (booking confirmed + data passata)
 
-## Problema
-I badge sovrapposti sull'immagine sono illeggibili. Inoltre, raggruppare per stato rende più chiaro cosa l'utente può fare su ogni esperienza.
+### ✅ Sprint 1 — Colonne additive (rischio zero)
+- `experiences`: + `type`, `price_per_participant`, `visibility`, `created_by`
+- `bookings`: + `verified_at`, `verification_method`, `verification_data`
+- `profiles`: + `manager_id`
+- `companies`: + `max_concurrent_absences`
 
-## Nuovo layout
+### ✅ Sprint 2 — Nuove tabelle (rischio basso)
+- `company_service_config` con RLS (HR + super admin)
+- `hour_budgets` con RLS (employee read + HR read + super admin full)
+- Triggers `updated_at` su entrambe
 
-La griglia piatta viene sostituita da **sezioni verticali per stato**, mostrate solo se contengono esperienze. Ordine: Bozze → In revisione → Pubblicate → Archiviate.
+### ✅ Sprint 3 — Lifecycle booking (rischio medio)
+- Function `process_completed_events()` per transizionare booking passati (confirmed → completed dopo 2h dalla fine)
+- RLS `experience_reviews` aggiornata per accettare status `completed`
+- Frontend retrocompatibile: tutti i filtri accettano sia `confirmed` (passato) che `completed`
+- Utility `src/lib/booking-utils.ts` con costanti e helper per gli stati
+- Badge `no_show` aggiunto nelle card booking
+- **Rollback:** `UPDATE bookings SET status = 'confirmed' WHERE status IN ('completed', 'verified');` + ripristino RLS
 
-```text
-┌─────────────────────────────────────────────┐
-│ Esperienze                [+ Crea esperienza]│
-├─────────────────────────────────────────────┤
-│ 📄 Bozze (2)               sfondo grigio    │
-│ ┌────────┐ ┌────────┐                       │
-│ │ IMG    │ │ IMG    │  ← immagine pulita    │
-│ │        │ │        │                       │
-│ ├────────┤ ├────────┤                       │
-│ │ Titolo │ │ Titolo │                       │
-│ │ Cat·Città│ │ Cat·Città│                   │
-│ │ ✏️ 📤 🗑│ │ ✏️ 📤 🗑│  ← azioni draft    │
-│ └────────┘ └────────┘                       │
-├─────────────────────────────────────────────┤
-│ 🕐 In attesa di approvazione (1)  sfondo amber│
-│ ┌────────┐                                  │
-│ │ IMG    │  ← card compatta                 │
-│ ├────────┤                                  │
-│ │ Titolo │  badge "In revisione"            │
-│ │ Cat·Città│  nessuna azione                │
-│ └────────┘                                  │
-├─────────────────────────────────────────────┤
-│ ✅ Pubblicate (3)           sfondo verde     │
-│ ┌────────┐ ┌────────┐ ┌────────┐           │
-│ │ IMG    │ │ IMG    │ │ IMG    │            │
-│ ├────────┤ ├────────┤ ├────────┤            │
-│ │ Titolo │ │ Titolo │ │ Titolo │            │
-│ │ Cat·Città│ │ Cat·Città│ │ Cat·Città│      │
-│ │ 👁️     │ │ 👁️     │ │ 👁️     │          │
-│ └────────┘ └────────┘ └────────┘            │
-├─────────────────────────────────────────────┤
-│ ▶ Archiviate (1)  ← collapsible, chiusa    │
-│   Titolo esperienza                         │
-└─────────────────────────────────────────────┘
+### ✅ Sprint 4 — Widget ore dipendente/HR
+- Hook `useHourBudget` con logica "nessun budget = illimitato"
+- Widget ore nel profilo dipendente e HR admin con skeleton loading
+- Calcolo anno fiscale basato su `hour_budgets.fiscal_year_start`
+
+---
+
+## Sprint in corso
+
+### 🔄 Sprint Marketplace — Refactoring experience_dates (IN CORSO)
+
+**Obiettivo:** passare da modello "Push" (date legate a `company_id`) a modello "Pull" (catalogo aperto, visibilità basata su `service_type` + assegnamenti diretti via `experience_companies`).
+
+**Sequenza di implementazione:**
+
+| Step | Cosa | Chi |
+|------|------|-----|
+| 0 | Seed `company_service_config` — INSERT 'volunteering' per tutte le companies | SQL manuale |
+| 1 | Funzione `can_employee_see_experience(p_user_id, p_experience_id)` | SQL manuale |
+| 2 | Nuove RLS policy `_v2` su experiences, experience_dates, bookings | SQL manuale |
+| 3 | Test funzionale | Manuale |
+| 4 | Drop vecchie policy | SQL manuale |
+| 5 | Frontend: `ExperienceDateDialog.tsx` — company_id opzionale | Lovable |
+| 6 | Aggiorna plan.md | Lovable |
+
+**Logica visibilità (`can_employee_see_experience`):**
+```sql
+CREATE OR REPLACE FUNCTION can_employee_see_experience(p_user_id uuid, p_experience_id uuid)
+RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_company_id uuid; v_visibility text;
+BEGIN
+  SELECT company_id INTO v_company_id FROM profiles WHERE id = p_user_id;
+  IF v_company_id IS NULL THEN RETURN false; END IF;
+
+  -- Check 1: assegnamento diretto
+  IF EXISTS (SELECT 1 FROM experience_companies
+             WHERE experience_id = p_experience_id AND company_id = v_company_id)
+  THEN RETURN true; END IF;
+
+  -- Check 2: se private → non visibile
+  SELECT visibility INTO v_visibility FROM experiences WHERE id = p_experience_id;
+  IF v_visibility = 'private' THEN RETURN false; END IF;
+
+  -- Check 3: catalogo aperto se service_type abilitato
+  RETURN EXISTS (
+    SELECT 1 FROM company_service_config
+    WHERE company_id = v_company_id AND enabled = true
+      AND service_type = (SELECT type FROM experiences WHERE id = p_experience_id)
+  );
+END; $$;
 ```
 
-## Dettagli per sezione
+**File frontend da modificare:**
+- `ExperienceDateDialog.tsx` — company_id diventa opzionale, label "Azienda esclusiva (opzionale)"
+- `Experiences.tsx` — nessuna modifica (RLS sufficiente)
+- `HRExperiencesPage.tsx` — **nessuna modifica** (da affrontare separatamente con policy HR dedicata)
 
-### Header sezione
-Ogni sezione ha un header con: icona, titolo, contatore, sfondo leggero tematico (`bg-muted/50` per draft, `bg-amber-50` per pending, `bg-green-50` per published, `bg-muted` per archived). Rounded, padding `px-4 py-2.5`.
+**Posti:** pool condiviso, `max_participants` globale per data.
 
-### Card (draft, pending_review, published)
-- **Immagine pulita** via `BaseCardImage` con `aspectRatio="square"` — nessun badge overlay
-- **Sotto l'immagine**: titolo (`text-[13px] font-medium, line-clamp-2`), poi riga con categoria in testo grigio piccolo (`text-[11px] text-muted-foreground`) + città con MapPin
-- **Azioni** variano per stato (vedi sotto)
+**`experience_dates.company_id`:** resta nel DB (nullable, deprecato), non più usato nelle nuove policy.
 
-### Azioni per stato
-- **draft**: Send (richiedi pubblicazione), Eye (anteprima), Pencil (modifica), Trash2 (elimina) — come ora
-- **pending_review**: solo Eye (anteprima), più badge "In revisione" amber inline
-- **published**: solo Eye (anteprima)
-- **archived**: sezione collapsible (Collapsible di ShadCN), card minime con solo titolo
+**Rollback:** ricreare le 3 policy originali con check su `ed.company_id`, drop delle `_v2`.
 
-### Griglia
-- `grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4` per draft/published
-- Stessa griglia per pending_review
-- Lista semplice per archived
+---
 
-## Cosa non cambia
-- Tutta la logica di stato, fetch, dialogs (create, edit, delete, submit for review), preview modal
-- Il pulsante "Crea esperienza" nell'header
-- Lo stato vuoto globale (nessuna esperienza in nessuno stato)
-- Le animazioni framer-motion
+## Sprint da fare
 
-## File modificati
+### Sprint 4b — Verifica ore pre-prenotazione
+- Verifica ore residue pre-prenotazione (frontend only)
+- Widget ore in dashboard HR
+- Se `hour_budgets` non esiste → budget illimitato (retrocompatibilità)
 
-| File | Modifica |
-|------|----------|
-| `AssociationExperiencesPage.tsx` | Raggruppare esperienze per stato, rimuovere badge overlay, aggiungere sezioni con header tematici, sezione archived collapsible |
+### Sprint 5 — "Le mie attività" + notifica manager
+- Nuova pagina `/app/my-activities`
+- Edge Function notifica manager alla prenotazione
+- Check tetto assenze contemporanee
 
+---
+
+## Regole di sicurezza
+1. Mai DROP + CREATE RLS in un singolo step — usare policy `_v2` affiancate, poi drop delle vecchie
+2. Mai ALTER colonne esistenti — solo ADD COLUMN
+3. Ogni migrazione reversibile
+4. Frontend retrocompatibile con fallback
+5. Test su ambiente Test prima di pubblicare
