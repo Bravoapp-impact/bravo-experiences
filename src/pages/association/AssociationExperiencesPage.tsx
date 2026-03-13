@@ -191,117 +191,114 @@ export default function AssociationExperiencesPage() {
           </Card>
         ) : (
           <TooltipProvider delayDuration={300}>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {experiences.map((experience, index) => (
                 <motion.div
                   key={experience.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
+                  transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
+                  className="group"
                 >
-                  <Card className="border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden hover:shadow-md transition-shadow h-full flex flex-col">
-                    <AspectRatio ratio={16 / 9}>
-                      {experience.image_url ? (
-                        <img
-                          src={experience.image_url}
-                          alt={experience.title}
-                          className="object-cover w-full h-full"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-muted flex items-center justify-center">
-                          <Calendar className="h-12 w-12 text-muted-foreground/30" />
-                        </div>
-                      )}
-                    </AspectRatio>
-                    <CardContent className="flex-1 p-4 flex flex-col">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="font-semibold text-foreground line-clamp-2 flex-1">
-                          {experience.title}
-                        </h3>
-                        {getStatusBadge(experience.status)}
+                  {/* Square image with status + category badges */}
+                  <div className="relative">
+                    <BaseCardImage
+                      imageUrl={experience.image_url}
+                      alt={experience.title}
+                      aspectRatio="square"
+                      badge={getStatusBadge(experience.status)}
+                      badgePosition="top-left"
+                    />
+                    {(experience.categories?.name || experience.category) && (
+                      <div className="absolute top-3 right-3">
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] font-medium bg-white/95 text-foreground backdrop-blur-sm rounded-full px-2 py-0.5 shadow-sm"
+                        >
+                          {experience.categories?.name || experience.category}
+                        </Badge>
                       </div>
+                    )}
+                  </div>
 
-                      <div className="space-y-1.5 mb-4 flex-1">
-                        {(experience.cities?.name || experience.city) && (
-                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                            <MapPin className="h-3.5 w-3.5" />
-                            <span>{experience.cities?.name || experience.city}</span>
-                          </div>
-                        )}
-                        {(experience.categories?.name || experience.category) && (
-                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                            <Tag className="h-3.5 w-3.5" />
-                            <span>{experience.categories?.name || experience.category}</span>
-                          </div>
-                        )}
+                  {/* Content */}
+                  <div className="pt-2 space-y-1">
+                    <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug">
+                      {experience.title}
+                    </h3>
+
+                    {(experience.cities?.name || experience.city) && (
+                      <div className="flex items-center gap-1 text-[11px] text-muted-foreground font-light">
+                        <MapPin className="h-2.5 w-2.5" />
+                        <span className="truncate">{experience.cities?.name || experience.city}</span>
                       </div>
+                    )}
 
-                      {/* Action buttons */}
-                      <div className="flex items-center justify-end gap-1 pt-2 border-t border-border/50">
-                        {experience.status === "draft" && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-green-600"
-                                onClick={() => setSubmitExperience(experience)}
-                              >
-                                <Send className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Richiedi pubblicazione</TooltipContent>
-                          </Tooltip>
-                        )}
-
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-0.5 pt-1">
+                      {experience.status === "draft" && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                              onClick={() => setSelectedExperience(experience)}
+                              className="h-7 w-7 text-muted-foreground hover:text-green-600"
+                              onClick={() => setSubmitExperience(experience)}
                             >
-                              <Eye className="h-4 w-4" />
+                              <Send className="h-3.5 w-3.5" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Anteprima</TooltipContent>
+                          <TooltipContent>Richiedi pubblicazione</TooltipContent>
                         </Tooltip>
+                      )}
 
-                        {experience.status === "draft" && (
-                          <>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                  onClick={() => setEditExperience(experience)}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Modifica</TooltipContent>
-                            </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            onClick={() => setSelectedExperience(experience)}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Anteprima</TooltipContent>
+                      </Tooltip>
 
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                  onClick={() => setDeleteExperience(experience)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Elimina</TooltipContent>
-                            </Tooltip>
-                          </>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
+                      {experience.status === "draft" && (
+                        <>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                onClick={() => setEditExperience(experience)}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Modifica</TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                onClick={() => setDeleteExperience(experience)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Elimina</TooltipContent>
+                          </Tooltip>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </motion.div>
               ))}
             </div>
