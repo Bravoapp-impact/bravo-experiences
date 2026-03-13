@@ -285,7 +285,7 @@ export default function AssociationExperiencesPage() {
                   icon={<CheckCircle2 className="h-4 w-4" />}
                   title="Pubblicate"
                   count={grouped.published.length}
-                  headerClassName="bg-green-50 text-green-900 dark:bg-green-950/30 dark:text-green-200"
+                  iconClassName="text-green-500"
                 >
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     {grouped.published.map((exp, i) => (
