@@ -266,7 +266,7 @@ export function CreateExperienceDialog({
 
           {/* Indirizzo */}
           <div className="space-y-1.5">
-            <Label htmlFor="exp-address">Indirizzo</Label>
+            <Label htmlFor="exp-address">Indirizzo *</Label>
             <Input
               id="exp-address"
               placeholder="Indirizzo specifico del punto di ritrovo"
@@ -274,6 +274,9 @@ export function CreateExperienceDialog({
               onChange={(e) => setAddress(e.target.value)}
               maxLength={300}
             />
+            {errors.address && (
+              <p className="text-sm text-destructive">{errors.address}</p>
+            )}
           </div>
 
           {/* Durata e Partecipanti */}
