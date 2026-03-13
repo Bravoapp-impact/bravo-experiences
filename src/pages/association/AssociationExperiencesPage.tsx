@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { AssociationLayout } from "@/components/layout/AssociationLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Calendar, MapPin, Tag, Eye, PackageOpen, Plus, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Calendar, MapPin, Tag, Eye, PackageOpen, Plus, Pencil, Trash2, Send } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,16 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { BaseModal, ModalCloseButton } from "@/components/common/BaseModal";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DeleteConfirmDialog } from "@/components/crud/DeleteConfirmDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { devLog } from "@/lib/logger";
 import { getSDGInfo } from "@/lib/sdg-data";
 import { CreateExperienceDialog } from "@/components/association/CreateExperienceDialog";
@@ -42,6 +52,8 @@ export default function AssociationExperiencesPage() {
   const [editExperience, setEditExperience] = useState<Experience | null>(null);
   const [deleteExperience, setDeleteExperience] = useState<Experience | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [submitExperience, setSubmitExperience] = useState<Experience | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (profile?.association_id) {
@@ -94,12 +106,40 @@ export default function AssociationExperiencesPage() {
     }
   };
 
+  const handleSubmitForReview = async () => {
+    if (!submitExperience) return;
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from("experiences")
+        .update({ status: "pending_review" })
+        .eq("id", submitExperience.id);
+      if (error) {
+        devLog.error("Error submitting experience:", error);
+        toast.error("Errore nell'invio della richiesta");
+        return;
+      }
+      toast.success("Richiesta inviata! Ti avviseremo quando l'esperienza sarà pubblicata.");
+      setSubmitExperience(null);
+      fetchExperiences();
+    } catch (err) {
+      devLog.error("Unexpected submit error:", err);
+      toast.error("Errore imprevisto");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "published":
         return <Badge className="bg-primary/10 text-primary hover:bg-primary/20">Pubblicata</Badge>;
       case "draft":
         return <Badge variant="secondary">Bozza</Badge>;
+      case "pending_review":
+        return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200">In revisione</Badge>;
+      case "archived":
+        return <Badge variant="outline" className="text-muted-foreground">Archiviata</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -233,6 +273,20 @@ export default function AssociationExperiencesPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                  onClick={() => setSubmitExperience(experience)}
+                                >
+                                  <Send className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Richiedi pubblicazione</TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
                                   className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                   onClick={() => setDeleteExperience(experience)}
                                 >
@@ -335,6 +389,31 @@ export default function AssociationExperiencesPage() {
         entityLabel={deleteExperience?.title}
         isLoading={deleting}
       />
+
+      {/* Submit for Review Confirm */}
+      <AlertDialog open={!!submitExperience} onOpenChange={(open) => { if (!open) setSubmitExperience(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Richiedi pubblicazione</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sei sicuro? L'esperienza verrà revisionata dal team Bravo! prima di essere pubblicata.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={submitting}>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSubmitForReview} disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Invio...
+                </>
+              ) : (
+                "Conferma"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AssociationLayout>
   );
 }
