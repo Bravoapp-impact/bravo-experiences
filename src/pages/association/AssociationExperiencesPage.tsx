@@ -455,18 +455,18 @@ export default function AssociationExperiencesPage() {
 
 /* ── Sub-components ── */
 
-function StatusSection({ icon, title, count, headerClassName, children }: {
+function StatusSection({ icon, title, count, iconClassName, children }: {
   icon: React.ReactNode;
   title: string;
   count: number;
-  headerClassName: string;
+  iconClassName: string;
   children: React.ReactNode;
 }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-      <div className={cn("flex items-center gap-2 px-4 py-2.5 rounded-xl mb-4", headerClassName)}>
-        {icon}
-        <span className="text-sm font-medium">{title} ({count})</span>
+      <div className="flex items-center gap-2.5 px-1 py-2 mb-4">
+        <span className={cn("flex-shrink-0", iconClassName)}>{icon}</span>
+        <span className="text-sm font-medium text-foreground">{title} ({count})</span>
       </div>
       {children}
     </motion.div>
