@@ -181,13 +181,9 @@ export function ManageDatesDialog({
       <BaseModal
         open={open}
         onClose={() => onOpenChange(false)}
-        title="Gestisci date"
+        title={`Gestisci date · ${experienceTitle}`}
         showBackButton={false}
       >
-        {/* Subtitle */}
-        <div className="px-4 -mt-2 mb-1">
-          <p className="text-xs text-muted-foreground line-clamp-1">{experienceTitle}</p>
-        </div>
 
         <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-5">
           {/* Existing dates */}
