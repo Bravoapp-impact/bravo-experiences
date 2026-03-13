@@ -140,6 +140,7 @@ interface ExperienceDate {
 
 const STATUS_OPTIONS = [
   { value: "draft", label: "Bozza" },
+  { value: "pending_review", label: "In revisione" },
   { value: "published", label: "Pubblicata" },
   { value: "archived", label: "Archiviata" },
 ];
