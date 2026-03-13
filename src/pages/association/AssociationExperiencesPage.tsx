@@ -7,14 +7,8 @@ import { Loader2, Calendar, MapPin, Tag, Eye, PackageOpen, Plus } from "lucide-r
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { BaseModal, ModalCloseButton } from "@/components/common/BaseModal";
 import { devLog } from "@/lib/logger";
 import { getSDGInfo } from "@/lib/sdg-data";
 import { CreateExperienceDialog } from "@/components/association/CreateExperienceDialog";
@@ -203,16 +197,23 @@ export default function AssociationExperiencesPage() {
         )}
       </div>
 
-      {/* Experience Detail Dialog */}
-      <Dialog open={!!selectedExperience} onOpenChange={() => setSelectedExperience(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>{selectedExperience?.title}</DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[70vh]">
-            <div className="space-y-6 pr-4">
-              {selectedExperience?.image_url && (
-                <AspectRatio ratio={16 / 9} className="rounded-lg overflow-hidden">
+      {/* Experience Detail Modal — BaseModal */}
+      <BaseModal
+        open={!!selectedExperience}
+        onClose={() => setSelectedExperience(null)}
+      >
+        {selectedExperience && (
+          <div className="flex flex-col h-full sm:max-h-[85vh] overflow-hidden">
+            {/* Close button overlay */}
+            <div className="absolute top-4 right-4 z-10">
+              <ModalCloseButton onClick={() => setSelectedExperience(null)} />
+            </div>
+
+            {/* Scrollable content */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Image */}
+              {selectedExperience.image_url && (
+                <AspectRatio ratio={16 / 9}>
                   <img
                     src={selectedExperience.image_url}
                     alt={selectedExperience.title}
@@ -221,56 +222,69 @@ export default function AssociationExperiencesPage() {
                 </AspectRatio>
               )}
 
-              <div className="flex flex-wrap gap-2">
-                {getStatusBadge(selectedExperience?.status || "")}
-                {(selectedExperience?.categories?.name || selectedExperience?.category) && (
-                  <Badge variant="outline">
-                    {selectedExperience?.categories?.name || selectedExperience?.category}
-                  </Badge>
+              {/* Content */}
+              <div className="p-5 space-y-4">
+                {/* Status & Category badges */}
+                <div className="flex flex-wrap gap-2">
+                  {getStatusBadge(selectedExperience.status)}
+                  {(selectedExperience.categories?.name || selectedExperience.category) && (
+                    <Badge variant="outline">
+                      {selectedExperience.categories?.name || selectedExperience.category}
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Title */}
+                <h2 className="text-xl font-bold text-foreground leading-tight">
+                  {selectedExperience.title}
+                </h2>
+
+                {/* Description */}
+                {selectedExperience.description && (
+                  <p className="text-[15px] text-muted-foreground font-light leading-relaxed whitespace-pre-wrap">
+                    {selectedExperience.description}
+                  </p>
+                )}
+
+                {/* Location */}
+                {(selectedExperience.cities?.name || selectedExperience.city || selectedExperience.address) && (
+                  <div className="flex items-start gap-2 pt-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-muted-foreground">
+                      {selectedExperience.address && `${selectedExperience.address}, `}
+                      {selectedExperience.cities?.name || selectedExperience.city}
+                    </p>
+                  </div>
+                )}
+
+                {/* SDGs */}
+                {selectedExperience.sdgs && selectedExperience.sdgs.length > 0 && (
+                  <div className="pt-3 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      Obiettivi SDG
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedExperience.sdgs.map((sdg) => {
+                        const sdgInfo = getSDGInfo(sdg);
+                        return (
+                          <Badge
+                            key={sdg}
+                            variant="secondary"
+                            className="text-xs"
+                            title={sdgInfo?.name}
+                          >
+                            {sdg}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
               </div>
-
-              {selectedExperience?.description && (
-                <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-1">Descrizione</h4>
-                  <p className="text-foreground whitespace-pre-wrap">{selectedExperience.description}</p>
-                </div>
-              )}
-
-              {(selectedExperience?.cities?.name || selectedExperience?.city || selectedExperience?.address) && (
-                <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-1">Luogo</h4>
-                  <p className="text-foreground">
-                    {selectedExperience?.address && `${selectedExperience.address}, `}
-                    {selectedExperience?.cities?.name || selectedExperience?.city}
-                  </p>
-                </div>
-              )}
-
-              {selectedExperience?.sdgs && selectedExperience.sdgs.length > 0 && (
-                <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-2">Obiettivi SDG</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedExperience.sdgs.map((sdg) => {
-                      const sdgInfo = getSDGInfo(sdg);
-                      return (
-                        <Badge
-                          key={sdg}
-                          variant="secondary"
-                          className="text-xs"
-                          title={sdgInfo?.name}
-                        >
-                          {sdg}
-                        </Badge>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
+          </div>
+        )}
+      </BaseModal>
 
       {/* Create Experience Dialog */}
       <CreateExperienceDialog
