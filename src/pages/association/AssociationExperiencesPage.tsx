@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { AssociationLayout } from "@/components/layout/AssociationLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, MapPin, Eye, PackageOpen, Plus, Pencil, Trash2, Send, FileText, Clock, CheckCircle2, Archive, ChevronRight } from "lucide-react";
+import { Loader2, MapPin, Eye, PackageOpen, Plus, Pencil, Trash2, Send, FileText, Clock, CheckCircle2, Archive, ChevronRight, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BaseCardImage } from "@/components/common/BaseCardImage";
@@ -27,6 +27,7 @@ import { getSDGInfo } from "@/lib/sdg-data";
 import { CreateExperienceDialog } from "@/components/association/CreateExperienceDialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ManageDatesDialog } from "@/components/association/ManageDatesDialog";
 
 interface Experience {
   id: string;
@@ -57,6 +58,7 @@ export default function AssociationExperiencesPage() {
   const [submitExperience, setSubmitExperience] = useState<Experience | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [archivedOpen, setArchivedOpen] = useState(false);
+  const [manageDatesExperience, setManageDatesExperience] = useState<Experience | null>(null);
 
   const grouped = useMemo(() => ({
     draft: experiences.filter(e => e.status === "draft"),
@@ -297,6 +299,14 @@ export default function AssociationExperiencesPage() {
                           <div className="flex items-center gap-0.5">
                             <Tooltip>
                               <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setManageDatesExperience(exp)}>
+                                  <Calendar className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Gestisci date</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setSelectedExperience(exp)}>
                                   <Eye className="h-3.5 w-3.5" />
                                 </Button>
@@ -448,6 +458,17 @@ export default function AssociationExperiencesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Manage Dates Dialog */}
+      {manageDatesExperience && (
+        <ManageDatesDialog
+          open={!!manageDatesExperience}
+          onOpenChange={(o) => { if (!o) setManageDatesExperience(null); }}
+          experienceId={manageDatesExperience.id}
+          experienceTitle={manageDatesExperience.title}
+          defaultMaxParticipants={null}
+        />
+      )}
     </AssociationLayout>
   );
 }
