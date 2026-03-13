@@ -56,7 +56,7 @@ export function BaseModal({
           exit={{ opacity: 0, y: "100%" }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
           className={cn(
-            "bg-background w-full h-full sm:h-auto sm:max-w-lg sm:max-h-[90vh] overflow-hidden sm:rounded-3xl",
+            "bg-background w-full h-full sm:h-auto sm:max-w-lg sm:max-h-[90vh] overflow-hidden sm:rounded-3xl flex flex-col",
             className
           )}
           onClick={(e) => e.stopPropagation()}
