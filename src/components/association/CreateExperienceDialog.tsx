@@ -13,6 +13,8 @@ interface ExperienceData {
   category_id?: string | null;
   city_id?: string | null;
   address: string | null;
+  default_hours?: number | null;
+  max_participants?: number | null;
   participant_info?: string | null;
   image_url: string | null;
 }
