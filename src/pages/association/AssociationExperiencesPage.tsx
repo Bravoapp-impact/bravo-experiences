@@ -238,6 +238,22 @@ export default function AssociationExperiencesPage() {
 
                       {/* Action buttons */}
                       <div className="flex items-center justify-end gap-1 pt-2 border-t border-border/50">
+                        {experience.status === "draft" && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-green-600"
+                                onClick={() => setSubmitExperience(experience)}
+                              >
+                                <Send className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Richiedi pubblicazione</TooltipContent>
+                          </Tooltip>
+                        )}
+
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -266,20 +282,6 @@ export default function AssociationExperiencesPage() {
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>Modifica</TooltipContent>
-                            </Tooltip>
-
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-muted-foreground hover:text-primary"
-                                  onClick={() => setSubmitExperience(experience)}
-                                >
-                                  <Send className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Richiedi pubblicazione</TooltipContent>
                             </Tooltip>
 
                             <Tooltip>
