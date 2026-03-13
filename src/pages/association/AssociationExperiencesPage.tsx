@@ -299,6 +299,14 @@ export default function AssociationExperiencesPage() {
                           <div className="flex items-center gap-0.5">
                             <Tooltip>
                               <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setManageDatesExperience(exp)}>
+                                  <Calendar className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Gestisci date</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setSelectedExperience(exp)}>
                                   <Eye className="h-3.5 w-3.5" />
                                 </Button>
