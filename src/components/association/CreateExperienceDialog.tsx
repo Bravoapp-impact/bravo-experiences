@@ -110,6 +110,9 @@ export function CreateExperienceDialog({
     if (!description.trim()) errs.description = "La descrizione è obbligatoria";
     if (!categoryId) errs.categoryId = "Seleziona una categoria";
     if (!cityId) errs.cityId = "Seleziona una città";
+    if (!address.trim()) errs.address = "L'indirizzo è obbligatorio";
+    if (!defaultHours || defaultHours < 1) errs.defaultHours = "La durata è obbligatoria";
+    if (!maxParticipants || maxParticipants < 1) errs.maxParticipants = "Il numero massimo è obbligatorio";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
