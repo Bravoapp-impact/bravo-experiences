@@ -106,6 +106,8 @@ export function ExperienceForm({
       setCategoryId(experience.category_id || "");
       setCityId(experience.city_id || "");
       setAddress(experience.address || "");
+      setDefaultHours(experience.default_hours ?? "");
+      setMaxParticipants(experience.max_participants ?? "");
       setParticipantInfo(experience.participant_info || "");
       setImagePreview(experience.image_url || null);
       setExistingImageUrl(experience.image_url || null);
