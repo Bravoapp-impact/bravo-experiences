@@ -49,7 +49,7 @@ export function CreateExperienceDialog({
   const [categoryId, setCategoryId] = useState("");
   const [cityId, setCityId] = useState("");
   const [address, setAddress] = useState("");
-  const [defaultHours, setDefaultHours] = useState<number>(4);
+  const [defaultHours, setDefaultHours] = useState<number | "">("");
   const [maxParticipants, setMaxParticipants] = useState<number | "">("");
   const [participantInfo, setParticipantInfo] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -79,7 +79,7 @@ export function CreateExperienceDialog({
     setCategoryId("");
     setCityId("");
     setAddress("");
-    setDefaultHours(4);
+    setDefaultHours("");
     setMaxParticipants("");
     setParticipantInfo("");
     setImageFile(null);
@@ -110,6 +110,9 @@ export function CreateExperienceDialog({
     if (!description.trim()) errs.description = "La descrizione è obbligatoria";
     if (!categoryId) errs.categoryId = "Seleziona una categoria";
     if (!cityId) errs.cityId = "Seleziona una città";
+    if (!address.trim()) errs.address = "L'indirizzo è obbligatorio";
+    if (!defaultHours || defaultHours < 1) errs.defaultHours = "La durata è obbligatoria";
+    if (!maxParticipants || maxParticipants < 1) errs.maxParticipants = "Il numero massimo è obbligatorio";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -263,7 +266,7 @@ export function CreateExperienceDialog({
 
           {/* Indirizzo */}
           <div className="space-y-1.5">
-            <Label htmlFor="exp-address">Indirizzo</Label>
+            <Label htmlFor="exp-address">Indirizzo *</Label>
             <Input
               id="exp-address"
               placeholder="Indirizzo specifico del punto di ritrovo"
@@ -271,23 +274,32 @@ export function CreateExperienceDialog({
               onChange={(e) => setAddress(e.target.value)}
               maxLength={300}
             />
+            {errors.address && (
+              <p className="text-sm text-destructive">{errors.address}</p>
+            )}
           </div>
 
           {/* Durata e Partecipanti */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="exp-hours">Durata (ore)</Label>
+              <Label htmlFor="exp-hours">Durata (ore) *</Label>
               <Input
                 id="exp-hours"
                 type="number"
                 min={1}
                 max={24}
+                placeholder="Es. 4"
                 value={defaultHours}
-                onChange={(e) => setDefaultHours(Number(e.target.value) || 4)}
+                onChange={(e) =>
+                  setDefaultHours(e.target.value ? Number(e.target.value) : "")
+                }
               />
+              {errors.defaultHours && (
+                <p className="text-sm text-destructive">{errors.defaultHours}</p>
+              )}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="exp-max">Max partecipanti</Label>
+              <Label htmlFor="exp-max">Max partecipanti *</Label>
               <Input
                 id="exp-max"
                 type="number"
@@ -298,6 +310,9 @@ export function CreateExperienceDialog({
                   setMaxParticipants(e.target.value ? Number(e.target.value) : "")
                 }
               />
+              {errors.maxParticipants && (
+                <p className="text-sm text-destructive">{errors.maxParticipants}</p>
+              )}
             </div>
           </div>
 
