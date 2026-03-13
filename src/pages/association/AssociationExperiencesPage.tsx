@@ -261,8 +261,7 @@ export default function AssociationExperiencesPage() {
                         index={i}
                         onPreview={setSelectedExperience}
                         actions={
-                          <div className="flex items-center gap-1.5">
-                            <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200 text-[10px] px-2 py-0">In revisione</Badge>
+                          <div className="flex items-center gap-0.5">
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setSelectedExperience(exp)}>
