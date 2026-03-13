@@ -45,7 +45,10 @@ export function BaseModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-end sm:items-center sm:justify-center sm:p-6"
-        onClick={onClose}
+        onClick={(e) => {
+          // Only close if clicking the backdrop itself, not portaled elements (e.g. Radix Select)
+          if (e.target === e.currentTarget) onClose();
+        }}
       >
         <motion.div
           initial={{ opacity: 0, y: "100%" }}
