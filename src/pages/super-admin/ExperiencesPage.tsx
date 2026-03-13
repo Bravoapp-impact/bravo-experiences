@@ -531,291 +531,406 @@ export default function ExperiencesPage() {
           </Button>
         </motion.div>
 
-        {/* Table */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <CardTitle className="text-lg">
-                  {experiences.length} Esperienze
-                </CardTitle>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="relative w-full sm:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Cerca..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="all">Tutte le esperienze</TabsTrigger>
+            <TabsTrigger value="pending" className="gap-2">
+              Da approvare
+              {pendingExperiences.length > 0 && (
+                <Badge variant="destructive" className="ml-1 h-5 min-w-[20px] px-1.5 text-xs">
+                  {pendingExperiences.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Tab: All experiences */}
+          <TabsContent value="all">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+                <CardHeader>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <CardTitle className="text-lg">
+                      {experiences.length} Esperienze
+                    </CardTitle>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Cerca..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-full sm:w-40 bg-background">
+                          <SelectValue placeholder="Stato" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover">
+                          <SelectItem value="all">Tutti</SelectItem>
+                          <SelectItem value="published">Pubblicate</SelectItem>
+                          <SelectItem value="draft">Bozze</SelectItem>
+                          <SelectItem value="pending_review">In revisione</SelectItem>
+                          <SelectItem value="archived">Archiviate</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full sm:w-40 bg-background">
-                      <SelectValue placeholder="Stato" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover">
-                      <SelectItem value="all">Tutti</SelectItem>
-                      <SelectItem value="published">Pubblicate</SelectItem>
-                      <SelectItem value="draft">Bozze</SelectItem>
-                      <SelectItem value="archived">Archiviate</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-lg border border-border overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead className="w-12"></TableHead>
-                      <TableHead>Esperienza</TableHead>
-                      <TableHead>Città</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Stato</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="w-24">Azioni</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loading ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8">
-                          Caricamento...
-                        </TableCell>
-                      </TableRow>
-                    ) : filteredExperiences.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={7}
-                          className="text-center py-8 text-muted-foreground"
-                        >
-                          Nessuna esperienza trovata
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredExperiences.map((experience, index) => (
-                        <>
-                          <motion.tr
-                            key={experience.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.02 }}
-                            className="border-b border-border"
-                          >
-                            <TableCell>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() =>
-                                  setExpandedExperience(
-                                    expandedExperience === experience.id
-                                      ? null
-                                      : experience.id
-                                  )
-                                }
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-lg border border-border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead className="w-12"></TableHead>
+                          <TableHead>Esperienza</TableHead>
+                          <TableHead>Città</TableHead>
+                          <TableHead>Categoria</TableHead>
+                          <TableHead>Stato</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead className="w-24">Azioni</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {loading ? (
+                          <TableRow>
+                            <TableCell colSpan={7} className="text-center py-8">
+                              Caricamento...
+                            </TableCell>
+                          </TableRow>
+                        ) : filteredExperiences.length === 0 ? (
+                          <TableRow>
+                            <TableCell
+                              colSpan={7}
+                              className="text-center py-8 text-muted-foreground"
+                            >
+                              Nessuna esperienza trovata
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          filteredExperiences.map((experience, index) => (
+                            <>
+                              <motion.tr
+                                key={experience.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.02 }}
+                                className="border-b border-border"
                               >
-                                {expandedExperience === experience.id ? (
-                                  <ChevronUp className="h-4 w-4" />
-                                ) : (
-                                  <ChevronDown className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                {experience.image_url ? (
-                                  <img
-                                    src={experience.image_url}
-                                    alt={experience.title}
-                                    className="w-12 h-12 rounded-lg object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                                    <Calendar className="h-6 w-6 text-primary" />
+                                <TableCell>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={() =>
+                                      setExpandedExperience(
+                                        expandedExperience === experience.id
+                                          ? null
+                                          : experience.id
+                                      )
+                                    }
+                                  >
+                                    {expandedExperience === experience.id ? (
+                                      <ChevronUp className="h-4 w-4" />
+                                    ) : (
+                                      <ChevronDown className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-3">
+                                    {experience.image_url ? (
+                                      <img
+                                        src={experience.image_url}
+                                        alt={experience.title}
+                                        className="w-12 h-12 rounded-lg object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                                        <Calendar className="h-6 w-6 text-primary" />
+                                      </div>
+                                    )}
+                                    <div>
+                                      <p className="font-medium">{experience.title}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {getAssociationName(experience.association_id, experience.association_name)}
+                                      </p>
+                                    </div>
                                   </div>
-                                )}
-                                <div>
-                                  <p className="font-medium">{experience.title}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {getAssociationName(experience.association_id, experience.association_name)}
-                                  </p>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1">
-                                <MapPin className="h-3 w-3 text-muted-foreground" />
-                                {getCityName(experience.city_id, experience.city)}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="capitalize">
-                                {getCategoryName(experience.category_id, experience.category)}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{getStatusBadge(experience.status)}</TableCell>
-                            <TableCell>
-                              {experience.experience_dates?.length || 0}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => handleOpenDialog(experience)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-destructive hover:text-destructive"
-                                  onClick={() => {
-                                    setSelectedExperience(experience);
-                                    setDeleteDialogOpen(true);
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </motion.tr>
-                          {/* Expanded dates section */}
-                          {expandedExperience === experience.id && (
-                            <TableRow className="bg-muted/30">
-                              <TableCell colSpan={7} className="p-4">
-                                <div className="space-y-3">
-                                  <div className="flex items-center justify-between">
-                                    <h4 className="font-medium text-sm">
-                                      Date Esperienza
-                                    </h4>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="h-3 w-3 text-muted-foreground" />
+                                    {getCityName(experience.city_id, experience.city)}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="capitalize">
+                                    {getCategoryName(experience.category_id, experience.category)}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>{getStatusBadge(experience.status)}</TableCell>
+                                <TableCell>
+                                  {experience.experience_dates?.length || 0}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-1">
                                     <Button
-                                      size="sm"
-                                      variant="outline"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => handleOpenDialog(experience)}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-destructive hover:text-destructive"
                                       onClick={() => {
                                         setSelectedExperience(experience);
-                                        setSelectedDate(null);
-                                        setDateDialogOpen(true);
+                                        setDeleteDialogOpen(true);
                                       }}
                                     >
-                                      <Plus className="h-4 w-4 mr-1" />
-                                      Aggiungi Data
+                                      <Trash2 className="h-4 w-4" />
                                     </Button>
                                   </div>
-                                  {experience.experience_dates &&
-                                  experience.experience_dates.length > 0 ? (
-                                    <div className="grid gap-2">
-                                      {experience.experience_dates
-                                        .sort(
-                                          (a, b) =>
-                                            new Date(a.start_datetime).getTime() -
-                                            new Date(b.start_datetime).getTime()
-                                        )
-                                        .map((date) => {
-                                          const companyName = date.company_id 
-                                            ? companies.find(c => c.id === date.company_id)?.name 
-                                            : null;
-                                          return (
-                                          <div
-                                            key={date.id}
-                                            className="flex items-center justify-between p-3 rounded-lg bg-background border border-border"
-                                          >
-                                            <div className="flex items-center gap-4">
-                                              <div>
-                                                <div className="flex items-center gap-2">
-                                                  <p className="font-medium text-sm">
-                                                    {format(
-                                                      new Date(date.start_datetime),
-                                                      "EEEE d MMMM yyyy",
-                                                      { locale: it }
+                                </TableCell>
+                              </motion.tr>
+                              {/* Expanded dates section */}
+                              {expandedExperience === experience.id && (
+                                <TableRow className="bg-muted/30">
+                                  <TableCell colSpan={7} className="p-4">
+                                    <div className="space-y-3">
+                                      <div className="flex items-center justify-between">
+                                        <h4 className="font-medium text-sm">
+                                          Date Esperienza
+                                        </h4>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => {
+                                            setSelectedExperience(experience);
+                                            setSelectedDate(null);
+                                            setDateDialogOpen(true);
+                                          }}
+                                        >
+                                          <Plus className="h-4 w-4 mr-1" />
+                                          Aggiungi Data
+                                        </Button>
+                                      </div>
+                                      {experience.experience_dates &&
+                                      experience.experience_dates.length > 0 ? (
+                                        <div className="grid gap-2">
+                                          {experience.experience_dates
+                                            .sort(
+                                              (a, b) =>
+                                                new Date(a.start_datetime).getTime() -
+                                                new Date(b.start_datetime).getTime()
+                                            )
+                                            .map((date) => {
+                                              const companyName = date.company_id 
+                                                ? companies.find(c => c.id === date.company_id)?.name 
+                                                : null;
+                                              return (
+                                              <div
+                                                key={date.id}
+                                                className="flex items-center justify-between p-3 rounded-lg bg-background border border-border"
+                                              >
+                                                <div className="flex items-center gap-4">
+                                                  <div>
+                                                    <div className="flex items-center gap-2">
+                                                      <p className="font-medium text-sm">
+                                                        {format(
+                                                          new Date(date.start_datetime),
+                                                          "EEEE d MMMM yyyy",
+                                                          { locale: it }
+                                                        )}
+                                                      </p>
+                                                      {companyName && (
+                                                        <Badge variant="outline" className="text-xs">
+                                                          {companyName}
+                                                        </Badge>
+                                                      )}
+                                                      {!companyName && (
+                                                        <Badge variant="destructive" className="text-xs">
+                                                          Nessuna azienda
+                                                        </Badge>
+                                                      )}
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground">
+                                                      {format(
+                                                        new Date(date.start_datetime),
+                                                        "HH:mm"
+                                                      )}{" "}
+                                                      -{" "}
+                                                      {format(
+                                                        new Date(date.end_datetime),
+                                                        "HH:mm"
+                                                      )}
+                                                    </p>
+                                                  </div>
+                                                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                                    <span className="flex items-center gap-1">
+                                                      <Users className="h-4 w-4" />
+                                                      {date.max_participants} posti
+                                                    </span>
+                                                    {date.volunteer_hours && (
+                                                      <span className="flex items-center gap-1">
+                                                        <Clock className="h-4 w-4" />
+                                                        {date.volunteer_hours}h
+                                                      </span>
                                                     )}
-                                                  </p>
-                                                  {companyName && (
-                                                    <Badge variant="outline" className="text-xs">
-                                                      {companyName}
-                                                    </Badge>
-                                                  )}
-                                                  {!companyName && (
-                                                    <Badge variant="destructive" className="text-xs">
-                                                      Nessuna azienda
-                                                    </Badge>
-                                                  )}
+                                                  </div>
                                                 </div>
-                                                <p className="text-xs text-muted-foreground">
-                                                  {format(
-                                                    new Date(date.start_datetime),
-                                                    "HH:mm"
-                                                  )}{" "}
-                                                  -{" "}
-                                                  {format(
-                                                    new Date(date.end_datetime),
-                                                    "HH:mm"
-                                                  )}
-                                                </p>
+                                                <div className="flex items-center gap-1">
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8"
+                                                    onClick={() => {
+                                                      setSelectedExperience(experience);
+                                                      setSelectedDate(date);
+                                                      setDateDialogOpen(true);
+                                                    }}
+                                                  >
+                                                    <Edit className="h-4 w-4" />
+                                                  </Button>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                                    onClick={() => handleDeleteDate(date.id)}
+                                                  >
+                                                    <Trash2 className="h-4 w-4" />
+                                                  </Button>
+                                                </div>
                                               </div>
-                                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                                <span className="flex items-center gap-1">
-                                                  <Users className="h-4 w-4" />
-                                                  {date.max_participants} posti
-                                                </span>
-                                                {date.volunteer_hours && (
-                                                  <span className="flex items-center gap-1">
-                                                    <Clock className="h-4 w-4" />
-                                                    {date.volunteer_hours}h
-                                                  </span>
-                                                )}
-                                              </div>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                              <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8"
-                                                onClick={() => {
-                                                  setSelectedExperience(experience);
-                                                  setSelectedDate(date);
-                                                  setDateDialogOpen(true);
-                                                }}
-                                              >
-                                                <Edit className="h-4 w-4" />
-                                              </Button>
-                                              <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-destructive hover:text-destructive"
-                                                onClick={() => handleDeleteDate(date.id)}
-                                              >
-                                                <Trash2 className="h-4 w-4" />
-                                              </Button>
-                                            </div>
-                                          </div>
-                                        );})}
+                                            );})}
+                                        </div>
+                                      ) : (
+                                        <p className="text-sm text-muted-foreground py-4 text-center">
+                                          Nessuna data programmata
+                                        </p>
+                                      )}
                                     </div>
-                                  ) : (
-                                    <p className="text-sm text-muted-foreground py-4 text-center">
-                                      Nessuna data programmata
-                                    </p>
-                                  )}
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
+
+          {/* Tab: Pending review */}
+          <TabsContent value="pending">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg">
+                    {pendingExperiences.length} esperienze da approvare
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {pendingExperiences.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Check className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
+                      <p>Nessuna esperienza in attesa di approvazione</p>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-border overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/50">
+                            <TableHead>Esperienza</TableHead>
+                            <TableHead>Associazione</TableHead>
+                            <TableHead>Categoria</TableHead>
+                            <TableHead>Data creazione</TableHead>
+                            <TableHead className="w-32">Azioni</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {pendingExperiences.map((experience, index) => (
+                            <motion.tr
+                              key={experience.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.03 }}
+                              className="border-b border-border"
+                            >
+                              <TableCell>
+                                <button
+                                  className="font-medium text-left hover:underline cursor-pointer"
+                                  onClick={() => setPreviewExperience(experience)}
+                                >
+                                  {experience.title}
+                                </button>
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {getAssociationName(experience.association_id, experience.association_name)}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="capitalize">
+                                  {getCategoryName(experience.category_id, experience.category)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {format(new Date(experience.created_at), "d MMM yyyy", { locale: it })}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                    onClick={() => setPreviewExperience(experience)}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                    onClick={() => setPublishExperience(experience)}
+                                  >
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                    onClick={() => setRejectExperience(experience)}
+                                  >
+                                    <XCircle className="h-4 w-4" />
+                                  </Button>
                                 </div>
                               </TableCell>
-                            </TableRow>
-                          )}
-                        </>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+                            </motion.tr>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Create/Edit Experience Dialog */}
