@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, Upload, X } from "lucide-react";
+import { toast } from "sonner";
 
 interface Category {
   id: string;
@@ -45,6 +46,8 @@ interface ExperienceInitialData {
   category_id?: string | null;
   city_id?: string | null;
   address?: string | null;
+  default_hours?: number | null;
+  max_participants?: number | null;
   participant_info?: string | null;
   image_url?: string | null;
 }
@@ -74,10 +77,10 @@ export function ExperienceForm({
   const [cityId, setCityId] = useState(experience?.city_id || "");
   const [address, setAddress] = useState(experience?.address || "");
   const [defaultHours, setDefaultHours] = useState<number | "">(
-    ""
+    experience?.default_hours ?? ""
   );
   const [maxParticipants, setMaxParticipants] = useState<number | "">(
-    ""
+    experience?.max_participants ?? ""
   );
   const [participantInfo, setParticipantInfo] = useState(
     experience?.participant_info || ""
@@ -104,6 +107,8 @@ export function ExperienceForm({
       setCategoryId(experience.category_id || "");
       setCityId(experience.city_id || "");
       setAddress(experience.address || "");
+      setDefaultHours(experience.default_hours ?? "");
+      setMaxParticipants(experience.max_participants ?? "");
       setParticipantInfo(experience.participant_info || "");
       setImagePreview(experience.image_url || null);
       setExistingImageUrl(experience.image_url || null);
@@ -162,6 +167,7 @@ export function ExperienceForm({
         .upload(path, imageFile);
       if (uploadError) {
         devLog.error("Image upload error:", uploadError);
+        toast.error("Errore nel caricamento dell'immagine");
         return;
       }
       const { data: urlData } = supabase.storage
@@ -190,7 +196,7 @@ export function ExperienceForm({
   };
 
   return (
-    <div className="flex flex-col h-full sm:max-h-[85vh] overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
         {subtitle && (
           <p className="text-sm text-muted-foreground">{subtitle}</p>

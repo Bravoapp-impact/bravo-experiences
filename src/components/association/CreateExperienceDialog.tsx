@@ -13,6 +13,8 @@ interface ExperienceData {
   category_id?: string | null;
   city_id?: string | null;
   address: string | null;
+  default_hours?: number | null;
+  max_participants?: number | null;
   participant_info?: string | null;
   image_url: string | null;
 }
@@ -50,6 +52,8 @@ export function CreateExperienceDialog({
             city_id: data.cityId,
             city: data.cityName,
             address: data.address || null,
+            default_hours: data.defaultHours,
+            max_participants: data.maxParticipants,
             participant_info: data.participantInfo || null,
             image_url: data.imageUrl,
           })
@@ -71,6 +75,8 @@ export function CreateExperienceDialog({
           city_id: data.cityId,
           city: data.cityName,
           address: data.address || null,
+          default_hours: data.defaultHours,
+          max_participants: data.maxParticipants,
           participant_info: data.participantInfo || null,
           image_url: data.imageUrl,
           status: "draft",

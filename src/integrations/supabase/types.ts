@@ -606,9 +606,11 @@ export type Database = {
           city_id: string | null
           created_at: string
           created_by: string | null
+          default_hours: number | null
           description: string | null
           id: string
           image_url: string | null
+          max_participants: number | null
           participant_info: string | null
           price_per_participant: number | null
           sdgs: string[] | null
@@ -628,9 +630,11 @@ export type Database = {
           city_id?: string | null
           created_at?: string
           created_by?: string | null
+          default_hours?: number | null
           description?: string | null
           id?: string
           image_url?: string | null
+          max_participants?: number | null
           participant_info?: string | null
           price_per_participant?: number | null
           sdgs?: string[] | null
@@ -650,9 +654,11 @@ export type Database = {
           city_id?: string | null
           created_at?: string
           created_by?: string | null
+          default_hours?: number | null
           description?: string | null
           id?: string
           image_url?: string | null
+          max_participants?: number | null
           participant_info?: string | null
           price_per_participant?: number | null
           sdgs?: string[] | null
