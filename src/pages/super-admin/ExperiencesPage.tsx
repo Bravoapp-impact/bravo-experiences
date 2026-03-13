@@ -445,10 +445,53 @@ export default function ExperiencesPage() {
         return <Badge className="bg-secondary text-secondary-foreground">Pubblicata</Badge>;
       case "draft":
         return <Badge variant="outline">Bozza</Badge>;
+      case "pending_review":
+        return <Badge className="bg-amber-100 text-amber-800">In revisione</Badge>;
       case "archived":
         return <Badge variant="secondary">Archiviata</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  const pendingExperiences = experiences.filter((exp) => exp.status === "pending_review");
+
+  const handlePublish = async () => {
+    if (!publishExperience) return;
+    setPublishing(true);
+    try {
+      const { error } = await supabase
+        .from("experiences")
+        .update({ status: "published" })
+        .eq("id", publishExperience.id);
+      if (error) throw error;
+      toast({ title: "Esperienza pubblicata" });
+      setPublishExperience(null);
+      fetchData();
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Errore", description: error.message });
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectExperience || !rejectReason.trim()) return;
+    setRejecting(true);
+    try {
+      const { error } = await supabase
+        .from("experiences")
+        .update({ status: "draft" })
+        .eq("id", rejectExperience.id);
+      if (error) throw error;
+      toast({ title: "Esperienza rifiutata e riportata in bozza", description: `Motivo: ${rejectReason}` });
+      setRejectExperience(null);
+      setRejectReason("");
+      fetchData();
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Errore", description: error.message });
+    } finally {
+      setRejecting(false);
     }
   };
 
