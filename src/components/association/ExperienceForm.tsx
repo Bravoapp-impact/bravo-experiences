@@ -75,9 +75,6 @@ export function ExperienceForm({
   const [categoryId, setCategoryId] = useState(experience?.category_id || "");
   const [cityId, setCityId] = useState(experience?.city_id || "");
   const [address, setAddress] = useState(experience?.address || "");
-  const [defaultHours, setDefaultHours] = useState<number | "">(
-    experience?.default_hours ?? ""
-  );
   const [maxParticipants, setMaxParticipants] = useState<number | "">(
     experience?.max_participants ?? ""
   );
