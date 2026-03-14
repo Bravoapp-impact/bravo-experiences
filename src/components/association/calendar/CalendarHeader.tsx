@@ -80,11 +80,26 @@ export function CalendarHeader({ currentDate, viewMode, onDateChange, onViewMode
             Giorno
           </ToggleGroupItem>
         </ToggleGroup>
-        {onAddDate && (
-          <Button variant="default" size="sm" onClick={onAddDate} className="gap-1.5">
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Nuova data</span>
+        {onAddDate && experiences.length <= 1 && (
+          <Button variant="outline" size="icon" className="h-7 w-7" onClick={onAddDate}>
+            <Plus className="h-3.5 w-3.5" />
           </Button>
+        )}
+        {onExperiencePicked && experiences.length > 1 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="h-7 w-7">
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {experiences.map(exp => (
+                <DropdownMenuItem key={exp.id} onClick={() => onExperiencePicked(exp)}>
+                  {exp.title}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
     </div>
