@@ -75,10 +75,9 @@ export function WeekView({ currentDate, events, onEventDeleted }: WeekViewProps)
             <div
               key={day.toISOString()}
               className={`relative border-l ${isPast ? "opacity-40" : ""}`}
-              onClick={() => !isPast && onEmptySlotClick(day)}
             >
               {HOURS.map(h => (
-                <div key={h} className="border-b cursor-pointer hover:bg-muted/20" style={{ height: HOUR_HEIGHT }} />
+                <div key={h} className="border-b" style={{ height: HOUR_HEIGHT }} />
               ))}
 
               {/* Events */}

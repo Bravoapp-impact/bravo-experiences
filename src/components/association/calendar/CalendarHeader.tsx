@@ -60,22 +60,30 @@ export function CalendarHeader({ currentDate, viewMode, onDateChange, onViewMode
         </div>
         <h2 className="text-lg font-semibold text-foreground">{getLabel()}</h2>
       </div>
-      <ToggleGroup
-        type="single"
-        value={viewMode}
-        onValueChange={(v) => v && onViewModeChange(v as ViewMode)}
-        className="bg-muted rounded-lg p-0.5"
-      >
-        <ToggleGroupItem value="month" className="text-xs px-3 h-7 rounded-md data-[state=on]:bg-background data-[state=on]:shadow-sm">
-          Mese
-        </ToggleGroupItem>
-        <ToggleGroupItem value="week" className="text-xs px-3 h-7 rounded-md data-[state=on]:bg-background data-[state=on]:shadow-sm">
-          Settimana
-        </ToggleGroupItem>
-        <ToggleGroupItem value="day" className="text-xs px-3 h-7 rounded-md data-[state=on]:bg-background data-[state=on]:shadow-sm">
-          Giorno
-        </ToggleGroupItem>
-      </ToggleGroup>
+      <div className="flex items-center gap-2">
+        <ToggleGroup
+          type="single"
+          value={viewMode}
+          onValueChange={(v) => v && onViewModeChange(v as ViewMode)}
+          className="bg-muted rounded-lg p-0.5"
+        >
+          <ToggleGroupItem value="month" className="text-xs px-3 h-7 rounded-md data-[state=on]:bg-background data-[state=on]:shadow-sm">
+            Mese
+          </ToggleGroupItem>
+          <ToggleGroupItem value="week" className="text-xs px-3 h-7 rounded-md data-[state=on]:bg-background data-[state=on]:shadow-sm">
+            Settimana
+          </ToggleGroupItem>
+          <ToggleGroupItem value="day" className="text-xs px-3 h-7 rounded-md data-[state=on]:bg-background data-[state=on]:shadow-sm">
+            Giorno
+          </ToggleGroupItem>
+        </ToggleGroup>
+        {onAddDate && (
+          <Button variant="default" size="sm" onClick={onAddDate} className="gap-1.5">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Nuova data</span>
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

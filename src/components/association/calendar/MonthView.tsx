@@ -7,22 +7,19 @@ import { it } from "date-fns/locale";
 import { CalendarEvent, ViewMode } from "./calendar-types";
 import { EventBlock } from "./EventBlock";
 import { DayDetailPopover } from "./DayDetailPopover";
-import { Plus } from "lucide-react";
 
 interface MonthViewProps {
   currentDate: Date;
   events: CalendarEvent[];
-  onDayClick: (date: Date) => void;
   onViewModeChange: (mode: ViewMode) => void;
   onDateChange: (date: Date) => void;
-  onEmptyDayClick: (date: Date) => void;
   onEventDeleted: () => void;
 }
 
 const WEEKDAYS = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
 const MAX_VISIBLE = 2;
 
-export function MonthView({ currentDate, events, onDayClick, onViewModeChange, onDateChange, onEmptyDayClick, onEventDeleted }: MonthViewProps) {
+export function MonthView({ currentDate, events, onViewModeChange, onDateChange, onEventDeleted }: MonthViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
 
@@ -46,15 +43,6 @@ export function MonthView({ currentDate, events, onDayClick, onViewModeChange, o
 
   const now = startOfDay(new Date());
 
-  const handleDayClick = (day: Date) => {
-    const key = format(day, "yyyy-MM-dd");
-    const dayEvents = eventsByDay.get(key) || [];
-    // Only trigger creation dialog for empty days; days with events use popovers
-    if (dayEvents.length === 0) {
-      onEmptyDayClick(day);
-    }
-  };
-
   return (
     <div className="border rounded-lg overflow-hidden bg-card">
       {/* Weekday header */}
@@ -68,7 +56,7 @@ export function MonthView({ currentDate, events, onDayClick, onViewModeChange, o
 
       {/* Days grid */}
       <div className="grid grid-cols-7">
-        {days.map((day, i) => {
+        {days.map((day) => {
           const key = format(day, "yyyy-MM-dd");
           const dayEvents = eventsByDay.get(key) || [];
           const inMonth = isSameMonth(day, currentDate);
@@ -78,10 +66,9 @@ export function MonthView({ currentDate, events, onDayClick, onViewModeChange, o
           return (
             <div
               key={key}
-              className={`min-h-[90px] sm:min-h-[110px] border-b border-r p-1 cursor-pointer transition-colors hover:bg-muted/30 ${
+              className={`min-h-[90px] sm:min-h-[110px] border-b border-r p-1 ${
                 !inMonth ? "bg-muted/10" : ""
               } ${isPast ? "opacity-50" : ""}`}
-              onClick={() => handleDayClick(day)}
             >
               <div className="flex items-center justify-between mb-0.5">
                 <span className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full ${
@@ -89,9 +76,6 @@ export function MonthView({ currentDate, events, onDayClick, onViewModeChange, o
                 }`}>
                   {format(day, "d")}
                 </span>
-                {!isPast && dayEvents.length === 0 && inMonth && (
-                  <Plus className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-primary" />
-                )}
               </div>
 
               <div className="space-y-0.5">
@@ -106,7 +90,7 @@ export function MonthView({ currentDate, events, onDayClick, onViewModeChange, o
                     }}
                     onDeleted={onEventDeleted}
                   >
-                    <div onClick={(e) => e.stopPropagation()}>
+                    <div>
                       <EventBlock event={ev} compact />
                     </div>
                   </DayDetailPopover>
@@ -114,8 +98,7 @@ export function MonthView({ currentDate, events, onDayClick, onViewModeChange, o
                 {dayEvents.length > MAX_VISIBLE && (
                   <button
                     className="text-[10px] text-muted-foreground font-medium px-1.5 hover:text-foreground"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    onClick={() => {
                       onDateChange(day);
                       onViewModeChange("day");
                     }}

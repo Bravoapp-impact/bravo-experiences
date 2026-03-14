@@ -75,9 +75,9 @@ export function DayView({ currentDate, events, onEventDeleted }: DayViewProps) {
         </div>
 
         {/* Events column */}
-        <div className="relative border-l" onClick={() => !isPast && onEmptySlotClick(currentDate)}>
+        <div className="relative border-l">
           {HOURS.map(h => (
-            <div key={h} className="border-b cursor-pointer hover:bg-muted/20" style={{ height: HOUR_HEIGHT }} />
+            <div key={h} className="border-b" style={{ height: HOUR_HEIGHT }} />
           ))}
 
           {dayEvents.map(ev => {
