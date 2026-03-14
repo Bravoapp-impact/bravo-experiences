@@ -5,6 +5,7 @@ import { it } from "date-fns/locale";
 import { ViewMode } from "./calendar-types";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface CalendarHeaderProps {
   currentDate: Date;
