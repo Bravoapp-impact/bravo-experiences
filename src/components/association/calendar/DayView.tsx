@@ -13,7 +13,7 @@ interface DayViewProps {
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 6:00-22:00
 const HOUR_HEIGHT = 64;
 
-export function DayView({ currentDate, events, onEmptySlotClick, onEventDeleted }: DayViewProps) {
+export function DayView({ currentDate, events, onEventDeleted }: DayViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const isPast = isBefore(currentDate, startOfDay(new Date()));
