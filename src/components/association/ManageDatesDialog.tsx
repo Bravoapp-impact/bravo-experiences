@@ -18,6 +18,11 @@ import { useToast } from "@/hooks/use-toast";
 import { devLog } from "@/lib/logger";
 import { format, addWeeks, addMonths, isBefore, isAfter } from "date-fns";
 import { it } from "date-fns/locale";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { CalendarIcon, Loader2, Plus, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -147,13 +152,30 @@ function RecurrenceSection({
                 <RadioGroupItem value="date" id="end-date" />
                 <Label htmlFor="end-date" className="text-sm font-normal cursor-pointer">Data</Label>
                 {endMode === "date" && (
-                  <Input
-                    type="date"
-                    className="w-auto h-8 text-sm"
-                    value={endDate ? format(endDate, "yyyy-MM-dd") : ""}
-                    min={format(addWeeks(selectedDate, 1), "yyyy-MM-dd")}
-                    onChange={(e) => setEndDate(e.target.value ? new Date(e.target.value) : undefined)}
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-auto h-8 text-sm justify-start text-left font-normal",
+                          !endDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                        {endDate ? format(endDate, "d MMM yyyy", { locale: it }) : "Seleziona"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 z-[200]" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={endDate}
+                        onSelect={setEndDate}
+                        disabled={(date) => date <= addWeeks(selectedDate, 0)}
+                        locale={it}
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
                 )}
               </div>
 
@@ -316,15 +338,50 @@ export function ManageDatesDialog({
       return;
     }
 
+    // Check for existing duplicate slots
+    const { data: existingDates } = await supabase
+      .from("experience_dates")
+      .select("start_datetime, end_datetime")
+      .eq("experience_id", experienceId);
+
+    const duplicates = records.filter((r) =>
+      existingDates?.some(
+        (ed) => ed.start_datetime === r.start_datetime && ed.end_datetime === r.end_datetime
+      )
+    );
+
+    const uniqueRecords = records.filter((r) =>
+      !existingDates?.some(
+        (ed) => ed.start_datetime === r.start_datetime && ed.end_datetime === r.end_datetime
+      )
+    );
+
+    if (uniqueRecords.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Date già esistenti",
+        description: duplicates.length === 1
+          ? "Questa data e orario esistono già per questa esperienza"
+          : `Tutte le ${duplicates.length} date esistono già per questa esperienza`,
+      });
+      return;
+    }
+
     setAdding(true);
     try {
-      const { error } = await supabase.from("experience_dates").insert(records);
+      const { error } = await supabase.from("experience_dates").insert(uniqueRecords);
       if (error) throw error;
 
+      const skippedCount = duplicates.length;
+      const addedCount = uniqueRecords.length;
+
       toast({
-        title: records.length === 1
+        title: addedCount === 1
           ? "Data aggiunta"
-          : `${records.length} date aggiunte`,
+          : `${addedCount} date aggiunte`,
+        description: skippedCount > 0
+          ? `${skippedCount} ${skippedCount === 1 ? "data già esistente saltata" : "date già esistenti saltate"}`
+          : undefined,
       });
       resetForm();
       fetchDates();
