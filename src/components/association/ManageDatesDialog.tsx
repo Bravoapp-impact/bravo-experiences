@@ -1,13 +1,22 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { BaseModal } from "@/components/common/BaseModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { devLog } from "@/lib/logger";
-import { format } from "date-fns";
+import { format, addWeeks, addMonths, isBefore, isAfter } from "date-fns";
 import { it } from "date-fns/locale";
 import { CalendarIcon, Loader2, Plus, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -30,12 +39,162 @@ interface ExperienceDate {
   volunteer_hours: number | null;
 }
 
+type RecurrenceMode = "none" | "weekly" | "biweekly" | "monthly";
+type EndMode = "never" | "date" | "count";
+
 interface ManageDatesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   experienceId: string;
   experienceTitle: string;
   defaultMaxParticipants: number | null;
+}
+
+function generateRecurringDates(
+  start: Date,
+  recurrence: RecurrenceMode,
+  endMode: EndMode,
+  endDate: Date | undefined,
+  endCount: number
+): Date[] {
+  if (recurrence === "none") return [start];
+
+  const dates: Date[] = [];
+  const maxIterations = 52;
+  let current = start;
+
+  const getNext = (d: Date): Date => {
+    switch (recurrence) {
+      case "weekly": return addWeeks(d, 1);
+      case "biweekly": return addWeeks(d, 2);
+      case "monthly": return addMonths(d, 1);
+      default: return d;
+    }
+  };
+
+  // Start from the NEXT occurrence (the start date itself is already selected)
+  for (let i = 0; i < maxIterations; i++) {
+    current = getNext(current);
+
+    if (endMode === "date" && endDate && isAfter(current, endDate)) break;
+    if (endMode === "count" && dates.length >= endCount) break;
+    if (endMode === "never" && dates.length >= 52) break;
+
+    dates.push(current);
+  }
+
+  return dates;
+}
+
+function RecurrenceSection({
+  selectedDate,
+  recurrence,
+  setRecurrence,
+  endMode,
+  setEndMode,
+  endDate,
+  setEndDate,
+  endCount,
+  setEndCount,
+  generatedDates,
+}: {
+  selectedDate: Date;
+  recurrence: RecurrenceMode;
+  setRecurrence: (v: RecurrenceMode) => void;
+  endMode: EndMode;
+  setEndMode: (v: EndMode) => void;
+  endDate: Date | undefined;
+  setEndDate: (v: Date | undefined) => void;
+  endCount: number;
+  setEndCount: (v: number) => void;
+  generatedDates: Date[];
+}) {
+  const dayName = format(selectedDate, "EEEE", { locale: it });
+  const dayOfMonth = format(selectedDate, "d");
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1.5">
+        <Label className="text-sm">Ricorrenza</Label>
+        <Select value={recurrence} onValueChange={(v) => setRecurrence(v as RecurrenceMode)}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Non si ripete</SelectItem>
+            <SelectItem value="weekly">Ogni settimana di {dayName}</SelectItem>
+            <SelectItem value="biweekly">Ogni 2 settimane di {dayName}</SelectItem>
+            <SelectItem value="monthly">Ogni mese il {dayOfMonth}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {recurrence !== "none" && (
+        <>
+          <div className="space-y-2">
+            <Label className="text-sm">Fine</Label>
+            <RadioGroup
+              value={endMode}
+              onValueChange={(v) => setEndMode(v as EndMode)}
+              className="space-y-2"
+            >
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="never" id="end-never" />
+                <Label htmlFor="end-never" className="text-sm font-normal cursor-pointer">Mai</Label>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="date" id="end-date" />
+                <Label htmlFor="end-date" className="text-sm font-normal cursor-pointer">Data</Label>
+                {endMode === "date" && (
+                  <Input
+                    type="date"
+                    className="w-auto h-8 text-sm"
+                    value={endDate ? format(endDate, "yyyy-MM-dd") : ""}
+                    min={format(addWeeks(selectedDate, 1), "yyyy-MM-dd")}
+                    onChange={(e) => setEndDate(e.target.value ? new Date(e.target.value) : undefined)}
+                  />
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="count" id="end-count" />
+                <Label htmlFor="end-count" className="text-sm font-normal cursor-pointer">Dopo</Label>
+                {endMode === "count" && (
+                  <>
+                    <Input
+                      type="number"
+                      className="w-16 h-8 text-sm text-center"
+                      min={1}
+                      max={52}
+                      value={endCount}
+                      onChange={(e) => setEndCount(Math.min(52, Math.max(1, parseInt(e.target.value) || 1)))}
+                    />
+                    <span className="text-sm text-muted-foreground">occorrenze</span>
+                  </>
+                )}
+              </div>
+            </RadioGroup>
+          </div>
+
+          {generatedDates.length > 0 && (
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">
+                Anteprima ({generatedDates.length} date aggiuntive)
+              </Label>
+              <div className="flex flex-wrap gap-1.5">
+                {generatedDates.map((d, i) => (
+                  <Badge key={i} variant="secondary" className="text-xs">
+                    {format(d, "d MMM", { locale: it })}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
 }
 
 export function ManageDatesDialog({
@@ -57,6 +216,12 @@ export function ManageDatesDialog({
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("13:00");
 
+  // Recurrence state
+  const [recurrence, setRecurrence] = useState<RecurrenceMode>("none");
+  const [endMode, setEndMode] = useState<EndMode>("count");
+  const [endDate, setEndDate] = useState<Date | undefined>();
+  const [endCount, setEndCount] = useState(4);
+
   const computeHours = useCallback(() => {
     if (!startTime || !endTime) return 0;
     const [sh, sm] = startTime.split(":").map(Number);
@@ -64,6 +229,23 @@ export function ManageDatesDialog({
     const diff = (eh * 60 + em - (sh * 60 + sm)) / 60;
     return diff > 0 ? Math.round(diff * 10) / 10 : 0;
   }, [startTime, endTime]);
+
+  const generatedDates = useMemo(() => {
+    if (!selectedDate || recurrence === "none") return [];
+    return generateRecurringDates(selectedDate, recurrence, endMode, endDate, endCount);
+  }, [selectedDate, recurrence, endMode, endDate, endCount]);
+
+  const totalDatesCount = recurrence === "none" ? 1 : 1 + generatedDates.length;
+
+  const resetForm = useCallback(() => {
+    setSelectedDate(undefined);
+    setStartTime("09:00");
+    setEndTime("13:00");
+    setRecurrence("none");
+    setEndMode("count");
+    setEndDate(undefined);
+    setEndCount(4);
+  }, []);
 
   const fetchDates = useCallback(async () => {
     setLoading(true);
@@ -90,11 +272,9 @@ export function ManageDatesDialog({
   useEffect(() => {
     if (open) {
       fetchDates();
-      setSelectedDate(undefined);
-      setStartTime("09:00");
-      setEndTime("13:00");
+      resetForm();
     }
-  }, [open, fetchDates]);
+  }, [open, fetchDates, resetForm]);
 
   const handleAdd = async () => {
     if (!selectedDate) {
@@ -112,35 +292,45 @@ export function ManageDatesDialog({
       return;
     }
 
-    const dateStr = format(selectedDate, "yyyy-MM-dd");
-    const startDatetime = new Date(`${dateStr}T${startTime}`);
-    const endDatetime = new Date(`${dateStr}T${endTime}`);
+    const allDates = [selectedDate, ...generatedDates];
+    const now = new Date();
 
-    if (startDatetime <= new Date()) {
-      toast({ variant: "destructive", title: "Errore", description: "La data deve essere nel futuro" });
+    const records = allDates
+      .filter((d) => {
+        const dateStr = format(d, "yyyy-MM-dd");
+        return new Date(`${dateStr}T${startTime}`) > now;
+      })
+      .map((d) => {
+        const dateStr = format(d, "yyyy-MM-dd");
+        return {
+          experience_id: experienceId,
+          start_datetime: new Date(`${dateStr}T${startTime}`).toISOString(),
+          end_datetime: new Date(`${dateStr}T${endTime}`).toISOString(),
+          max_participants: defaultMaxParticipants || 10,
+          volunteer_hours: hours,
+        };
+      });
+
+    if (records.length === 0) {
+      toast({ variant: "destructive", title: "Errore", description: "Tutte le date sono nel passato" });
       return;
     }
 
     setAdding(true);
     try {
-      const { error } = await supabase.from("experience_dates").insert({
-        experience_id: experienceId,
-        start_datetime: startDatetime.toISOString(),
-        end_datetime: endDatetime.toISOString(),
-        max_participants: defaultMaxParticipants || 10,
-        volunteer_hours: hours,
-      });
-
+      const { error } = await supabase.from("experience_dates").insert(records);
       if (error) throw error;
 
-      toast({ title: "Data aggiunta" });
-      setSelectedDate(undefined);
-      setStartTime("09:00");
-      setEndTime("13:00");
+      toast({
+        title: records.length === 1
+          ? "Data aggiunta"
+          : `${records.length} date aggiunte`,
+      });
+      resetForm();
       fetchDates();
     } catch (error: any) {
-      devLog.error("Error adding experience date:", error);
-      toast({ variant: "destructive", title: "Errore", description: error.message || "Impossibile aggiungere la data" });
+      devLog.error("Error adding experience date(s):", error);
+      toast({ variant: "destructive", title: "Errore", description: error.message || "Impossibile aggiungere le date" });
     } finally {
       setAdding(false);
     }
@@ -185,7 +375,6 @@ export function ManageDatesDialog({
         subtitle={experienceTitle}
         showBackButton={false}
       >
-
         <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-5">
           {/* Existing dates */}
           <div className="space-y-2">
@@ -230,9 +419,9 @@ export function ManageDatesDialog({
 
           {/* Add form */}
           <div className="space-y-3 border-t pt-4">
-            <Label className="text-xs text-muted-foreground uppercase tracking-wide">Aggiungi data</Label>
+            <Label className="text-xs text-muted-foreground uppercase tracking-wide">Aggiungi date</Label>
 
-            {/* Inline calendar or selected date display */}
+            {/* Calendar or selected date display */}
             <div className="space-y-1.5">
               <Label className="text-sm">Data *</Label>
               {selectedDate ? (
@@ -247,7 +436,7 @@ export function ManageDatesDialog({
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 text-muted-foreground"
-                    onClick={() => setSelectedDate(undefined)}
+                    onClick={resetForm}
                   >
                     <X className="h-3.5 w-3.5" />
                   </Button>
@@ -265,6 +454,22 @@ export function ManageDatesDialog({
                 </div>
               )}
             </div>
+
+            {/* Recurrence section */}
+            {selectedDate && (
+              <RecurrenceSection
+                selectedDate={selectedDate}
+                recurrence={recurrence}
+                setRecurrence={setRecurrence}
+                endMode={endMode}
+                setEndMode={setEndMode}
+                endDate={endDate}
+                setEndDate={setEndDate}
+                endCount={endCount}
+                setEndCount={setEndCount}
+                generatedDates={generatedDates}
+              />
+            )}
 
             {/* Time pickers */}
             <div className="grid grid-cols-2 gap-3">
@@ -288,7 +493,6 @@ export function ManageDatesDialog({
               </div>
             </div>
 
-
             <Button onClick={handleAdd} disabled={adding} className="w-full" size="sm">
               {adding ? (
                 <>
@@ -298,7 +502,9 @@ export function ManageDatesDialog({
               ) : (
                 <>
                   <Plus className="h-4 w-4 mr-1.5" />
-                  Aggiungi
+                  {totalDatesCount === 1
+                    ? "Aggiungi"
+                    : `Aggiungi ${totalDatesCount} date`}
                 </>
               )}
             </Button>
