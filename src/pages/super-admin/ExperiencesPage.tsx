@@ -1040,60 +1040,6 @@ export default function ExperiencesPage() {
         companies={companies}
       />
 
-      {/* Publish Confirmation */}
-      <AlertDialog open={!!publishExperience} onOpenChange={(open) => { if (!open) setPublishExperience(null); }}>
-        <AlertDialogContent className="bg-background">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confermi la pubblicazione?</AlertDialogTitle>
-            <AlertDialogDescription>
-              L'esperienza "{publishExperience?.title}" sarà visibile a tutti gli utenti.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={publishing}>Annulla</AlertDialogCancel>
-            <AlertDialogAction onClick={handlePublish} disabled={publishing}>
-              {publishing ? "Pubblicazione..." : "Pubblica"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Reject Dialog */}
-      <Dialog open={!!rejectExperience} onOpenChange={(open) => { if (!open) { setRejectExperience(null); setRejectReason(""); } }}>
-        <DialogContent className="sm:max-w-md bg-background">
-          <DialogHeader>
-            <DialogTitle>Rifiuta esperienza</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
-            <p className="text-sm text-muted-foreground">
-              L'esperienza "{rejectExperience?.title}" verrà riportata in bozza. L'associazione potrà modificarla e ri-sottometterla.
-            </p>
-            <div className="space-y-2">
-              <Label htmlFor="reject-reason">Motivo del rifiuto *</Label>
-              <Textarea
-                id="reject-reason"
-                placeholder="Spiega il motivo del rifiuto..."
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setRejectExperience(null); setRejectReason(""); }}>
-              Annulla
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleReject}
-              disabled={rejecting || !rejectReason.trim()}
-            >
-              {rejecting ? "Rifiuto..." : "Rifiuta"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Preview Dialog */}
       <Dialog open={!!previewExperience} onOpenChange={(open) => { if (!open) setPreviewExperience(null); }}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto bg-background">
