@@ -13,7 +13,7 @@ interface CalendarHeaderProps {
   onAddDate?: () => void;
 }
 
-export function CalendarHeader({ currentDate, viewMode, onDateChange, onViewModeChange }: CalendarHeaderProps) {
+export function CalendarHeader({ currentDate, viewMode, onDateChange, onViewModeChange, onAddDate }: CalendarHeaderProps) {
   const handlePrev = () => {
     if (viewMode === "month") onDateChange(subMonths(currentDate, 1));
     else if (viewMode === "week") onDateChange(subWeeks(currentDate, 1));
