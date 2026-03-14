@@ -4,6 +4,7 @@ import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays } fr
 import { it } from "date-fns/locale";
 import { ViewMode } from "./calendar-types";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface CalendarHeaderProps {
   currentDate: Date;
@@ -11,9 +12,11 @@ interface CalendarHeaderProps {
   onDateChange: (date: Date) => void;
   onViewModeChange: (mode: ViewMode) => void;
   onAddDate?: () => void;
+  experiences?: { id: string; title: string }[];
+  onExperiencePicked?: (exp: { id: string; title: string }) => void;
 }
 
-export function CalendarHeader({ currentDate, viewMode, onDateChange, onViewModeChange, onAddDate }: CalendarHeaderProps) {
+export function CalendarHeader({ currentDate, viewMode, onDateChange, onViewModeChange, onAddDate, experiences = [], onExperiencePicked }: CalendarHeaderProps) {
   const handlePrev = () => {
     if (viewMode === "month") onDateChange(subMonths(currentDate, 1));
     else if (viewMode === "week") onDateChange(subWeeks(currentDate, 1));
@@ -77,11 +80,26 @@ export function CalendarHeader({ currentDate, viewMode, onDateChange, onViewMode
             Giorno
           </ToggleGroupItem>
         </ToggleGroup>
-        {onAddDate && (
-          <Button variant="default" size="sm" onClick={onAddDate} className="gap-1.5">
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Nuova data</span>
+        {onAddDate && experiences.length <= 1 && (
+          <Button variant="outline" size="icon" className="h-7 w-7" onClick={onAddDate}>
+            <Plus className="h-3.5 w-3.5" />
           </Button>
+        )}
+        {onExperiencePicked && experiences.length > 1 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="h-7 w-7">
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {experiences.map(exp => (
+                <DropdownMenuItem key={exp.id} onClick={() => onExperiencePicked(exp)}>
+                  {exp.title}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
     </div>

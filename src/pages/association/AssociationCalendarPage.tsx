@@ -12,7 +12,6 @@ import { startOfMonth, endOfMonth, addDays, subDays, format } from "date-fns";
 import { LoadingState } from "@/components/common/LoadingState";
 import { ManageDatesDialog } from "@/components/association/ManageDatesDialog";
 import { devLog } from "@/lib/logger";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function AssociationCalendarPage() {
   const { profile } = useAuth();
@@ -24,7 +23,6 @@ export default function AssociationCalendarPage() {
   const [addDateOpen, setAddDateOpen] = useState(false);
   const [addDateExperience, setAddDateExperience] = useState<{ id: string; title: string } | null>(null);
   const [experiences, setExperiences] = useState<{ id: string; title: string; max_participants: number | null }[]>([]);
-  const [showExperiencePicker, setShowExperiencePicker] = useState(false);
 
   const associationId = profile?.association_id;
 
@@ -99,14 +97,11 @@ export default function AssociationCalendarPage() {
     if (experiences.length === 1) {
       setAddDateExperience({ id: experiences[0].id, title: experiences[0].title });
       setAddDateOpen(true);
-    } else if (experiences.length > 1) {
-      setShowExperiencePicker(true);
     }
   };
 
   const handleExperiencePicked = (exp: { id: string; title: string }) => {
     setAddDateExperience(exp);
-    setShowExperiencePicker(false);
     setAddDateOpen(true);
   };
 
@@ -121,6 +116,8 @@ export default function AssociationCalendarPage() {
           onDateChange={setCurrentDate}
           onViewModeChange={setViewMode}
           onAddDate={experiences.length > 0 ? handleAddDate : undefined}
+          experiences={experiences}
+          onExperiencePicked={experiences.length > 1 ? handleExperiencePicked : undefined}
         />
 
         {loading ? (
@@ -154,28 +151,6 @@ export default function AssociationCalendarPage() {
         )}
       </div>
 
-      {/* Experience picker dialog */}
-      <Dialog open={showExperiencePicker} onOpenChange={setShowExperiencePicker}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Seleziona esperienza</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Per quale esperienza vuoi aggiungere una data?
-          </p>
-          <div className="space-y-1.5 max-h-60 overflow-y-auto">
-            {experiences.map(exp => (
-              <button
-                key={exp.id}
-                className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors"
-                onClick={() => handleExperiencePicked(exp)}
-              >
-                {exp.title}
-              </button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {addDateExperience && (
         <ManageDatesDialog
