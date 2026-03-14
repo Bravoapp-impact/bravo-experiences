@@ -7,14 +7,13 @@ import { DayDetailPopover } from "./DayDetailPopover";
 interface WeekViewProps {
   currentDate: Date;
   events: CalendarEvent[];
-  onEmptySlotClick: (date: Date) => void;
   onEventDeleted: () => void;
 }
 
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 6:00-22:00
 const HOUR_HEIGHT = 60; // px per hour
 
-export function WeekView({ currentDate, events, onEmptySlotClick, onEventDeleted }: WeekViewProps) {
+export function WeekView({ currentDate, events, onEventDeleted }: WeekViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const now = startOfDay(new Date());
@@ -76,10 +75,9 @@ export function WeekView({ currentDate, events, onEmptySlotClick, onEventDeleted
             <div
               key={day.toISOString()}
               className={`relative border-l ${isPast ? "opacity-40" : ""}`}
-              onClick={() => !isPast && onEmptySlotClick(day)}
             >
               {HOURS.map(h => (
-                <div key={h} className="border-b cursor-pointer hover:bg-muted/20" style={{ height: HOUR_HEIGHT }} />
+                <div key={h} className="border-b" style={{ height: HOUR_HEIGHT }} />
               ))}
 
               {/* Events */}

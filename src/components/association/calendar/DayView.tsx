@@ -7,14 +7,13 @@ import { DayDetailPopover } from "./DayDetailPopover";
 interface DayViewProps {
   currentDate: Date;
   events: CalendarEvent[];
-  onEmptySlotClick: (date: Date) => void;
   onEventDeleted: () => void;
 }
 
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 6:00-22:00
 const HOUR_HEIGHT = 64;
 
-export function DayView({ currentDate, events, onEmptySlotClick, onEventDeleted }: DayViewProps) {
+export function DayView({ currentDate, events, onEventDeleted }: DayViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const isPast = isBefore(currentDate, startOfDay(new Date()));
@@ -76,9 +75,9 @@ export function DayView({ currentDate, events, onEmptySlotClick, onEventDeleted 
         </div>
 
         {/* Events column */}
-        <div className="relative border-l" onClick={() => !isPast && onEmptySlotClick(currentDate)}>
+        <div className="relative border-l">
           {HOURS.map(h => (
-            <div key={h} className="border-b cursor-pointer hover:bg-muted/20" style={{ height: HOUR_HEIGHT }} />
+            <div key={h} className="border-b" style={{ height: HOUR_HEIGHT }} />
           ))}
 
           {dayEvents.map(ev => {

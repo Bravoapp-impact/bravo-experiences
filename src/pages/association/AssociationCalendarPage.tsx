@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AssociationLayout } from "@/components/layout/AssociationLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import { CalendarHeader } from "@/components/association/calendar/CalendarHeader";
@@ -12,6 +12,7 @@ import { startOfMonth, endOfMonth, addDays, subDays, format } from "date-fns";
 import { LoadingState } from "@/components/common/LoadingState";
 import { ManageDatesDialog } from "@/components/association/ManageDatesDialog";
 import { devLog } from "@/lib/logger";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function AssociationCalendarPage() {
   const { profile } = useAuth();
@@ -20,11 +21,9 @@ export default function AssociationCalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // For ManageDatesDialog opened from empty day click
   const [addDateOpen, setAddDateOpen] = useState(false);
   const [addDateExperience, setAddDateExperience] = useState<{ id: string; title: string } | null>(null);
   const [experiences, setExperiences] = useState<{ id: string; title: string; max_participants: number | null }[]>([]);
-  const [experiencePickerDate, setExperiencePickerDate] = useState<Date | null>(null);
   const [showExperiencePicker, setShowExperiencePicker] = useState(false);
 
   const associationId = profile?.association_id;
@@ -33,7 +32,6 @@ export default function AssociationCalendarPage() {
     if (!associationId) return;
     setLoading(true);
 
-    // Fetch a wide range to cover month view with overflow
     const rangeStart = subDays(startOfMonth(currentDate), 7);
     const rangeEnd = addDays(endOfMonth(currentDate), 7);
 
@@ -51,7 +49,6 @@ export default function AssociationCalendarPage() {
 
       if (error) throw error;
 
-      // Fetch confirmed counts
       const dateIds = (data || []).map(d => d.id);
       let countsMap = new Map<string, number>();
 
@@ -85,7 +82,6 @@ export default function AssociationCalendarPage() {
     }
   }, [associationId, currentDate]);
 
-  // Fetch experiences list for picker
   const fetchExperiences = useCallback(async () => {
     if (!associationId) return;
     const { data } = await supabase
@@ -99,12 +95,11 @@ export default function AssociationCalendarPage() {
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
   useEffect(() => { fetchExperiences(); }, [fetchExperiences]);
 
-  const handleEmptyDayClick = (date: Date) => {
+  const handleAddDate = () => {
     if (experiences.length === 1) {
       setAddDateExperience({ id: experiences[0].id, title: experiences[0].title });
       setAddDateOpen(true);
     } else if (experiences.length > 1) {
-      setExperiencePickerDate(date);
       setShowExperiencePicker(true);
     }
   };
@@ -125,6 +120,7 @@ export default function AssociationCalendarPage() {
           viewMode={viewMode}
           onDateChange={setCurrentDate}
           onViewModeChange={setViewMode}
+          onAddDate={experiences.length > 0 ? handleAddDate : undefined}
         />
 
         {loading ? (
@@ -135,10 +131,8 @@ export default function AssociationCalendarPage() {
               <MonthView
                 currentDate={currentDate}
                 events={events}
-                onDayClick={(d) => { setCurrentDate(d); setViewMode("day"); }}
                 onViewModeChange={setViewMode}
                 onDateChange={setCurrentDate}
-                onEmptyDayClick={handleEmptyDayClick}
                 onEventDeleted={fetchEvents}
               />
             )}
@@ -146,7 +140,6 @@ export default function AssociationCalendarPage() {
               <WeekView
                 currentDate={currentDate}
                 events={events}
-                onEmptySlotClick={handleEmptyDayClick}
                 onEventDeleted={fetchEvents}
               />
             )}
@@ -154,7 +147,6 @@ export default function AssociationCalendarPage() {
               <DayView
                 currentDate={currentDate}
                 events={events}
-                onEmptySlotClick={handleEmptyDayClick}
                 onEventDeleted={fetchEvents}
               />
             )}
@@ -162,28 +154,28 @@ export default function AssociationCalendarPage() {
         )}
       </div>
 
-      {/* Experience picker modal for empty day click */}
-      {showExperiencePicker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowExperiencePicker(false)}>
-          <div className="bg-card rounded-lg shadow-lg p-4 w-80 space-y-3" onClick={e => e.stopPropagation()}>
-            <h3 className="text-sm font-semibold text-foreground">Seleziona esperienza</h3>
-            <p className="text-xs text-muted-foreground">
-              Per quale esperienza vuoi aggiungere una data?
-            </p>
-            <div className="space-y-1.5 max-h-60 overflow-y-auto">
-              {experiences.map(exp => (
-                <button
-                  key={exp.id}
-                  className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors"
-                  onClick={() => handleExperiencePicked(exp)}
-                >
-                  {exp.title}
-                </button>
-              ))}
-            </div>
+      {/* Experience picker dialog */}
+      <Dialog open={showExperiencePicker} onOpenChange={setShowExperiencePicker}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Seleziona esperienza</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Per quale esperienza vuoi aggiungere una data?
+          </p>
+          <div className="space-y-1.5 max-h-60 overflow-y-auto">
+            {experiences.map(exp => (
+              <button
+                key={exp.id}
+                className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors"
+                onClick={() => handleExperiencePicked(exp)}
+              >
+                {exp.title}
+              </button>
+            ))}
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {addDateExperience && (
         <ManageDatesDialog
