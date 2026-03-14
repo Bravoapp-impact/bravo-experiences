@@ -181,7 +181,6 @@ export function ExperienceForm({
       cityId,
       cityName,
       address: address.trim(),
-      defaultHours: Number(defaultHours),
       maxParticipants: Number(maxParticipants),
       participantInfo: participantInfo.trim(),
       imageUrl,
