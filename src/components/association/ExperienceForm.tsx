@@ -34,7 +34,6 @@ export interface ExperienceFormData {
   cityId: string;
   cityName: string | null;
   address: string;
-  defaultHours: number;
   maxParticipants: number;
   participantInfo: string;
   imageUrl: string | null;
