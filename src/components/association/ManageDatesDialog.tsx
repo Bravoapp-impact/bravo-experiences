@@ -570,7 +570,7 @@ export function ManageDatesDialog({
       </BaseModal>
 
       {/* Delete confirm */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o && !deleting) setDeleteTarget(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Elimina data</AlertDialogTitle>
@@ -580,7 +580,13 @@ export function ManageDatesDialog({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Annulla</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={deleting}>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+              }}
+              disabled={deleting}
+            >
               {deleting ? "Eliminazione..." : "Elimina"}
             </AlertDialogAction>
           </AlertDialogFooter>
