@@ -445,47 +445,6 @@ export default function ExperiencesPage() {
     }
   };
 
-  const pendingExperiences = experiences.filter((exp) => exp.status === "pending_review");
-
-  const handlePublish = async () => {
-    if (!publishExperience) return;
-    setPublishing(true);
-    try {
-      const { error } = await supabase
-        .from("experiences")
-        .update({ status: "published" })
-        .eq("id", publishExperience.id);
-      if (error) throw error;
-      toast({ title: "Esperienza pubblicata" });
-      setPublishExperience(null);
-      fetchData();
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Errore", description: error.message });
-    } finally {
-      setPublishing(false);
-    }
-  };
-
-  const handleReject = async () => {
-    if (!rejectExperience || !rejectReason.trim()) return;
-    setRejecting(true);
-    try {
-      const { error } = await supabase
-        .from("experiences")
-        .update({ status: "draft" })
-        .eq("id", rejectExperience.id);
-      if (error) throw error;
-      toast({ title: "Esperienza rifiutata e riportata in bozza", description: `Motivo: ${rejectReason}` });
-      setRejectExperience(null);
-      setRejectReason("");
-      fetchData();
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Errore", description: error.message });
-    } finally {
-      setRejecting(false);
-    }
-  };
-
   const filteredExperiences = experiences.filter((exp) => {
     const associationName = getAssociationName(exp.association_id, exp.association_name);
     const cityName = getCityName(exp.city_id, exp.city);
