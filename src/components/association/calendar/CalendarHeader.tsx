@@ -16,7 +16,7 @@ interface CalendarHeaderProps {
   onExperiencePicked?: (exp: { id: string; title: string }) => void;
 }
 
-export function CalendarHeader({ currentDate, viewMode, onDateChange, onViewModeChange, onAddDate }: CalendarHeaderProps) {
+export function CalendarHeader({ currentDate, viewMode, onDateChange, onViewModeChange, onAddDate, experiences = [], onExperiencePicked }: CalendarHeaderProps) {
   const handlePrev = () => {
     if (viewMode === "month") onDateChange(subMonths(currentDate, 1));
     else if (viewMode === "week") onDateChange(subWeeks(currentDate, 1));
