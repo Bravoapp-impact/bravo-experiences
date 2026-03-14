@@ -152,13 +152,30 @@ function RecurrenceSection({
                 <RadioGroupItem value="date" id="end-date" />
                 <Label htmlFor="end-date" className="text-sm font-normal cursor-pointer">Data</Label>
                 {endMode === "date" && (
-                  <Input
-                    type="date"
-                    className="w-auto h-8 text-sm"
-                    value={endDate ? format(endDate, "yyyy-MM-dd") : ""}
-                    min={format(addWeeks(selectedDate, 1), "yyyy-MM-dd")}
-                    onChange={(e) => setEndDate(e.target.value ? new Date(e.target.value) : undefined)}
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-auto h-8 text-sm justify-start text-left font-normal",
+                          !endDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                        {endDate ? format(endDate, "d MMM yyyy", { locale: it }) : "Seleziona"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 z-[200]" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={endDate}
+                        onSelect={setEndDate}
+                        disabled={(date) => date <= addWeeks(selectedDate, 0)}
+                        locale={it}
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
                 )}
               </div>
 
