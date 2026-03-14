@@ -246,6 +246,14 @@ const App = () => (
               }
             />
             <Route
+              path="/association/calendar"
+              element={
+                <ProtectedAssociationRoute>
+                  <AssociationCalendarPage />
+                </ProtectedAssociationRoute>
+              }
+            />
+            <Route
               path="/association/profile"
               element={
                 <ProtectedAssociationRoute>

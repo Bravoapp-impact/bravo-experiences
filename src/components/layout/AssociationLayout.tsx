@@ -19,6 +19,11 @@ const sidebarItems: SidebarItem[] = [
     href: "/association/experiences",
   },
   {
+    label: "Calendario",
+    icon: CalendarDays,
+    href: "/association/calendar",
+  },
+  {
     label: "Storico",
     icon: History,
     href: "/association/history",
