@@ -34,7 +34,6 @@ export interface ExperienceFormData {
   cityId: string;
   cityName: string | null;
   address: string;
-  defaultHours: number;
   maxParticipants: number;
   participantInfo: string;
   imageUrl: string | null;
@@ -76,9 +75,6 @@ export function ExperienceForm({
   const [categoryId, setCategoryId] = useState(experience?.category_id || "");
   const [cityId, setCityId] = useState(experience?.city_id || "");
   const [address, setAddress] = useState(experience?.address || "");
-  const [defaultHours, setDefaultHours] = useState<number | "">(
-    experience?.default_hours ?? ""
-  );
   const [maxParticipants, setMaxParticipants] = useState<number | "">(
     experience?.max_participants ?? ""
   );
@@ -107,7 +103,6 @@ export function ExperienceForm({
       setCategoryId(experience.category_id || "");
       setCityId(experience.city_id || "");
       setAddress(experience.address || "");
-      setDefaultHours(experience.default_hours ?? "");
       setMaxParticipants(experience.max_participants ?? "");
       setParticipantInfo(experience.participant_info || "");
       setImagePreview(experience.image_url || null);
@@ -146,8 +141,6 @@ export function ExperienceForm({
     if (!categoryId) errs.categoryId = "Seleziona una categoria";
     if (!cityId) errs.cityId = "Seleziona una città";
     if (!address.trim()) errs.address = "L'indirizzo è obbligatorio";
-    if (!defaultHours || defaultHours < 1)
-      errs.defaultHours = "La durata è obbligatoria";
     if (!maxParticipants || maxParticipants < 1)
       errs.maxParticipants = "Il numero massimo è obbligatorio";
     setErrors(errs);
@@ -188,7 +181,6 @@ export function ExperienceForm({
       cityId,
       cityName,
       address: address.trim(),
-      defaultHours: Number(defaultHours),
       maxParticipants: Number(maxParticipants),
       participantInfo: participantInfo.trim(),
       imageUrl,
@@ -288,45 +280,26 @@ export function ExperienceForm({
           )}
         </div>
 
-        {/* Durata e Partecipanti */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="exp-hours">Durata (ore) *</Label>
-            <Input
-              id="exp-hours"
-              type="number"
-              min={1}
-              max={24}
-              placeholder="Es. 4"
-              value={defaultHours}
-              onChange={(e) =>
-                setDefaultHours(e.target.value ? Number(e.target.value) : "")
-              }
-            />
-            {errors.defaultHours && (
-              <p className="text-sm text-destructive">{errors.defaultHours}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="exp-max">Max partecipanti *</Label>
-            <Input
-              id="exp-max"
-              type="number"
-              min={1}
-              placeholder="Es. 15"
-              value={maxParticipants}
-              onChange={(e) =>
-                setMaxParticipants(
-                  e.target.value ? Number(e.target.value) : ""
-                )
-              }
-            />
-            {errors.maxParticipants && (
-              <p className="text-sm text-destructive">
-                {errors.maxParticipants}
-              </p>
-            )}
-          </div>
+        {/* Partecipanti */}
+        <div className="space-y-1.5">
+          <Label htmlFor="exp-max">Max partecipanti *</Label>
+          <Input
+            id="exp-max"
+            type="number"
+            min={1}
+            placeholder="Es. 15"
+            value={maxParticipants}
+            onChange={(e) =>
+              setMaxParticipants(
+                e.target.value ? Number(e.target.value) : ""
+              )
+            }
+          />
+          {errors.maxParticipants && (
+            <p className="text-sm text-destructive">
+              {errors.maxParticipants}
+            </p>
+          )}
         </div>
 
         {/* Participant info */}
