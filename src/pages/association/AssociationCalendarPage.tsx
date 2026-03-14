@@ -153,28 +153,6 @@ export default function AssociationCalendarPage() {
         )}
       </div>
 
-      {/* Experience picker dialog */}
-      <Dialog open={showExperiencePicker} onOpenChange={setShowExperiencePicker}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Seleziona esperienza</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Per quale esperienza vuoi aggiungere una data?
-          </p>
-          <div className="space-y-1.5 max-h-60 overflow-y-auto">
-            {experiences.map(exp => (
-              <button
-                key={exp.id}
-                className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors"
-                onClick={() => handleExperiencePicked(exp)}
-              >
-                {exp.title}
-              </button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {addDateExperience && (
         <ManageDatesDialog
