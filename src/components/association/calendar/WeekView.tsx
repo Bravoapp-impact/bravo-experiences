@@ -104,7 +104,7 @@ export function WeekView({ currentDate, events, onEmptySlotClick, onEventDeleted
                       style={{ top, height: Math.max(height, 24), backgroundColor: bgColor, borderLeft: `3px solid ${color}` }}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <p className="text-[10px] font-semibold truncate" style={{ color }}>{event.experience_title}</p>
+                      <p className="text-[10px] font-semibold truncate" style={{ color }}>{ev.experience_title}</p>
                       {height >= 40 && (
                         <p className="text-[9px] text-muted-foreground">
                           {format(new Date(ev.start_datetime), "HH:mm")}–{format(new Date(ev.end_datetime), "HH:mm")}
