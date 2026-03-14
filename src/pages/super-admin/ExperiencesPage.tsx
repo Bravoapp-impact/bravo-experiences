@@ -481,23 +481,8 @@ export default function ExperiencesPage() {
           </Button>
         </motion.div>
 
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="all">Tutte le esperienze</TabsTrigger>
-            <TabsTrigger value="pending" className="gap-2">
-              Da approvare
-              {pendingExperiences.length > 0 && (
-                <Badge variant="destructive" className="ml-1 h-5 min-w-[20px] px-1.5 text-xs">
-                  {pendingExperiences.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Tab: All experiences */}
-          <TabsContent value="all">
-            <motion.div
+        {/* Experiences Table */}
+        <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
