@@ -369,13 +369,19 @@ export function ManageDatesDialog({
 
     setAdding(true);
     try {
-      const { error } = await supabase.from("experience_dates").insert(records);
+      const { error } = await supabase.from("experience_dates").insert(uniqueRecords);
       if (error) throw error;
 
+      const skippedCount = duplicates.length;
+      const addedCount = uniqueRecords.length;
+
       toast({
-        title: records.length === 1
+        title: addedCount === 1
           ? "Data aggiunta"
-          : `${records.length} date aggiunte`,
+          : `${addedCount} date aggiunte`,
+        description: skippedCount > 0
+          ? `${skippedCount} ${skippedCount === 1 ? "data già esistente saltata" : "date già esistenti saltate"}`
+          : undefined,
       });
       resetForm();
       fetchDates();
