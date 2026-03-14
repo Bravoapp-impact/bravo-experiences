@@ -118,6 +118,8 @@ export default function AssociationCalendarPage() {
           onDateChange={setCurrentDate}
           onViewModeChange={setViewMode}
           onAddDate={experiences.length > 0 ? handleAddDate : undefined}
+          experiences={experiences}
+          onExperiencePicked={experiences.length > 1 ? handleExperiencePicked : undefined}
         />
 
         {loading ? (
