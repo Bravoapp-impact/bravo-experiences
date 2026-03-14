@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Calendar, BarChart3, History, Building } from "lucide-react";
+import { Calendar, CalendarDays, BarChart3, History, Building } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminLayout, SidebarItem } from "./AdminLayout";
 
@@ -17,6 +17,11 @@ const sidebarItems: SidebarItem[] = [
     label: "Esperienze",
     icon: Calendar,
     href: "/association/experiences",
+  },
+  {
+    label: "Calendario",
+    icon: CalendarDays,
+    href: "/association/calendar",
   },
   {
     label: "Storico",
