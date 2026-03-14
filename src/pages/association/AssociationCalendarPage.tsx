@@ -24,7 +24,7 @@ export default function AssociationCalendarPage() {
   const [addDateOpen, setAddDateOpen] = useState(false);
   const [addDateExperience, setAddDateExperience] = useState<{ id: string; title: string } | null>(null);
   const [experiences, setExperiences] = useState<{ id: string; title: string; max_participants: number | null }[]>([]);
-  const [showExperiencePicker, setShowExperiencePicker] = useState(false);
+  const [experiences, setExperiences] = useState<{ id: string; title: string; max_participants: number | null }[]>([]);
 
   const associationId = profile?.association_id;
 
