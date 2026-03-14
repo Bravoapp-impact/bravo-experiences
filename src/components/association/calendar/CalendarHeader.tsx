@@ -4,6 +4,7 @@ import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays } fr
 import { it } from "date-fns/locale";
 import { ViewMode } from "./calendar-types";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface CalendarHeaderProps {
   currentDate: Date;
