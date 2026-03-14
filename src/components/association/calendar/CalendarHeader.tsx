@@ -82,17 +82,27 @@ export function CalendarHeader({ currentDate, viewMode, onDateChange, onViewMode
           </ToggleGroupItem>
         </ToggleGroup>
         {onAddDate && experiences.length <= 1 && (
-          <Button variant="outline" size="icon" className="h-7 w-7" onClick={onAddDate}>
-            <Plus className="h-3.5 w-3.5" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="icon" className="h-7 w-7 hover:border-green-500 hover:text-green-600 transition-colors" onClick={onAddDate}>
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Aggiungi data</TooltipContent>
+          </Tooltip>
         )}
         {onExperiencePicked && experiences.length > 1 && (
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" className="h-7 w-7">
-                <Plus className="h-3.5 w-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-7 w-7 hover:border-green-500 hover:text-green-600 transition-colors">
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Aggiungi data</TooltipContent>
+            </Tooltip>
             <DropdownMenuContent align="end">
               {experiences.map(exp => (
                 <DropdownMenuItem key={exp.id} onClick={() => onExperiencePicked(exp)}>
