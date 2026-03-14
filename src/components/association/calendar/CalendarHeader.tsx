@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays } from "date-fns";
 import { it } from "date-fns/locale";
 import { ViewMode } from "./calendar-types";
@@ -10,6 +10,7 @@ interface CalendarHeaderProps {
   viewMode: ViewMode;
   onDateChange: (date: Date) => void;
   onViewModeChange: (mode: ViewMode) => void;
+  onAddDate?: () => void;
 }
 
 export function CalendarHeader({ currentDate, viewMode, onDateChange, onViewModeChange }: CalendarHeaderProps) {
