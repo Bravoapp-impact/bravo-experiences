@@ -18,6 +18,11 @@ import { useToast } from "@/hooks/use-toast";
 import { devLog } from "@/lib/logger";
 import { format, addWeeks, addMonths, isBefore, isAfter } from "date-fns";
 import { it } from "date-fns/locale";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { CalendarIcon, Loader2, Plus, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
