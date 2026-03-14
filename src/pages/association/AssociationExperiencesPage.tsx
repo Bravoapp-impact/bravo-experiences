@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { AssociationLayout } from "@/components/layout/AssociationLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, MapPin, Eye, PackageOpen, Plus, Pencil, Trash2, Send, FileText, Clock, CheckCircle2, Archive, ChevronRight, Calendar } from "lucide-react";
+import { Loader2, MapPin, Eye, PackageOpen, Plus, Pencil, Trash2, FileText, CheckCircle2, Archive, ChevronRight, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BaseCardImage } from "@/components/common/BaseCardImage";
@@ -55,14 +55,13 @@ export default function AssociationExperiencesPage() {
   const [editExperience, setEditExperience] = useState<Experience | null>(null);
   const [deleteExperience, setDeleteExperience] = useState<Experience | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [submitExperience, setSubmitExperience] = useState<Experience | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [publishExperience, setPublishExperience] = useState<Experience | null>(null);
+  const [publishing, setPublishing] = useState(false);
   const [archivedOpen, setArchivedOpen] = useState(false);
   const [manageDatesExperience, setManageDatesExperience] = useState<Experience | null>(null);
 
   const grouped = useMemo(() => ({
     draft: experiences.filter(e => e.status === "draft"),
-    pending_review: experiences.filter(e => e.status === "pending_review"),
     published: experiences.filter(e => e.status === "published"),
     archived: experiences.filter(e => e.status === "archived"),
   }), [experiences]);
@@ -94,6 +93,47 @@ export default function AssociationExperiencesPage() {
     }
   };
 
+  const checkCanDelete = async (expId: string): Promise<boolean> => {
+    // Check future dates
+    const { count: futureDates } = await supabase
+      .from("experience_dates")
+      .select("id", { count: "exact", head: true })
+      .eq("experience_id", expId)
+      .gte("start_datetime", new Date().toISOString());
+
+    if (futureDates && futureDates > 0) {
+      toast.error("Non puoi eliminare un'esperienza con date future programmate");
+      return false;
+    }
+
+    // Check active bookings on any dates
+    const { data: dateIds } = await supabase
+      .from("experience_dates")
+      .select("id")
+      .eq("experience_id", expId);
+
+    if (dateIds && dateIds.length > 0) {
+      const { count: activeBookings } = await supabase
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .in("experience_date_id", dateIds.map(d => d.id))
+        .eq("status", "confirmed");
+
+      if (activeBookings && activeBookings > 0) {
+        toast.error("Non puoi eliminare un'esperienza con prenotazioni attive");
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleDeleteRequest = async (exp: Experience) => {
+    const canDelete = await checkCanDelete(exp.id);
+    if (canDelete) {
+      setDeleteExperience(exp);
+    }
+  };
+
   const handleDelete = async () => {
     if (!deleteExperience) return;
     setDeleting(true);
@@ -118,27 +158,27 @@ export default function AssociationExperiencesPage() {
     }
   };
 
-  const handleSubmitForReview = async () => {
-    if (!submitExperience) return;
-    setSubmitting(true);
+  const handlePublish = async () => {
+    if (!publishExperience) return;
+    setPublishing(true);
     try {
       const { error } = await supabase
         .from("experiences")
-        .update({ status: "pending_review" })
-        .eq("id", submitExperience.id);
+        .update({ status: "published" })
+        .eq("id", publishExperience.id);
       if (error) {
-        devLog.error("Error submitting experience:", error);
-        toast.error("Errore nell'invio della richiesta");
+        devLog.error("Error publishing experience:", error);
+        toast.error("Errore nella pubblicazione");
         return;
       }
-      toast.success("Richiesta inviata! Ti avviseremo quando l'esperienza sarà pubblicata.");
-      setSubmitExperience(null);
+      toast.success("Esperienza pubblicata!");
+      setPublishExperience(null);
       fetchExperiences();
     } catch (err) {
-      devLog.error("Unexpected submit error:", err);
+      devLog.error("Unexpected publish error:", err);
       toast.error("Errore imprevisto");
     } finally {
-      setSubmitting(false);
+      setPublishing(false);
     }
   };
 
@@ -209,11 +249,11 @@ export default function AssociationExperiencesPage() {
                           <div className="flex items-center gap-0.5">
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-green-600" onClick={() => setSubmitExperience(exp)}>
-                                  <Send className="h-3.5 w-3.5" />
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-green-600" onClick={() => setPublishExperience(exp)}>
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Richiedi pubblicazione</TooltipContent>
+                              <TooltipContent>Pubblica</TooltipContent>
                             </Tooltip>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -238,39 +278,6 @@ export default function AssociationExperiencesPage() {
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>Elimina</TooltipContent>
-                            </Tooltip>
-                          </div>
-                        }
-                      />
-                    ))}
-                  </div>
-                </StatusSection>
-              )}
-
-              {/* PENDING REVIEW */}
-              {grouped.pending_review.length > 0 && (
-                <StatusSection
-                  icon={<Clock className="h-4 w-4" />}
-                  title="In attesa di approvazione"
-                  count={grouped.pending_review.length}
-                  iconClassName="text-amber-500"
-                >
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    {grouped.pending_review.map((exp, i) => (
-                      <ExperienceCompactCard
-                        key={exp.id}
-                        experience={exp}
-                        index={i}
-                        onPreview={setSelectedExperience}
-                        actions={
-                          <div className="flex items-center gap-0.5">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setSelectedExperience(exp)}>
-                                  <Eye className="h-3.5 w-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Anteprima</TooltipContent>
                             </Tooltip>
                           </div>
                         }
@@ -312,6 +319,22 @@ export default function AssociationExperiencesPage() {
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>Anteprima</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setEditExperience(exp)}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Modifica</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteRequest(exp)}>
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Elimina</TooltipContent>
                             </Tooltip>
                           </div>
                         }
@@ -434,25 +457,25 @@ export default function AssociationExperiencesPage() {
         isLoading={deleting}
       />
 
-      {/* Submit for Review Confirm */}
-      <AlertDialog open={!!submitExperience} onOpenChange={(open) => { if (!open) setSubmitExperience(null); }}>
+      {/* Publish Confirm */}
+      <AlertDialog open={!!publishExperience} onOpenChange={(open) => { if (!open) setPublishExperience(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Richiedi pubblicazione</AlertDialogTitle>
+            <AlertDialogTitle>Pubblica esperienza</AlertDialogTitle>
             <AlertDialogDescription>
-              Sei sicuro? L'esperienza verrà revisionata dal team Bravo! prima di essere pubblicata.
+              Sei sicuro? L'esperienza sarà visibile ai dipendenti delle aziende associate.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={submitting}>Annulla</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSubmitForReview} disabled={submitting}>
-              {submitting ? (
+            <AlertDialogCancel disabled={publishing}>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={handlePublish} disabled={publishing}>
+              {publishing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Invio...
+                  Pubblicazione...
                 </>
               ) : (
-                "Conferma"
+                "Pubblica"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
