@@ -456,7 +456,7 @@ export function ManageDatesDialog({
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{dayStr}</p>
                         <p className="text-xs text-muted-foreground">
-                          {timeStr} · {d.volunteer_hours ?? 0}h volontariato
+                          {timeStr}
                         </p>
                       </div>
                       <Button
