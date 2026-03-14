@@ -7,7 +7,6 @@ import { DayDetailPopover } from "./DayDetailPopover";
 interface WeekViewProps {
   currentDate: Date;
   events: CalendarEvent[];
-  onEmptySlotClick: (date: Date) => void;
   onEventDeleted: () => void;
 }
 
