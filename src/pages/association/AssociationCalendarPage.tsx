@@ -12,7 +12,7 @@ import { startOfMonth, endOfMonth, addDays, subDays, format } from "date-fns";
 import { LoadingState } from "@/components/common/LoadingState";
 import { ManageDatesDialog } from "@/components/association/ManageDatesDialog";
 import { devLog } from "@/lib/logger";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { devLog } from "@/lib/logger";
 
 export default function AssociationCalendarPage() {
   const { profile } = useAuth();
