@@ -67,7 +67,7 @@ export function DayDetailPopover({ event, open, onOpenChange, onDeleted, childre
                   </p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={() => onOpenChange(false)}>
+              <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={(e) => { e.stopPropagation(); onOpenChange(false); }}>
                 <X className="h-3.5 w-3.5" />
               </Button>
             </div>
