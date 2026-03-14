@@ -13,7 +13,7 @@ interface WeekViewProps {
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 6:00-22:00
 const HOUR_HEIGHT = 60; // px per hour
 
-export function WeekView({ currentDate, events, onEmptySlotClick, onEventDeleted }: WeekViewProps) {
+export function WeekView({ currentDate, events, onEventDeleted }: WeekViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const now = startOfDay(new Date());
