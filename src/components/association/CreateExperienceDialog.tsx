@@ -5,6 +5,10 @@ import { devLog } from "@/lib/logger";
 import { toast } from "sonner";
 import { BaseModal } from "@/components/common/BaseModal";
 import { ExperienceForm, ExperienceFormData } from "./ExperienceForm";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ExperienceData {
   id: string;
@@ -24,6 +28,7 @@ interface CreateExperienceDialogProps {
   onOpenChange: (open: boolean) => void;
   onCreated: () => void;
   experience?: ExperienceData;
+  isPublished?: boolean;
 }
 
 export function CreateExperienceDialog({
@@ -31,12 +36,14 @@ export function CreateExperienceDialog({
   onOpenChange,
   onCreated,
   experience,
+  isPublished = false,
 }: CreateExperienceDialogProps) {
   const { profile } = useAuth();
   const [saving, setSaving] = useState(false);
+  const [pendingData, setPendingData] = useState<ExperienceFormData | null>(null);
   const isEdit = !!experience;
 
-  const handleSubmit = async (data: ExperienceFormData) => {
+  const performSave = async (data: ExperienceFormData) => {
     if (!profile?.id || !profile?.association_id) return;
 
     setSaving(true);
@@ -103,24 +110,58 @@ export function CreateExperienceDialog({
     }
   };
 
+  const handleSubmit = async (data: ExperienceFormData) => {
+    if (isEdit && isPublished) {
+      setPendingData(data);
+      return;
+    }
+    await performSave(data);
+  };
+
+  const handleConfirmLiveEdit = async () => {
+    if (!pendingData) return;
+    await performSave(pendingData);
+    setPendingData(null);
+  };
+
   return (
-    <BaseModal
-      open={open}
-      onClose={() => onOpenChange(false)}
-      title={isEdit ? "Modifica esperienza" : "Nuova esperienza"}
-    >
-      <ExperienceForm
-        key={experience?.id || "create"}
-        experience={isEdit ? experience : undefined}
-        onSubmit={handleSubmit}
-        saving={saving}
-        submitLabel={isEdit ? "Salva modifiche" : "Crea esperienza"}
-        subtitle={
-          isEdit
-            ? undefined
-            : "Compila i campi per creare una nuova esperienza di volontariato. Verrà salvata come bozza."
-        }
-      />
-    </BaseModal>
+    <>
+      <BaseModal
+        open={open}
+        onClose={() => onOpenChange(false)}
+        title={isEdit ? "Modifica esperienza" : "Nuova esperienza"}
+      >
+        <ExperienceForm
+          key={experience?.id || "create"}
+          experience={isEdit ? experience : undefined}
+          onSubmit={handleSubmit}
+          saving={saving}
+          submitLabel={isEdit ? "Salva modifiche" : "Crea esperienza"}
+          subtitle={
+            isEdit
+              ? (isPublished ? "Le modifiche saranno visibili immediatamente a tutti i dipendenti." : undefined)
+              : "Compila i campi per creare una nuova esperienza di volontariato. Verrà salvata come bozza."
+          }
+        />
+      </BaseModal>
+
+      {/* Confirmation for live edits on published experiences */}
+      <AlertDialog open={!!pendingData} onOpenChange={(open) => { if (!open) setPendingData(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Conferma modifiche</AlertDialogTitle>
+            <AlertDialogDescription>
+              Le modifiche andranno live e saranno visibili a tutti i dipendenti immediatamente. Vuoi procedere?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={saving}>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmLiveEdit} disabled={saving}>
+              {saving ? "Salvataggio..." : "Conferma e pubblica"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
