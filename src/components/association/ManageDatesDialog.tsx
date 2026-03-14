@@ -338,6 +338,35 @@ export function ManageDatesDialog({
       return;
     }
 
+    // Check for existing duplicate slots
+    const { data: existingDates } = await supabase
+      .from("experience_dates")
+      .select("start_datetime, end_datetime")
+      .eq("experience_id", experienceId);
+
+    const duplicates = records.filter((r) =>
+      existingDates?.some(
+        (ed) => ed.start_datetime === r.start_datetime && ed.end_datetime === r.end_datetime
+      )
+    );
+
+    const uniqueRecords = records.filter((r) =>
+      !existingDates?.some(
+        (ed) => ed.start_datetime === r.start_datetime && ed.end_datetime === r.end_datetime
+      )
+    );
+
+    if (uniqueRecords.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Date già esistenti",
+        description: duplicates.length === 1
+          ? "Questa data e orario esistono già per questa esperienza"
+          : `Tutte le ${duplicates.length} date esistono già per questa esperienza`,
+      });
+      return;
+    }
+
     setAdding(true);
     try {
       const { error } = await supabase.from("experience_dates").insert(records);
