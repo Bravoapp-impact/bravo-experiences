@@ -1084,18 +1084,6 @@ export default function ExperiencesPage() {
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">{previewExperience.participant_info}</p>
                 </div>
               )}
-              {previewExperience.status === "pending_review" && (
-                <div className="flex gap-2 pt-2 border-t border-border">
-                  <Button className="flex-1" onClick={() => { setPreviewExperience(null); setPublishExperience(previewExperience); }}>
-                    <Check className="h-4 w-4 mr-2" />
-                    Pubblica
-                  </Button>
-                  <Button variant="destructive" className="flex-1" onClick={() => { setPreviewExperience(null); setRejectExperience(previewExperience); }}>
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Rifiuta
-                  </Button>
-                </div>
-              )}
             </div>
           )}
         </DialogContent>
