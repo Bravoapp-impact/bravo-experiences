@@ -12,6 +12,8 @@ interface CalendarHeaderProps {
   onDateChange: (date: Date) => void;
   onViewModeChange: (mode: ViewMode) => void;
   onAddDate?: () => void;
+  experiences?: { id: string; title: string }[];
+  onExperiencePicked?: (exp: { id: string; title: string }) => void;
 }
 
 export function CalendarHeader({ currentDate, viewMode, onDateChange, onViewModeChange, onAddDate }: CalendarHeaderProps) {
