@@ -99,14 +99,11 @@ export default function AssociationCalendarPage() {
     if (experiences.length === 1) {
       setAddDateExperience({ id: experiences[0].id, title: experiences[0].title });
       setAddDateOpen(true);
-    } else if (experiences.length > 1) {
-      setShowExperiencePicker(true);
     }
   };
 
   const handleExperiencePicked = (exp: { id: string; title: string }) => {
     setAddDateExperience(exp);
-    setShowExperiencePicker(false);
     setAddDateOpen(true);
   };
 
