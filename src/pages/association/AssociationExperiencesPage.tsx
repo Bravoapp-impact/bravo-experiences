@@ -848,8 +848,9 @@ function MobileActions({ items }: { items: MobileActionItem[] }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground">
-          <MoreHorizontal className="h-4 w-4" />
+        <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs text-muted-foreground gap-1.5">
+          <MoreHorizontal className="h-3.5 w-3.5" />
+          Azioni
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
