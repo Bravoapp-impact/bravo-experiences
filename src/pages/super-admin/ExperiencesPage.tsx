@@ -157,12 +157,6 @@ export default function ExperiencesPage() {
   const [expandedExperience, setExpandedExperience] = useState<string | null>(null);
   const [dateDialogOpen, setDateDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<ExperienceDate | null>(null);
-  const [activeTab, setActiveTab] = useState("all");
-  const [publishExperience, setPublishExperience] = useState<Experience | null>(null);
-  const [rejectExperience, setRejectExperience] = useState<Experience | null>(null);
-  const [rejectReason, setRejectReason] = useState("");
-  const [publishing, setPublishing] = useState(false);
-  const [rejecting, setRejecting] = useState(false);
   const [previewExperience, setPreviewExperience] = useState<Experience | null>(null);
   const [suggestedSdgs, setSuggestedSdgs] = useState<string[]>([]);
   const [formData, setFormData] = useState({
