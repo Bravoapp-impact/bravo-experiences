@@ -110,7 +110,7 @@ export function DayDetailPopover({ event, open, onOpenChange, onDeleted, childre
     <>
       <Popover open={open} onOpenChange={(v) => { if (!v) resetEdit(); onOpenChange(v); }}>
         <PopoverTrigger asChild>{children}</PopoverTrigger>
-        <PopoverContent className="w-72 p-0" align="start" sideOffset={4}>
+        <PopoverContent className="w-72 p-0" align="start" sideOffset={4} onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
           <div className="p-3 space-y-3">
             {/* Header */}
             <div className="flex items-start justify-between gap-2">

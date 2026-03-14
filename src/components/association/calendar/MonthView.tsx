@@ -49,10 +49,8 @@ export function MonthView({ currentDate, events, onDayClick, onViewModeChange, o
   const handleDayClick = (day: Date) => {
     const key = format(day, "yyyy-MM-dd");
     const dayEvents = eventsByDay.get(key) || [];
-    if (dayEvents.length > 0) {
-      onDateChange(day);
-      onViewModeChange("day");
-    } else {
+    // Only trigger creation dialog for empty days; days with events use popovers
+    if (dayEvents.length === 0) {
       onEmptyDayClick(day);
     }
   };
