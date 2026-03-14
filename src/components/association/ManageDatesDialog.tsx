@@ -288,16 +288,6 @@ export function ManageDatesDialog({
               </div>
             </div>
 
-            {/* Computed hours */}
-            <div className="space-y-1.5">
-              <Label className="text-sm">Ore di volontariato</Label>
-              <Input
-                type="number"
-                value={computeHours()}
-                readOnly
-                className="bg-muted cursor-not-allowed"
-              />
-            </div>
 
             <Button onClick={handleAdd} disabled={adding} className="w-full" size="sm">
               {adding ? (
