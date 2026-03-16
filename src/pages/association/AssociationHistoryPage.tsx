@@ -142,8 +142,8 @@ export default function AssociationHistoryPage() {
                   <CalendarCheck className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{totalEvents}</p>
-                  <p className="text-sm text-muted-foreground">Eventi completati</p>
+                  <p className="text-xl font-bold text-foreground">{totalEvents}</p>
+                  <p className="text-[13px] text-muted-foreground">Eventi completati</p>
                 </div>
               </div>
             </CardContent>
