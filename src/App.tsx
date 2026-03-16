@@ -24,7 +24,7 @@ import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import SuperAdminProfile from "./pages/super-admin/SuperAdminProfile";
 import CompaniesPage from "./pages/super-admin/CompaniesPage";
 import ExperiencesPage from "./pages/super-admin/ExperiencesPage";
-import AssignmentsPage from "./pages/super-admin/AssignmentsPage";
+
 import UsersPage from "./pages/super-admin/UsersPage";
 import AssociationsPage from "./pages/super-admin/AssociationsPage";
 import CitiesPage from "./pages/super-admin/CitiesPage";
