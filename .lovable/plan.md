@@ -34,59 +34,23 @@
 
 ## Sprint in corso
 
-### 🔄 Sprint Marketplace — Refactoring experience_dates (IN CORSO)
+### ✅ Sprint Marketplace — Refactoring experience_dates (COMPLETATO)
 
 **Obiettivo:** passare da modello "Push" (date legate a `company_id`) a modello "Pull" (catalogo aperto, visibilità basata su `service_type` + assegnamenti diretti via `experience_companies`).
 
-**Sequenza di implementazione:**
+**Completato:**
+- Step 0-4: SQL (funzione `can_employee_see_experience`, nuove RLS `_v2`, drop vecchie policy)
+- Step 5: Frontend — `ExperienceDateDialog.tsx` ripulito da `company_id` (campo deprecato, non più usato)
+- Step 6: Nuovo componente `VisibilityDialog.tsx` per gestione eventi privati
+- Step 7: `ExperiencesPage.tsx` — bottone Lock/Globe per gestire visibilità + badge "Privata" + dialog assegnamenti aziende
 
-| Step | Cosa | Chi |
-|------|------|-----|
-| 0 | Seed `company_service_config` — INSERT 'volunteering' per tutte le companies | SQL manuale |
-| 1 | Funzione `can_employee_see_experience(p_user_id, p_experience_id)` | SQL manuale |
-| 2 | Nuove RLS policy `_v2` su experiences, experience_dates, bookings | SQL manuale |
-| 3 | Test funzionale | Manuale |
-| 4 | Drop vecchie policy | SQL manuale |
-| 5 | Frontend: `ExperienceDateDialog.tsx` — company_id opzionale | Lovable |
-| 6 | Aggiorna plan.md | Lovable |
+**Architettura visibilità:**
+- `experiences.visibility`: `'public'` (default) o `'private'`
+- `experience_companies`: tabella join per assegnamenti diretti
+- `can_employee_see_experience()`: gestisce la logica di accesso
+- Super admin può rendere un'esperienza privata e assegnare aziende specifiche dal pannello Esperienze
 
-**Logica visibilità (`can_employee_see_experience`):**
-```sql
-CREATE OR REPLACE FUNCTION can_employee_see_experience(p_user_id uuid, p_experience_id uuid)
-RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_company_id uuid; v_visibility text;
-BEGIN
-  SELECT company_id INTO v_company_id FROM profiles WHERE id = p_user_id;
-  IF v_company_id IS NULL THEN RETURN false; END IF;
-
-  -- Check 1: assegnamento diretto
-  IF EXISTS (SELECT 1 FROM experience_companies
-             WHERE experience_id = p_experience_id AND company_id = v_company_id)
-  THEN RETURN true; END IF;
-
-  -- Check 2: se private → non visibile
-  SELECT visibility INTO v_visibility FROM experiences WHERE id = p_experience_id;
-  IF v_visibility = 'private' THEN RETURN false; END IF;
-
-  -- Check 3: catalogo aperto se service_type abilitato
-  RETURN EXISTS (
-    SELECT 1 FROM company_service_config
-    WHERE company_id = v_company_id AND enabled = true
-      AND service_type = (SELECT type FROM experiences WHERE id = p_experience_id)
-  );
-END; $$;
-```
-
-**File frontend da modificare:**
-- `ExperienceDateDialog.tsx` — company_id diventa opzionale, label "Azienda esclusiva (opzionale)"
-- `Experiences.tsx` — nessuna modifica (RLS sufficiente)
-- `HRExperiencesPage.tsx` — **nessuna modifica** (da affrontare separatamente con policy HR dedicata)
-
-**Posti:** pool condiviso, `max_participants` globale per data.
-
-**`experience_dates.company_id`:** resta nel DB (nullable, deprecato), non più usato nelle nuove policy.
-
-**Rollback:** ricreare le 3 policy originali con check su `ed.company_id`, drop delle `_v2`.
+**`experience_dates.company_id`:** resta nel DB (nullable, deprecato), non più usato nel frontend.
 
 ---
 
