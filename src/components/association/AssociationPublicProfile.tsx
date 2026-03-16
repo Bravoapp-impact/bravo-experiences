@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { devLog } from "@/lib/logger";
-import { differenceInYears } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { formatDistanceToNow, format } from "date-fns";
 import { it } from "date-fns/locale";
 import {
