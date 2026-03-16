@@ -450,7 +450,7 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
   const displayedReviews = showAllReviews ? allReviews : reviews;
 
   return (
-    <div className="max-w-5xl">
+    <div className="max-w-5xl space-y-10">
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 lg:gap-12">
         {/* Left — Profile Card (sticky across full page) */}
         <div>
@@ -539,8 +539,8 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
           )}
         </div>
 
-        {/* Right — All content sections */}
-        <div className="space-y-10">
+        {/* Right — Info section */}
+        <div className="space-y-5">
           {/* Info section */}
           <div className="space-y-5">
             <h2 className="text-lg font-bold text-foreground">
@@ -585,9 +585,13 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
               </div>
             )}
           </div>
+        </div>
+      </div>
 
-          {/* === SECTION 2: REVIEWS === */}
-          <div className="space-y-5">
+      <Separator />
+
+      {/* === SECTION 2: REVIEWS (full width) === */}
+      <div className="space-y-5">
             <h2 className="text-lg font-bold text-foreground">
               Recensioni su {association.name}{reviewCount > 0 ? ` (${reviewCount})` : ""}
             </h2>
@@ -643,8 +647,10 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
             )}
           </div>
 
-          {/* === SECTION 3: EXPERIENCES === */}
-          <div className="space-y-5">
+      <Separator />
+
+      {/* === SECTION 3: EXPERIENCES (full width) === */}
+      <div className="space-y-5">
             <h2 className="text-lg font-bold text-foreground">
               Esperienze di {association.name}{experiences.length > 0 ? ` (${experiences.length})` : ""}
             </h2>
@@ -708,8 +714,6 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
                 ))}
               </div>
             )}
-          </div>
-        </div>
       </div>
     </div>
   );
