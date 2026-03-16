@@ -50,11 +50,6 @@ const sidebarItems: SidebarItem[] = [
     href: "/super-admin/experiences",
   },
   {
-    label: "Assegnazioni",
-    icon: Link2,
-    href: "/super-admin/assignments",
-  },
-  {
     label: "Utenti",
     icon: Users,
     href: "/super-admin/users",

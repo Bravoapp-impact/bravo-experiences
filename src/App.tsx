@@ -149,14 +149,6 @@ const App = () => (
               }
             />
             <Route
-              path="/super-admin/assignments"
-              element={
-                <ProtectedSuperAdminRoute>
-                  <AssignmentsPage />
-                </ProtectedSuperAdminRoute>
-              }
-            />
-            <Route
               path="/super-admin/users"
               element={
                 <ProtectedSuperAdminRoute>
