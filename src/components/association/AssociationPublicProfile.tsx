@@ -585,9 +585,13 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
               </div>
             )}
           </div>
+        </div>
+      </div>
 
-          {/* === SECTION 2: REVIEWS === */}
-          <div className="space-y-5">
+      <Separator />
+
+      {/* === SECTION 2: REVIEWS (full width) === */}
+      <div className="space-y-5">
             <h2 className="text-lg font-bold text-foreground">
               Recensioni su {association.name}{reviewCount > 0 ? ` (${reviewCount})` : ""}
             </h2>
