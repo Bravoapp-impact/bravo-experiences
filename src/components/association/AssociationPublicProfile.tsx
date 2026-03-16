@@ -53,8 +53,10 @@ interface ExperienceData {
   description: string | null;
   image_url: string | null;
   city: string | null;
+  address: string | null;
   category: string | null;
   next_date: string | null;
+  max_participants: number | null;
 }
 
 // --- Star Rating ---
