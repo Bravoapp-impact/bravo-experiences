@@ -635,6 +635,19 @@ export default function ExperiencesPage() {
                                       variant="ghost"
                                       size="icon"
                                       className="h-8 w-8"
+                                      onClick={() => setVisibilityDialogExp(experience)}
+                                      title="Gestisci visibilità"
+                                    >
+                                      {experience.visibility === "private" ? (
+                                        <Lock className="h-4 w-4" />
+                                      ) : (
+                                        <Globe className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
                                       onClick={() => handleOpenDialog(experience)}
                                     >
                                       <Edit className="h-4 w-4" />
