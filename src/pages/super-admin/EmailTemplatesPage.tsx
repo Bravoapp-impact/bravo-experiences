@@ -325,7 +325,7 @@ export default function EmailTemplatesPage() {
         {/* Company Selector */}
         <Card>
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg flex items-center gap-2">
+            <CardTitle className="text-base flex items-center gap-2">
               <Building2 className="h-5 w-5 text-bravo-purple" />
               Seleziona Azienda
             </CardTitle>
