@@ -211,7 +211,7 @@ export function AdminLayout({
                     className={cn(
                       "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all",
                       active
-                        ? "bg-muted font-medium text-foreground border-l-2 border-primary"
+                        ? "bg-muted font-medium text-foreground"
                         : "text-muted-foreground hover:bg-muted/50"
                     )}
                   >

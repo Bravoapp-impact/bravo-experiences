@@ -12,7 +12,7 @@ const sidebarItems: SidebarItem[] = [
   { label: "Home", icon: Home, href: "/association/home" },
   { label: "Esperienze", icon: Calendar, href: "/association/experiences" },
   { label: "Calendario", icon: CalendarDays, href: "/association/calendar" },
-  { label: "Storico", icon: History, href: "/association/history" },
+  { label: "Report", icon: History, href: "/association/history" },
 ];
 
 export function AssociationLayout({ children }: AssociationLayoutProps) {
