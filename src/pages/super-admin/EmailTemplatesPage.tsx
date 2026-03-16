@@ -358,7 +358,7 @@ export default function EmailTemplatesPage() {
             {/* Email Settings */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="text-base flex items-center gap-2">
                   <Mail className="h-5 w-5 text-bravo-purple" />
                   Impostazioni Email
                   {selectedCompany && (
