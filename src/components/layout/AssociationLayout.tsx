@@ -8,7 +8,7 @@ interface AssociationLayoutProps {
 }
 
 const sidebarItems: SidebarItem[] = [
-  { label: "Pagina Host", icon: Globe, href: "/association/profile" },
+  { label: "Profilo Pubblico", icon: Globe, href: "/association/profile" },
   { label: "Home", icon: Home, href: "/association/home" },
   { label: "Esperienze", icon: Calendar, href: "/association/experiences" },
   { label: "Calendario", icon: CalendarDays, href: "/association/calendar" },
