@@ -1051,7 +1051,19 @@ export default function ExperiencesPage() {
         experienceId={selectedExperience?.id || ""}
         experienceDate={selectedDate}
         onSaved={handleDateSaved}
+      />
+
+      {/* Visibility Dialog */}
+      <VisibilityDialog
+        open={!!visibilityDialogExp}
+        onOpenChange={(open) => { if (!open) setVisibilityDialogExp(null); }}
+        experienceId={visibilityDialogExp?.id || ""}
+        currentVisibility={visibilityDialogExp?.visibility || "public"}
         companies={companies}
+        onSaved={() => {
+          setVisibilityDialogExp(null);
+          fetchData();
+        }}
       />
 
       {/* Preview Dialog */}
