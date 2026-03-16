@@ -9,21 +9,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { devLog } from "@/lib/logger";
-
-interface Company {
-  id: string;
-  name: string;
-}
 
 interface ExperienceDate {
   id: string;
@@ -42,7 +30,6 @@ interface ExperienceDateDialogProps {
   experienceId: string;
   experienceDate: ExperienceDate | null;
   onSaved: () => void;
-  companies: Company[];
 }
 
 export function ExperienceDateDialog({
@@ -51,7 +38,6 @@ export function ExperienceDateDialog({
   experienceId,
   experienceDate,
   onSaved,
-  companies,
 }: ExperienceDateDialogProps) {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -62,7 +48,6 @@ export function ExperienceDateDialog({
     max_participants: 10,
     volunteer_hours: 2,
     beneficiaries_count: 0,
-    company_id: "",
   });
   const { toast } = useToast();
 
@@ -78,10 +63,8 @@ export function ExperienceDateDialog({
         max_participants: experienceDate.max_participants,
         volunteer_hours: experienceDate.volunteer_hours || 2,
         beneficiaries_count: experienceDate.beneficiaries_count || 0,
-        company_id: experienceDate.company_id || "",
       });
     } else {
-      // Default values for new date
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       setFormData({
@@ -92,7 +75,6 @@ export function ExperienceDateDialog({
         max_participants: 10,
         volunteer_hours: 3,
         beneficiaries_count: 0,
-        company_id: "",
       });
     }
   }, [experienceDate, open]);
@@ -103,15 +85,6 @@ export function ExperienceDateDialog({
         variant: "destructive",
         title: "Errore",
         description: "Compila tutti i campi obbligatori",
-      });
-      return;
-    }
-
-    if (!formData.company_id) {
-      toast({
-        variant: "destructive",
-        title: "Errore",
-        description: "Seleziona un'azienda per questa data",
       });
       return;
     }
@@ -137,7 +110,6 @@ export function ExperienceDateDialog({
         max_participants: formData.max_participants,
         volunteer_hours: formData.volunteer_hours,
         beneficiaries_count: formData.beneficiaries_count,
-        company_id: formData.company_id,
       };
 
       if (experienceDate) {
@@ -185,28 +157,6 @@ export function ExperienceDateDialog({
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          {/* Company selection */}
-          <div className="space-y-2">
-            <Label htmlFor="company_id">Azienda *</Label>
-            <Select
-              value={formData.company_id}
-              onValueChange={(value) =>
-                setFormData({ ...formData, company_id: value })
-              }
-            >
-              <SelectTrigger className="bg-background">
-                <SelectValue placeholder="Seleziona azienda..." />
-              </SelectTrigger>
-              <SelectContent className="bg-popover">
-                {companies.map((company) => (
-                  <SelectItem key={company.id} value={company.id}>
-                    {company.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="start_date">Data Inizio *</Label>

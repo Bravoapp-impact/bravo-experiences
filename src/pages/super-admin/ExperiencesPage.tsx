@@ -15,6 +15,8 @@ import {
   Tag,
   X,
   Eye,
+  Lock,
+  Globe,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,6 +64,7 @@ import { it } from "date-fns/locale";
 import { getAllSDGs } from "@/lib/sdg-data";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ExperienceDateDialog } from "@/components/super-admin/ExperienceDateDialog";
+import { VisibilityDialog } from "@/components/super-admin/VisibilityDialog";
 import { devLog } from "@/lib/logger";
 import { LogoUpload } from "@/components/super-admin/LogoUpload";
 
@@ -91,6 +94,7 @@ interface Experience {
   category_id: string | null;
   address: string | null;
   status: string;
+  visibility: string;
   sdgs: string[] | null;
   participant_info: string | null;
   secondary_tags: string[] | null;
@@ -158,6 +162,7 @@ export default function ExperiencesPage() {
   const [dateDialogOpen, setDateDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<ExperienceDate | null>(null);
   const [previewExperience, setPreviewExperience] = useState<Experience | null>(null);
+  const [visibilityDialogExp, setVisibilityDialogExp] = useState<Experience | null>(null);
   const [suggestedSdgs, setSuggestedSdgs] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     title: "",
@@ -610,12 +615,35 @@ export default function ExperiencesPage() {
                                     {getCategoryName(experience.category_id, experience.category)}
                                   </Badge>
                                 </TableCell>
-                                <TableCell>{getStatusBadge(experience.status)}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-1.5">
+                                    {getStatusBadge(experience.status)}
+                                    {experience.visibility === "private" && (
+                                      <Badge variant="outline" className="text-xs gap-1">
+                                        <Lock className="h-3 w-3" />
+                                        Privata
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </TableCell>
                                 <TableCell>
                                   {experience.experience_dates?.length || 0}
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setVisibilityDialogExp(experience)}
+                                      title="Gestisci visibilità"
+                                    >
+                                      {experience.visibility === "private" ? (
+                                        <Lock className="h-4 w-4" />
+                                      ) : (
+                                        <Globe className="h-4 w-4" />
+                                      )}
+                                    </Button>
                                     <Button
                                       variant="ghost"
                                       size="icon"
@@ -670,9 +698,6 @@ export default function ExperiencesPage() {
                                                 new Date(b.start_datetime).getTime()
                                             )
                                             .map((date) => {
-                                              const companyName = date.company_id 
-                                                ? companies.find(c => c.id === date.company_id)?.name 
-                                                : null;
                                               return (
                                               <div
                                                 key={date.id}
@@ -688,16 +713,6 @@ export default function ExperiencesPage() {
                                                           { locale: it }
                                                         )}
                                                       </p>
-                                                      {companyName && (
-                                                        <Badge variant="outline" className="text-xs">
-                                                          {companyName}
-                                                        </Badge>
-                                                      )}
-                                                      {!companyName && (
-                                                        <Badge variant="destructive" className="text-xs">
-                                                          Nessuna azienda
-                                                        </Badge>
-                                                      )}
                                                     </div>
                                                     <p className="text-xs text-muted-foreground">
                                                       {format(
@@ -1036,7 +1051,19 @@ export default function ExperiencesPage() {
         experienceId={selectedExperience?.id || ""}
         experienceDate={selectedDate}
         onSaved={handleDateSaved}
+      />
+
+      {/* Visibility Dialog */}
+      <VisibilityDialog
+        open={!!visibilityDialogExp}
+        onOpenChange={(open) => { if (!open) setVisibilityDialogExp(null); }}
+        experienceId={visibilityDialogExp?.id || ""}
+        currentVisibility={visibilityDialogExp?.visibility || "public"}
         companies={companies}
+        onSaved={() => {
+          setVisibilityDialogExp(null);
+          fetchData();
+        }}
       />
 
       {/* Preview Dialog */}
