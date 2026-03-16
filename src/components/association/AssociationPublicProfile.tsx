@@ -6,8 +6,8 @@ import { formatDistanceToNow, format } from "date-fns";
 import { formatDistanceToNow, format } from "date-fns";
 import { it } from "date-fns/locale";
 import {
-  MapPin, Globe, Mail, Phone, User, Pencil, Star,
-  CheckCircle, Camera, X, Check, ArrowRight, Clock,
+  MapPin, Globe, Mail, Phone, User, Users, Pencil, Star,
+  CheckCircle, Camera, X, Check, ArrowRight,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
