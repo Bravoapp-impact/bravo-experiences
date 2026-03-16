@@ -162,6 +162,7 @@ export default function ExperiencesPage() {
   const [dateDialogOpen, setDateDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<ExperienceDate | null>(null);
   const [previewExperience, setPreviewExperience] = useState<Experience | null>(null);
+  const [visibilityDialogExp, setVisibilityDialogExp] = useState<Experience | null>(null);
   const [suggestedSdgs, setSuggestedSdgs] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     title: "",
