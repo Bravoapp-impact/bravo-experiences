@@ -539,8 +539,8 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
           )}
         </div>
 
-        {/* Right — All content sections */}
-        <div className="space-y-10">
+        {/* Right — Info section */}
+        <div className="space-y-5">
           {/* Info section */}
           <div className="space-y-5">
             <h2 className="text-lg font-bold text-foreground">
