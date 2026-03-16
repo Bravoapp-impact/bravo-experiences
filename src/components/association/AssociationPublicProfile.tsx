@@ -2,12 +2,11 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { devLog } from "@/lib/logger";
-import { differenceInYears } from "date-fns";
 import { formatDistanceToNow, format } from "date-fns";
 import { it } from "date-fns/locale";
 import {
-  MapPin, Globe, Mail, Phone, User, Pencil, Star,
-  CheckCircle, Camera, X, Check, ArrowRight, Clock,
+  MapPin, Globe, Mail, Phone, User, Users, Pencil, Star,
+  CheckCircle, Camera, X, Check, ArrowRight,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -53,8 +52,10 @@ interface ExperienceData {
   description: string | null;
   image_url: string | null;
   city: string | null;
+  address: string | null;
   category: string | null;
   next_date: string | null;
+  max_participants: number | null;
 }
 
 // --- Star Rating ---
@@ -244,7 +245,7 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
   const fetchExperiences = async () => {
     const { data, error } = await supabase
       .from("experiences")
-      .select("id, title, description, image_url, city, category, experience_dates(id, start_datetime)")
+      .select("id, title, description, image_url, city, address, category, max_participants, experience_dates(id, start_datetime)")
       .eq("association_id", associationId)
       .eq("status", "published")
       .order("created_at", { ascending: false });
@@ -262,8 +263,10 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
         description: e.description,
         image_url: e.image_url,
         city: e.city,
+        address: e.address,
         category: e.category,
         next_date: futureDates[0]?.start_datetime || null,
+        max_participants: e.max_participants,
       };
     });
     mapped.sort((a, b) => {
@@ -398,9 +401,6 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
   const avgRating = reviewCount > 0
     ? Math.round((allReviews.reduce((s, r) => s + r.rating, 0) / reviewCount) * 10) / 10
     : 0;
-  const yearsOnPlatform = association?.partnership_start_date
-    ? differenceInYears(new Date(), new Date(association.partnership_start_date))
-    : null;
 
   // --- Loading skeleton ---
   if (loading) {
@@ -486,15 +486,6 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
                   {avgRating > 0 && <Star className="inline h-3 w-3 text-amber-500 fill-current ml-0.5 -mt-0.5" />}
                 </p>
                 <p className="text-[10px] text-muted-foreground leading-tight">Valutazione</p>
-              </div>
-              <Separator orientation="vertical" className="h-8" />
-              <div className="text-center min-w-0">
-                <p className="text-base font-bold text-foreground leading-tight">
-                  {yearsOnPlatform !== null ? yearsOnPlatform : "Nuovo"}
-                </p>
-                <p className="text-[10px] text-muted-foreground leading-tight">
-                  {yearsOnPlatform !== null ? "Anni su Bravo!" : "Su Bravo!"}
-                </p>
               </div>
             </div>
 
@@ -655,18 +646,26 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
                   <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug">
                     {exp.title}
                   </h3>
+                  {/* Location */}
+                  {(exp.address || exp.city) && (
+                    <p className="text-[11px] text-muted-foreground font-light flex items-center gap-0.5">
+                      <MapPin className="h-2.5 w-2.5 shrink-0" />
+                      <span className="truncate">{exp.address || exp.city}</span>
+                    </p>
+                  )}
+                  {/* Date + participants */}
                   <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
-                    {exp.city && (
-                      <span className="flex items-center gap-0.5">
-                        <MapPin className="h-2.5 w-2.5" />
-                        {exp.city}
+                    {exp.next_date && (
+                      <span>
+                        {format(new Date(exp.next_date), "d MMM", { locale: it })}
                       </span>
                     )}
-                    {exp.next_date && (
+                    {exp.max_participants && (
                       <>
-                        {exp.city && <span className="text-border">·</span>}
-                        <span>
-                          {format(new Date(exp.next_date), "d MMM", { locale: it })}
+                        {exp.next_date && <span className="text-border">·</span>}
+                        <span className="flex items-center gap-0.5">
+                          <Users className="h-2.5 w-2.5" />
+                          {exp.max_participants}
                         </span>
                       </>
                     )}
