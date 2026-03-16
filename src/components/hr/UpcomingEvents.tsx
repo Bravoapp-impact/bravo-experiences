@@ -52,7 +52,7 @@ export function UpcomingEvents({ events }: UpcomingEventsProps) {
               <span className="text-xs text-primary font-medium uppercase">
                 {format(new Date(event.start_datetime), "MMM", { locale: it })}
               </span>
-              <span className="text-lg font-bold text-primary">
+              <span className="text-base font-bold text-primary">
                 {format(new Date(event.start_datetime), "dd")}
               </span>
             </div>

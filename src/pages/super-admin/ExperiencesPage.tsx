@@ -495,7 +495,7 @@ export default function ExperiencesPage() {
               <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
                 <CardHeader>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <CardTitle className="text-lg">
+                    <CardTitle className="text-base">
                       {experiences.length} Esperienze
                     </CardTitle>
                     <div className="flex flex-col sm:flex-row gap-3">

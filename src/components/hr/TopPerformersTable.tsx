@@ -96,7 +96,7 @@ export function TopPerformersTable({
                     {topPerformers.map((employee, index) => (
                       <TableRow key={employee.id}>
                         <TableCell className="font-medium">
-                          <span className="text-lg">
+                          <span className="text-base">
                             {getMedalEmoji(index + 1)}
                           </span>
                         </TableCell>

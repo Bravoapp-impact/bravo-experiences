@@ -416,7 +416,7 @@ export default function AccessCodesPage() {
           <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
             <CardHeader>
               <div className="flex flex-col gap-4">
-                <CardTitle className="text-lg">
+                <CardTitle className="text-base">
                   {filteredCodes.length} Codici
                 </CardTitle>
                 <div className="flex flex-wrap gap-3">

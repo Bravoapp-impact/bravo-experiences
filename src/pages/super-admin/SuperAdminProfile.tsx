@@ -86,7 +86,7 @@ export default function SuperAdminProfile() {
         >
           <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle className="text-lg">Informazioni account</CardTitle>
+              <CardTitle className="text-base">Informazioni account</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">

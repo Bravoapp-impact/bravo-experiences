@@ -478,7 +478,7 @@ export default function EmailTemplatesPage() {
             {/* Email Templates */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Contenuto Email</CardTitle>
+                <CardTitle className="text-base">Contenuto Email</CardTitle>
                 <CardDescription>
                   Personalizza il testo delle email per questa azienda. I dettagli
                   dell'esperienza vengono inseriti automaticamente.

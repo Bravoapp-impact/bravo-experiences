@@ -109,7 +109,7 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
     <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <CardTitle className="text-lg">Lista Prenotazioni</CardTitle>
+          <CardTitle className="text-base">Lista Prenotazioni</CardTitle>
           <Button onClick={exportCSV} variant="outline" size="sm" className="gap-2">
             <Download className="h-4 w-4" />
             Esporta CSV

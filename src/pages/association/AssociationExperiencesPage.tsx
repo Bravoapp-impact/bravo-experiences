@@ -344,7 +344,7 @@ export default function AssociationExperiencesPage() {
         {!hasAny ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <PackageOpen className="h-12 w-12 text-muted-foreground/50 mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-1">Nessuna esperienza</h3>
+            <h3 className="text-base font-medium text-foreground mb-1">Nessuna esperienza</h3>
             <p className="text-sm text-muted-foreground max-w-sm">
               Non ci sono ancora esperienze associate alla tua organizzazione.
             </p>
