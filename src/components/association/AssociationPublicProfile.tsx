@@ -488,15 +488,6 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
                 </p>
                 <p className="text-[10px] text-muted-foreground leading-tight">Valutazione</p>
               </div>
-              <Separator orientation="vertical" className="h-8" />
-              <div className="text-center min-w-0">
-                <p className="text-base font-bold text-foreground leading-tight">
-                  {yearsOnPlatform !== null ? yearsOnPlatform : "Nuovo"}
-                </p>
-                <p className="text-[10px] text-muted-foreground leading-tight">
-                  {yearsOnPlatform !== null ? "Anni su Bravo!" : "Su Bravo!"}
-                </p>
-              </div>
             </div>
 
             {/* Verified badge — compact */}
