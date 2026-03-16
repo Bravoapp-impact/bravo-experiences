@@ -246,7 +246,7 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
   const fetchExperiences = async () => {
     const { data, error } = await supabase
       .from("experiences")
-      .select("id, title, description, image_url, city, category, experience_dates(id, start_datetime)")
+      .select("id, title, description, image_url, city, address, category, max_participants, experience_dates(id, start_datetime)")
       .eq("association_id", associationId)
       .eq("status", "published")
       .order("created_at", { ascending: false });
