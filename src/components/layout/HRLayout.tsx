@@ -1,7 +1,6 @@
 import { ReactNode } from "react";
-import { BarChart3, Calendar, Users } from "lucide-react";
+import { BarChart3, Calendar, Users, Home, LayoutGrid } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { AdminLayout, SidebarItem } from "./AdminLayout";
 
 interface HRLayoutProps {
@@ -9,50 +8,26 @@ interface HRLayoutProps {
 }
 
 const sidebarItems: SidebarItem[] = [
-  {
-    label: "Dashboard",
-    icon: BarChart3,
-    href: "/hr",
-  },
-  {
-    label: "Esperienze",
-    icon: Calendar,
-    href: "/hr/experiences",
-  },
-  {
-    label: "Dipendenti",
-    icon: Users,
-    href: "/hr/employees",
-  },
+  { label: "Home", icon: Home, href: "/hr/home" },
+  { label: "Esperienze", icon: Calendar, href: "/hr/experiences" },
+  { label: "Dipendenti", icon: Users, href: "/hr/employees" },
+  { label: "Report", icon: BarChart3, href: "/hr" },
 ];
 
 export function HRLayout({ children }: HRLayoutProps) {
   const { profile } = useAuth();
-  const companyName = profile?.companies?.name;
-
-  const dropdownHeader = (
-    <>
-      <div className="px-3 py-2">
-        <p className="text-sm font-medium">
-          {profile?.first_name} {profile?.last_name}
-        </p>
-        <p className="text-xs text-muted-foreground">{profile?.email}</p>
-        {companyName && (
-          <p className="text-xs text-primary mt-1">{companyName}</p>
-        )}
-      </div>
-      <DropdownMenuSeparator />
-    </>
-  );
 
   return (
     <AdminLayout
       sidebarItems={sidebarItems}
-      badgeLabel="HR Admin"
       profilePath="/hr/profile"
       basePath="/hr"
-      showCompanyLogo
-      dropdownHeader={dropdownHeader}
+      entityLogoUrl={profile?.companies?.logo_url || undefined}
+      entityName={profile?.companies?.name || "Azienda"}
+      separatorAfterIndex={[2]}
+      dropdownItems={[
+        { label: "Esplora catalogo", icon: LayoutGrid, href: "/app/experiences" },
+      ]}
     >
       {children}
     </AdminLayout>
