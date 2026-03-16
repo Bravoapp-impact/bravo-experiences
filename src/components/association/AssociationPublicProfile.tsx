@@ -450,7 +450,7 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
   const displayedReviews = showAllReviews ? allReviews : reviews;
 
   return (
-    <div className="max-w-5xl">
+    <div className="max-w-5xl space-y-10">
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 lg:gap-12">
         {/* Left — Profile Card (sticky across full page) */}
         <div>
