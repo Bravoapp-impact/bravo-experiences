@@ -647,10 +647,10 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
                     {exp.title}
                   </h3>
                   {/* Location */}
-                  {(exp.address || exp.city) && (
+                  {exp.city && (
                     <p className="text-[11px] text-muted-foreground font-light flex items-center gap-0.5">
                       <MapPin className="h-2.5 w-2.5 shrink-0" />
-                      <span className="truncate">{exp.address || exp.city}</span>
+                      <span className="truncate">{exp.city}</span>
                     </p>
                   )}
                   {/* Date + participants */}
