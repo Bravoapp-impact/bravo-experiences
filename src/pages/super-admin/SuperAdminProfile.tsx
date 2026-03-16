@@ -47,7 +47,7 @@ export default function SuperAdminProfile() {
                   />
                 )}
                 <div>
-                  <p className="text-lg font-semibold text-foreground">
+                  <p className="text-base font-semibold text-foreground">
                     {profile?.first_name} {profile?.last_name}
                   </p>
                   <p className="text-sm text-muted-foreground">{profile?.email}</p>
