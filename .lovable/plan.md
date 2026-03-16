@@ -1,76 +1,84 @@
-# Piano di Implementazione Fase 1 — Roadmap v4.0
 
-## Sprint completati
 
-### ✅ Sprint 0 — Feedback (già implementato)
-- Tabella `experience_reviews` + RLS + modal feedback + email post-evento
-- Pagina Impact funzionante (booking confirmed + data passata)
+# Piano: Ristrutturazione AssociationProfilePage in stile Airbnb Host
 
-### ✅ Sprint 1 — Colonne additive (rischio zero)
-- `experiences`: + `type`, `price_per_participant`, `visibility`, `created_by`
-- `bookings`: + `verified_at`, `verification_method`, `verification_data`
-- `profiles`: + `manager_id`
-- `companies`: + `max_concurrent_absences`
+## File coinvolti
 
-### ✅ Sprint 2 — Nuove tabelle (rischio basso)
-- `company_service_config` con RLS (HR + super admin)
-- `hour_budgets` con RLS (employee read + HR read + super admin full)
-- Triggers `updated_at` su entrambe
-
-### ✅ Sprint 3 — Lifecycle booking (rischio medio)
-- Function `process_completed_events()` per transizionare booking passati (confirmed → completed dopo 2h dalla fine)
-- RLS `experience_reviews` aggiornata per accettare status `completed`
-- Frontend retrocompatibile: tutti i filtri accettano sia `confirmed` (passato) che `completed`
-- Utility `src/lib/booking-utils.ts` con costanti e helper per gli stati
-- Badge `no_show` aggiunto nelle card booking
-- **Rollback:** `UPDATE bookings SET status = 'confirmed' WHERE status IN ('completed', 'verified');` + ripristino RLS
-
-### ✅ Sprint 4 — Widget ore dipendente/HR
-- Hook `useHourBudget` con logica "nessun budget = illimitato"
-- Widget ore nel profilo dipendente e HR admin con skeleton loading
-- Calcolo anno fiscale basato su `hour_budgets.fiscal_year_start`
+| File | Azione |
+|------|--------|
+| `src/components/association/AssociationPublicProfile.tsx` | **Nuovo** — componente principale con tutta la logica |
+| `src/pages/association/AssociationProfilePage.tsx` | **Riscrittura** — wrapper sottile |
+| `src/components/layout/AssociationLayout.tsx` | **Modifica** — rinomina sidebar item |
 
 ---
 
-## Sprint in corso
+## 1. `AssociationLayout.tsx`
+Rinomina `"Pagina Host"` → `"Profilo Pubblico"`.
 
-### ✅ Sprint Marketplace — Refactoring experience_dates (COMPLETATO)
+## 2. `AssociationProfilePage.tsx`
+Diventa wrapper minimale: legge `profile?.association_id` da `useAuth()`, renderizza `<AssociationLayout>` con dentro `<AssociationPublicProfile associationId={id} canEdit={true} />`. Se `association_id` è null, mostra loader.
 
-**Obiettivo:** passare da modello "Push" (date legate a `company_id`) a modello "Pull" (catalogo aperto, visibilità basata su `service_type` + assegnamenti diretti via `experience_companies`).
+## 3. `AssociationPublicProfile.tsx` — Componente principale
 
-**Completato:**
-- Step 0-4: SQL (funzione `can_employee_see_experience`, nuove RLS `_v2`, drop vecchie policy)
-- Step 5: Frontend — `ExperienceDateDialog.tsx` ripulito da `company_id` (campo deprecato, non più usato)
-- Step 6: Nuovo componente `VisibilityDialog.tsx` per gestione eventi privati
-- Step 7: `ExperiencesPage.tsx` — bottone Lock/Globe per gestire visibilità + badge "Privata" + dialog assegnamenti aziende
+Props: `{ associationId: string; canEdit: boolean }`
 
-**Architettura visibilità:**
-- `experiences.visibility`: `'public'` (default) o `'private'`
-- `experience_companies`: tabella join per assegnamenti diretti
-- `can_employee_see_experience()`: gestisce la logica di accesso
-- Super admin può rendere un'esperienza privata e assegnare aziende specifiche dal pannello Esperienze
+### Data fetching (tutto in `useEffect` all'init):
+1. **Association**: `supabase.from('associations').select('*').eq('id', associationId).single()`
+2. **Città operative**: `supabase.from('association_cities').select('city_id, cities(name)').eq('association_id', associationId)`
+3. **Esperienze pubblicate**: `supabase.from('experiences').select('id, title, description, image_url, city, category, status, experience_dates(id, start_datetime, end_datetime, max_participants)').eq('association_id', associationId).eq('status', 'published').order('created_at', { ascending: false })`
+4. **Recensioni** (strategia multi-step per evitare problemi con filtri nested):
+   - Fetch IDs esperienze dall'associazione
+   - Fetch IDs date per quelle esperienze via `.in('experience_id', expIds)`
+   - Fetch booking IDs per quelle date via `.in('experience_date_id', dateIds)`
+   - Fetch reviews per quei booking IDs: `.in('booking_id', bookingIds)` con select che include `bookings(user_id, profiles:user_id(first_name, avatar_url))`
+   - Stats (count + media rating) calcolate in frontend dai dati
 
-**`experience_dates.company_id`:** resta nel DB (nullable, deprecato), non più usato nel frontend.
+### Stato inline editing
+Per ogni campo editabile (`description`, `contact_name`, `contact_email`, `contact_phone`, `website`, `address`):
+- `editingField: string | null` — quale campo è in edit mode
+- `editValue: string` — valore corrente nell'input
+- Click su Pencil → setta `editingField` e `editValue`
+- Salva → update singolo campo su `associations`, aggiorna state locale, toast conferma
+- Annulla → resetta `editingField` a null
 
----
+### Sezioni UI
 
-## Sprint da fare
+**Sezione 1 — Header (grid 2 colonne desktop, stacked mobile)**
 
-### Sprint 4b — Verifica ore pre-prenotazione
-- Verifica ore residue pre-prenotazione (frontend only)
-- Widget ore in dashboard HR
-- Se `hour_budgets` non esiste → budget illimitato (retrocompatibilità)
+Colonna sinistra — Card profilo:
+- Avatar 96px cerchio con logo o iniziali su bg-muted
+- Se `canEdit`, overlay camera al hover → usa `LogoUpload` con bucket `association-logos`, salva direttamente su DB
+- Nome associazione (h2 font-bold)
+- 3 stats in riga: N recensioni, X.X ★ valutazione, N anni su Bravo! (da `partnership_start_date`, `differenceInYears` di date-fns; se null → "Nuovo")
+- Badge "Identità verificata" con CheckCircle verde
 
-### Sprint 5 — "Le mie attività" + notifica manager
-- Nuova pagina `/app/my-activities`
-- Edge Function notifica manager alla prenotazione
-- Check tetto assenze contemporanee
+Colonna destra — Info:
+- Titolo "Informazioni su [Nome]"
+- Descrizione con Pencil inline se canEdit → Textarea editabile
+- Lista campi (MapPin/address, Globe/website come link, Mail/email, Phone/telefono, User/referente) con Pencil inline
+- Campi vuoti + canEdit → placeholder "+ Aggiungi [campo]" in muted, cliccabile
+- Badge città operative in riga (read-only)
 
----
+**Sezione 2 — Recensioni**
+- Titolo "Recensioni su [Nome] (N)"
+- Grid 3 col desktop / 1 mobile, max 6 recensioni
+- Card: avatar/primo nome, stelline (Star da lucide, fill per piene, text-amber-500), data relativa (`formatDistanceToNow` con locale `it`), testo `feedback_positive` troncato a 3 righe
+- Se >6 reviews, bottone "Mostra altre recensioni" (incrementa limit)
+- Se 0 reviews, messaggio muted
+- Sempre read-only anche con canEdit
 
-## Regole di sicurezza
-1. Mai DROP + CREATE RLS in un singolo step — usare policy `_v2` affiancate, poi drop delle vecchie
-2. Mai ALTER colonne esistenti — solo ADD COLUMN
-3. Ogni migrazione reversibile
-4. Frontend retrocompatibile con fallback
-5. Test su ambiente Test prima di pubblicare
+**Sezione 3 — Esperienze**
+- Titolo "Esperienze di [Nome] (N)"
+- Grid 3/2/1 colonne
+- Card: immagine (BaseCardImage), titolo, descrizione 2 righe, badge categoria, prossima data, icona città
+- Solo `status = 'published'`
+- Se 0 e canEdit, link "Crea la tua prima esperienza →" verso `/association/experiences`
+
+### Dettagli tecnici
+- Loading: Skeleton per card profilo e sezioni
+- Stelline: componente inline con 5 Star icons, fill basato su rating, colore `text-amber-500`
+- Date relative: `formatDistanceToNow` da `date-fns` con locale `it`
+- Hover card: `hover:shadow-md transition-shadow`
+- Edit buttons: `variant="ghost" size="icon"`, visibili solo se `canEdit`
+- Imports: date-fns (`differenceInYears`, `formatDistanceToNow`, `format`), locale `it`, lucide icons, Skeleton, LogoUpload, BaseCardImage
+
