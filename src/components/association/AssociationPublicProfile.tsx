@@ -211,12 +211,28 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
         fetchCities(),
         fetchExperiences(),
         fetchReviews(),
+        fetchReferente(),
       ]);
     } catch (err) {
       devLog.error("Error fetching profile data:", err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchReferente = async () => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("first_name, last_name, avatar_url")
+      .eq("association_id", associationId)
+      .eq("role", "association_admin")
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      devLog.error("Error fetching referente:", error);
+      return;
+    }
+    setReferente(data);
   };
 
   const fetchAssociation = async () => {
