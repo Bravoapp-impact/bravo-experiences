@@ -716,7 +716,6 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
             )}
           </div>
         </div>
-      </div>
     </div>
   );
 }
