@@ -155,8 +155,8 @@ export default function AssociationHistoryPage() {
                   <Users className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{totalParticipants}</p>
-                  <p className="text-sm text-muted-foreground">Partecipanti totali</p>
+                  <p className="text-xl font-bold text-foreground">{totalParticipants}</p>
+                  <p className="text-[13px] text-muted-foreground">Partecipanti totali</p>
                 </div>
               </div>
             </CardContent>
