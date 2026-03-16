@@ -4,7 +4,6 @@ import {
   Calendar,
   Users,
   BarChart3,
-  Link2,
   MapPin,
   Tag,
   Heart,
@@ -48,11 +47,6 @@ const sidebarItems: SidebarItem[] = [
     label: "Esperienze",
     icon: Calendar,
     href: "/super-admin/experiences",
-  },
-  {
-    label: "Assegnazioni",
-    icon: Link2,
-    href: "/super-admin/assignments",
   },
   {
     label: "Utenti",
