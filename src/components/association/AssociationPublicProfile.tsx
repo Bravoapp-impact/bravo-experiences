@@ -7,7 +7,7 @@ import { formatDistanceToNow, format } from "date-fns";
 import { it } from "date-fns/locale";
 import {
   MapPin, Globe, Mail, Phone, User, Pencil, Star,
-  CheckCircle, Camera, X, Check, ArrowRight,
+  CheckCircle, Camera, X, Check, ArrowRight, Clock,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { LogoUpload } from "@/components/super-admin/LogoUpload";
 import { BaseCardImage } from "@/components/common/BaseCardImage";
 import { Link } from "react-router-dom";
 
@@ -65,7 +64,7 @@ function StarRating({ rating }: { rating: number }) {
       {[1, 2, 3, 4, 5].map((i) => (
         <Star
           key={i}
-          className={`h-4 w-4 ${i <= rating ? "text-amber-500 fill-current" : "text-muted-foreground/30"}`}
+          className={`h-3.5 w-3.5 ${i <= rating ? "text-amber-500 fill-current" : "text-muted-foreground/30"}`}
         />
       ))}
     </div>
@@ -178,6 +177,9 @@ function InlineEditField({
   );
 }
 
+const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
+const MAX_SIZE = 2 * 1024 * 1024;
+
 // === MAIN COMPONENT ===
 export default function AssociationPublicProfile({ associationId, canEdit }: AssociationPublicProfileProps) {
   const { toast } = useToast();
@@ -191,8 +193,8 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [savingField, setSavingField] = useState(false);
-  const [showLogoUpload, setShowLogoUpload] = useState(false);
-  const logoUploadRef = useRef<HTMLDivElement>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchAllData();
@@ -264,7 +266,6 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
         next_date: futureDates[0]?.start_datetime || null,
       };
     });
-    // Sort: experiences with upcoming dates first
     mapped.sort((a, b) => {
       if (a.next_date && !b.next_date) return -1;
       if (!a.next_date && b.next_date) return 1;
@@ -275,14 +276,12 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
   };
 
   const fetchReviews = async () => {
-    // Step 1: Get experience IDs
     const { data: exps } = await supabase
       .from("experiences")
       .select("id")
       .eq("association_id", associationId);
     if (!exps?.length) { setAllReviews([]); setReviews([]); return; }
 
-    // Step 2: Get date IDs
     const expIds = exps.map((e) => e.id);
     const { data: dates } = await supabase
       .from("experience_dates")
@@ -290,7 +289,6 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
       .in("experience_id", expIds);
     if (!dates?.length) { setAllReviews([]); setReviews([]); return; }
 
-    // Step 3: Get booking IDs
     const dateIds = dates.map((d) => d.id);
     const { data: bookings } = await supabase
       .from("bookings")
@@ -298,7 +296,6 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
       .in("experience_date_id", dateIds);
     if (!bookings?.length) { setAllReviews([]); setReviews([]); return; }
 
-    // Step 4: Get reviews
     const bookingIds = bookings.map((b) => b.id);
     const { data: reviewsData } = await supabase
       .from("experience_reviews")
@@ -353,15 +350,46 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
     }
   };
 
-  const handleLogoChange = async (url: string | null) => {
-    if (!association) return;
-    const { error } = await supabase
-      .from("associations")
-      .update({ logo_url: url })
-      .eq("id", associationId);
-    if (!error) {
-      setAssociation({ ...association, logo_url: url });
-      setShowLogoUpload(false);
+  // --- Direct logo upload (no LogoUpload component) ---
+  const handleLogoFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !association) return;
+
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      toast({ variant: "destructive", title: "Formato non valido", description: "PNG, JPG, WebP, SVG" });
+      return;
+    }
+    if (file.size > MAX_SIZE) {
+      toast({ variant: "destructive", title: "File troppo grande", description: "Max 2 MB" });
+      return;
+    }
+
+    setUploadingLogo(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${associationId}-${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from("association-logos")
+        .upload(fileName, file, { cacheControl: "3600", upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("association-logos").getPublicUrl(fileName);
+      const publicUrl = urlData.publicUrl;
+
+      const { error: dbError } = await supabase
+        .from("associations")
+        .update({ logo_url: publicUrl })
+        .eq("id", associationId);
+      if (dbError) throw dbError;
+
+      setAssociation({ ...association, logo_url: publicUrl });
+      toast({ title: "Logo aggiornato" });
+    } catch (err) {
+      devLog.error("Error uploading logo:", err);
+      toast({ variant: "destructive", title: "Errore", description: "Impossibile caricare il logo" });
+    } finally {
+      setUploadingLogo(false);
+      if (logoInputRef.current) logoInputRef.current.value = "";
     }
   };
 
@@ -377,29 +405,23 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
   // --- Loading skeleton ---
   if (loading) {
     return (
-      <div className="space-y-8 max-w-5xl">
-        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 lg:gap-10">
-          <Card><CardContent className="p-6 space-y-4">
-            <Skeleton className="h-24 w-24 rounded-full mx-auto" />
-            <Skeleton className="h-6 w-40 mx-auto" />
-            <div className="flex justify-center gap-6">
-              <Skeleton className="h-10 w-16" />
-              <Skeleton className="h-10 w-16" />
-              <Skeleton className="h-10 w-16" />
+      <div className="space-y-10 max-w-5xl">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 lg:gap-10">
+          <div className="flex flex-col items-center space-y-4">
+            <Skeleton className="h-24 w-24 rounded-full" />
+            <Skeleton className="h-5 w-36" />
+            <div className="flex gap-6">
+              <Skeleton className="h-10 w-14" />
+              <Skeleton className="h-10 w-14" />
+              <Skeleton className="h-10 w-14" />
             </div>
-          </CardContent></Card>
-          <div className="space-y-4">
-            <Skeleton className="h-6 w-60" />
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-4 w-48" />
-            <Skeleton className="h-4 w-36" />
           </div>
-        </div>
-        <Skeleton className="h-6 w-48" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Skeleton className="h-40" />
-          <Skeleton className="h-40" />
-          <Skeleton className="h-40" />
+          <div className="space-y-4">
+            <Skeleton className="h-5 w-52" />
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-4 w-44" />
+            <Skeleton className="h-4 w-32" />
+          </div>
         </div>
       </div>
     );
@@ -410,19 +432,19 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
   const displayedReviews = showAllReviews ? allReviews : reviews;
 
   return (
-    <div className="space-y-8 sm:space-y-10 max-w-5xl">
+    <div className="space-y-10 max-w-5xl">
       {/* === SECTION 1: HEADER === */}
-      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 lg:gap-10">
-        {/* Left — Profile Card */}
-        <Card>
-          <CardContent className="p-6 flex flex-col items-center text-center space-y-4">
-            {/* Logo */}
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 lg:gap-12">
+        {/* Left — Profile Card (Airbnb-style sticky card) */}
+        <Card className="h-fit lg:sticky lg:top-6">
+          <CardContent className="p-5 flex flex-col items-center text-center space-y-3">
+            {/* Logo with direct upload */}
             <div className="relative group">
               {association.logo_url ? (
                 <img
                   src={association.logo_url}
                   alt={association.name}
-                  className="h-24 w-24 rounded-full object-cover border border-border"
+                  className="h-24 w-24 rounded-full object-cover border-2 border-border"
                 />
               ) : (
                 <div className="h-24 w-24 rounded-full bg-muted flex items-center justify-center text-2xl font-bold text-muted-foreground">
@@ -431,55 +453,54 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
               )}
               {canEdit && (
                 <button
-                  onClick={() => setShowLogoUpload(!showLogoUpload)}
+                  onClick={() => logoInputRef.current?.click()}
                   className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  disabled={uploadingLogo}
                 >
                   <Camera className="h-5 w-5 text-white" />
                 </button>
               )}
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept=".png,.jpg,.jpeg,.webp,.svg"
+                className="hidden"
+                onChange={handleLogoFileSelect}
+                disabled={uploadingLogo}
+              />
             </div>
-            {showLogoUpload && canEdit && (
-              <div ref={logoUploadRef}>
-                <LogoUpload
-                  currentLogoUrl={association.logo_url}
-                  onLogoChange={handleLogoChange}
-                  bucket="association-logos"
-                  entityId={associationId}
-                />
-              </div>
-            )}
 
             {/* Name */}
-            <h2 className="text-xl font-bold text-foreground">{association.name}</h2>
+            <h2 className="text-xl font-bold text-foreground leading-tight">{association.name}</h2>
 
-            {/* Stats */}
-            <div className="flex justify-center gap-6">
-              <div className="text-center">
-                <p className="text-lg font-bold text-foreground">{reviewCount}</p>
-                <p className="text-[11px] text-muted-foreground">Recensioni</p>
+            {/* Stats row */}
+            <div className="flex items-center justify-center gap-4 w-full">
+              <div className="text-center min-w-0">
+                <p className="text-base font-bold text-foreground leading-tight">{reviewCount}</p>
+                <p className="text-[10px] text-muted-foreground leading-tight">Recensioni</p>
               </div>
-              <Separator orientation="vertical" className="h-10" />
-              <div className="text-center">
-                <p className="text-lg font-bold text-foreground">
-                  {avgRating > 0 ? `${avgRating}` : "–"}
-                  {avgRating > 0 && <Star className="inline h-3.5 w-3.5 text-amber-500 fill-current ml-0.5 -mt-0.5" />}
+              <Separator orientation="vertical" className="h-8" />
+              <div className="text-center min-w-0">
+                <p className="text-base font-bold text-foreground leading-tight">
+                  {avgRating > 0 ? avgRating : "–"}
+                  {avgRating > 0 && <Star className="inline h-3 w-3 text-amber-500 fill-current ml-0.5 -mt-0.5" />}
                 </p>
-                <p className="text-[11px] text-muted-foreground">Valutazione</p>
+                <p className="text-[10px] text-muted-foreground leading-tight">Valutazione</p>
               </div>
-              <Separator orientation="vertical" className="h-10" />
-              <div className="text-center">
-                <p className="text-lg font-bold text-foreground">
+              <Separator orientation="vertical" className="h-8" />
+              <div className="text-center min-w-0">
+                <p className="text-base font-bold text-foreground leading-tight">
                   {yearsOnPlatform !== null ? yearsOnPlatform : "Nuovo"}
                 </p>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[10px] text-muted-foreground leading-tight">
                   {yearsOnPlatform !== null ? "Anni su Bravo!" : "Su Bravo!"}
                 </p>
               </div>
             </div>
 
-            {/* Verified badge */}
-            <div className="flex items-center gap-1.5 text-[13px] text-green-700">
-              <CheckCircle className="h-4 w-4" />
+            {/* Verified badge — compact */}
+            <div className="flex items-center gap-1 text-[12px] text-green-700">
+              <CheckCircle className="h-3.5 w-3.5" />
               <span className="font-medium">Identità verificata</span>
             </div>
           </CardContent>
@@ -487,11 +508,9 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
 
         {/* Right — Info */}
         <div className="space-y-5">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-foreground">
-              Informazioni su {association.name}
-            </h2>
-          </div>
+          <h2 className="text-lg font-bold text-foreground">
+            Informazioni su {association.name}
+          </h2>
 
           {/* Description */}
           <InlineEditField
@@ -536,63 +555,70 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
         </div>
       </div>
 
-      {/* === SECTION 2: REVIEWS === */}
-      <div className="space-y-4">
+      {/* === SECTION 2: REVIEWS (Airbnb flat style) === */}
+      <div className="space-y-5">
         <h2 className="text-lg font-bold text-foreground">
-          Recensioni su {association.name} ({reviewCount})
+          Recensioni su {association.name}{reviewCount > 0 ? ` (${reviewCount})` : ""}
         </h2>
 
         {reviewCount === 0 ? (
           <p className="text-[13px] text-muted-foreground">Ancora nessuna recensione</p>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {displayedReviews.map((review) => (
-                <Card key={review.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4 space-y-3">
-                    {/* Reviewer */}
-                    <div className="flex items-center gap-2">
-                      {review.reviewer_avatar ? (
-                        <img src={review.reviewer_avatar} alt="" className="h-8 w-8 rounded-full object-cover" />
-                      ) : (
-                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">
-                          {review.reviewer_name?.charAt(0)?.toUpperCase() || "?"}
-                        </div>
-                      )}
-                      <span className="text-[13px] font-medium text-foreground">
-                        {review.reviewer_name || "Utente"}
-                      </span>
-                    </div>
-                    {/* Rating + date */}
-                    <div className="flex items-center gap-2">
-                      <StarRating rating={review.rating} />
-                      <span className="text-[11px] text-muted-foreground">
-                        {formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: it })}
-                      </span>
-                    </div>
-                    {/* Feedback */}
-                    {review.feedback_positive && (
-                      <p className="text-[13px] text-foreground line-clamp-3">
-                        {review.feedback_positive}
-                      </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-0">
+              {displayedReviews.map((review, idx) => (
+                <div
+                  key={review.id}
+                  className="py-5 border-b border-border last:border-b-0"
+                >
+                  {/* Reviewer row */}
+                  <div className="flex items-center gap-2.5 mb-2">
+                    {review.reviewer_avatar ? (
+                      <img src={review.reviewer_avatar} alt="" className="h-10 w-10 rounded-full object-cover" />
+                    ) : (
+                      <div className="h-10 w-10 rounded-full bg-foreground text-background flex items-center justify-center text-sm font-semibold">
+                        {review.reviewer_name?.charAt(0)?.toUpperCase() || "?"}
+                      </div>
                     )}
-                  </CardContent>
-                </Card>
+                    <div>
+                      <p className="text-[13px] font-semibold text-foreground leading-tight">
+                        {review.reviewer_name || "Utente"}
+                      </p>
+                    </div>
+                  </div>
+                  {/* Stars + date */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <StarRating rating={review.rating} />
+                    <span className="text-[11px] text-muted-foreground">
+                      {formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: it })}
+                    </span>
+                  </div>
+                  {/* Feedback text */}
+                  {review.feedback_positive && (
+                    <p className="text-[13px] text-foreground line-clamp-3 leading-relaxed">
+                      {review.feedback_positive}
+                    </p>
+                  )}
+                </div>
               ))}
             </div>
             {allReviews.length > 6 && !showAllReviews && (
-              <Button variant="outline" onClick={() => { setShowAllReviews(true); setReviews(allReviews); }}>
-                Mostra altre recensioni
+              <Button
+                variant="outline"
+                className="font-semibold border-foreground text-foreground hover:bg-muted"
+                onClick={() => { setShowAllReviews(true); setReviews(allReviews); }}
+              >
+                Mostra tutte le {allReviews.length} recensioni
               </Button>
             )}
           </>
         )}
       </div>
 
-      {/* === SECTION 3: EXPERIENCES === */}
-      <div className="space-y-4">
+      {/* === SECTION 3: EXPERIENCES (catalog-style compact cards) === */}
+      <div className="space-y-5">
         <h2 className="text-lg font-bold text-foreground">
-          Esperienze di {association.name} ({experiences.length})
+          Esperienze di {association.name}{experiences.length > 0 ? ` (${experiences.length})` : ""}
         </h2>
 
         {experiences.length === 0 ? (
@@ -605,40 +631,48 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {experiences.map((exp) => (
-              <Card key={exp.id} className="group overflow-hidden hover:shadow-md transition-shadow">
+              <div key={exp.id} className="group">
+                {/* Square image — matches ExperienceCardCompact style */}
                 <BaseCardImage
                   imageUrl={exp.image_url}
                   alt={exp.title}
-                  aspectRatio="video"
+                  aspectRatio="square"
                   fallbackEmoji="🌿"
                   badge={exp.category ? (
-                    <Badge variant="secondary" className="text-[10px] bg-background/80 backdrop-blur-sm">
+                    <Badge
+                      variant="secondary"
+                      className="text-[10px] font-medium bg-white/95 text-foreground backdrop-blur-sm rounded-full px-2 py-0.5 shadow-sm"
+                    >
                       {exp.category}
                     </Badge>
                   ) : undefined}
-                  className="rounded-none rounded-t-lg"
+                  badgePosition="top-left"
                 />
-                <CardContent className="p-4 space-y-2">
-                  <h3 className="font-semibold text-[13px] text-foreground line-clamp-1">{exp.title}</h3>
-                  {exp.description && (
-                    <p className="text-[11px] text-muted-foreground line-clamp-2">{exp.description}</p>
-                  )}
-                  <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                {/* Text content — same style as catalog */}
+                <div className="pt-2 space-y-1">
+                  <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug">
+                    {exp.title}
+                  </h3>
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
                     {exp.city && (
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> {exp.city}
+                      <span className="flex items-center gap-0.5">
+                        <MapPin className="h-2.5 w-2.5" />
+                        {exp.city}
                       </span>
                     )}
                     {exp.next_date && (
-                      <span>
-                        {format(new Date(exp.next_date), "d MMM yyyy", { locale: it })}
-                      </span>
+                      <>
+                        {exp.city && <span className="text-border">·</span>}
+                        <span>
+                          {format(new Date(exp.next_date), "d MMM", { locale: it })}
+                        </span>
+                      </>
                     )}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         )}
