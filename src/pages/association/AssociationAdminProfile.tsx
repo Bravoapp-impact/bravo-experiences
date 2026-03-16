@@ -48,7 +48,7 @@ export default function AssociationAdminProfile() {
                   />
                 )}
                 <div>
-                  <p className="text-lg font-semibold text-foreground">
+                  <p className="text-base font-semibold text-foreground">
                     {profile?.first_name} {profile?.last_name}
                   </p>
                   <p className="text-sm text-muted-foreground">{profile?.email}</p>
@@ -87,7 +87,7 @@ export default function AssociationAdminProfile() {
         >
           <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle className="text-lg">Informazioni account</CardTitle>
+              <CardTitle className="text-base">Informazioni account</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">

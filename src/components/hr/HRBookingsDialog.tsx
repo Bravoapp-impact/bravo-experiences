@@ -74,7 +74,7 @@ export function HRBookingsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold pr-8">
+          <DialogTitle className="text-base font-semibold pr-8">
             Prenotazioni per {experienceTitle}
           </DialogTitle>
         </DialogHeader>

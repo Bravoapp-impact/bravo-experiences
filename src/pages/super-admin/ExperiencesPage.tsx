@@ -475,8 +475,8 @@ export default function ExperiencesPage() {
           className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
         >
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Esperienze</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-xl font-bold tracking-tight">Esperienze</h1>
+            <p className="text-muted-foreground text-[13px]">
               Gestisci le esperienze di volontariato
             </p>
           </div>
@@ -495,7 +495,7 @@ export default function ExperiencesPage() {
               <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
                 <CardHeader>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <CardTitle className="text-lg">
+                    <CardTitle className="text-base">
                       {experiences.length} Esperienze
                     </CardTitle>
                     <div className="flex flex-col sm:flex-row gap-3">

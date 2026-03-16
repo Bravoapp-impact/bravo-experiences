@@ -325,7 +325,7 @@ export default function EmailTemplatesPage() {
         {/* Company Selector */}
         <Card>
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg flex items-center gap-2">
+            <CardTitle className="text-base flex items-center gap-2">
               <Building2 className="h-5 w-5 text-bravo-purple" />
               Seleziona Azienda
             </CardTitle>
@@ -358,7 +358,7 @@ export default function EmailTemplatesPage() {
             {/* Email Settings */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="text-base flex items-center gap-2">
                   <Mail className="h-5 w-5 text-bravo-purple" />
                   Impostazioni Email
                   {selectedCompany && (
@@ -478,7 +478,7 @@ export default function EmailTemplatesPage() {
             {/* Email Templates */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Contenuto Email</CardTitle>
+                <CardTitle className="text-base">Contenuto Email</CardTitle>
                 <CardDescription>
                   Personalizza il testo delle email per questa azienda. I dettagli
                   dell'esperienza vengono inseriti automaticamente.

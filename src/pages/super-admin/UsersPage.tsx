@@ -369,7 +369,7 @@ export default function UsersPage() {
         >
           <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle className="text-lg">{users.length} Utenti</CardTitle>
+              <CardTitle className="text-base">{users.length} Utenti</CardTitle>
             </CardHeader>
             <CardContent>
               {/* Filters */}
