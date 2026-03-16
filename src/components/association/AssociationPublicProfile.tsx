@@ -436,7 +436,7 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
     <div className="max-w-5xl">
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 lg:gap-12">
         {/* Left — Profile Card (sticky across full page) */}
-        <div className="lg:self-start lg:sticky lg:top-6">
+        <div>
           <Card className="h-fit">
             <CardContent className="p-5 flex flex-col items-center text-center space-y-3">
               {/* Logo with direct upload */}
