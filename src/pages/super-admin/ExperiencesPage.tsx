@@ -64,6 +64,7 @@ import { it } from "date-fns/locale";
 import { getAllSDGs } from "@/lib/sdg-data";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ExperienceDateDialog } from "@/components/super-admin/ExperienceDateDialog";
+import { VisibilityDialog } from "@/components/super-admin/VisibilityDialog";
 import { devLog } from "@/lib/logger";
 import { LogoUpload } from "@/components/super-admin/LogoUpload";
 
