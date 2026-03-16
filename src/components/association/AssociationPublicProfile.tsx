@@ -402,9 +402,6 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
   const avgRating = reviewCount > 0
     ? Math.round((allReviews.reduce((s, r) => s + r.rating, 0) / reviewCount) * 10) / 10
     : 0;
-  const yearsOnPlatform = association?.partnership_start_date
-    ? differenceInYears(new Date(), new Date(association.partnership_start_date))
-    : null;
 
   // --- Loading skeleton ---
   if (loading) {
