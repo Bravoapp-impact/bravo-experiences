@@ -264,8 +264,10 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
         description: e.description,
         image_url: e.image_url,
         city: e.city,
+        address: e.address,
         category: e.category,
         next_date: futureDates[0]?.start_datetime || null,
+        max_participants: e.max_participants,
       };
     });
     mapped.sort((a, b) => {
