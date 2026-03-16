@@ -698,9 +698,6 @@ export default function ExperiencesPage() {
                                                 new Date(b.start_datetime).getTime()
                                             )
                                             .map((date) => {
-                                              const companyName = date.company_id 
-                                                ? companies.find(c => c.id === date.company_id)?.name 
-                                                : null;
                                               return (
                                               <div
                                                 key={date.id}
@@ -716,16 +713,6 @@ export default function ExperiencesPage() {
                                                           { locale: it }
                                                         )}
                                                       </p>
-                                                      {companyName && (
-                                                        <Badge variant="outline" className="text-xs">
-                                                          {companyName}
-                                                        </Badge>
-                                                      )}
-                                                      {!companyName && (
-                                                        <Badge variant="destructive" className="text-xs">
-                                                          Nessuna azienda
-                                                        </Badge>
-                                                      )}
                                                     </div>
                                                     <p className="text-xs text-muted-foreground">
                                                       {format(
