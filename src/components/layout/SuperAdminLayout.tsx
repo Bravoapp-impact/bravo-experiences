@@ -4,7 +4,6 @@ import {
   Calendar,
   Users,
   BarChart3,
-  Link2,
   MapPin,
   Tag,
   Heart,
