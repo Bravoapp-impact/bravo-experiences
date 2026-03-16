@@ -432,249 +432,243 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
   const displayedReviews = showAllReviews ? allReviews : reviews;
 
   return (
-    <div className="space-y-10 max-w-5xl">
-      {/* === SECTION 1: HEADER === */}
+    <div className="max-w-5xl">
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 lg:gap-12">
-        {/* Left — Profile Card (Airbnb-style sticky card) */}
-        <Card className="h-fit lg:sticky lg:top-6">
-          <CardContent className="p-5 flex flex-col items-center text-center space-y-3">
-            {/* Logo with direct upload */}
-            <div className="relative group">
-              {association.logo_url ? (
-                <img
-                  src={association.logo_url}
-                  alt={association.name}
-                  className="h-24 w-24 rounded-full object-cover border-2 border-border"
-                />
-              ) : (
-                <div className="h-24 w-24 rounded-full bg-muted flex items-center justify-center text-2xl font-bold text-muted-foreground">
-                  {association.name.slice(0, 2).toUpperCase()}
-                </div>
-              )}
-              {canEdit && (
-                <button
-                  onClick={() => logoInputRef.current?.click()}
-                  className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+        {/* Left — Profile Card (sticky across full page) */}
+        <div className="lg:self-start lg:sticky lg:top-6">
+          <Card className="h-fit">
+            <CardContent className="p-5 flex flex-col items-center text-center space-y-3">
+              {/* Logo with direct upload */}
+              <div className="relative group">
+                {association.logo_url ? (
+                  <img
+                    src={association.logo_url}
+                    alt={association.name}
+                    className="h-24 w-24 rounded-full object-cover border-2 border-border"
+                  />
+                ) : (
+                  <div className="h-24 w-24 rounded-full bg-muted flex items-center justify-center text-2xl font-bold text-muted-foreground">
+                    {association.name.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+                {canEdit && (
+                  <button
+                    onClick={() => logoInputRef.current?.click()}
+                    className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    disabled={uploadingLogo}
+                  >
+                    <Camera className="h-5 w-5 text-white" />
+                  </button>
+                )}
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept=".png,.jpg,.jpeg,.webp,.svg"
+                  className="hidden"
+                  onChange={handleLogoFileSelect}
                   disabled={uploadingLogo}
-                >
-                  <Camera className="h-5 w-5 text-white" />
-                </button>
-              )}
-              <input
-                ref={logoInputRef}
-                type="file"
-                accept=".png,.jpg,.jpeg,.webp,.svg"
-                className="hidden"
-                onChange={handleLogoFileSelect}
-                disabled={uploadingLogo}
-              />
-            </div>
-
-            {/* Name */}
-            <h2 className="text-xl font-bold text-foreground leading-tight">{association.name}</h2>
-
-            {/* Stats row */}
-            <div className="flex items-center justify-center gap-4 w-full">
-              <div className="text-center min-w-0">
-                <p className="text-base font-bold text-foreground leading-tight">{reviewCount}</p>
-                <p className="text-[10px] text-muted-foreground leading-tight">Recensioni</p>
+                />
               </div>
-              <Separator orientation="vertical" className="h-8" />
-              <div className="text-center min-w-0">
-                <p className="text-base font-bold text-foreground leading-tight">
-                  {avgRating > 0 ? avgRating : "–"}
-                  {avgRating > 0 && <Star className="inline h-3 w-3 text-amber-500 fill-current ml-0.5 -mt-0.5" />}
-                </p>
-                <p className="text-[10px] text-muted-foreground leading-tight">Valutazione</p>
+
+              {/* Name */}
+              <h2 className="text-xl font-bold text-foreground leading-tight">{association.name}</h2>
+
+              {/* Stats row */}
+              <div className="flex items-center justify-center gap-4 w-full">
+                <div className="text-center min-w-0">
+                  <p className="text-base font-bold text-foreground leading-tight">{reviewCount}</p>
+                  <p className="text-[10px] text-muted-foreground leading-tight">Recensioni</p>
+                </div>
+                <Separator orientation="vertical" className="h-8" />
+                <div className="text-center min-w-0">
+                  <p className="text-base font-bold text-foreground leading-tight">
+                    {avgRating > 0 ? avgRating : "–"}
+                    {avgRating > 0 && <Star className="inline h-3 w-3 text-amber-500 fill-current ml-0.5 -mt-0.5" />}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground leading-tight">Valutazione</p>
+                </div>
               </div>
+
+              {/* Verified badge — compact */}
+              <div className="flex items-center gap-1 text-[12px] text-green-700">
+                <CheckCircle className="h-3.5 w-3.5" />
+                <span className="font-medium">Identità verificata</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right — All content sections */}
+        <div className="space-y-10">
+          {/* Info section */}
+          <div className="space-y-5">
+            <h2 className="text-lg font-bold text-foreground">
+              Informazioni su {association.name}
+            </h2>
+
+            <InlineEditField
+              value={association.description}
+              fieldKey="description"
+              editingField={editingField}
+              editValue={editValue}
+              onStartEdit={startEdit}
+              onChangeEdit={setEditValue}
+              onSave={saveField}
+              onCancel={cancelEdit}
+              canEdit={canEdit}
+              placeholder="Aggiungi descrizione"
+              isTextarea
+            />
+
+            <Separator />
+
+            <div className="space-y-3">
+              <InlineEditField value={association.address} fieldKey="address" editingField={editingField} editValue={editValue} onStartEdit={startEdit} onChangeEdit={setEditValue} onSave={saveField} onCancel={cancelEdit} canEdit={canEdit} placeholder="Aggiungi indirizzo" icon={MapPin} />
+              <InlineEditField value={association.website} fieldKey="website" editingField={editingField} editValue={editValue} onStartEdit={startEdit} onChangeEdit={setEditValue} onSave={saveField} onCancel={cancelEdit} canEdit={canEdit} placeholder="Aggiungi sito web" icon={Globe} isLink />
+              <InlineEditField value={association.contact_email} fieldKey="contact_email" editingField={editingField} editValue={editValue} onStartEdit={startEdit} onChangeEdit={setEditValue} onSave={saveField} onCancel={cancelEdit} canEdit={canEdit} placeholder="Aggiungi email" icon={Mail} />
+              <InlineEditField value={association.contact_phone} fieldKey="contact_phone" editingField={editingField} editValue={editValue} onStartEdit={startEdit} onChangeEdit={setEditValue} onSave={saveField} onCancel={cancelEdit} canEdit={canEdit} placeholder="Aggiungi telefono" icon={Phone} />
+              <InlineEditField value={association.contact_name} fieldKey="contact_name" editingField={editingField} editValue={editValue} onStartEdit={startEdit} onChangeEdit={setEditValue} onSave={saveField} onCancel={cancelEdit} canEdit={canEdit} placeholder="Aggiungi nome referente" icon={User} />
             </div>
 
-            {/* Verified badge — compact */}
-            <div className="flex items-center gap-1 text-[12px] text-green-700">
-              <CheckCircle className="h-3.5 w-3.5" />
-              <span className="font-medium">Identità verificata</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Right — Info */}
-        <div className="space-y-5">
-          <h2 className="text-lg font-bold text-foreground">
-            Informazioni su {association.name}
-          </h2>
-
-          {/* Description */}
-          <InlineEditField
-            value={association.description}
-            fieldKey="description"
-            editingField={editingField}
-            editValue={editValue}
-            onStartEdit={startEdit}
-            onChangeEdit={setEditValue}
-            onSave={saveField}
-            onCancel={cancelEdit}
-            canEdit={canEdit}
-            placeholder="Aggiungi descrizione"
-            isTextarea
-          />
-
-          <Separator />
-
-          {/* Contact fields */}
-          <div className="space-y-3">
-            <InlineEditField value={association.address} fieldKey="address" editingField={editingField} editValue={editValue} onStartEdit={startEdit} onChangeEdit={setEditValue} onSave={saveField} onCancel={cancelEdit} canEdit={canEdit} placeholder="Aggiungi indirizzo" icon={MapPin} />
-            <InlineEditField value={association.website} fieldKey="website" editingField={editingField} editValue={editValue} onStartEdit={startEdit} onChangeEdit={setEditValue} onSave={saveField} onCancel={cancelEdit} canEdit={canEdit} placeholder="Aggiungi sito web" icon={Globe} isLink />
-            <InlineEditField value={association.contact_email} fieldKey="contact_email" editingField={editingField} editValue={editValue} onStartEdit={startEdit} onChangeEdit={setEditValue} onSave={saveField} onCancel={cancelEdit} canEdit={canEdit} placeholder="Aggiungi email" icon={Mail} />
-            <InlineEditField value={association.contact_phone} fieldKey="contact_phone" editingField={editingField} editValue={editValue} onStartEdit={startEdit} onChangeEdit={setEditValue} onSave={saveField} onCancel={cancelEdit} canEdit={canEdit} placeholder="Aggiungi telefono" icon={Phone} />
-            <InlineEditField value={association.contact_name} fieldKey="contact_name" editingField={editingField} editValue={editValue} onStartEdit={startEdit} onChangeEdit={setEditValue} onSave={saveField} onCancel={cancelEdit} canEdit={canEdit} placeholder="Aggiungi nome referente" icon={User} />
+            {cities.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-[13px] font-medium text-muted-foreground">Città operative</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {cities.map((city) => (
+                    <Badge key={city} variant="secondary" className="text-[11px]">
+                      <MapPin className="h-3 w-3 mr-1" />
+                      {city}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Cities */}
-          {cities.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-[13px] font-medium text-muted-foreground">Città operative</p>
-              <div className="flex flex-wrap gap-1.5">
-                {cities.map((city) => (
-                  <Badge key={city} variant="secondary" className="text-[11px]">
-                    <MapPin className="h-3 w-3 mr-1" />
-                    {city}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+          {/* === SECTION 2: REVIEWS === */}
+          <div className="space-y-5">
+            <h2 className="text-lg font-bold text-foreground">
+              Recensioni su {association.name}{reviewCount > 0 ? ` (${reviewCount})` : ""}
+            </h2>
 
-      {/* === SECTION 2: REVIEWS (Airbnb flat style) === */}
-      <div className="space-y-5">
-        <h2 className="text-lg font-bold text-foreground">
-          Recensioni su {association.name}{reviewCount > 0 ? ` (${reviewCount})` : ""}
-        </h2>
-
-        {reviewCount === 0 ? (
-          <p className="text-[13px] text-muted-foreground">Ancora nessuna recensione</p>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-0">
-              {displayedReviews.map((review, idx) => (
-                <div
-                  key={review.id}
-                  className="py-5 border-b border-border last:border-b-0"
-                >
-                  {/* Reviewer row */}
-                  <div className="flex items-center gap-2.5 mb-2">
-                    {review.reviewer_avatar ? (
-                      <img src={review.reviewer_avatar} alt="" className="h-10 w-10 rounded-full object-cover" />
-                    ) : (
-                      <div className="h-10 w-10 rounded-full bg-foreground text-background flex items-center justify-center text-sm font-semibold">
-                        {review.reviewer_name?.charAt(0)?.toUpperCase() || "?"}
+            {reviewCount === 0 ? (
+              <p className="text-[13px] text-muted-foreground">Ancora nessuna recensione</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
+                  {displayedReviews.map((review) => (
+                    <div
+                      key={review.id}
+                      className="py-5 border-b border-border last:border-b-0"
+                    >
+                      <div className="flex items-center gap-2.5 mb-2">
+                        {review.reviewer_avatar ? (
+                          <img src={review.reviewer_avatar} alt="" className="h-10 w-10 rounded-full object-cover" />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-foreground text-background flex items-center justify-center text-sm font-semibold">
+                            {review.reviewer_name?.charAt(0)?.toUpperCase() || "?"}
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-[13px] font-semibold text-foreground leading-tight">
+                            {review.reviewer_name || "Utente"}
+                          </p>
+                        </div>
                       </div>
-                    )}
-                    <div>
-                      <p className="text-[13px] font-semibold text-foreground leading-tight">
-                        {review.reviewer_name || "Utente"}
-                      </p>
+                      <div className="flex items-center gap-2 mb-2">
+                        <StarRating rating={review.rating} />
+                        <span className="text-[11px] text-muted-foreground">
+                          {formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: it })}
+                        </span>
+                      </div>
+                      {review.feedback_positive && (
+                        <p className="text-[13px] text-foreground line-clamp-3 leading-relaxed">
+                          {review.feedback_positive}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {allReviews.length > 6 && !showAllReviews && (
+                  <Button
+                    variant="outline"
+                    className="font-semibold border-foreground text-foreground hover:bg-muted"
+                    onClick={() => { setShowAllReviews(true); setReviews(allReviews); }}
+                  >
+                    Mostra tutte le {allReviews.length} recensioni
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* === SECTION 3: EXPERIENCES === */}
+          <div className="space-y-5">
+            <h2 className="text-lg font-bold text-foreground">
+              Esperienze di {association.name}{experiences.length > 0 ? ` (${experiences.length})` : ""}
+            </h2>
+
+            {experiences.length === 0 ? (
+              <div className="text-[13px] text-muted-foreground">
+                <p>Nessuna esperienza pubblicata ancora</p>
+                {canEdit && (
+                  <Link to="/association/experiences" className="inline-flex items-center gap-1 text-primary hover:underline mt-2">
+                    Crea la tua prima esperienza <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                {experiences.map((exp) => (
+                  <div key={exp.id} className="group">
+                    <BaseCardImage
+                      imageUrl={exp.image_url}
+                      alt={exp.title}
+                      aspectRatio="square"
+                      fallbackEmoji="🌿"
+                      badge={exp.category ? (
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] font-medium bg-white/95 text-foreground backdrop-blur-sm rounded-full px-2 py-0.5 shadow-sm"
+                        >
+                          {exp.category}
+                        </Badge>
+                      ) : undefined}
+                      badgePosition="top-left"
+                    />
+                    <div className="pt-2 space-y-1">
+                      <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug">
+                        {exp.title}
+                      </h3>
+                      {exp.city && (
+                        <p className="text-[11px] text-muted-foreground font-light flex items-center gap-0.5">
+                          <MapPin className="h-2.5 w-2.5 shrink-0" />
+                          <span className="truncate">{exp.city}</span>
+                        </p>
+                      )}
+                      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
+                        {exp.next_date && (
+                          <span>
+                            {format(new Date(exp.next_date), "d MMM", { locale: it })}
+                          </span>
+                        )}
+                        {exp.max_participants && (
+                          <>
+                            {exp.next_date && <span className="text-border">·</span>}
+                            <span className="flex items-center gap-0.5">
+                              <Users className="h-2.5 w-2.5" />
+                              {exp.max_participants}
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  {/* Stars + date */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <StarRating rating={review.rating} />
-                    <span className="text-[11px] text-muted-foreground">
-                      {formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: it })}
-                    </span>
-                  </div>
-                  {/* Feedback text */}
-                  {review.feedback_positive && (
-                    <p className="text-[13px] text-foreground line-clamp-3 leading-relaxed">
-                      {review.feedback_positive}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-            {allReviews.length > 6 && !showAllReviews && (
-              <Button
-                variant="outline"
-                className="font-semibold border-foreground text-foreground hover:bg-muted"
-                onClick={() => { setShowAllReviews(true); setReviews(allReviews); }}
-              >
-                Mostra tutte le {allReviews.length} recensioni
-              </Button>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* === SECTION 3: EXPERIENCES (catalog-style compact cards) === */}
-      <div className="space-y-5">
-        <h2 className="text-lg font-bold text-foreground">
-          Esperienze di {association.name}{experiences.length > 0 ? ` (${experiences.length})` : ""}
-        </h2>
-
-        {experiences.length === 0 ? (
-          <div className="text-[13px] text-muted-foreground">
-            <p>Nessuna esperienza pubblicata ancora</p>
-            {canEdit && (
-              <Link to="/association/experiences" className="inline-flex items-center gap-1 text-primary hover:underline mt-2">
-                Crea la tua prima esperienza <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-            {experiences.map((exp) => (
-              <div key={exp.id} className="group">
-                {/* Square image — matches ExperienceCardCompact style */}
-                <BaseCardImage
-                  imageUrl={exp.image_url}
-                  alt={exp.title}
-                  aspectRatio="square"
-                  fallbackEmoji="🌿"
-                  badge={exp.category ? (
-                    <Badge
-                      variant="secondary"
-                      className="text-[10px] font-medium bg-white/95 text-foreground backdrop-blur-sm rounded-full px-2 py-0.5 shadow-sm"
-                    >
-                      {exp.category}
-                    </Badge>
-                  ) : undefined}
-                  badgePosition="top-left"
-                />
-                {/* Text content — same style as catalog */}
-                <div className="pt-2 space-y-1">
-                  <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug">
-                    {exp.title}
-                  </h3>
-                  {/* Location */}
-                  {(exp.address || exp.city) && (
-                    <p className="text-[11px] text-muted-foreground font-light flex items-center gap-0.5">
-                      <MapPin className="h-2.5 w-2.5 shrink-0" />
-                      <span className="truncate">{exp.address || exp.city}</span>
-                    </p>
-                  )}
-                  {/* Date + participants */}
-                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
-                    {exp.next_date && (
-                      <span>
-                        {format(new Date(exp.next_date), "d MMM", { locale: it })}
-                      </span>
-                    )}
-                    {exp.max_participants && (
-                      <>
-                        {exp.next_date && <span className="text-border">·</span>}
-                        <span className="flex items-center gap-0.5">
-                          <Users className="h-2.5 w-2.5" />
-                          {exp.max_participants}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
