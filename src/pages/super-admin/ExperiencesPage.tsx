@@ -615,7 +615,17 @@ export default function ExperiencesPage() {
                                     {getCategoryName(experience.category_id, experience.category)}
                                   </Badge>
                                 </TableCell>
-                                <TableCell>{getStatusBadge(experience.status)}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-1.5">
+                                    {getStatusBadge(experience.status)}
+                                    {experience.visibility === "private" && (
+                                      <Badge variant="outline" className="text-xs gap-1">
+                                        <Lock className="h-3 w-3" />
+                                        Privata
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </TableCell>
                                 <TableCell>
                                   {experience.experience_dates?.length || 0}
                                 </TableCell>
