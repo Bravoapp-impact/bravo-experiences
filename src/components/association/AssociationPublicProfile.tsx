@@ -647,18 +647,26 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
                   <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug">
                     {exp.title}
                   </h3>
+                  {/* Location */}
+                  {(exp.address || exp.city) && (
+                    <p className="text-[11px] text-muted-foreground font-light flex items-center gap-0.5">
+                      <MapPin className="h-2.5 w-2.5 shrink-0" />
+                      <span className="truncate">{exp.address || exp.city}</span>
+                    </p>
+                  )}
+                  {/* Date + participants */}
                   <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
-                    {exp.city && (
-                      <span className="flex items-center gap-0.5">
-                        <MapPin className="h-2.5 w-2.5" />
-                        {exp.city}
+                    {exp.next_date && (
+                      <span>
+                        {format(new Date(exp.next_date), "d MMM", { locale: it })}
                       </span>
                     )}
-                    {exp.next_date && (
+                    {exp.max_participants && (
                       <>
-                        {exp.city && <span className="text-border">·</span>}
-                        <span>
-                          {format(new Date(exp.next_date), "d MMM", { locale: it })}
+                        {exp.next_date && <span className="text-border">·</span>}
+                        <span className="flex items-center gap-0.5">
+                          <Users className="h-2.5 w-2.5" />
+                          {exp.max_participants}
                         </span>
                       </>
                     )}
