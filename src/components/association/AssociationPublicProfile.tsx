@@ -647,8 +647,10 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
             )}
           </div>
 
-          {/* === SECTION 3: EXPERIENCES === */}
-          <div className="space-y-5">
+      <Separator />
+
+      {/* === SECTION 3: EXPERIENCES (full width) === */}
+      <div className="space-y-5">
             <h2 className="text-lg font-bold text-foreground">
               Esperienze di {association.name}{experiences.length > 0 ? ` (${experiences.length})` : ""}
             </h2>
