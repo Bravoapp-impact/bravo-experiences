@@ -1,76 +1,70 @@
-# Piano di Implementazione Fase 1 — Roadmap v4.0
 
-## Sprint completati
 
-### ✅ Sprint 0 — Feedback (già implementato)
-- Tabella `experience_reviews` + RLS + modal feedback + email post-evento
-- Pagina Impact funzionante (booking confirmed + data passata)
+# Piano: Refactoring completo sidebar AdminLayout + Layout specifici
 
-### ✅ Sprint 1 — Colonne additive (rischio zero)
-- `experiences`: + `type`, `price_per_participant`, `visibility`, `created_by`
-- `bookings`: + `verified_at`, `verification_method`, `verification_data`
-- `profiles`: + `manager_id`
-- `companies`: + `max_concurrent_absences`
-
-### ✅ Sprint 2 — Nuove tabelle (rischio basso)
-- `company_service_config` con RLS (HR + super admin)
-- `hour_budgets` con RLS (employee read + HR read + super admin full)
-- Triggers `updated_at` su entrambe
-
-### ✅ Sprint 3 — Lifecycle booking (rischio medio)
-- Function `process_completed_events()` per transizionare booking passati (confirmed → completed dopo 2h dalla fine)
-- RLS `experience_reviews` aggiornata per accettare status `completed`
-- Frontend retrocompatibile: tutti i filtri accettano sia `confirmed` (passato) che `completed`
-- Utility `src/lib/booking-utils.ts` con costanti e helper per gli stati
-- Badge `no_show` aggiunto nelle card booking
-- **Rollback:** `UPDATE bookings SET status = 'confirmed' WHERE status IN ('completed', 'verified');` + ripristino RLS
-
-### ✅ Sprint 4 — Widget ore dipendente/HR
-- Hook `useHourBudget` con logica "nessun budget = illimitato"
-- Widget ore nel profilo dipendente e HR admin con skeleton loading
-- Calcolo anno fiscale basato su `hour_budgets.fiscal_year_start`
+## Modifiche a 4 file, nessun file nuovo, nessuna migrazione DB.
 
 ---
 
-## Sprint in corso
+## 1. `AdminLayout.tsx` — Riscrittura sostanziale
 
-### ✅ Sprint Marketplace — Refactoring experience_dates (COMPLETATO)
+**Rimuovere:**
+- Props: `badgeLabel`, `showCompanyLogo`, `dropdownHeader`
+- Imports: `bravoLogo`, `Badge`, `ChevronRight`, `LayoutGrid`
+- Intero header sidebar (logo Bravo + badge)
+- Intero footer utente (avatar + dropdown in basso)
+- Variabili `companyLogo`, `companyName`, `displayBadgeLabel`, `getInitials`
 
-**Obiettivo:** passare da modello "Push" (date legate a `company_id`) a modello "Pull" (catalogo aperto, visibilità basata su `service_type` + assegnamenti diretti via `experience_companies`).
+**Aggiungere alle props:**
+- `entityLogoUrl?: string`
+- `dropdownItems?: { label: string; icon: LucideIcon; href?: string; onClick?: () => void }[]`
+- `sectionLabels?: { beforeIndex: number; label: string }[]`
+- `separatorAfterIndex?: number[]`
+- (mantieni `entityName` già esistente)
 
-**Completato:**
-- Step 0-4: SQL (funzione `can_employee_see_experience`, nuove RLS `_v2`, drop vecchie policy)
-- Step 5: Frontend — `ExperienceDateDialog.tsx` ripulito da `company_id` (campo deprecato, non più usato)
-- Step 6: Nuovo componente `VisibilityDialog.tsx` per gestione eventi privati
-- Step 7: `ExperiencesPage.tsx` — bottone Lock/Globe per gestire visibilità + badge "Privata" + dialog assegnamenti aziende
+**Aggiungere imports:** `Settings`, `ChevronsUpDown` da lucide-react
 
-**Architettura visibilità:**
-- `experiences.visibility`: `'public'` (default) o `'private'`
-- `experience_companies`: tabella join per assegnamenti diretti
-- `can_employee_see_experience()`: gestisce la logica di accesso
-- Super admin può rendere un'esperienza privata e assegnare aziende specifiche dal pannello Esperienze
+**Nuovo header sidebar** (sostituisce vecchio header + badge + footer):
+- Container `px-3 pt-3 pb-2` come primo elemento della sidebar
+- `DropdownMenu` wrapper, trigger = bottone con:
+  - Avatar 28px con `entityLogoUrl` o iniziali di `entityName`
+  - Riga 1: greeting gendered (Bravo/Brava/Bravə basato su `(profile as any)?.gender`) + ", " + nome utente
+  - Riga 2: `entityName` in muted
+  - Icona `ChevronsUpDown` a destra
+- Dropdown content: Profilo personale, Impostazioni (`basePath + '/settings'`), eventuali `dropdownItems`, separator, Esci (destructive)
 
-**`experience_dates.company_id`:** resta nel DB (nullable, deprecato), non più usato nel frontend.
+**Stile nav items — compatti:**
+- `py-1.5` (era `py-2.5`), `space-y-0.5` (era `space-y-1`)
+- Icone `h-4 w-4` (era `h-5 w-5`), `gap-2` (era `gap-3`), `rounded-md` (era `rounded-lg`)
+- Attivo: `bg-muted font-medium text-foreground border-l-2 border-primary` — no ChevronRight
+- Hover: `hover:bg-muted/50`
+
+**Section labels e separatori:** renderizzati inline nel loop degli items basandosi su `sectionLabels` e `separatorAfterIndex`
+
+**ScrollArea:** `h-[calc(100vh-5rem)]` (no footer)
+
+**Mobile header:** solo hamburger button, niente logo/badge
+
+**Bottone X sidebar mobile:** rimane nel header della sidebar (visibile solo lg:hidden), posizionato dopo il dropdown header
 
 ---
 
-## Sprint da fare
+## 2. `HRLayout.tsx`
 
-### Sprint 4b — Verifica ore pre-prenotazione
-- Verifica ore residue pre-prenotazione (frontend only)
-- Widget ore in dashboard HR
-- Se `hour_budgets` non esiste → budget illimitato (retrocompatibilità)
+- Items: Home (`/hr/home`), Esperienze, Dipendenti, Report (`/hr` — rinomina Dashboard)
+- Import `Home`, `LayoutGrid` da lucide-react
+- Props: rimuovi `badgeLabel`, `showCompanyLogo`, `dropdownHeader`; aggiungi `entityLogoUrl`, `entityName`, `separatorAfterIndex={[2]}`, `dropdownItems` con "Esplora catalogo"
+- Elimina il JSX `dropdownHeader`
 
-### Sprint 5 — "Le mie attività" + notifica manager
-- Nuova pagina `/app/my-activities`
-- Edge Function notifica manager alla prenotazione
-- Check tetto assenze contemporanee
+## 3. `AssociationLayout.tsx`
 
----
+- Items: Pagina Host (`/association/profile`, icon Globe), Home (`/association/home`), Esperienze, Calendario, Storico
+- Import `Globe`, `Home`; rimuovi `BarChart3`, `Building`
+- Props: rimuovi `badgeLabel`; aggiungi `entityLogoUrl`, `separatorAfterIndex={[0]}`
 
-## Regole di sicurezza
-1. Mai DROP + CREATE RLS in un singolo step — usare policy `_v2` affiancate, poi drop delle vecchie
-2. Mai ALTER colonne esistenti — solo ADD COLUMN
-3. Ogni migrazione reversibile
-4. Frontend retrocompatibile con fallback
-5. Test su ambiente Test prima di pubblicare
+## 4. `SuperAdminLayout.tsx`
+
+- Items riordinati: Home (`/super-admin/home`), Aziende, Associazioni, Esperienze, Utenti, Codici Accesso, Richieste Accesso, Città, Categorie, Email Templates
+- Import `Home`; rimuovi `BarChart3`
+- Props: rimuovi `badgeLabel`; aggiungi `entityName="Bravo! Team"`, `sectionLabels` (Marketplace@1, Configurazione@5)
+
