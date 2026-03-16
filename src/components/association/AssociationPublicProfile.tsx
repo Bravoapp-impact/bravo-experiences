@@ -514,6 +514,29 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
               </div>
             </CardContent>
           </Card>
+
+          {/* Referente card */}
+          {referente && (
+            <Card className="mt-4">
+              <CardContent className="p-5 flex flex-col items-center text-center space-y-2">
+                <Avatar className="h-16 w-16">
+                  {referente.avatar_url ? (
+                    <AvatarImage src={referente.avatar_url} alt={`${referente.first_name} ${referente.last_name}`} />
+                  ) : null}
+                  <AvatarFallback className="text-lg font-semibold bg-muted text-muted-foreground">
+                    {(referente.first_name?.charAt(0) || "").toUpperCase()}
+                    {(referente.last_name?.charAt(0) || "").toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-semibold text-foreground leading-tight">
+                    {referente.first_name} {referente.last_name}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Referente</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Right — All content sections */}
