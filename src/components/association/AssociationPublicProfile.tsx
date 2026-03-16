@@ -197,6 +197,7 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
   const [savingField, setSavingField] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const [referente, setReferente] = useState<{ first_name: string | null; last_name: string | null; avatar_url: string | null } | null>(null);
 
   useEffect(() => {
     fetchAllData();
