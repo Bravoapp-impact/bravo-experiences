@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { devLog } from "@/lib/logger";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow, format } from "date-fns";
 import { it } from "date-fns/locale";
 import {
@@ -196,6 +197,7 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
   const [savingField, setSavingField] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const [referente, setReferente] = useState<{ first_name: string | null; last_name: string | null; avatar_url: string | null } | null>(null);
 
   useEffect(() => {
     fetchAllData();
@@ -209,12 +211,28 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
         fetchCities(),
         fetchExperiences(),
         fetchReviews(),
+        fetchReferente(),
       ]);
     } catch (err) {
       devLog.error("Error fetching profile data:", err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchReferente = async () => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("first_name, last_name, avatar_url")
+      .eq("association_id", associationId)
+      .eq("role", "association_admin")
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      devLog.error("Error fetching referente:", error);
+      return;
+    }
+    setReferente(data);
   };
 
   const fetchAssociation = async () => {
@@ -435,7 +453,7 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
     <div className="max-w-5xl">
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 lg:gap-12">
         {/* Left — Profile Card (sticky across full page) */}
-        <div className="lg:self-start lg:sticky lg:top-6">
+        <div>
           <Card className="h-fit">
             <CardContent className="p-5 flex flex-col items-center text-center space-y-3">
               {/* Logo with direct upload */}
@@ -496,6 +514,29 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
               </div>
             </CardContent>
           </Card>
+
+          {/* Referente card */}
+          {referente && (
+            <Card className="mt-4">
+              <CardContent className="p-5 flex flex-col items-center text-center space-y-2">
+                <Avatar className="h-16 w-16">
+                  {referente.avatar_url ? (
+                    <AvatarImage src={referente.avatar_url} alt={`${referente.first_name} ${referente.last_name}`} />
+                  ) : null}
+                  <AvatarFallback className="text-lg font-semibold bg-muted text-muted-foreground">
+                    {(referente.first_name?.charAt(0) || "").toUpperCase()}
+                    {(referente.last_name?.charAt(0) || "").toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-semibold text-foreground leading-tight">
+                    {referente.first_name} {referente.last_name}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Referente</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Right — All content sections */}
