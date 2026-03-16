@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { devLog } from "@/lib/logger";
 import { formatDistanceToNow, format } from "date-fns";
-import { formatDistanceToNow, format } from "date-fns";
 import { it } from "date-fns/locale";
 import {
   MapPin, Globe, Mail, Phone, User, Users, Pencil, Star,
