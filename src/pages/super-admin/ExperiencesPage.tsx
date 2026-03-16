@@ -94,6 +94,7 @@ interface Experience {
   category_id: string | null;
   address: string | null;
   status: string;
+  visibility: string;
   sdgs: string[] | null;
   participant_info: string | null;
   secondary_tags: string[] | null;
