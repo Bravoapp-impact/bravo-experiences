@@ -742,6 +742,7 @@ export type Database = {
           created_at: string
           email: string
           first_name: string | null
+          gender: string | null
           id: string
           last_name: string | null
           manager_id: string | null
@@ -754,6 +755,7 @@ export type Database = {
           created_at?: string
           email: string
           first_name?: string | null
+          gender?: string | null
           id: string
           last_name?: string | null
           manager_id?: string | null
@@ -766,6 +768,7 @@ export type Database = {
           created_at?: string
           email?: string
           first_name?: string | null
+          gender?: string | null
           id?: string
           last_name?: string | null
           manager_id?: string | null

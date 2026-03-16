@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Calendar, CalendarDays, BarChart3, History, Building } from "lucide-react";
+import { Calendar, CalendarDays, History, Globe, Home } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminLayout, SidebarItem } from "./AdminLayout";
 
@@ -8,44 +8,24 @@ interface AssociationLayoutProps {
 }
 
 const sidebarItems: SidebarItem[] = [
-  {
-    label: "Dashboard",
-    icon: BarChart3,
-    href: "/association",
-  },
-  {
-    label: "Esperienze",
-    icon: Calendar,
-    href: "/association/experiences",
-  },
-  {
-    label: "Calendario",
-    icon: CalendarDays,
-    href: "/association/calendar",
-  },
-  {
-    label: "Storico",
-    icon: History,
-    href: "/association/history",
-  },
-  {
-    label: "Profilo",
-    icon: Building,
-    href: "/association/profile",
-  },
+  { label: "Pagina Host", icon: Globe, href: "/association/profile" },
+  { label: "Home", icon: Home, href: "/association/home" },
+  { label: "Esperienze", icon: Calendar, href: "/association/experiences" },
+  { label: "Calendario", icon: CalendarDays, href: "/association/calendar" },
+  { label: "Storico", icon: History, href: "/association/history" },
 ];
 
 export function AssociationLayout({ children }: AssociationLayoutProps) {
   const { profile } = useAuth();
-  const associationName = profile?.associations?.name || "Associazione";
 
   return (
     <AdminLayout
       sidebarItems={sidebarItems}
-      badgeLabel="Associazione"
       profilePath="/association/my-profile"
       basePath="/association"
-      entityName={associationName}
+      entityLogoUrl={(profile?.associations as any)?.logo_url || undefined}
+      entityName={(profile?.associations as any)?.name || "Associazione"}
+      separatorAfterIndex={[0]}
     >
       {children}
     </AdminLayout>
