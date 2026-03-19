@@ -361,7 +361,7 @@ export default function HREmployeesPage() {
         <TopPerformersTable employees={employees} />
 
         {/* Filters */}
-        <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+        <Card className="border bg-card">
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row gap-4">
               {/* Search */}
