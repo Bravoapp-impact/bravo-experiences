@@ -40,7 +40,7 @@ export default function HRProfile() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+          <Card className="border bg-card">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 {profile?.id && (
@@ -74,7 +74,7 @@ export default function HRProfile() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.12 }}
           >
-            <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+            <Card className="border bg-card">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 flex-shrink-0">
@@ -117,7 +117,7 @@ export default function HRProfile() {
               initialFirstName={profile.first_name}
               initialLastName={profile.last_name}
               onSave={refreshProfile}
-              cardClassName="border-border/50 bg-card/80 backdrop-blur-sm"
+              cardClassName="border bg-card"
             />
           )}
         </motion.div>
@@ -128,7 +128,7 @@ export default function HRProfile() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+          <Card className="border bg-card">
             <CardHeader>
             <CardTitle className="text-base font-semibold">Informazioni account</CardTitle>
             </CardHeader>

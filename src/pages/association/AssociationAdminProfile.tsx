@@ -35,7 +35,7 @@ export default function AssociationAdminProfile() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+          <Card className="border bg-card">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 {profile?.id && (
@@ -74,7 +74,7 @@ export default function AssociationAdminProfile() {
               initialFirstName={profile.first_name}
               initialLastName={profile.last_name}
               onSave={refreshProfile}
-              cardClassName="border-border/50 bg-card/80 backdrop-blur-sm"
+              cardClassName="border bg-card"
             />
           )}
         </motion.div>
@@ -85,7 +85,7 @@ export default function AssociationAdminProfile() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+          <Card className="border bg-card">
             <CardHeader>
               <CardTitle className="text-base">Informazioni account</CardTitle>
             </CardHeader>

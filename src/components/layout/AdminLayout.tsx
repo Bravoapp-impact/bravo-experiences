@@ -29,6 +29,7 @@ export interface SidebarItem {
   href: string;
   disabled?: boolean;
   badge?: string;
+  iconColor?: string;
 }
 
 export interface AdminLayoutProps {
@@ -94,7 +95,7 @@ export function AdminLayout({
   const separatorSet = new Set(separatorAfterIndex || []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background admin-panel">
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -102,7 +103,7 @@ export function AdminLayout({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
@@ -111,7 +112,7 @@ export function AdminLayout({
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-50 h-full w-64 border-r border-border/50 bg-card/95 backdrop-blur-md transition-transform duration-300 lg:translate-x-0",
+          "fixed left-0 top-0 z-50 h-full w-64 border-r border-border bg-card transition-transform duration-300 lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -211,7 +212,7 @@ export function AdminLayout({
                     <span
                       className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm opacity-50 cursor-not-allowed select-none"
                     >
-                      <Icon className="h-4 w-4" />
+                      <Icon className={cn("h-4 w-4", active && item.iconColor ? item.iconColor : "")} />
                       <span className="flex-1">{item.label}</span>
                       {item.badge && (
                         <span className="text-[10px] bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-medium">
@@ -230,8 +231,8 @@ export function AdminLayout({
                           : "text-muted-foreground hover:bg-muted/50"
                       )}
                     >
-                      <Icon className="h-4 w-4" />
-                      {item.label}
+                      <Icon className={cn("h-4 w-4", active && item.iconColor ? item.iconColor : "")} />
+                      <span className="flex-1">{item.label}</span>
                     </Link>
                   )}
                   {separatorSet.has(index) && (
@@ -247,7 +248,7 @@ export function AdminLayout({
       {/* Main content area */}
       <div className="lg:pl-64">
         {/* Mobile header */}
-        <header className="sticky top-0 z-30 flex h-14 items-center border-b border-border/50 bg-background/80 backdrop-blur-md px-4 lg:hidden">
+        <header className="sticky top-0 z-30 flex h-14 items-center border-b border-border bg-background px-4 lg:hidden">
           <Button
             variant="ghost"
             size="icon"

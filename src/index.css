@@ -42,11 +42,11 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 10%;
     
-    --border: 0 0% 81%;
-    --input: 0 0% 81%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
     --ring: 0 0% 20%;
     
-    --radius: 0.75rem;
+    --radius: 0.5rem;
     
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 0 0% 10%;
@@ -67,6 +67,17 @@
     --gradient-hero: linear-gradient(135deg, hsl(274 100% 50%) 0%, hsl(330 56% 53%) 50%, hsl(26 100% 65%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
     --gradient-purple-orange: linear-gradient(90deg, hsl(274 100% 50%) 0%, hsl(290 67% 46%) 25%, hsl(330 56% 53%) 50%, hsl(26 100% 65%) 75%, hsl(45 96% 61%) 100%);
+  }
+
+  /* Scoped admin panel overrides */
+  .admin-panel {
+    --primary: 274 80% 55%;
+    --foreground: 0 0% 15%;
+  }
+
+  .dark .admin-panel {
+    --primary: 274 80% 62%;
+    --foreground: 0 0% 92%;
   }
 
   .dark {
@@ -139,6 +150,16 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Plus Jakarta Sans', sans-serif;
     font-weight: 600;
+  }
+}
+
+@layer components {
+  /* Compact buttons inside admin panels */
+  .admin-panel :where(button, [role="button"]) {
+    min-height: 2rem;
+    font-size: 0.8125rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
   }
 }
 
