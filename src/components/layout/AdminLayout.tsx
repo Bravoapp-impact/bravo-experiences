@@ -29,6 +29,7 @@ export interface SidebarItem {
   href: string;
   disabled?: boolean;
   badge?: string;
+  iconColor?: string;
 }
 
 export interface AdminLayoutProps {
