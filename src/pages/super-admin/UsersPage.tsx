@@ -367,7 +367,7 @@ export default function UsersPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+          <Card className="border bg-card">
             <CardHeader>
               <CardTitle className="text-base">{users.length} Utenti</CardTitle>
             </CardHeader>

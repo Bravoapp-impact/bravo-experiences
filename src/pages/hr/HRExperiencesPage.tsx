@@ -350,7 +350,7 @@ export default function HRExperiencesPage() {
         />
 
         {/* Filters */}
-        <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+        <Card className="border bg-card">
           <CardContent className="p-4 sm:p-6">
             <HRExperienceFilters
               searchTerm={searchTerm}

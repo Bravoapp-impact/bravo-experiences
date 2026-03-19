@@ -84,7 +84,7 @@ export default function SuperAdminProfile() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+          <Card className="border bg-card">
             <CardHeader>
               <CardTitle className="text-base">Informazioni account</CardTitle>
             </CardHeader>

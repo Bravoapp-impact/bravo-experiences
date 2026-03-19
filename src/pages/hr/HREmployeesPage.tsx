@@ -401,7 +401,7 @@ export default function HREmployeesPage() {
         </Card>
 
         {/* Employees Table */}
-        <Card className="border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden">
+        <Card className="border bg-card overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>

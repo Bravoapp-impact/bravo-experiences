@@ -177,7 +177,7 @@ export default function SuperAdminDashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+          <Card className="border bg-card">
             <CardHeader>
               <CardTitle>Azioni Rapide</CardTitle>
             </CardHeader>
