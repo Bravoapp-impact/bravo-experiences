@@ -23,7 +23,7 @@ const sidebarItems: SidebarItem[] = [
   { label: "Profilo Pubblico", icon: Globe, href: "/association/profile" },
   // separator after index 0
   { label: "Home", icon: Home, href: "/association" },
-  // section label "Servizi alle aziende" before index 3
+  // section label "Servizi alle aziende" before index 2
   { label: "Volontariato aziendale", icon: Briefcase, href: "/association/experiences" },
   { label: "Team Building", icon: Users, href: "#", disabled: true, badge: "Presto" },
   { label: "Formazione", icon: GraduationCap, href: "#", disabled: true, badge: "Presto" },
