@@ -74,7 +74,7 @@ export default function HRProfile() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.12 }}
           >
-            <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+            <Card className="border bg-card">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 flex-shrink-0">
