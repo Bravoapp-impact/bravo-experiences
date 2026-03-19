@@ -153,6 +153,16 @@
   }
 }
 
+@layer components {
+  /* Compact buttons inside admin panels */
+  .admin-panel :where(button, [role="button"]) {
+    min-height: 2rem;
+    font-size: 0.8125rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+}
+
 @layer utilities {
   /* Hide scrollbar for horizontal scroll containers */
   .scrollbar-hide {
