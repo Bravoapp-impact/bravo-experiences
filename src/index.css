@@ -42,11 +42,11 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 10%;
     
-    --border: 0 0% 81%;
-    --input: 0 0% 81%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
     --ring: 0 0% 20%;
     
-    --radius: 0.75rem;
+    --radius: 0.5rem;
     
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 0 0% 10%;
