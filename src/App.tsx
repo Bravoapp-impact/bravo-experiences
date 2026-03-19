@@ -31,7 +31,7 @@ import CitiesPage from "./pages/super-admin/CitiesPage";
 import CategoriesPage from "./pages/super-admin/CategoriesPage";
 import EmailTemplatesPage from "./pages/super-admin/EmailTemplatesPage";
 import AccessCodesPage from "./pages/super-admin/AccessCodesPage";
-import AssociationDashboard from "./pages/association/AssociationDashboard";
+import AssociationHome from "./pages/association/AssociationHome";
 import AssociationExperiencesPage from "./pages/association/AssociationExperiencesPage";
 import AssociationHistoryPage from "./pages/association/AssociationHistoryPage";
 import AssociationProfilePage from "./pages/association/AssociationProfilePage";
