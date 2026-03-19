@@ -196,6 +196,7 @@ export default function AssociationHome() {
           className="flex flex-wrap gap-3"
         >
           <Button
+            variant="outline"
             onClick={() => navigate("/association/experiences")}
             className="gap-2"
           >

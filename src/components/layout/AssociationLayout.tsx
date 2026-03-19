@@ -46,7 +46,7 @@ export function AssociationLayout({ children }: AssociationLayoutProps) {
       entityLogoUrl={(profile?.associations as any)?.logo_url || undefined}
       entityName={(profile?.associations as any)?.name || "Associazione"}
       separatorAfterIndex={[0, 8]}
-      sectionLabels={[{ beforeIndex: 3, label: "Servizi alle aziende" }]}
+      sectionLabels={[{ beforeIndex: 2, label: "Servizi alle aziende" }]}
     >
       {children}
     </AdminLayout>
