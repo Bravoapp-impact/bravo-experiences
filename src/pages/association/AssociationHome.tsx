@@ -152,7 +152,7 @@ export default function AssociationHome() {
 
   return (
     <AssociationLayout>
-      <div className="space-y-8">
+      <div className="max-w-4xl mx-auto space-y-8">
         {/* Greeting */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -196,6 +196,7 @@ export default function AssociationHome() {
           className="flex flex-wrap gap-3"
         >
           <Button
+            variant="outline"
             onClick={() => navigate("/association/experiences")}
             className="gap-2"
           >
