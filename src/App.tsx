@@ -217,7 +217,7 @@ const App = () => (
               path="/association"
               element={
                 <ProtectedAssociationRoute>
-                  <AssociationDashboard />
+                  <AssociationHome />
                 </ProtectedAssociationRoute>
               }
             />
