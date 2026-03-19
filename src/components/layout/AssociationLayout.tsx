@@ -45,7 +45,7 @@ export function AssociationLayout({ children }: AssociationLayoutProps) {
       basePath="/association"
       entityLogoUrl={(profile?.associations as any)?.logo_url || undefined}
       entityName={(profile?.associations as any)?.name || "Associazione"}
-      separatorAfterIndex={[0, 8]}
+      separatorAfterIndex={[0, 7]}
       sectionLabels={[{ beforeIndex: 2, label: "Servizi alle aziende" }]}
     >
       {children}
