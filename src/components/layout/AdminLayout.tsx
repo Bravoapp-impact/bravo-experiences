@@ -27,6 +27,8 @@ export interface SidebarItem {
   label: string;
   icon: LucideIcon;
   href: string;
+  disabled?: boolean;
+  badge?: string;
 }
 
 export interface AdminLayoutProps {
@@ -205,19 +207,33 @@ export function AdminLayout({
                       </span>
                     </div>
                   )}
-                  <Link
-                    to={item.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={cn(
-                      "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all",
-                      active
-                        ? "bg-muted font-medium text-foreground"
-                        : "text-muted-foreground hover:bg-muted/50"
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {item.label}
-                  </Link>
+                  {item.disabled ? (
+                    <span
+                      className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm opacity-50 cursor-not-allowed select-none"
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span className="flex-1">{item.label}</span>
+                      {item.badge && (
+                        <span className="text-[10px] bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-medium">
+                          {item.badge}
+                        </span>
+                      )}
+                    </span>
+                  ) : (
+                    <Link
+                      to={item.href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={cn(
+                        "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all",
+                        active
+                          ? "bg-muted font-medium text-foreground"
+                          : "text-muted-foreground hover:bg-muted/50"
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </Link>
+                  )}
                   {separatorSet.has(index) && (
                     <div className="mx-3 my-1.5 h-px bg-border/20" />
                   )}

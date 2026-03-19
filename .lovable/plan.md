@@ -1,57 +1,76 @@
+# Piano di Implementazione Fase 1 — Roadmap v4.0
 
+## Sprint completati
 
-# Piano: Ristrutturazione pannello Associazione
+### ✅ Sprint 0 — Feedback (già implementato)
+- Tabella `experience_reviews` + RLS + modal feedback + email post-evento
+- Pagina Impact funzionante (booking confirmed + data passata)
 
-## 1. Estendere `SidebarItem` in `AdminLayout.tsx`
+### ✅ Sprint 1 — Colonne additive (rischio zero)
+- `experiences`: + `type`, `price_per_participant`, `visibility`, `created_by`
+- `bookings`: + `verified_at`, `verification_method`, `verification_data`
+- `profiles`: + `manager_id`
+- `companies`: + `max_concurrent_absences`
 
-Aggiungere campi opzionali `disabled?: boolean` e `badge?: string` all'interfaccia `SidebarItem`. Nel rendering, se `disabled` e' true: rendere come `span` invece di `Link`, aggiungere `opacity-50 cursor-not-allowed`, e mostrare il badge inline. Retrocompatibile: HR e SuperAdmin non usano questi campi.
+### ✅ Sprint 2 — Nuove tabelle (rischio basso)
+- `company_service_config` con RLS (HR + super admin)
+- `hour_budgets` con RLS (employee read + HR read + super admin full)
+- Triggers `updated_at` su entrambe
 
-## 2. Aggiornare sidebar in `AssociationLayout.tsx`
+### ✅ Sprint 3 — Lifecycle booking (rischio medio)
+- Function `process_completed_events()` per transizionare booking passati (confirmed → completed dopo 2h dalla fine)
+- RLS `experience_reviews` aggiornata per accettare status `completed`
+- Frontend retrocompatibile: tutti i filtri accettano sia `confirmed` (passato) che `completed`
+- Utility `src/lib/booking-utils.ts` con costanti e helper per gli stati
+- Badge `no_show` aggiunto nelle card booking
+- **Rollback:** `UPDATE bookings SET status = 'confirmed' WHERE status IN ('completed', 'verified');` + ripristino RLS
 
-Nuova configurazione sidebar:
-- Profilo Pubblico → `/association/profile`
-- (separatore dopo index 0)
-- Home → `/association` (non `/association/home`)
-- (section label "Servizi alle aziende" prima di index 3)
-- Volontariato aziendale → `/association/experiences`
-- Team Building → disabled, badge "Presto"
-- Formazione → disabled, badge "Presto"
-- Consulenza → disabled, badge "Presto"
-- Gadget solidali → disabled, badge "Presto"
-- Progetti → disabled, badge "Presto"
-- (separatore dopo index 8)
-- Calendario → `/association/calendar`
-- Report → `/association/history`
+### ✅ Sprint 4 — Widget ore dipendente/HR
+- Hook `useHourBudget` con logica "nessun budget = illimitato"
+- Widget ore nel profilo dipendente e HR admin con skeleton loading
+- Calcolo anno fiscale basato su `hour_budgets.fiscal_year_start`
 
-Icone appropriate per ogni voce (Briefcase, Users, GraduationCap, HeartHandshake, Gift, FolderKanban).
+---
 
-## 3. Creare nuova Home `AssociationHome.tsx`
+## Sprint in corso
 
-Sostituisce `AssociationDashboard.tsx`. Contenuto:
+### ✅ Sprint Marketplace — Refactoring experience_dates (COMPLETATO)
 
-- **Saluto**: "Buongiorno, {nome associazione}" + data odierna in italiano
-- **Placeholder AI**: Card con bordo tratteggiato, icona sparkle, "Assistente AI Bravo! — Coming Soon"
-- **Azioni rapide**: Due bottoni — "Crea esperienza" (naviga a `/association/experiences`) e "Vai al calendario"
-- **Due widget affiancati** (grid 2 col desktop, stack mobile):
-  - **Prossime attività**: Query date prossimi 7 giorni (riuso logica da AssociationDashboard), max 5, con titolo/data/ora/citta/posti confermati. Link "Vedi tutte" al calendario
-  - **Da gestire**: Esperienze in stato `draft`, titolo + badge stato. Click porta a `/association/experiences`. Se vuoto: "Tutto in ordine!"
+**Obiettivo:** passare da modello "Push" (date legate a `company_id`) a modello "Pull" (catalogo aperto, visibilità basata su `service_type` + assegnamenti diretti via `experience_companies`).
 
-## 4. Aggiornare routing in `App.tsx`
+**Completato:**
+- Step 0-4: SQL (funzione `can_employee_see_experience`, nuove RLS `_v2`, drop vecchie policy)
+- Step 5: Frontend — `ExperienceDateDialog.tsx` ripulito da `company_id` (campo deprecato, non più usato)
+- Step 6: Nuovo componente `VisibilityDialog.tsx` per gestione eventi privati
+- Step 7: `ExperiencesPage.tsx` — bottone Lock/Globe per gestire visibilità + badge "Privata" + dialog assegnamenti aziende
 
-- Importare `AssociationHome` al posto di `AssociationDashboard`
-- Route `/association` punta a `AssociationHome`
-- Rimuovere la route `/association/home` se presente
-- Eliminare `AssociationDashboard.tsx`
+**Architettura visibilità:**
+- `experiences.visibility`: `'public'` (default) o `'private'`
+- `experience_companies`: tabella join per assegnamenti diretti
+- `can_employee_see_experience()`: gestisce la logica di accesso
+- Super admin può rendere un'esperienza privata e assegnare aziende specifiche dal pannello Esperienze
 
-## File coinvolti
+**`experience_dates.company_id`:** resta nel DB (nullable, deprecato), non più usato nel frontend.
 
-| File | Azione |
-|------|--------|
-| `src/components/layout/AdminLayout.tsx` | Estendere interfaccia + rendering disabled/badge |
-| `src/components/layout/AssociationLayout.tsx` | Nuova config sidebar |
-| `src/pages/association/AssociationHome.tsx` | Nuovo file — Home operativa |
-| `src/pages/association/AssociationDashboard.tsx` | Eliminare |
-| `src/App.tsx` | Aggiornare import e route |
+---
 
-Nessuna modifica al database.
+## Sprint da fare
 
+### Sprint 4b — Verifica ore pre-prenotazione
+- Verifica ore residue pre-prenotazione (frontend only)
+- Widget ore in dashboard HR
+- Se `hour_budgets` non esiste → budget illimitato (retrocompatibilità)
+
+### Sprint 5 — "Le mie attività" + notifica manager
+- Nuova pagina `/app/my-activities`
+- Edge Function notifica manager alla prenotazione
+- Check tetto assenze contemporanee
+
+---
+
+## Regole di sicurezza
+1. Mai DROP + CREATE RLS in un singolo step — usare policy `_v2` affiancate, poi drop delle vecchie
+2. Mai ALTER colonne esistenti — solo ADD COLUMN
+3. Ogni migrazione reversibile
+4. Frontend retrocompatibile con fallback
+5. Test su ambiente Test prima di pubblicare
