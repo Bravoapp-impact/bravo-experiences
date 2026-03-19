@@ -95,7 +95,7 @@ export function AdminLayout({
   const separatorSet = new Set(separatorAfterIndex || []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background admin-panel">
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {sidebarOpen && (
