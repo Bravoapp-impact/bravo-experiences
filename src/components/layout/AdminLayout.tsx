@@ -27,6 +27,8 @@ export interface SidebarItem {
   label: string;
   icon: LucideIcon;
   href: string;
+  disabled?: boolean;
+  badge?: string;
 }
 
 export interface AdminLayoutProps {
