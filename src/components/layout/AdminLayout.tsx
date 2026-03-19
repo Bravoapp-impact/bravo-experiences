@@ -248,7 +248,7 @@ export function AdminLayout({
       {/* Main content area */}
       <div className="lg:pl-64">
         {/* Mobile header */}
-        <header className="sticky top-0 z-30 flex h-14 items-center border-b border-border/50 bg-background/80 backdrop-blur-md px-4 lg:hidden">
+        <header className="sticky top-0 z-30 flex h-14 items-center border-b border-border bg-background px-4 lg:hidden">
           <Button
             variant="ghost"
             size="icon"
