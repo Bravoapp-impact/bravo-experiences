@@ -212,7 +212,7 @@ export function AdminLayout({
                     <span
                       className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm opacity-50 cursor-not-allowed select-none"
                     >
-                      <Icon className="h-4 w-4" />
+                      <Icon className={cn("h-4 w-4", active && item.iconColor ? item.iconColor : "")} />
                       <span className="flex-1">{item.label}</span>
                       {item.badge && (
                         <span className="text-[10px] bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-medium">
