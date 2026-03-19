@@ -231,8 +231,8 @@ export function AdminLayout({
                           : "text-muted-foreground hover:bg-muted/50"
                       )}
                     >
-                      <Icon className="h-4 w-4" />
-                      {item.label}
+                      <Icon className={cn("h-4 w-4", active && item.iconColor ? item.iconColor : "")} />
+                      <span className="flex-1">{item.label}</span>
                     </Link>
                   )}
                   {separatorSet.has(index) && (
