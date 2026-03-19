@@ -74,7 +74,7 @@ export default function AssociationAdminProfile() {
               initialFirstName={profile.first_name}
               initialLastName={profile.last_name}
               onSave={refreshProfile}
-              cardClassName="border-border/50 bg-card/80 backdrop-blur-sm"
+              cardClassName="border bg-card"
             />
           )}
         </motion.div>
