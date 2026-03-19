@@ -221,7 +221,7 @@ export default function AssociationHome() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
           >
-            <Card className="border-border/50 bg-card/80 backdrop-blur-sm h-full">
+            <Card className="border bg-card h-full">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center justify-between">
                   <span className="flex items-center gap-2 text-base">
