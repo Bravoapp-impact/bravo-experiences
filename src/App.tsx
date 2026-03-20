@@ -18,6 +18,7 @@ import MyBookings from "./pages/MyBookings";
 import Impact from "./pages/Impact";
 import Profile from "./pages/Profile";
 import HRDashboard from "./pages/HRDashboard";
+import HRHomePage from "./pages/hr/HRHomePage";
 import HRExperiencesPage from "./pages/hr/HRExperiencesPage";
 import HREmployeesPage from "./pages/hr/HREmployeesPage";
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
@@ -93,6 +94,14 @@ const App = () => (
             />
             <Route
               path="/hr"
+              element={
+                <ProtectedHRRoute>
+                  <HRHomePage />
+                </ProtectedHRRoute>
+              }
+            />
+            <Route
+              path="/hr/report"
               element={
                 <ProtectedHRRoute>
                   <HRDashboard />
