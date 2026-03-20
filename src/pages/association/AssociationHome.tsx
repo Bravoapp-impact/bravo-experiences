@@ -13,14 +13,19 @@ import {
   ArrowRight,
   CheckCircle2,
   FileEdit,
+  ArrowUp,
+  BarChart3,
+  CalendarDays,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { devLog } from "@/lib/logger";
 import { LoadingState } from "@/components/common/LoadingState";
+import { toast } from "@/hooks/use-toast";
 
 interface UpcomingDate {
   id: string;
