@@ -52,6 +52,19 @@ export default function AssociationHome() {
   const [loading, setLoading] = useState(true);
   const [upcomingDates, setUpcomingDates] = useState<UpcomingDate[]>([]);
   const [drafts, setDrafts] = useState<DraftExperience[]>([]);
+  const [aiInput, setAiInput] = useState("");
+
+  const aiSuggestions = [
+    { label: "Riepilogo prenotazioni", text: "Fammi un riepilogo delle prenotazioni di questa settimana", icon: BarChart3 },
+    { label: "Prossimi eventi", text: "Quali sono i prossimi eventi in programma?", icon: CalendarDays },
+    { label: "Nuova esperienza", text: "Aiutami a creare una nuova esperienza di volontariato", icon: Plus },
+  ];
+
+  const handleAiSend = () => {
+    if (!aiInput.trim()) return;
+    toast({ title: "L'assistente AI Bravo! sarà disponibile a breve", description: "Stiamo lavorando per portarti questa funzionalità." });
+    setAiInput("");
+  };
 
   const associationName =
     (profile?.associations as any)?.name || "Associazione";
