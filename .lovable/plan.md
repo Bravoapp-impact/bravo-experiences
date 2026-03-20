@@ -1,76 +1,21 @@
-# Piano di Implementazione Fase 1 — Roadmap v4.0
+# Piano: Interfaccia AI conversazionale stile Attio (non funzionale)
 
-## Sprint completati
+Sostituire il placeholder "Coming Soon" con un'interfaccia che sembra un vero assistente AI conversazionale, ispirata allo screenshot di Attio: textarea grande con placeholder "Descrivi il progetto che vuoi proporre alle aziende...", bottone invio, e chip di suggerimenti sotto. Quando l'utente prova a scrivere e inviare, mostra un toast che dice che la funzionalità è in arrivo.
 
-### ✅ Sprint 0 — Feedback (già implementato)
-- Tabella `experience_reviews` + RLS + modal feedback + email post-evento
-- Pagina Impact funzionante (booking confirmed + data passata)
+## File: `src/pages/association/AssociationHome.tsx`
 
-### ✅ Sprint 1 — Colonne additive (rischio zero)
-- `experiences`: + `type`, `price_per_participant`, `visibility`, `created_by`
-- `bookings`: + `verified_at`, `verification_method`, `verification_data`
-- `profiles`: + `manager_id`
-- `companies`: + `max_concurrent_absences`
+**Sostituire il blocco AI Placeholder (righe 169-189) con:**
 
-### ✅ Sprint 2 — Nuove tabelle (rischio basso)
-- `company_service_config` con RLS (HR + super admin)
-- `hour_budgets` con RLS (employee read + HR read + super admin full)
-- Triggers `updated_at` su entrambe
+- Textarea con placeholder "Descrivi il progetto che vuoi proporre alle aziende..." dentro un contenitore con bordo sottile arrotondato (stile Attio: bordo grigio chiaro, focus con bordo primary leggero)
+- In basso a destra nella textarea: bottone invio circolare (icona `ArrowUp`, bg primary, disabilitato/muted quando vuoto)
+- Sotto la textarea: 2-3 chip suggerimenti cliccabili in riga (es. "Riepilogo prenotazioni", "Prossimi eventi"), con icone piccole, bordo sottile, hover leggero
+- Sopra la textarea: riga muted piccola "Assistente AI Bravo!" con icona Sparkles (come "Recent chat" in Attio)
 
-### ✅ Sprint 3 — Lifecycle booking (rischio medio)
-- Function `process_completed_events()` per transizionare booking passati (confirmed → completed dopo 2h dalla fine)
-- RLS `experience_reviews` aggiornata per accettare status `completed`
-- Frontend retrocompatibile: tutti i filtri accettano sia `confirmed` (passato) che `completed`
-- Utility `src/lib/booking-utils.ts` con costanti e helper per gli stati
-- Badge `no_show` aggiunto nelle card booking
-- **Rollback:** `UPDATE bookings SET status = 'confirmed' WHERE status IN ('completed', 'verified');` + ripristino RLS
+**Comportamento:**
 
-### ✅ Sprint 4 — Widget ore dipendente/HR
-- Hook `useHourBudget` con logica "nessun budget = illimitato"
-- Widget ore nel profilo dipendente e HR admin con skeleton loading
-- Calcolo anno fiscale basato su `hour_budgets.fiscal_year_start`
+- La textarea è scrivibile (stato locale `aiInput`)
+- Click su invio o Enter → toast "L'assistente AI Bravo! sarà disponibile a breve" e resetta l'input
+- Click su un chip → popola la textarea con quel testo (ma non invia)
+- Nessuna chiamata API, nessun edge function
 
----
-
-## Sprint in corso
-
-### ✅ Sprint Marketplace — Refactoring experience_dates (COMPLETATO)
-
-**Obiettivo:** passare da modello "Push" (date legate a `company_id`) a modello "Pull" (catalogo aperto, visibilità basata su `service_type` + assegnamenti diretti via `experience_companies`).
-
-**Completato:**
-- Step 0-4: SQL (funzione `can_employee_see_experience`, nuove RLS `_v2`, drop vecchie policy)
-- Step 5: Frontend — `ExperienceDateDialog.tsx` ripulito da `company_id` (campo deprecato, non più usato)
-- Step 6: Nuovo componente `VisibilityDialog.tsx` per gestione eventi privati
-- Step 7: `ExperiencesPage.tsx` — bottone Lock/Globe per gestire visibilità + badge "Privata" + dialog assegnamenti aziende
-
-**Architettura visibilità:**
-- `experiences.visibility`: `'public'` (default) o `'private'`
-- `experience_companies`: tabella join per assegnamenti diretti
-- `can_employee_see_experience()`: gestisce la logica di accesso
-- Super admin può rendere un'esperienza privata e assegnare aziende specifiche dal pannello Esperienze
-
-**`experience_dates.company_id`:** resta nel DB (nullable, deprecato), non più usato nel frontend.
-
----
-
-## Sprint da fare
-
-### Sprint 4b — Verifica ore pre-prenotazione
-- Verifica ore residue pre-prenotazione (frontend only)
-- Widget ore in dashboard HR
-- Se `hour_budgets` non esiste → budget illimitato (retrocompatibilità)
-
-### Sprint 5 — "Le mie attività" + notifica manager
-- Nuova pagina `/app/my-activities`
-- Edge Function notifica manager alla prenotazione
-- Check tetto assenze contemporanee
-
----
-
-## Regole di sicurezza
-1. Mai DROP + CREATE RLS in un singolo step — usare policy `_v2` affiancate, poi drop delle vecchie
-2. Mai ALTER colonne esistenti — solo ADD COLUMN
-3. Ogni migrazione reversibile
-4. Frontend retrocompatibile con fallback
-5. Test su ambiente Test prima di pubblicare
+**Stile:** bordi solidi leggeri (non tratteggiati), sfondo card, angoli arrotondati generosi (rounded-xl), transizioni smooth
