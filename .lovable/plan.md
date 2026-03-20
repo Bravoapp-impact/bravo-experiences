@@ -1,21 +1,59 @@
-# Piano: Interfaccia AI conversazionale stile Attio (non funzionale)
 
-Sostituire il placeholder "Coming Soon" con un'interfaccia che sembra un vero assistente AI conversazionale, ispirata allo screenshot di Attio: textarea grande con placeholder "Descrivi il progetto che vuoi proporre alle aziende...", bottone invio, e chip di suggerimenti sotto. Quando l'utente prova a scrivere e inviare, mostra un toast che dice che la funzionalità è in arrivo.
 
-## File: `src/pages/association/AssociationHome.tsx`
+# Piano: Ristrutturazione pannello HR — Home + Sidebar
 
-**Sostituire il blocco AI Placeholder (righe 169-189) con:**
+## File coinvolti
 
-- Textarea con placeholder "Descrivi il progetto che vuoi proporre alle aziende..." dentro un contenitore con bordo sottile arrotondato (stile Attio: bordo grigio chiaro, focus con bordo primary leggero)
-- In basso a destra nella textarea: bottone invio circolare (icona `ArrowUp`, bg primary, disabilitato/muted quando vuoto)
-- Sotto la textarea: 2-3 chip suggerimenti cliccabili in riga (es. "Riepilogo prenotazioni", "Prossimi eventi"), con icone piccole, bordo sottile, hover leggero
-- Sopra la textarea: riga muted piccola "Assistente AI Bravo!" con icona Sparkles (come "Recent chat" in Attio)
+| File | Azione |
+|------|--------|
+| `src/components/layout/HRLayout.tsx` | Riscrittura sidebar |
+| `src/pages/hr/HRHomePage.tsx` | **Nuovo** — Home operativa |
+| `src/pages/HRDashboard.tsx` | Nessuna modifica (diventa Report su nuova route) |
+| `src/App.tsx` | Nuove route: `/hr` → HRHomePage, `/hr/report` → HRDashboard |
 
-**Comportamento:**
+---
 
-- La textarea è scrivibile (stato locale `aiInput`)
-- Click su invio o Enter → toast "L'assistente AI Bravo! sarà disponibile a breve" e resetta l'input
-- Click su un chip → popola la textarea con quel testo (ma non invia)
-- Nessuna chiamata API, nessun edge function
+## 1. `HRLayout.tsx` — Nuova sidebar
 
-**Stile:** bordi solidi leggeri (non tratteggiati), sfondo card, angoli arrotondati generosi (rounded-xl), transizioni smooth
+Nuova configurazione sidebarItems con disabled, badge e iconColor:
+
+```
+Esplora catalogo → /app/experiences (LayoutGrid, text-slate-500)
+--- separatore dopo index 0 ---
+Home → /hr (Home, text-violet-500)
+[section label "Iniziative" prima di index 3]
+Volontariato aziendale → /hr/experiences (Calendar, text-green-500)
+Team building sociali → disabled, badge "Presto"
+Formazione → disabled, badge "Presto"
+Negozio solidale → disabled, badge "Presto"
+[section label "Gestione" prima di index 7]
+Calendario → disabled, badge "Presto"
+Dipendenti → /hr/employees (Users, text-blue-500)
+Galleria → disabled, badge "Presto"
+Comunicazione → disabled, badge "Presto"
+--- separatore dopo index 10 ---
+Report → /hr/report (BarChart3, text-rose-500)
+Impostazioni → disabled, badge "Presto"
+```
+
+Rimuovere `dropdownItems` (Esplora catalogo ora e' in sidebar).
+
+Icone: `Briefcase`, `GraduationCap`, `ShoppingBag`, `CalendarDays`, `Image`, `MessageSquare`, `Settings` per le voci disabled.
+
+## 2. `HRHomePage.tsx` — Nuova Home
+
+Stesso pattern di AssociationHome: contenuto centrato `max-w-4xl mx-auto`, stile Attio.
+
+- **Saluto**: "Buongiorno, {nome utente}" + data odierna in italiano
+- **AI textarea**: placeholder "Descrivi il progetto che vuoi realizzare...", send button, chip suggerimenti ("Vedi chi si e' iscritto", "Report impatto", "Prossime iniziative"), toast "coming soon" su invio
+- **Azioni rapide**: "Esplora esperienze" → `/hr/experiences`, "Gestisci dipendenti" → `/hr/employees` (entrambi `variant="outline"`)
+- **Widget "Prossime iniziative"**: date esperienze aziendali nei prossimi 7 giorni (query experience_dates JOIN experiences JOIN experience_companies con company_id), max 5, con titolo/data/citta/posti confermati. Link "Vedi tutte" → `/hr/report`
+- **Widget "Riepilogo rapido"**: 3 metriche compatte (Dipendenti totali, Ore volontariato, Tasso partecipazione) — query leggera da profiles + bookings
+
+## 3. `App.tsx` — Route
+
+- Aggiungere import `HRHomePage`
+- Route `/hr` → `<HRHomePage />` (sostituisce HRDashboard)
+- Aggiungere route `/hr/report` → `<HRDashboard />`
+- HRDashboard resta importato, solo spostato di route
+
