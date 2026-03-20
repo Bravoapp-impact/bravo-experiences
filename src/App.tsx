@@ -96,6 +96,14 @@ const App = () => (
               path="/hr"
               element={
                 <ProtectedHRRoute>
+                  <HRHomePage />
+                </ProtectedHRRoute>
+              }
+            />
+            <Route
+              path="/hr/report"
+              element={
+                <ProtectedHRRoute>
                   <HRDashboard />
                 </ProtectedHRRoute>
               }
