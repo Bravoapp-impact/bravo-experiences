@@ -13,14 +13,19 @@ import {
   ArrowRight,
   CheckCircle2,
   FileEdit,
+  ArrowUp,
+  BarChart3,
+  CalendarDays,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { devLog } from "@/lib/logger";
 import { LoadingState } from "@/components/common/LoadingState";
+import { toast } from "@/hooks/use-toast";
 
 interface UpcomingDate {
   id: string;
@@ -47,6 +52,19 @@ export default function AssociationHome() {
   const [loading, setLoading] = useState(true);
   const [upcomingDates, setUpcomingDates] = useState<UpcomingDate[]>([]);
   const [drafts, setDrafts] = useState<DraftExperience[]>([]);
+  const [aiInput, setAiInput] = useState("");
+
+  const aiSuggestions = [
+    { label: "Riepilogo prenotazioni", text: "Fammi un riepilogo delle prenotazioni di questa settimana", icon: BarChart3 },
+    { label: "Prossimi eventi", text: "Quali sono i prossimi eventi in programma?", icon: CalendarDays },
+    { label: "Nuova esperienza", text: "Aiutami a creare una nuova esperienza di volontariato", icon: Plus },
+  ];
+
+  const handleAiSend = () => {
+    if (!aiInput.trim()) return;
+    toast({ title: "L'assistente AI Bravo! sarà disponibile a breve", description: "Stiamo lavorando per portarti questa funzionalità." });
+    setAiInput("");
+  };
 
   const associationName =
     (profile?.associations as any)?.name || "Associazione";
@@ -166,24 +184,49 @@ export default function AssociationHome() {
           </p>
         </motion.div>
 
-        {/* AI Placeholder */}
+        {/* AI Assistant Interface */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
         >
-          <div className="rounded-lg border-2 border-dashed border-border/60 p-6 flex items-center gap-4">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <Sparkles className="h-5 w-5 text-primary" />
+          <div className="bg-card border rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60">
+              <Sparkles className="h-3 w-3" />
+              Assistente AI Bravo!
             </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">
-                Assistente AI Bravo!
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Coming Soon — Il tuo assistente intelligente per gestire
-                esperienze, comunicazioni e report.
-              </p>
+            <div className="relative">
+              <Textarea
+                placeholder="Descrivi il progetto che vuoi proporre alle aziende..."
+                value={aiInput}
+                onChange={(e) => setAiInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleAiSend();
+                  }
+                }}
+                className="min-h-[80px] resize-none rounded-lg border-border/60 bg-background pr-12 text-sm focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:ring-offset-0"
+              />
+              <button
+                onClick={handleAiSend}
+                disabled={!aiInput.trim()}
+                className="absolute bottom-2.5 right-2.5 h-7 w-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground transition-opacity disabled:opacity-30 hover:opacity-90"
+              >
+                <ArrowUp className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {aiSuggestions.map((s) => (
+                <button
+                  key={s.label}
+                  onClick={() => setAiInput(s.text)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-3 py-1 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+                >
+                  <s.icon className="h-3 w-3" />
+                  {s.label}
+                </button>
+              ))}
             </div>
           </div>
         </motion.div>
