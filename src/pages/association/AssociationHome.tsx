@@ -184,24 +184,49 @@ export default function AssociationHome() {
           </p>
         </motion.div>
 
-        {/* AI Placeholder */}
+        {/* AI Assistant Interface */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
         >
-          <div className="rounded-lg border-2 border-dashed border-border/60 p-6 flex items-center gap-4">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <Sparkles className="h-5 w-5 text-primary" />
+          <div className="bg-card border rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60">
+              <Sparkles className="h-3 w-3" />
+              Assistente AI Bravo!
             </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">
-                Assistente AI Bravo!
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Coming Soon — Il tuo assistente intelligente per gestire
-                esperienze, comunicazioni e report.
-              </p>
+            <div className="relative">
+              <Textarea
+                placeholder="Descrivi il progetto che vuoi proporre alle aziende..."
+                value={aiInput}
+                onChange={(e) => setAiInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleAiSend();
+                  }
+                }}
+                className="min-h-[80px] resize-none rounded-lg border-border/60 bg-background pr-12 text-sm focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:ring-offset-0"
+              />
+              <button
+                onClick={handleAiSend}
+                disabled={!aiInput.trim()}
+                className="absolute bottom-2.5 right-2.5 h-7 w-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground transition-opacity disabled:opacity-30 hover:opacity-90"
+              >
+                <ArrowUp className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {aiSuggestions.map((s) => (
+                <button
+                  key={s.label}
+                  onClick={() => setAiInput(s.text)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-3 py-1 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+                >
+                  <s.icon className="h-3 w-3" />
+                  {s.label}
+                </button>
+              ))}
             </div>
           </div>
         </motion.div>
