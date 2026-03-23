@@ -458,7 +458,7 @@ export default function HREmployeesPage() {
                 {filteredEmployees.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                      Nessun dipendente corrisponde ai filtri
+                      Nessun utente corrisponde ai filtri
                     </TableCell>
                   </TableRow>
                 ) : (
