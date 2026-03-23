@@ -382,8 +382,8 @@ export default function HREmployeesPage() {
                   checked={showOnlyNoParticipation}
                   onCheckedChange={setShowOnlyNoParticipation}
                 />
-                <Label htmlFor="no-participation" className="text-sm cursor-pointer">
-                  Mostra utenti da coinvolgere
+                 <Label htmlFor="no-participation" className="text-sm cursor-pointer">
+                   Mostra utenti da coinvolgere
                 </Label>
               </div>
 
