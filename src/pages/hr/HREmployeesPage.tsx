@@ -309,7 +309,7 @@ export default function HREmployeesPage() {
   if (loading) {
     return (
       <HRLayout>
-        <LoadingState message="Caricamento dipendenti..." />
+        <LoadingState message="Caricamento utenti..." />
       </HRLayout>
     );
   }
