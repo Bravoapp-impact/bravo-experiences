@@ -76,7 +76,7 @@ export function TopPerformersTable({
           {topPerformers.length === 0 ? (
             <div className="py-8 text-center">
               <p className="text-sm text-muted-foreground">
-                Nessun dipendente ha ancora partecipato a esperienze
+                Nessun utente ha ancora partecipato a esperienze
               </p>
             </div>
           ) : (
@@ -87,7 +87,7 @@ export function TopPerformersTable({
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12">#</TableHead>
-                      <TableHead>Dipendente</TableHead>
+                      <TableHead>Utente</TableHead>
                       <TableHead className="text-center">Esperienze</TableHead>
                       <TableHead className="text-right">Ore</TableHead>
                     </TableRow>

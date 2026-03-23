@@ -73,7 +73,7 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
   }, [bookings, searchTerm, statusFilter, dateRange]);
 
   const exportCSV = () => {
-    const headers = ["Dipendente", "Email", "Esperienza", "Data", "Stato", "Ore"];
+    const headers = ["Utente", "Email", "Esperienza", "Data", "Stato", "Ore"];
     const rows = filteredBookings.map((b) => [
       `${b.user.first_name || ""} ${b.user.last_name || ""}`.trim(),
       b.user.email,
@@ -122,7 +122,7 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Cerca dipendente o esperienza..."
+              placeholder="Cerca utente o esperienza..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -175,7 +175,7 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead>Dipendente</TableHead>
+                <TableHead>Utente</TableHead>
                 <TableHead>Esperienza</TableHead>
                 <TableHead>Data</TableHead>
                 <TableHead>Stato</TableHead>
