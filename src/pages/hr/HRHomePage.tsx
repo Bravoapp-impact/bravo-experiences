@@ -240,9 +240,9 @@ export default function HRHomePage() {
             <Calendar className="h-4 w-4" />
             Esplora esperienze
           </Button>
-          <Button variant="outline" onClick={() => navigate("/hr/employees")} className="gap-2">
+          <Button variant="outline" onClick={() => navigate("/hr/users")} className="gap-2">
             <Users className="h-4 w-4" />
-            Gestisci dipendenti
+            Gestisci utenti
           </Button>
         </motion.div>
 
