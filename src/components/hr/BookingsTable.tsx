@@ -73,7 +73,7 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
   }, [bookings, searchTerm, statusFilter, dateRange]);
 
   const exportCSV = () => {
-    const headers = ["Dipendente", "Email", "Esperienza", "Data", "Stato", "Ore"];
+    const headers = ["Utente", "Email", "Esperienza", "Data", "Stato", "Ore"];
     const rows = filteredBookings.map((b) => [
       `${b.user.first_name || ""} ${b.user.last_name || ""}`.trim(),
       b.user.email,
