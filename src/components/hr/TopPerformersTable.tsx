@@ -76,7 +76,7 @@ export function TopPerformersTable({
           {topPerformers.length === 0 ? (
             <div className="py-8 text-center">
               <p className="text-sm text-muted-foreground">
-                Nessun dipendente ha ancora partecipato a esperienze
+                Nessun utente ha ancora partecipato a esperienze
               </p>
             </div>
           ) : (
