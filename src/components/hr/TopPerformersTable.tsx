@@ -87,7 +87,7 @@ export function TopPerformersTable({
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12">#</TableHead>
-                      <TableHead>Dipendente</TableHead>
+                      <TableHead>Utente</TableHead>
                       <TableHead className="text-center">Esperienze</TableHead>
                       <TableHead className="text-right">Ore</TableHead>
                     </TableRow>

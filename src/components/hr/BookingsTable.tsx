@@ -175,7 +175,7 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead>Dipendente</TableHead>
+                <TableHead>Utente</TableHead>
                 <TableHead>Esperienza</TableHead>
                 <TableHead>Data</TableHead>
                 <TableHead>Stato</TableHead>

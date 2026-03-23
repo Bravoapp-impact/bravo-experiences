@@ -55,7 +55,7 @@ export function MetricsCards({
       bgColor: "bg-bravo-purple/10",
     },
     {
-      label: "Budget Ore / Dipendente",
+      label: "Budget Ore / Utente",
       value: budgetHoursPerEmployee && budgetHoursPerEmployee > 0
         ? `${budgetHoursPerEmployee} ore/anno`
         : "Illimitato",

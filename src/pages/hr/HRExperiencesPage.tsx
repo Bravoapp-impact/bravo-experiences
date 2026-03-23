@@ -338,7 +338,7 @@ export default function HRExperiencesPage() {
       <div className="space-y-6">
         <PageHeader
           title="Esperienze"
-          description="Monitora le esperienze e le partecipazioni dei dipendenti"
+          description="Monitora le esperienze e le partecipazioni degli utenti"
         />
 
         {/* Metrics */}
