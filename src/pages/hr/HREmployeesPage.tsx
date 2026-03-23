@@ -338,8 +338,8 @@ export default function HREmployeesPage() {
           />
           <EmptyState
             icon={Users}
-            title="Nessun dipendente registrato"
-            description="Non ci sono ancora dipendenti registrati per la tua azienda. I dipendenti appariranno qui dopo la registrazione con il codice aziendale."
+            title="Nessun utente registrato"
+            description="Non ci sono ancora utenti registrati per la tua azienda. Gli utenti appariranno qui dopo la registrazione con il codice aziendale."
           />
         </div>
       </HRLayout>
