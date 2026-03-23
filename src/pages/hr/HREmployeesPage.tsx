@@ -200,7 +200,7 @@ export default function HREmployeesPage() {
       setEmployees(employeesWithStats);
     } catch (err) {
       devLog.error("Error fetching employees:", err);
-      setError("Errore nel caricamento dei dipendenti");
+      setError("Errore nel caricamento degli utenti");
     } finally {
       setLoading(false);
     }
@@ -299,7 +299,7 @@ export default function HREmployeesPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `dipendenti_${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.download = `utenti_${format(new Date(), "yyyy-MM-dd")}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -309,7 +309,7 @@ export default function HREmployeesPage() {
   if (loading) {
     return (
       <HRLayout>
-        <LoadingState message="Caricamento dipendenti..." />
+        <LoadingState message="Caricamento utenti..." />
       </HRLayout>
     );
   }
@@ -333,13 +333,13 @@ export default function HREmployeesPage() {
       <HRLayout>
         <div className="space-y-6">
           <PageHeader
-            title="Dipendenti"
-            description="Monitora la partecipazione dei dipendenti"
+            title="Utenti"
+            description="Monitora la partecipazione degli utenti"
           />
           <EmptyState
             icon={Users}
-            title="Nessun dipendente registrato"
-            description="Non ci sono ancora dipendenti registrati per la tua azienda. I dipendenti appariranno qui dopo la registrazione con il codice aziendale."
+            title="Nessun utente registrato"
+            description="Non ci sono ancora utenti registrati per la tua azienda. Gli utenti appariranno qui dopo la registrazione con il codice aziendale."
           />
         </div>
       </HRLayout>
@@ -349,9 +349,9 @@ export default function HREmployeesPage() {
   return (
     <HRLayout>
       <div className="space-y-6">
-        <PageHeader
-          title="Dipendenti"
-          description={`${employees.length} dipendent${employees.length === 1 ? "e" : "i"} registrat${employees.length === 1 ? "o" : "i"}${noParticipationCount > 0 ? ` • ${noParticipationCount} da coinvolgere` : ""}`}
+          <PageHeader
+            title="Utenti"
+            description={`${employees.length} utent${employees.length === 1 ? "e" : "i"} registrat${employees.length === 1 ? "o" : "i"}${noParticipationCount > 0 ? ` • ${noParticipationCount} da coinvolgere` : ""}`}
         />
 
         {/* Metrics Cards */}
@@ -382,8 +382,8 @@ export default function HREmployeesPage() {
                   checked={showOnlyNoParticipation}
                   onCheckedChange={setShowOnlyNoParticipation}
                 />
-                <Label htmlFor="no-participation" className="text-sm cursor-pointer">
-                  Mostra utenti da coinvolgere
+                 <Label htmlFor="no-participation" className="text-sm cursor-pointer">
+                   Mostra utenti da coinvolgere
                 </Label>
               </div>
 
@@ -406,14 +406,14 @@ export default function HREmployeesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>
+                   <TableHead>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="gap-1 -ml-3 font-medium"
                       onClick={() => handleSort("name")}
                     >
-                      Dipendente
+                      Utente
                       <ArrowUpDown className="h-3 w-3" />
                     </Button>
                   </TableHead>
@@ -458,7 +458,7 @@ export default function HREmployeesPage() {
                 {filteredEmployees.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                      Nessun dipendente corrisponde ai filtri
+                      Nessun utente corrisponde ai filtri
                     </TableCell>
                   </TableRow>
                 ) : (

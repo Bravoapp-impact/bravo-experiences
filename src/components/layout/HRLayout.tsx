@@ -31,7 +31,7 @@ const sidebarItems: SidebarItem[] = [
   { label: "Negozio solidale", icon: ShoppingBag, href: "#", disabled: true, badge: "Presto" },
   // section label "Gestione" before index 7
   { label: "Calendario", icon: CalendarDays, href: "#", disabled: true, badge: "Presto" },
-  { label: "Dipendenti", icon: Users, href: "/hr/employees", iconColor: "text-blue-500" },
+  { label: "Utenti", icon: Users, href: "/hr/users", iconColor: "text-blue-500" },
   { label: "Galleria", icon: Image, href: "#", disabled: true, badge: "Presto" },
   { label: "Comunicazione", icon: MessageSquare, href: "#", disabled: true, badge: "Presto" },
   // separator after index 10
