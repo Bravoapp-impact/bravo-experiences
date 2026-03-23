@@ -20,7 +20,7 @@ export function MetricsCards({
 }: MetricsCardsProps) {
   const metrics = [
     {
-      label: "Dipendenti Registrati",
+      label: "Utenti Registrati",
       value: employeesCount,
       icon: Users,
       color: "text-bravo-purple",
