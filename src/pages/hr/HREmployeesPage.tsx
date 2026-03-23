@@ -299,7 +299,7 @@ export default function HREmployeesPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `dipendenti_${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.download = `utenti_${format(new Date(), "yyyy-MM-dd")}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
