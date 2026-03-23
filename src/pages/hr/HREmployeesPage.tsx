@@ -200,7 +200,7 @@ export default function HREmployeesPage() {
       setEmployees(employeesWithStats);
     } catch (err) {
       devLog.error("Error fetching employees:", err);
-      setError("Errore nel caricamento dei dipendenti");
+      setError("Errore nel caricamento degli utenti");
     } finally {
       setLoading(false);
     }
