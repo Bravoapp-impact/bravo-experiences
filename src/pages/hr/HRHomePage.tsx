@@ -308,7 +308,7 @@ export default function HRHomePage() {
                       <div className="p-2 rounded-lg bg-blue-500/10">
                         <Users className="h-4 w-4 text-blue-500" />
                       </div>
-                      <span className="text-sm text-muted-foreground">Dipendenti</span>
+                      <span className="text-sm text-muted-foreground">Utenti</span>
                     </div>
                     <span className="text-lg font-bold text-foreground">{metrics.employeesCount}</span>
                   </div>

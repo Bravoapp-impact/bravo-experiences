@@ -406,14 +406,14 @@ export default function HREmployeesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>
+                   <TableHead>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="gap-1 -ml-3 font-medium"
                       onClick={() => handleSort("name")}
                     >
-                      Dipendente
+                      Utente
                       <ArrowUpDown className="h-3 w-3" />
                     </Button>
                   </TableHead>

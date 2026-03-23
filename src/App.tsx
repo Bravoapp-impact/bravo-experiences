@@ -117,7 +117,7 @@ const App = () => (
               }
             />
             <Route
-              path="/hr/employees"
+              path="/hr/users"
               element={
                 <ProtectedHRRoute>
                   <HREmployeesPage />
