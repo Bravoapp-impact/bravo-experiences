@@ -349,9 +349,9 @@ export default function HREmployeesPage() {
   return (
     <HRLayout>
       <div className="space-y-6">
-        <PageHeader
-          title="Dipendenti"
-          description={`${employees.length} dipendent${employees.length === 1 ? "e" : "i"} registrat${employees.length === 1 ? "o" : "i"}${noParticipationCount > 0 ? ` • ${noParticipationCount} da coinvolgere` : ""}`}
+          <PageHeader
+            title="Utenti"
+            description={`${employees.length} utent${employees.length === 1 ? "e" : "i"} registrat${employees.length === 1 ? "o" : "i"}${noParticipationCount > 0 ? ` • ${noParticipationCount} da coinvolgere` : ""}`}
         />
 
         {/* Metrics Cards */}
