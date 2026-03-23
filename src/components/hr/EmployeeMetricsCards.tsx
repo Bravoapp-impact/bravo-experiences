@@ -68,7 +68,7 @@ export function EmployeeMetricsCards({
                   {avgHoursPerEmployee}h
                 </p>
                 <p className="text-[11px] text-muted-foreground leading-tight">
-                  Ore Medie per Dipendente
+                   Ore Medie per Utente
                 </p>
               </div>
             </div>
