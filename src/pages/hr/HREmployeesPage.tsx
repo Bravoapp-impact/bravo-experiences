@@ -333,8 +333,8 @@ export default function HREmployeesPage() {
       <HRLayout>
         <div className="space-y-6">
           <PageHeader
-            title="Dipendenti"
-            description="Monitora la partecipazione dei dipendenti"
+            title="Utenti"
+            description="Monitora la partecipazione degli utenti"
           />
           <EmptyState
             icon={Users}
