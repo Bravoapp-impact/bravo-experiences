@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Users, Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { BaseCardImage } from "@/components/common/BaseCardImage";
 import { format, differenceInMinutes } from "date-fns";
@@ -9,10 +10,10 @@ import type { Experience, ExperienceDate } from "@/types/experiences";
 interface ExperienceCardCompactProps {
   experience: Experience;
   index: number;
-  onSelect: (experience: Experience) => void;
 }
 
-export function ExperienceCardCompact({ experience, index, onSelect }: ExperienceCardCompactProps) {
+export function ExperienceCardCompact({ experience, index }: ExperienceCardCompactProps) {
+  const navigate = useNavigate();
   const nextDate = experience.experience_dates?.[0];
   const availableSpots = nextDate
     ? nextDate.max_participants - (nextDate.confirmed_count || 0)
