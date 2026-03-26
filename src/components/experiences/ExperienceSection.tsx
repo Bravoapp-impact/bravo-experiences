@@ -62,7 +62,6 @@ export function ExperienceSection({ title, experiences }: ExperienceSectionProps
               <ExperienceCardCompact
                 experience={experience}
                 index={index}
-                onSelect={onSelectExperience}
               />
             </div>
           ))}
