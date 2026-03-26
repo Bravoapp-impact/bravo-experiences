@@ -17,7 +17,6 @@ export default function Experiences() {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   
 
   const fetchExperiences = async () => {
