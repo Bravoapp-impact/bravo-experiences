@@ -4,7 +4,6 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ExperienceSection } from "@/components/experiences/ExperienceSection";
-import { ExperienceDetailModal } from "@/components/experiences/ExperienceDetailModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { devLog } from "@/lib/logger";
@@ -18,7 +17,6 @@ export default function Experiences() {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   
 
   const fetchExperiences = async () => {
@@ -167,18 +165,8 @@ export default function Experiences() {
           <ExperienceSection
             title="Esperienze disponibili"
             experiences={filteredExperiences}
-            onSelectExperience={setSelectedExperience}
           />
         </div>
-      )}
-
-      {/* Detail Modal */}
-      {selectedExperience && (
-        <ExperienceDetailModal
-          experience={selectedExperience}
-          onClose={() => setSelectedExperience(null)}
-          onBookingComplete={fetchExperiences}
-        />
       )}
     </AppLayout>
   );

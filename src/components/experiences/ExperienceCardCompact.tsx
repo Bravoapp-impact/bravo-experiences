@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Users, Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { BaseCardImage } from "@/components/common/BaseCardImage";
 import { format, differenceInMinutes } from "date-fns";
@@ -9,10 +10,10 @@ import type { Experience, ExperienceDate } from "@/types/experiences";
 interface ExperienceCardCompactProps {
   experience: Experience;
   index: number;
-  onSelect: (experience: Experience) => void;
 }
 
-export function ExperienceCardCompact({ experience, index, onSelect }: ExperienceCardCompactProps) {
+export function ExperienceCardCompact({ experience, index }: ExperienceCardCompactProps) {
+  const navigate = useNavigate();
   const nextDate = experience.experience_dates?.[0];
   const availableSpots = nextDate
     ? nextDate.max_participants - (nextDate.confirmed_count || 0)
@@ -30,7 +31,7 @@ export function ExperienceCardCompact({ experience, index, onSelect }: Experienc
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
-      onClick={() => onSelect(experience)}
+      onClick={() => navigate(`/app/experiences/${experience.id}`)}
       className={`group flex-shrink-0 w-[145px] sm:w-[165px] md:w-[200px] text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-2xl ${isFull ? "opacity-60" : ""}`}
     >
       {/* Square Image with category badge + "Completo" overlay */}

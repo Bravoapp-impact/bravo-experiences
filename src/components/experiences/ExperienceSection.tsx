@@ -7,10 +7,9 @@ import type { Experience } from "@/types/experiences";
 interface ExperienceSectionProps {
   title: string;
   experiences: Experience[];
-  onSelectExperience: (experience: Experience) => void;
 }
 
-export function ExperienceSection({ title, experiences, onSelectExperience }: ExperienceSectionProps) {
+export function ExperienceSection({ title, experiences }: ExperienceSectionProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: "left" | "right") => {
@@ -63,7 +62,6 @@ export function ExperienceSection({ title, experiences, onSelectExperience }: Ex
               <ExperienceCardCompact
                 experience={experience}
                 index={index}
-                onSelect={onSelectExperience}
               />
             </div>
           ))}
