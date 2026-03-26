@@ -70,6 +70,14 @@ const App = () => (
               }
             />
             <Route
+              path="/app/experiences/:id"
+              element={
+                <ProtectedRoute>
+                  <ExperienceDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/app/bookings"
               element={
                 <ProtectedRoute>

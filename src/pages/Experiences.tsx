@@ -165,18 +165,8 @@ export default function Experiences() {
           <ExperienceSection
             title="Esperienze disponibili"
             experiences={filteredExperiences}
-            onSelectExperience={setSelectedExperience}
           />
         </div>
-      )}
-
-      {/* Detail Modal */}
-      {selectedExperience && (
-        <ExperienceDetailModal
-          experience={selectedExperience}
-          onClose={() => setSelectedExperience(null)}
-          onBookingComplete={fetchExperiences}
-        />
       )}
     </AppLayout>
   );
