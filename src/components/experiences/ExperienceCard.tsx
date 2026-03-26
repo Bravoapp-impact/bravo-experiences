@@ -105,7 +105,7 @@ export function ExperienceCard({ experience, index }: ExperienceCardProps) {
 
         {/* CTA */}
         <Button
-          onClick={() => onSelect(experience)}
+          onClick={() => navigate(`/app/experiences/${experience.id}`)}
           className="w-full mt-4 group/btn"
         >
           Scopri e prenota
