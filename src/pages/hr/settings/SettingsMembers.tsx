@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,6 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { devLog } from "@/lib/logger";
+import SettingsPage from "@/components/common/SettingsPage";
+import SettingsSection from "@/components/common/SettingsSection";
 
 function getInitials(name?: string | null): string {
   if (!name) return "?";
@@ -49,31 +49,22 @@ export default function SettingsMembers() {
   }, [profile?.company_id]);
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-      <h2 className="text-lg font-semibold text-foreground">Membri e accessi</h2>
-      <p className="text-sm text-muted-foreground mb-6">Gestisci chi può accedere a Bravo! nella tua azienda</p>
-
-      {/* Domain block */}
-      <div className="mb-4">
-        <div className="flex items-center gap-2 mb-1">
-          <h3 className="text-sm font-semibold text-foreground">Dominio aziendale</h3>
-          <Badge variant="outline" className="text-[10px]">Presto</Badge>
+    <SettingsPage title="Membri e accessi" description="Gestisci chi può accedere a Bravo! nella tua azienda">
+      <SettingsSection
+        title="Dominio aziendale"
+        description="I dipendenti che si registrano con questo dominio email accedono automaticamente alla tua azienda."
+      >
+        <div className="mb-1">
+          <Badge variant="outline" className="text-[10px] mb-2">Presto</Badge>
         </div>
-        <p className="text-xs text-muted-foreground mb-2">
-          I dipendenti che si registrano con questo dominio email accedono automaticamente alla tua azienda.
-        </p>
         <Input placeholder="@nomeazienda.com" readOnly className="bg-muted/30" />
         <p className="text-xs text-muted-foreground mt-1.5">
           Contatta il tuo referente Bravo! per configurare il dominio aziendale.
         </p>
-      </div>
+      </SettingsSection>
 
-      <Separator className="my-6" />
-
-      {/* Employees table */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-foreground">Dipendenti registrati</h3>
+      <SettingsSection title="Dipendenti registrati" separator={false}>
+        <div className="flex items-center justify-end mb-3">
           <Button size="sm" disabled>Invita dipendente</Button>
         </div>
 
@@ -126,7 +117,7 @@ export default function SettingsMembers() {
             </Table>
           </div>
         )}
-      </div>
-    </motion.div>
+      </SettingsSection>
+    </SettingsPage>
   );
 }

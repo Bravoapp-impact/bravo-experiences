@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Upload } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import SettingsPage from "@/components/common/SettingsPage";
+import AvatarUploadBlock from "@/components/common/AvatarUploadBlock";
 
 function getInitials(name?: string | null): string {
   if (!name) return "?";
@@ -34,27 +32,13 @@ export default function SettingsGeneral() {
   }, [profile?.company_id]);
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-      <h2 className="text-lg font-semibold text-foreground">Profilo azienda</h2>
-      <p className="text-sm text-muted-foreground mb-6">Informazioni sulla tua azienda su Bravo!</p>
-
-      {/* Logo — Attio style */}
-      <div className="flex items-center gap-4 mb-8">
-        <Avatar className="h-16 w-16">
-          <AvatarImage src={companyLogoUrl || undefined} />
-          <AvatarFallback className="bg-primary/10 text-primary text-lg font-medium">
-            {getInitials(companyName)}
-          </AvatarFallback>
-        </Avatar>
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-foreground">Logo azienda</p>
-          <p className="text-xs text-muted-foreground">Supportiamo PNG e JPEG sotto 2MB</p>
-          <Button variant="outline" size="sm" className="mt-1 h-7 text-xs" disabled>
-            <Upload className="mr-1.5 h-3 w-3" />
-            Carica logo
-          </Button>
-        </div>
-      </div>
+    <SettingsPage title="Profilo azienda" description="Informazioni sulla tua azienda su Bravo!">
+      <AvatarUploadBlock
+        imageUrl={companyLogoUrl}
+        fallbackInitials={getInitials(companyName)}
+        title="Logo azienda"
+        disabled
+      />
 
       <div className="space-y-4">
         <div className="space-y-1.5">
@@ -64,6 +48,6 @@ export default function SettingsGeneral() {
       </div>
 
       <p className="text-xs text-muted-foreground mt-4">Per modificare i dati contatta il tuo referente Bravo!</p>
-    </motion.div>
+    </SettingsPage>
   );
 }

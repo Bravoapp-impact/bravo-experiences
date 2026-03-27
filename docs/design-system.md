@@ -1293,7 +1293,53 @@ export default function CitiesPage() {
 
 ---
 
+## ⚙️ Settings Pages Pattern
+
+Le pagine impostazioni usano componenti riutilizzabili per garantire coerenza visiva.
+
+### Componenti
+
+| Componente | File | Uso |
+|-----------|------|-----|
+| `SettingsPage` | `src/components/common/SettingsPage.tsx` | Wrapper pagina: h2 + descrizione + animazione framer-motion |
+| `SettingsSection` | `src/components/common/SettingsSection.tsx` | Sezione: h3 + descrizione opzionale + children + Separator |
+| `AvatarUploadBlock` | `src/components/common/AvatarUploadBlock.tsx` | Avatar 64px + titolo + descrizione + bottone upload |
+| `SettingsToggleRow` | `src/components/common/SettingsToggleRow.tsx` | Label a sinistra + Switch a destra |
+
+### Struttura tipo
+
+```tsx
+<SettingsPage title="Titolo" description="Descrizione">
+  <AvatarUploadBlock ... />
+  <SettingsSection title="Sezione 1">
+    {/* contenuto */}
+  </SettingsSection>
+  <SettingsSection title="Sezione 2" separator={false}>
+    {/* ultima sezione senza separator */}
+  </SettingsSection>
+</SettingsPage>
+```
+
+### Regole spacing
+
+- `mb-6` dopo header pagina (gestito da `SettingsPage`)
+- `my-6` separator tra sezioni (gestito da `SettingsSection`)
+- `mb-8` dopo `AvatarUploadBlock`
+- Campi form: `space-y-4`, label `text-xs text-muted-foreground`
+- Grid 2 colonne per nome/cognome: `grid grid-cols-1 sm:grid-cols-2 gap-4`
+
+---
+
 ## 📚 Riferimenti
+
+- **Tailwind Config**: `tailwind.config.ts`
+- **CSS Variables**: `src/index.css`
+- **UI Components (shadcn)**: `src/components/ui/`
+- **Componenti Riutilizzabili**: `src/components/common/`, `src/components/profile/`
+- **Componenti CRUD**: `src/components/crud/`
+- **Componenti Settings**: `src/components/common/Settings*.tsx`
+- **Hook CRUD**: `src/hooks/useCrudState.ts`
+- **Layout Admin**: `src/components/layout/AdminLayout.tsx`
 
 - **Tailwind Config**: `tailwind.config.ts`
 - **CSS Variables**: `src/index.css`
