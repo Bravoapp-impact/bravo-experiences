@@ -1,36 +1,23 @@
 
+Diagnosi rapida:
+- Il problema non è nel calcolo delle metriche, ma nel fetch dati della tab Statistiche.
+- `fetchStatsData` prende i booking aziendali, poi fa query su `experience_dates` con gli `experience_date_id`.
+- Dopo che rimuovi “Ripuliamo Artemisia” da `experience_companies`, la policy `employees_view_dates_v2` (basata su `can_employee_see_experience`) non fa più vedere quelle date.
+- Risultato: `datesRaw` torna vuoto, quindi `uniqueExpIds` è vuoto e le metriche si azzerano.
 
-# Piano: Statistiche basate su booking storici, non su activatedIds
+Piano di correzione (mirato):
+1) Aggiornare RLS su `experience_dates` con una nuova policy SELECT per HR admin (senza dipendere da `experience_companies`), che consenta visibilità se:
+   - la data appartiene a un’esperienza pubblicata/pubblica abilitata per il servizio aziendale, oppure
+   - esiste almeno un booking storico di un utente della stessa azienda su quella data.
+2) Lasciare invariata la policy employee (`employees_view_dates_v2`): i dipendenti continuano a vedere solo esperienze attivate dall’HR.
+3) Mantenere la logica frontend attuale in `HRExperiencesPage.tsx` (booking-driven), perché con la policy HR corretta torna a funzionare anche dopo rimozione dal programma.
+4) Aggiungere solo un hardening minimo nel frontend: log/guard esplicito se ci sono booking ma zero date risolte, per diagnosticare subito regressioni RLS future.
 
-## Problema
-`fetchStatsData` filtra le esperienze usando `activatedIds` (riga 168). Se un'esperienza viene rimossa dal programma, i dati storici (ore, partecipazioni, beneficiari) spariscono dalle statistiche.
+Verifica funzionale (E2E):
+- Caso A: HR rimuove “Ripuliamo Artemisia” da “Il mio programma” → in “Statistiche” restano visibili partecipazioni e fill rate storici.
+- Caso B: Dipendente della stessa azienda non vede più l’esperienza nel catalogo (comportamento atteso).
+- Caso C: HR continua a vedere catalogo completo e può riattivare l’esperienza.
 
-## Soluzione
-Cambiare la logica di fetch della tab Statistiche: invece di partire dalle esperienze attivate, partire dai **booking dei dipendenti dell'azienda** e risalire alle esperienze tramite le date.
-
-## Modifica in `HRExperiencesPage.tsx`
-
-Riscrivere `fetchStatsData`:
-
-1. Recuperare tutti i profili dell'azienda (come oggi)
-2. Recuperare tutti i booking dei dipendenti dell'azienda (qualsiasi stato tranne `cancelled`)
-3. Dai booking, ottenere le `experience_dates` e da quelle gli `experience_id` unici
-4. Recuperare i dettagli delle esperienze corrispondenti (query diretta su `experiences` con `.in("id", uniqueExpIds)`)
-5. Costruire `statsExperiences` da questi dati
-
-Questo approccio garantisce che:
-- Esperienze passate con booking completati appaiano sempre nelle statistiche
-- La rimozione dal programma non cancelli lo storico
-- Le metriche (ore, partecipazioni, fill rate) restino accurate
-
-## Rimozione dipendenza da activatedIds
-La riga `const activatedList = experiences.filter((e) => activatedIds.has(e.id))` viene eliminata. Il fetch delle statistiche diventa completamente indipendente dallo stato del programma attivo.
-
-## File coinvolti
-
-| File | Modifica |
-|------|----------|
-| `src/pages/hr/HRExperiencesPage.tsx` | Riscrittura di `fetchStatsData` |
-
-1 file, logica di fetch stats.
-
+File coinvolti:
+- `supabase/migrations/<nuova_migration>.sql` (nuova policy SELECT su `experience_dates` per HR)
+- `src/pages/hr/HRExperiencesPage.tsx` (solo guard/log difensivo, opzionale ma consigliato)
