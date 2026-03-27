@@ -360,16 +360,18 @@ export default function HRExperiencesPage() {
     const activeExperiences = statsExperiences.length;
     let futureEvents = 0, totalParticipations = 0, totalFillRate = 0, futureWithBookings = 0;
 
+    let totalFillRate = 0, datesWithCapacity = 0;
+
     statsExperiences.forEach((exp) => {
       exp.dates.forEach((date) => {
         const participated = date.bookings.filter((b) => ["confirmed", "completed", "verified"].includes(b.status)).length;
         totalParticipations += participated;
         if (new Date(date.start_datetime) > now) {
           futureEvents++;
-          if (date.max_participants > 0) {
-            totalFillRate += (participated / date.max_participants) * 100;
-            futureWithBookings++;
-          }
+        }
+        if (date.max_participants > 0) {
+          totalFillRate += (participated / date.max_participants) * 100;
+          datesWithCapacity++;
         }
       });
     });
