@@ -111,7 +111,13 @@ export default function HRExperiencesPage() {
         .eq("visibility", "public")
         .order("created_at", { ascending: false });
 
-      if (expError) throw expError;
+      const expIds = (experiencesData || []).map((e) => e.id);
+
+      if (expIds.length === 0) {
+        setExperiences([]);
+        setLoading(false);
+        return;
+      }
 
       // Fetch company employees for filtering bookings
       const { data: companyProfiles } = await supabase
@@ -141,7 +147,7 @@ export default function HRExperiencesPage() {
             user_id
           )
         `)
-        .in("experience_id", experienceIds)
+        .in("experience_id", expIds)
         .order("start_datetime", { ascending: true });
 
       // Map dates to experiences and filter bookings to company employees
