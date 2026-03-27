@@ -1,31 +1,84 @@
+# Piano: Ristrutturazione Impostazioni HR (stile Attio)
 
-Obiettivo: ripristinare le metriche HR (non più tutte a zero) nella tab “Statistiche”.
+## Panoramica
 
-Diagnosi confermata:
-- Le richieste a `experience_dates` stanno fallendo con errore backend `42P17: infinite recursion detected in policy for relation "experience_dates"`.
-- Questo errore nasce dalla policy `hr_view_experience_dates_v2` appena introdotta: dentro la policy su `experience_dates` fai una subquery su `bookings`, e le policy di `bookings` a loro volta referenziano `experience_dates` ⇒ loop RLS.
-- Quando la query fallisce, `fetchStatsData` non riceve date/esperienze e la UI mostra metriche a zero.
+Trasformare la pagina Impostazioni in un layout fullscreen con sidebar dedicata (come Attio), sotto-route per ogni sezione, responsive, e Switch più compatti.
 
-Piano di correzione (mirato e sicuro):
-1) Migrazione SQL per eliminare la ricorsione RLS
-- Creare una funzione `SECURITY DEFINER` (con `SET row_security = off`) che verifichi lo storico booking aziendale per una data:
-  - input: `p_user_id uuid`, `p_date_id uuid`
-  - query interna: `bookings` + `profiles` filtrando `company_id` dell’HR e status in `('confirmed','completed','verified')`
-  - ritorno boolean.
-- Sostituire la policy `hr_view_experience_dates_v2`:
-  - `DROP POLICY hr_view_experience_dates_v2 ON public.experience_dates`
-  - `CREATE POLICY hr_view_experience_dates_v3 ... USING ( has_role(auth.uid(),'hr_admin') AND ( [condizione catalogo pubblico+servizio abilitato] OR public.hr_has_historical_booking_for_date(auth.uid(), experience_dates.id) ) )`
-- Lasciare invariata la policy employee (`employees_view_dates_v2`), così i dipendenti continuano a vedere solo esperienze attivate.
+## Modifiche
 
-2) Hardening frontend minimo (stesso file già toccato)
-- In `fetchStatsData`, se una query restituisce errore (`error` non nullo), loggare esplicitamente l’errore e mostrare stato errore nella tab statistiche (invece di far sembrare “0 reale”).
-- Nessun cambio di logica business: la logica booking-driven resta corretta.
+### 1. Layout fullscreen con sidebar propria
 
-3) Verifica funzionale E2E
-- Caso 1: HR apre `/hr/volontariato` → tab “Statistiche” mostra di nuovo partecipazioni e fill rate (non zero fittizio).
-- Caso 2: rimozione esperienza da “Il mio programma” → lo storico resta visibile nelle metriche.
-- Caso 3: dipendente non vede esperienza rimossa nel catalogo (comportamento atteso, invariato).
+La pagina Impostazioni NON usa `HRLayout`. Diventa un layout autonomo fullscreen:
 
-File coinvolti:
-- `supabase/migrations/<nuova_migration>.sql` (nuova funzione + policy v3, rimozione v2)
-- `src/pages/hr/HRExperiencesPage.tsx` (gestione errore più esplicita in fetch stats)
+- Sidebar sinistra con freccia "indietro" in alto (torna a `/hr`)
+- Gruppi di navigazione come ora ma con `<NavLink>` a sotto-route
+- Su mobile: sidebar nascosta, header con hamburger o select dropdown
+
+### 2. Sotto-route per ogni sezione
+
+`App.tsx`: sostituire la route singola `/hr/impostazioni` con una route parent + nested routes:
+
+- `/hr/impostazioni` → redirect a `/hr/impostazioni/profilo`
+- `/hr/impostazioni/profilo`
+- `/hr/impostazioni/tema`
+- `/hr/impostazioni/generali`
+- `/hr/impostazioni/membri`
+- `/hr/impostazioni/volontariato`
+- Sezioni disabilitate: nessuna route, link non cliccabili
+
+### 3. Ristrutturazione file
+
+Creare un layout wrapper `HRSettingsLayout.tsx` con:
+
+- Sidebar sinistra (w-56, border-r, full height)
+- Header sidebar: freccia indietro + "Impostazioni"
+- Gruppi navigazione con `useLocation` per evidenziare la sezione attiva
+- Su mobile: sidebar collassabile o sheet
+- Area contenuto a destra con scroll, padding e max-width
+
+Spezzare `HRSettingsPage.tsx` in file sezione separati sotto `src/pages/hr/settings/`:
+
+- `SettingsProfile.tsx`
+- `SettingsTheme.tsx`
+- `SettingsGeneral.tsx`
+- `SettingsMembers.tsx`
+- `SettingsVolunteering.tsx`
+- `SettingsDisabled.tsx` (placeholder per sezioni future)
+
+### 4. Switch compatto (stile Attio)
+
+Lo screenshot Attio mostra toggle piccoli e sottili. Ridurre dimensioni del Switch:
+
+- Root: `h-4 w-7` (da `h-6 w-11`)
+- Thumb: `h-3 w-3`, `translate-x-3` quando checked (da `h-5 w-5`, `translate-x-5`)
+- Colore checked: mantenere `bg-primary`
+
+Modifica anche il switch globale secondo queste specifiche di design - ogni switch nella web app deve avere queste caratteristiche -> creiamo un componente o se già creato lo modifichiamo
+
+### 5. Profilo e Generali editabili
+
+Le sezioni Profilo e Generali mantengono la funzionalità di editing che era presente prima (nome, cognome, avatar upload). Si riutilizza il pattern `ProfileEditForm` esistente dove possibile.
+
+### 6. Responsive
+
+- Desktop: due colonne (sidebar 224px + contenuto)
+- Tablet (< md): sidebar nascosta, sheet laterale con trigger hamburger nell'header
+- Mobile: stessa logica tablet, contenuto full-width con padding ridotto
+
+## File coinvolti
+
+
+| File                                             | Modifica                                |
+| ------------------------------------------------ | --------------------------------------- |
+| `src/components/layout/HRSettingsLayout.tsx`     | Nuovo - layout fullscreen con sidebar   |
+| `src/pages/hr/settings/SettingsProfile.tsx`      | Nuovo                                   |
+| `src/pages/hr/settings/SettingsTheme.tsx`        | Nuovo                                   |
+| `src/pages/hr/settings/SettingsGeneral.tsx`      | Nuovo                                   |
+| `src/pages/hr/settings/SettingsMembers.tsx`      | Nuovo                                   |
+| `src/pages/hr/settings/SettingsVolunteering.tsx` | Nuovo                                   |
+| `src/pages/hr/settings/SettingsDisabled.tsx`     | Nuovo                                   |
+| `src/pages/hr/HRSettingsPage.tsx`                | Eliminato o svuotato (logica spostata)  |
+| `src/App.tsx`                                    | Route nested sotto `/hr/impostazioni/*` |
+
+
+Nessuna modifica a database o RLS.
