@@ -113,7 +113,7 @@ export function BookingCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
       onClick={() => onView(booking)}
-      className="group w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-2xl"
+      className="group w-full text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 rounded-2xl"
     >
       {/* Square Image with date badge */}
       <BaseCardImage
