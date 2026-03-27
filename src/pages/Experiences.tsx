@@ -68,6 +68,7 @@ export default function Experiences() {
         query = query.in("id", allowedExperienceIds);
       }
 
+      const { data: expData, error: expError } = await query;
       if (expError) throw expError;
 
       // Transform to include association logo and SDGs
