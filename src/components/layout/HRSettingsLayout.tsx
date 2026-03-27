@@ -1,155 +1,61 @@
-import { ReactNode } from "react";
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { ArrowLeft, Menu } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useState } from "react";
+import { Outlet } from "react-router-dom";
+import {
+  User,
+  Palette,
+  Bell,
+  Gift,
+  Building2,
+  Users,
+  Zap,
+  Receipt,
+  Heart,
+  UsersRound,
+  GraduationCap,
+  ShoppingBag,
+  ArrowLeft,
+} from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { AdminLayout, SidebarItem } from "./AdminLayout";
 
-type SectionId = "profilo" | "tema" | "notifiche" | "referral"
-  | "generali" | "membri" | "upgrade" | "fatturazione"
-  | "volontariato" | "team-building" | "formazione" | "negozio-solidale";
-
-interface NavItem {
-  id: SectionId;
-  label: string;
-  path: string;
-  disabled?: boolean;
-}
-
-interface NavGroup {
-  label: string;
-  items: NavItem[];
-}
-
-const navGroups: NavGroup[] = [
-  {
-    label: "Personale",
-    items: [
-      { id: "profilo", label: "Profilo", path: "/hr/impostazioni/profilo" },
-      { id: "tema", label: "Tema", path: "/hr/impostazioni/tema" },
-      { id: "notifiche", label: "Notifiche", path: "", disabled: true },
-      { id: "referral", label: "Referral", path: "", disabled: true },
-    ],
-  },
-  {
-    label: "Workspace",
-    items: [
-      { id: "generali", label: "Generali", path: "/hr/impostazioni/generali" },
-      { id: "membri", label: "Membri", path: "/hr/impostazioni/membri" },
-      { id: "upgrade", label: "Upgrade", path: "", disabled: true },
-      { id: "fatturazione", label: "Fatturazione", path: "", disabled: true },
-    ],
-  },
-  {
-    label: "Iniziative",
-    items: [
-      { id: "volontariato", label: "Volontariato", path: "/hr/impostazioni/volontariato" },
-      { id: "team-building", label: "Team Building", path: "", disabled: true },
-      { id: "formazione", label: "Formazione", path: "", disabled: true },
-      { id: "negozio-solidale", label: "Negozio Solidale", path: "", disabled: true },
-    ],
-  },
+const sidebarItems: SidebarItem[] = [
+  { label: "Indietro", icon: ArrowLeft, href: "/hr", iconColor: "text-muted-foreground" },
+  // separator after 0, section "Personale" before 1
+  { label: "Profilo", icon: User, href: "/hr/impostazioni/profilo", iconColor: "text-violet-500" },
+  { label: "Tema", icon: Palette, href: "/hr/impostazioni/tema", iconColor: "text-amber-500" },
+  { label: "Notifiche", icon: Bell, href: "#", disabled: true, badge: "Presto" },
+  { label: "Referral", icon: Gift, href: "#", disabled: true, badge: "Presto" },
+  // section "Workspace" before 5
+  { label: "Generali", icon: Building2, href: "/hr/impostazioni/generali", iconColor: "text-blue-500" },
+  { label: "Membri", icon: Users, href: "/hr/impostazioni/membri", iconColor: "text-green-500" },
+  { label: "Upgrade", icon: Zap, href: "#", disabled: true, badge: "Presto" },
+  { label: "Fatturazione", icon: Receipt, href: "#", disabled: true, badge: "Presto" },
+  // section "Iniziative" before 9
+  { label: "Volontariato", icon: Heart, href: "/hr/impostazioni/volontariato", iconColor: "text-rose-500" },
+  { label: "Team Building", icon: UsersRound, href: "#", disabled: true, badge: "Presto" },
+  { label: "Formazione", icon: GraduationCap, href: "#", disabled: true, badge: "Presto" },
+  { label: "Negozio Solidale", icon: ShoppingBag, href: "#", disabled: true, badge: "Presto" },
 ];
 
-function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
-  const location = useLocation();
-
-  return (
-    <nav className="space-y-4">
-      {navGroups.map((group) => (
-        <div key={group.label}>
-          <p className="text-[11px] font-medium text-muted-foreground tracking-wide uppercase mb-1 px-2">
-            {group.label}
-          </p>
-          {group.items.map((item) =>
-            item.disabled ? (
-              <span
-                key={item.id}
-                className="block w-full text-left text-sm px-2 py-1.5 rounded-md text-muted-foreground/40 cursor-not-allowed"
-              >
-                {item.label}
-              </span>
-            ) : (
-              <NavLink
-                key={item.id}
-                to={item.path}
-                onClick={onNavigate}
-                className={({ isActive }) =>
-                  cn(
-                    "block w-full text-left text-sm px-2 py-1.5 rounded-md transition-colors",
-                    isActive || location.pathname === item.path
-                      ? "bg-muted text-foreground font-medium"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                  )
-                }
-              >
-                {item.label}
-              </NavLink>
-            )
-          )}
-        </div>
-      ))}
-    </nav>
-  );
-}
-
 export default function HRSettingsLayout() {
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const { profile } = useAuth();
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-56 shrink-0 border-r border-border flex-col">
-        <div className="p-4 pb-2">
-          <Link
-            to="/hr"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Indietro
-          </Link>
-          <h1 className="text-base font-semibold text-foreground mt-3">Impostazioni</h1>
-        </div>
-        <div className="px-3 py-2 flex-1 overflow-y-auto">
-          <SidebarNav />
-        </div>
-      </aside>
-
-      {/* Mobile header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-background border-b border-border h-12 flex items-center px-3 gap-2">
-        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-              <Menu className="h-4 w-4" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-56 p-0">
-            <div className="p-4 pb-2">
-              <Link
-                to="/hr"
-                onClick={() => setSheetOpen(false)}
-                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Indietro
-              </Link>
-              <h1 className="text-base font-semibold text-foreground mt-3">Impostazioni</h1>
-            </div>
-            <div className="px-3 py-2">
-              <SidebarNav onNavigate={() => setSheetOpen(false)} />
-            </div>
-          </SheetContent>
-        </Sheet>
-        <span className="text-sm font-semibold text-foreground">Impostazioni</span>
+    <AdminLayout
+      sidebarItems={sidebarItems}
+      profilePath="/hr/impostazioni/profilo"
+      basePath="/hr/impostazioni"
+      entityLogoUrl={profile?.companies?.logo_url || undefined}
+      entityName={profile?.companies?.name || "Azienda"}
+      separatorAfterIndex={[0]}
+      sectionLabels={[
+        { beforeIndex: 1, label: "Personale" },
+        { beforeIndex: 5, label: "Workspace" },
+        { beforeIndex: 9, label: "Iniziative" },
+      ]}
+    >
+      <div className="max-w-2xl">
+        <Outlet />
       </div>
-
-      {/* Content area */}
-      <main className="flex-1 overflow-y-auto md:pt-0 pt-12">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 md:py-10">
-          <Outlet />
-        </div>
-      </main>
-    </div>
+    </AdminLayout>
   );
 }
