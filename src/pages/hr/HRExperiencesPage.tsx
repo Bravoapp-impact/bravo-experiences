@@ -358,7 +358,7 @@ export default function HRExperiencesPage() {
   const statsMetrics = useMemo<Metrics>(() => {
     const now = new Date();
     const activeExperiences = statsExperiences.length;
-    let futureEvents = 0, totalParticipations = 0, totalFillRate = 0, futureWithBookings = 0;
+    let futureEvents = 0, totalParticipations = 0, totalFillRate = 0, datesWithCapacity = 0;
 
     statsExperiences.forEach((exp) => {
       exp.dates.forEach((date) => {
@@ -366,10 +366,10 @@ export default function HRExperiencesPage() {
         totalParticipations += participated;
         if (new Date(date.start_datetime) > now) {
           futureEvents++;
-          if (date.max_participants > 0) {
-            totalFillRate += (participated / date.max_participants) * 100;
-            futureWithBookings++;
-          }
+        }
+        if (date.max_participants > 0) {
+          totalFillRate += (participated / date.max_participants) * 100;
+          datesWithCapacity++;
         }
       });
     });
@@ -378,7 +378,7 @@ export default function HRExperiencesPage() {
       activeExperiences,
       futureEvents,
       totalParticipations,
-      averageFillRate: futureWithBookings > 0 ? Math.round(totalFillRate / futureWithBookings) : 0,
+      averageFillRate: datesWithCapacity > 0 ? Math.round(totalFillRate / datesWithCapacity) : 0,
     };
   }, [statsExperiences]);
 
