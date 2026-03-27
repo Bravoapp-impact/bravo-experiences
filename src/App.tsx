@@ -40,7 +40,13 @@ import AssociationProfilePage from "./pages/association/AssociationProfilePage";
 import AssociationAdminProfile from "./pages/association/AssociationAdminProfile";
 import AssociationCalendarPage from "./pages/association/AssociationCalendarPage";
 import HRProfile from "./pages/hr/HRProfile";
-import HRSettingsPage from "./pages/hr/HRSettingsPage";
+import HRSettingsLayout from "./components/layout/HRSettingsLayout";
+import SettingsProfile from "./pages/hr/settings/SettingsProfile";
+import SettingsTheme from "./pages/hr/settings/SettingsTheme";
+import SettingsGeneral from "./pages/hr/settings/SettingsGeneral";
+import SettingsMembers from "./pages/hr/settings/SettingsMembers";
+import SettingsVolunteering from "./pages/hr/settings/SettingsVolunteering";
+import SettingsDisabled from "./pages/hr/settings/SettingsDisabled";
 import AccessRequestsPage from "./pages/super-admin/AccessRequestsPage";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
@@ -146,10 +152,17 @@ const App = () => (
               path="/hr/impostazioni"
               element={
                 <ProtectedHRRoute>
-                  <HRSettingsPage />
+                  <HRSettingsLayout />
                 </ProtectedHRRoute>
               }
-            />
+            >
+              <Route index element={<Navigate to="profilo" replace />} />
+              <Route path="profilo" element={<SettingsProfile />} />
+              <Route path="tema" element={<SettingsTheme />} />
+              <Route path="generali" element={<SettingsGeneral />} />
+              <Route path="membri" element={<SettingsMembers />} />
+              <Route path="volontariato" element={<SettingsVolunteering />} />
+            </Route>
             {/* Super Admin Routes */}
             <Route
               path="/super-admin"
