@@ -1,32 +1,36 @@
 
 
-# Piano: Dipendenti vedono solo esperienze attivate dall'HR
+# Piano: Statistiche basate su booking storici, non su activatedIds
 
 ## Problema
-
-La funzione SQL `can_employee_see_experience` attualmente permette ai dipendenti di vedere un'esperienza se:
-1. È assegnata direttamente via `experience_companies` (Check 1)
-2. **OPPURE** è pubblica e l'azienda ha il `service_type` abilitato in `company_service_config` (Check 3)
-
-Il Check 3 è troppo permissivo: mostra TUTTE le esperienze pubbliche del tipo abilitato, ignorando la curation fatta dall'HR.
+`fetchStatsData` filtra le esperienze usando `activatedIds` (riga 168). Se un'esperienza viene rimossa dal programma, i dati storici (ore, partecipazioni, beneficiari) spariscono dalle statistiche.
 
 ## Soluzione
+Cambiare la logica di fetch della tab Statistiche: invece di partire dalle esperienze attivate, partire dai **booking dei dipendenti dell'azienda** e risalire alle esperienze tramite le date.
 
-Modificare la funzione `can_employee_see_experience` rimuovendo il Check 3 (fallback su `company_service_config`). I dipendenti vedranno solo le esperienze che il loro HR ha esplicitamente aggiunto al programma via `experience_companies`.
+## Modifica in `HRExperiencesPage.tsx`
 
-## Modifica
+Riscrivere `fetchStatsData`:
 
-Una sola migration SQL che fa `CREATE OR REPLACE FUNCTION public.can_employee_see_experience` mantenendo solo il check su `experience_companies` e rimuovendo il blocco che interroga `company_service_config`.
+1. Recuperare tutti i profili dell'azienda (come oggi)
+2. Recuperare tutti i booking dei dipendenti dell'azienda (qualsiasi stato tranne `cancelled`)
+3. Dai booking, ottenere le `experience_dates` e da quelle gli `experience_id` unici
+4. Recuperare i dettagli delle esperienze corrispondenti (query diretta su `experiences` con `.in("id", uniqueExpIds)`)
+5. Costruire `statsExperiences` da questi dati
 
-La policy RLS dell'HR (`HR admin can view published public experiences v2`) resta invariata — l'HR continua a vedere tutto il catalogo per poter scegliere cosa attivare.
+Questo approccio garantisce che:
+- Esperienze passate con booking completati appaiano sempre nelle statistiche
+- La rimozione dal programma non cancelli lo storico
+- Le metriche (ore, partecipazioni, fill rate) restino accurate
 
-Nessuna modifica al codice frontend.
+## Rimozione dipendenza da activatedIds
+La riga `const activatedList = experiences.filter((e) => activatedIds.has(e.id))` viene eliminata. Il fetch delle statistiche diventa completamente indipendente dallo stato del programma attivo.
 
 ## File coinvolti
 
 | File | Modifica |
 |------|----------|
-| Migration SQL | `CREATE OR REPLACE FUNCTION can_employee_see_experience` senza Check 3 |
+| `src/pages/hr/HRExperiencesPage.tsx` | Riscrittura di `fetchStatsData` |
 
-1 migration, 0 file frontend.
+1 file, logica di fetch stats.
 
