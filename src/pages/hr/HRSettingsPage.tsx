@@ -403,7 +403,7 @@ function MembriSection({ employees, loading }: { employees: Employee[]; loading:
                     {format(new Date(emp.created_at), "d MMM yyyy", { locale: it })}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 text-[11px]">
+                    <Badge variant="secondary" className="text-[11px]">
                       Attivo
                     </Badge>
                   </TableCell>
