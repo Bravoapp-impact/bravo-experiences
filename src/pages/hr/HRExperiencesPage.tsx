@@ -164,17 +164,7 @@ export default function HRExperiencesPage() {
     if (!profile?.company_id) return;
     setStatsLoading(true);
     try {
-      // Only activated experiences
-      const activatedList = experiences.filter((e) => activatedIds.has(e.id));
-      const expIds = activatedList.map((e) => e.id);
-
-      if (expIds.length === 0) {
-        setStatsExperiences([]);
-        setStatsLoaded(true);
-        setStatsLoading(false);
-        return;
-      }
-
+      // 1. Get all company employee profiles
       const { data: companyProfiles } = await supabase
         .from("profiles")
         .select("id, first_name, last_name, email")
@@ -183,22 +173,74 @@ export default function HRExperiencesPage() {
       const profileMap = new Map((companyProfiles || []).map((p) => [p.id, p]));
       const companyUserIds = Array.from(profileMap.keys());
 
-      const { data: datesData } = await supabase
+      if (companyUserIds.length === 0) {
+        setStatsExperiences([]);
+        setStatsLoaded(true);
+        setStatsLoading(false);
+        return;
+      }
+
+      // 2. Get all non-cancelled bookings from company employees
+      const { data: bookingsData } = await supabase
+        .from("bookings")
+        .select("id, status, created_at, user_id, experience_date_id")
+        .in("user_id", companyUserIds)
+        .neq("status", "cancelled");
+
+      if (!bookingsData || bookingsData.length === 0) {
+        setStatsExperiences([]);
+        setStatsLoaded(true);
+        setStatsLoading(false);
+        return;
+      }
+
+      // 3. Get unique experience_date_ids, then fetch dates to get experience_ids
+      const dateIds = [...new Set(bookingsData.map((b) => b.experience_date_id))];
+      const { data: datesRaw } = await supabase
         .from("experience_dates")
-        .select(`id, experience_id, start_datetime, end_datetime, max_participants, volunteer_hours, bookings (id, status, created_at, user_id)`)
-        .in("experience_id", expIds)
+        .select("id, experience_id, start_datetime, end_datetime, max_participants, volunteer_hours")
+        .in("id", dateIds)
         .order("start_datetime", { ascending: true });
 
+      const uniqueExpIds = [...new Set((datesRaw || []).map((d) => d.experience_id))];
+
+      if (uniqueExpIds.length === 0) {
+        setStatsExperiences([]);
+        setStatsLoaded(true);
+        setStatsLoading(false);
+        return;
+      }
+
+      // 4. Fetch full experience details (use RPC-free direct query — HR RLS allows seeing published/public)
+      const { data: expData } = await supabase
+        .from("experiences")
+        .select("id, title, description, image_url, status, address, sdgs, category_id, city_id, categories:category_id (id, name), cities:city_id (id, name), associations:association_id (name)")
+        .in("id", uniqueExpIds);
+
+      // Also fetch ALL dates for these experiences (not just the ones with bookings)
+      const { data: allDatesData } = await supabase
+        .from("experience_dates")
+        .select("id, experience_id, start_datetime, end_datetime, max_participants, volunteer_hours")
+        .in("experience_id", uniqueExpIds)
+        .order("start_datetime", { ascending: true });
+
+      // 5. Build bookings lookup by date_id
+      const bookingsByDate = new Map<string, typeof bookingsData>();
+      bookingsData.forEach((b) => {
+        const list = bookingsByDate.get(b.experience_date_id) || [];
+        list.push(b);
+        bookingsByDate.set(b.experience_date_id, list);
+      });
+
+      // 6. Build dates map grouped by experience_id
       const datesMap = new Map<string, ExperienceDate[]>();
-      (datesData || []).forEach((date) => {
-        const companyBookings = date.bookings
-          .filter((b) => companyUserIds.includes(b.user_id))
-          .map((b) => ({
-            id: b.id,
-            status: b.status,
-            created_at: b.created_at,
-            user: profileMap.get(b.user_id) || { first_name: null, last_name: null, email: "" },
-          }));
+      (allDatesData || []).forEach((date) => {
+        const dateBookings = (bookingsByDate.get(date.id) || []).map((b) => ({
+          id: b.id,
+          status: b.status,
+          created_at: b.created_at,
+          user: profileMap.get(b.user_id) || { first_name: null, last_name: null, email: "" },
+        }));
 
         const list = datesMap.get(date.experience_id) || [];
         list.push({
@@ -207,12 +249,13 @@ export default function HRExperiencesPage() {
           end_datetime: date.end_datetime,
           max_participants: date.max_participants,
           volunteer_hours: date.volunteer_hours ? Number(date.volunteer_hours) : null,
-          bookings: companyBookings,
+          bookings: dateBookings,
         });
         datesMap.set(date.experience_id, list);
       });
 
-      const formatted: StatsExperience[] = activatedList.map((exp) => ({
+      // 7. Format final stats experiences
+      const formatted: StatsExperience[] = (expData || []).map((exp) => ({
         id: exp.id,
         title: exp.title,
         description: exp.description,
