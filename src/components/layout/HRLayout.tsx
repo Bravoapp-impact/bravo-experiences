@@ -36,7 +36,7 @@ const sidebarItems: SidebarItem[] = [
   { label: "Comunicazione", icon: MessageSquare, href: "#", disabled: true, badge: "Presto" },
   // separator after index 10
   { label: "Report", icon: BarChart3, href: "/hr/report", iconColor: "text-rose-500" },
-  { label: "Impostazioni", icon: Settings, href: "#", disabled: true, badge: "Presto" },
+  { label: "Impostazioni", icon: Settings, href: "/hr/impostazioni", iconColor: "text-slate-500" },
 ];
 
 export function HRLayout({ children }: HRLayoutProps) {

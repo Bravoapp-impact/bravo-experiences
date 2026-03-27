@@ -40,6 +40,7 @@ import AssociationProfilePage from "./pages/association/AssociationProfilePage";
 import AssociationAdminProfile from "./pages/association/AssociationAdminProfile";
 import AssociationCalendarPage from "./pages/association/AssociationCalendarPage";
 import HRProfile from "./pages/hr/HRProfile";
+import HRSettingsPage from "./pages/hr/HRSettingsPage";
 import AccessRequestsPage from "./pages/super-admin/AccessRequestsPage";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
@@ -138,6 +139,14 @@ const App = () => (
               element={
                 <ProtectedHRRoute>
                   <HRProfile />
+                </ProtectedHRRoute>
+              }
+            />
+            <Route
+              path="/hr/impostazioni"
+              element={
+                <ProtectedHRRoute>
+                  <HRSettingsPage />
                 </ProtectedHRRoute>
               }
             />

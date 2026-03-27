@@ -144,14 +144,7 @@ export function AdminLayout({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56 bg-popover">
                 <DropdownMenuItem
-                  onClick={() => navigate(profilePath)}
-                  className="cursor-pointer"
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  Profilo personale
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => navigate(`${basePath}/settings`)}
+                  onClick={() => navigate(`${basePath}/impostazioni`)}
                   className="cursor-pointer"
                 >
                   <Settings className="mr-2 h-4 w-4" />
