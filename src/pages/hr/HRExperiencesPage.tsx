@@ -358,8 +358,6 @@ export default function HRExperiencesPage() {
   const statsMetrics = useMemo<Metrics>(() => {
     const now = new Date();
     const activeExperiences = statsExperiences.length;
-    let futureEvents = 0, totalParticipations = 0, totalFillRate = 0, futureWithBookings = 0;
-
     let totalFillRate = 0, datesWithCapacity = 0;
 
     statsExperiences.forEach((exp) => {
