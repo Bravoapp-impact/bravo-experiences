@@ -921,6 +921,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      hr_has_historical_booking_for_date: {
+        Args: { _date_id: string; _user_id: string }
+        Returns: boolean
+      }
       increment_access_code_usage: {
         Args: { p_code: string }
         Returns: boolean

@@ -196,11 +196,15 @@ export default function HRExperiencesPage() {
 
       // 3. Get unique experience_date_ids, then fetch dates to get experience_ids
       const dateIds = [...new Set(bookingsData.map((b) => b.experience_date_id))];
-      const { data: datesRaw } = await supabase
+      const { data: datesRaw, error: datesError } = await supabase
         .from("experience_dates")
         .select("id, experience_id, start_datetime, end_datetime, max_participants, volunteer_hours")
         .in("id", dateIds)
         .order("start_datetime", { ascending: true });
+
+      if (datesError) {
+        devLog.error("[Stats] experience_dates query failed:", datesError.message);
+      }
 
       const uniqueExpIds = [...new Set((datesRaw || []).map((d) => d.experience_id))];
 
