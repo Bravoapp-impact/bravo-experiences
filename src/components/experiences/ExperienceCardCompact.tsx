@@ -32,7 +32,7 @@ export function ExperienceCardCompact({ experience, index }: ExperienceCardCompa
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
       onClick={() => navigate(`/app/experiences/${experience.id}`)}
-      className={`group flex-shrink-0 w-[145px] sm:w-[165px] md:w-[200px] text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-2xl ${isFull ? "opacity-60" : ""}`}
+      className={`group flex-shrink-0 w-[145px] sm:w-[165px] md:w-[200px] text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 rounded-2xl ${isFull ? "opacity-60" : ""}`}
     >
       {/* Square Image with category badge + "Completo" overlay */}
       <div className="relative">
