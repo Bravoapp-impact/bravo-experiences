@@ -358,7 +358,7 @@ export default function HRExperiencesPage() {
   const statsMetrics = useMemo<Metrics>(() => {
     const now = new Date();
     const activeExperiences = statsExperiences.length;
-    let totalFillRate = 0, datesWithCapacity = 0;
+    let futureEvents = 0, totalParticipations = 0, totalFillRate = 0, datesWithCapacity = 0;
 
     statsExperiences.forEach((exp) => {
       exp.dates.forEach((date) => {
@@ -378,7 +378,7 @@ export default function HRExperiencesPage() {
       activeExperiences,
       futureEvents,
       totalParticipations,
-      averageFillRate: futureWithBookings > 0 ? Math.round(totalFillRate / futureWithBookings) : 0,
+      averageFillRate: datesWithCapacity > 0 ? Math.round(totalFillRate / datesWithCapacity) : 0,
     };
   }, [statsExperiences]);
 
