@@ -142,6 +142,14 @@ const App = () => (
                 </ProtectedHRRoute>
               }
             />
+            <Route
+              path="/hr/impostazioni"
+              element={
+                <ProtectedHRRoute>
+                  <HRSettingsPage />
+                </ProtectedHRRoute>
+              }
+            />
             {/* Super Admin Routes */}
             <Route
               path="/super-admin"
