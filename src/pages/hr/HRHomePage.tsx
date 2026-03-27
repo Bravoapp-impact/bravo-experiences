@@ -236,7 +236,7 @@ export default function HRHomePage() {
 
         {/* Quick Actions */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="flex flex-wrap gap-3">
-          <Button variant="outline" onClick={() => navigate("/hr/experiences")} className="gap-2">
+          <Button variant="outline" onClick={() => navigate("/hr/volontariato")} className="gap-2">
             <Calendar className="h-4 w-4" />
             Esplora esperienze
           </Button>

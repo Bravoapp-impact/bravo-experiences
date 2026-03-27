@@ -118,7 +118,7 @@ const App = () => (
               }
             />
             <Route
-              path="/hr/experiences"
+              path="/hr/volontariato"
               element={
                 <ProtectedHRRoute>
                   <HRExperiencesPage />
