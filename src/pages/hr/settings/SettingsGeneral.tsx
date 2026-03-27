@@ -38,25 +38,32 @@ export default function SettingsGeneral() {
       <h2 className="text-lg font-semibold text-foreground">Profilo azienda</h2>
       <p className="text-sm text-muted-foreground mb-6">Informazioni sulla tua azienda su Bravo!</p>
 
-      <div className="flex items-center gap-4 mb-4">
-        <Avatar className="h-14 w-14">
+      {/* Logo — Attio style */}
+      <div className="flex items-center gap-4 mb-8">
+        <Avatar className="h-16 w-16">
           <AvatarImage src={companyLogoUrl || undefined} />
-          <AvatarFallback className="bg-primary/10 text-primary text-base font-medium">
+          <AvatarFallback className="bg-primary/10 text-primary text-lg font-medium">
             {getInitials(companyName)}
           </AvatarFallback>
         </Avatar>
-        <Button variant="outline" size="sm" disabled>
-          <Upload className="mr-2 h-3.5 w-3.5" />
-          Carica logo
-        </Button>
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-foreground">Logo azienda</p>
+          <p className="text-xs text-muted-foreground">Supportiamo PNG e JPEG sotto 2MB</p>
+          <Button variant="outline" size="sm" className="mt-1 h-7 text-xs" disabled>
+            <Upload className="mr-1.5 h-3 w-3" />
+            Carica logo
+          </Button>
+        </div>
       </div>
 
-      <div className="mb-3 max-w-sm">
-        <Label className="text-xs text-muted-foreground">Nome azienda</Label>
-        <Input value={companyName} readOnly className="mt-1 bg-muted/30" />
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Nome azienda</Label>
+          <Input value={companyName} readOnly className="bg-muted/30" />
+        </div>
       </div>
 
-      <p className="text-xs text-muted-foreground">Per modificare i dati contatta il tuo referente Bravo!</p>
+      <p className="text-xs text-muted-foreground mt-4">Per modificare i dati contatta il tuo referente Bravo!</p>
     </motion.div>
   );
 }

@@ -62,7 +62,7 @@ export default function SettingsMembers() {
         <p className="text-xs text-muted-foreground mb-2">
           I dipendenti che si registrano con questo dominio email accedono automaticamente alla tua azienda.
         </p>
-        <Input placeholder="@nomeazienda.com" readOnly className="bg-muted/30 max-w-xs" />
+        <Input placeholder="@nomeazienda.com" readOnly className="bg-muted/30" />
         <p className="text-xs text-muted-foreground mt-1.5">
           Contatta il tuo referente Bravo! per configurare il dominio aziendale.
         </p>
