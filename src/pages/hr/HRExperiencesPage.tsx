@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Calendar } from "lucide-react";
+import {
+  Calendar, CheckCircle2, Eye, MapPin, PackageOpen, Plus, Search, Trash2,
+} from "lucide-react";
 import { HRLayout } from "@/components/layout/HRLayout";
 import { HRExperienceMetrics } from "@/components/hr/HRExperienceMetrics";
 import { HRExperienceFilters } from "@/components/hr/HRExperienceFilters";
@@ -12,6 +14,40 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/common/PageHeader";
 import { LoadingState } from "@/components/common/LoadingState";
 import { EmptyState } from "@/components/common/EmptyState";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { BaseCardImage } from "@/components/common/BaseCardImage";
+import { BaseModal, ModalCloseButton } from "@/components/common/BaseModal";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { getSDGInfo } from "@/lib/sdg-data";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+
+/* ── Types ── */
+
+interface CatalogExperience {
+  id: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  city: string | null;
+  address: string | null;
+  status: string;
+  sdgs: string[] | null;
+  category: string | null;
+  category_id: string | null;
+  city_id: string | null;
+  participant_info: string | null;
+  categories?: { id: string; name: string } | null;
+  cities?: { id: string; name: string } | null;
+  associations?: { name: string } | null;
+}
 
 interface ExperienceDate {
   id: string;
@@ -23,15 +59,11 @@ interface ExperienceDate {
     id: string;
     status: string;
     created_at: string;
-    user: {
-      first_name: string | null;
-      last_name: string | null;
-      email: string;
-    };
+    user: { first_name: string | null; last_name: string | null; email: string };
   }[];
 }
 
-interface Experience {
+interface StatsExperience {
   id: string;
   title: string;
   description: string | null;
@@ -58,99 +90,105 @@ export default function HRExperiencesPage() {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [experiences, setExperiences] = useState<Experience[]>([]);
+
+  // Shared
+  const [experiences, setExperiences] = useState<CatalogExperience[]>([]);
+  const [activatedIds, setActivatedIds] = useState<Set<string>>(new Set());
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [cities, setCities] = useState<{ id: string; name: string }[]>([]);
 
-  // Filters
+  // Catalog filters
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [cityFilter, setCityFilter] = useState("all");
+
+  // Preview modal
+  const [previewExp, setPreviewExp] = useState<CatalogExperience | null>(null);
+
+  // Stats tab
+  const [statsLoaded, setStatsLoaded] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [statsExperiences, setStatsExperiences] = useState<StatsExperience[]>([]);
+  const [statsSearch, setStatsSearch] = useState("");
+  const [statsCategoryFilter, setStatsCategoryFilter] = useState("all");
+  const [statsCityFilter, setStatsCityFilter] = useState("all");
   const [showPastEvents, setShowPastEvents] = useState(false);
 
+  const [activeTab, setActiveTab] = useState("catalogo");
+
   useEffect(() => {
-    if (profile?.company_id) {
-      fetchData();
-    }
+    if (profile?.company_id) fetchInitialData();
   }, [profile?.company_id]);
 
-  const fetchData = async () => {
-    if (!profile?.company_id) return;
+  // Lazy-load stats when tab opens
+  useEffect(() => {
+    if (activeTab === "statistiche" && !statsLoaded && profile?.company_id) {
+      fetchStatsData();
+    }
+  }, [activeTab, statsLoaded, profile?.company_id]);
 
+  const fetchInitialData = async () => {
+    if (!profile?.company_id) return;
     try {
       setLoading(true);
       setError(null);
 
-      // Fetch categories and cities for filters
-      const [categoriesRes, citiesRes] = await Promise.all([
+      const [catRes, cityRes, expRes, ecRes] = await Promise.all([
         supabase.from("categories").select("id, name").order("name"),
         supabase.from("cities").select("id, name").order("name"),
+        supabase
+          .from("experiences")
+          .select(`id, title, description, image_url, city, address, status, sdgs, category, category_id, city_id, participant_info, categories:category_id (id, name), cities:city_id (id, name), associations:association_id (name)`)
+          .eq("status", "published")
+          .eq("visibility", "public")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("experience_companies")
+          .select("experience_id")
+          .eq("company_id", profile.company_id),
       ]);
 
-      setCategories(categoriesRes.data || []);
-      setCities(citiesRes.data || []);
+      setCategories(catRes.data || []);
+      setCities(cityRes.data || []);
+      setExperiences((expRes.data || []) as CatalogExperience[]);
+      setActivatedIds(new Set((ecRes.data || []).map((r) => r.experience_id)));
+    } catch (err) {
+      devLog.error("Error fetching initial data:", err);
+      setError("Errore nel caricamento");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      // Fetch published public experiences — RLS filters by company_service_config
-      const { data: experiencesData, error: expError } = await supabase
-        .from("experiences")
-        .select(`
-          id,
-          title,
-          description,
-          image_url,
-          status,
-          address,
-          sdgs,
-          category_id,
-          city_id,
-          associations:association_id (name),
-          cities:city_id (name),
-          categories:category_id (name)
-        `)
-        .eq("status", "published")
-        .eq("visibility", "public")
-        .order("created_at", { ascending: false });
-
-      const expIds = (experiencesData || []).map((e) => e.id);
+  const fetchStatsData = async () => {
+    if (!profile?.company_id) return;
+    setStatsLoading(true);
+    try {
+      // Only activated experiences
+      const activatedList = experiences.filter((e) => activatedIds.has(e.id));
+      const expIds = activatedList.map((e) => e.id);
 
       if (expIds.length === 0) {
-        setExperiences([]);
-        setLoading(false);
+        setStatsExperiences([]);
+        setStatsLoaded(true);
+        setStatsLoading(false);
         return;
       }
 
-      // Fetch company employees for filtering bookings
       const { data: companyProfiles } = await supabase
         .from("profiles")
         .select("id, first_name, last_name, email")
         .eq("company_id", profile.company_id);
 
-      const profileMap = new Map(
-        companyProfiles?.map((p) => [p.id, p]) || []
-      );
+      const profileMap = new Map((companyProfiles || []).map((p) => [p.id, p]));
       const companyUserIds = Array.from(profileMap.keys());
 
-      // Fetch experience dates with bookings
       const { data: datesData } = await supabase
         .from("experience_dates")
-        .select(`
-          id,
-          experience_id,
-          start_datetime,
-          end_datetime,
-          max_participants,
-          volunteer_hours,
-          bookings (
-            id,
-            status,
-            created_at,
-            user_id
-          )
-        `)
+        .select(`id, experience_id, start_datetime, end_datetime, max_participants, volunteer_hours, bookings (id, status, created_at, user_id)`)
         .in("experience_id", expIds)
         .order("start_datetime", { ascending: true });
 
-      // Map dates to experiences and filter bookings to company employees
       const datesMap = new Map<string, ExperienceDate[]>();
       (datesData || []).forEach((date) => {
         const companyBookings = date.bookings
@@ -159,15 +197,11 @@ export default function HRExperiencesPage() {
             id: b.id,
             status: b.status,
             created_at: b.created_at,
-            user: profileMap.get(b.user_id) || {
-              first_name: null,
-              last_name: null,
-              email: "",
-            },
+            user: profileMap.get(b.user_id) || { first_name: null, last_name: null, email: "" },
           }));
 
-        const experienceDates = datesMap.get(date.experience_id) || [];
-        experienceDates.push({
+        const list = datesMap.get(date.experience_id) || [];
+        list.push({
           id: date.id,
           start_datetime: date.start_datetime,
           end_datetime: date.end_datetime,
@@ -175,11 +209,10 @@ export default function HRExperiencesPage() {
           volunteer_hours: date.volunteer_hours ? Number(date.volunteer_hours) : null,
           bookings: companyBookings,
         });
-        datesMap.set(date.experience_id, experienceDates);
+        datesMap.set(date.experience_id, list);
       });
 
-      // Combine data
-      const formattedExperiences: Experience[] = (experiencesData || []).map((exp) => ({
+      const formatted: StatsExperience[] = activatedList.map((exp) => ({
         id: exp.id,
         title: exp.title,
         description: exp.description,
@@ -195,131 +228,127 @@ export default function HRExperiencesPage() {
         dates: datesMap.get(exp.id) || [],
       }));
 
-      setExperiences(formattedExperiences);
+      setStatsExperiences(formatted);
+      setStatsLoaded(true);
     } catch (err) {
-      devLog.error("Error fetching experiences:", err);
-      setError("Errore nel caricamento delle esperienze");
+      devLog.error("Error fetching stats:", err);
     } finally {
-      setLoading(false);
+      setStatsLoading(false);
     }
   };
 
-  // Filtered experiences
-  const filteredExperiences = useMemo(() => {
-    const now = new Date();
+  /* ── Activate / Deactivate ── */
 
+  const handleActivate = async (expId: string) => {
+    if (!profile?.company_id) return;
+    // Optimistic
+    setActivatedIds((prev) => new Set(prev).add(expId));
+    const { error } = await supabase
+      .from("experience_companies")
+      .insert({ experience_id: expId, company_id: profile.company_id });
+    if (error) {
+      devLog.error("Error activating:", error);
+      setActivatedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(expId);
+        return next;
+      });
+      toast({ title: "Errore nell'aggiunta al programma", variant: "destructive" });
+    } else {
+      toast({ title: "Aggiunta al programma" });
+      // Reset stats so they reload
+      setStatsLoaded(false);
+    }
+  };
+
+  const handleDeactivate = async (expId: string) => {
+    if (!profile?.company_id) return;
+    setActivatedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(expId);
+      return next;
+    });
+    const { error } = await supabase
+      .from("experience_companies")
+      .delete()
+      .eq("experience_id", expId)
+      .eq("company_id", profile.company_id);
+    if (error) {
+      devLog.error("Error deactivating:", error);
+      setActivatedIds((prev) => new Set(prev).add(expId));
+      toast({ title: "Errore nella rimozione", variant: "destructive" });
+    } else {
+      toast({ title: "Rimossa dal programma" });
+      setStatsLoaded(false);
+    }
+  };
+
+  /* ── Filtered lists ── */
+
+  const filteredCatalog = useMemo(() => {
     return experiences.filter((exp) => {
-      // Search filter
-      if (
-        searchTerm &&
-        !exp.title.toLowerCase().includes(searchTerm.toLowerCase())
-      ) {
-        return false;
-      }
-
-      // Category filter
-      if (categoryFilter !== "all" && exp.category_id !== categoryFilter) {
-        return false;
-      }
-
-      // City filter
-      if (cityFilter !== "all" && exp.city_id !== cityFilter) {
-        return false;
-      }
-
-      // Past events filter - if not showing past, only show experiences with future dates
-      if (!showPastEvents) {
-        const hasFutureDates = exp.dates.some(
-          (d) => new Date(d.start_datetime) > now
-        );
-        if (!hasFutureDates && exp.dates.length > 0) {
-          return false;
-        }
-      }
-
+      if (searchTerm && !exp.title.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+      if (categoryFilter !== "all" && exp.category_id !== categoryFilter) return false;
+      if (cityFilter !== "all" && exp.city_id !== cityFilter) return false;
       return true;
     });
-  }, [experiences, searchTerm, categoryFilter, cityFilter, showPastEvents]);
+  }, [experiences, searchTerm, categoryFilter, cityFilter]);
 
-  // Calculate metrics
-  const metrics = useMemo<Metrics>(() => {
+  const programExperiences = useMemo(() => {
+    return experiences.filter((e) => activatedIds.has(e.id));
+  }, [experiences, activatedIds]);
+
+  const filteredStats = useMemo(() => {
     const now = new Date();
-    const activeExperiences = experiences.filter(
-      (e) => e.status === "published"
-    ).length;
+    return statsExperiences.filter((exp) => {
+      if (statsSearch && !exp.title.toLowerCase().includes(statsSearch.toLowerCase())) return false;
+      if (statsCategoryFilter !== "all" && exp.category_id !== statsCategoryFilter) return false;
+      if (statsCityFilter !== "all" && exp.city_id !== statsCityFilter) return false;
+      if (!showPastEvents) {
+        const hasFuture = exp.dates.some((d) => new Date(d.start_datetime) > now);
+        if (!hasFuture && exp.dates.length > 0) return false;
+      }
+      return true;
+    });
+  }, [statsExperiences, statsSearch, statsCategoryFilter, statsCityFilter, showPastEvents]);
 
-    let futureEvents = 0;
-    let totalParticipations = 0;
-    let totalFillRate = 0;
-    let futureEventsWithBookings = 0;
+  const statsMetrics = useMemo<Metrics>(() => {
+    const now = new Date();
+    const activeExperiences = statsExperiences.length;
+    let futureEvents = 0, totalParticipations = 0, totalFillRate = 0, futureWithBookings = 0;
 
-    experiences.forEach((exp) => {
+    statsExperiences.forEach((exp) => {
       exp.dates.forEach((date) => {
-        const confirmedBookings = date.bookings.filter(
-          (b) => b.status === "confirmed"
-        ).length;
-        totalParticipations += confirmedBookings;
-
+        const confirmed = date.bookings.filter((b) => b.status === "confirmed").length;
+        totalParticipations += confirmed;
         if (new Date(date.start_datetime) > now) {
           futureEvents++;
           if (date.max_participants > 0) {
-            totalFillRate += (confirmedBookings / date.max_participants) * 100;
-            futureEventsWithBookings++;
+            totalFillRate += (confirmed / date.max_participants) * 100;
+            futureWithBookings++;
           }
         }
       });
     });
 
-    const averageFillRate =
-      futureEventsWithBookings > 0
-        ? Math.round(totalFillRate / futureEventsWithBookings)
-        : 0;
-
     return {
       activeExperiences,
       futureEvents,
       totalParticipations,
-      averageFillRate,
+      averageFillRate: futureWithBookings > 0 ? Math.round(totalFillRate / futureWithBookings) : 0,
     };
-  }, [experiences]);
+  }, [statsExperiences]);
 
+  /* ── Render ── */
 
   if (loading) {
-    return (
-      <HRLayout>
-        <LoadingState message="Caricamento esperienze..." />
-      </HRLayout>
-    );
+    return <HRLayout><LoadingState message="Caricamento..." /></HRLayout>;
   }
 
   if (error) {
     return (
       <HRLayout>
-        <EmptyState
-          icon={Calendar}
-          title="Errore di caricamento"
-          description={error}
-          className="min-h-[60vh]"
-        />
-      </HRLayout>
-    );
-  }
-
-  // Empty state
-  if (experiences.length === 0) {
-    return (
-      <HRLayout>
-        <div className="space-y-6">
-          <PageHeader
-            title="Esperienze"
-            description="Esperienze assegnate alla tua azienda"
-          />
-          <EmptyState
-            icon={Calendar}
-            title="Nessuna esperienza assegnata"
-            description="La tua azienda non ha ancora esperienze di volontariato assegnate. Contatta il Super Admin per richiedere l'assegnazione di nuove esperienze."
-          />
-        </div>
+        <EmptyState icon={Calendar} title="Errore di caricamento" description={error} className="min-h-[60vh]" />
       </HRLayout>
     );
   }
@@ -327,63 +356,292 @@ export default function HRExperiencesPage() {
   return (
     <HRLayout>
       <div className="space-y-6">
-        <PageHeader
-          title="Esperienze"
-          description="Monitora le esperienze e le partecipazioni degli utenti"
-        />
+        <PageHeader title="Volontariato aziendale" description="Gestisci il programma e monitora l'impatto" />
 
-        {/* Metrics */}
-        <HRExperienceMetrics
-          activeExperiences={metrics.activeExperiences}
-          futureEvents={metrics.futureEvents}
-          totalParticipations={metrics.totalParticipations}
-          averageFillRate={metrics.averageFillRate}
-        />
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="catalogo">Catalogo</TabsTrigger>
+            <TabsTrigger value="programma" className="gap-1.5">
+              Il mio programma
+              {activatedIds.size > 0 && (
+                <Badge variant="secondary" className="h-5 min-w-[20px] px-1.5 text-[11px] font-semibold">
+                  {activatedIds.size}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="statistiche">Statistiche</TabsTrigger>
+          </TabsList>
 
-        {/* Filters */}
-        <Card className="border bg-card">
-          <CardContent className="p-4 sm:p-6">
-            <HRExperienceFilters
+          {/* ── TAB: Catalogo ── */}
+          <TabsContent value="catalogo" className="space-y-4 mt-4">
+            <CatalogFilters
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
               categoryFilter={categoryFilter}
               onCategoryChange={setCategoryFilter}
               cityFilter={cityFilter}
               onCityChange={setCityFilter}
-              showPastEvents={showPastEvents}
-              onShowPastEventsChange={setShowPastEvents}
               categories={categories}
               cities={cities}
-              resultCount={filteredExperiences.length}
             />
-          </CardContent>
-        </Card>
 
-        {/* Experiences list */}
-        <div className="space-y-4">
-          {filteredExperiences.length === 0 ? (
-            <Card className="border-border/50 bg-card/80">
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">
-                  Nessuna esperienza corrisponde ai filtri selezionati
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredExperiences.map((experience, index) => (
-              <motion.div
-                key={experience.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <HRExperienceCard experience={experience} />
-              </motion.div>
-            ))
+            {filteredCatalog.length === 0 ? (
+              <EmptyState icon={Search} title="Nessuna esperienza trovata" description="Prova a modificare i filtri di ricerca" />
+            ) : (
+              <TooltipProvider delayDuration={300}>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {filteredCatalog.map((exp, i) => (
+                    <CompactCard key={exp.id} experience={exp} index={i} actions={
+                      activatedIds.has(exp.id) ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex items-center gap-1 text-[11px] text-green-600 font-medium">
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              Nel programma
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>Questa esperienza è nel tuo programma</TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-primary"
+                              onClick={() => handleActivate(exp.id)}
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Aggiungi al programma</TooltipContent>
+                        </Tooltip>
+                      )
+                    } />
+                  ))}
+                </div>
+              </TooltipProvider>
+            )}
+          </TabsContent>
+
+          {/* ── TAB: Il mio programma ── */}
+          <TabsContent value="programma" className="space-y-4 mt-4">
+            {programExperiences.length === 0 ? (
+              <EmptyState
+                icon={PackageOpen}
+                title="Nessuna esperienza attiva"
+                description="Vai al Catalogo per aggiungere esperienze al programma"
+              />
+            ) : (
+              <TooltipProvider delayDuration={300}>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {programExperiences.map((exp, i) => (
+                    <CompactCard key={exp.id} experience={exp} index={i} actions={
+                      <div className="flex items-center gap-0.5">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setPreviewExp(exp)}>
+                              <Eye className="h-3.5 w-3.5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Anteprima</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => handleDeactivate(exp.id)}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Rimuovi dal programma</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    } />
+                  ))}
+                </div>
+              </TooltipProvider>
+            )}
+          </TabsContent>
+
+          {/* ── TAB: Statistiche ── */}
+          <TabsContent value="statistiche" className="space-y-6 mt-4">
+            {statsLoading ? (
+              <LoadingState message="Caricamento statistiche..." />
+            ) : statsExperiences.length === 0 ? (
+              <EmptyState icon={Calendar} title="Nessun dato disponibile" description="Aggiungi esperienze al programma per visualizzare le statistiche" />
+            ) : (
+              <>
+                <HRExperienceMetrics
+                  activeExperiences={statsMetrics.activeExperiences}
+                  futureEvents={statsMetrics.futureEvents}
+                  totalParticipations={statsMetrics.totalParticipations}
+                  averageFillRate={statsMetrics.averageFillRate}
+                />
+
+                <Card className="border bg-card">
+                  <CardContent className="p-4 sm:p-6">
+                    <HRExperienceFilters
+                      searchTerm={statsSearch}
+                      onSearchChange={setStatsSearch}
+                      categoryFilter={statsCategoryFilter}
+                      onCategoryChange={setStatsCategoryFilter}
+                      cityFilter={statsCityFilter}
+                      onCityChange={setStatsCityFilter}
+                      showPastEvents={showPastEvents}
+                      onShowPastEventsChange={setShowPastEvents}
+                      categories={categories}
+                      cities={cities}
+                      resultCount={filteredStats.length}
+                    />
+                  </CardContent>
+                </Card>
+
+                <div className="space-y-4">
+                  {filteredStats.length === 0 ? (
+                    <Card className="border-border/50 bg-card/80">
+                      <CardContent className="py-12 text-center">
+                        <p className="text-muted-foreground">Nessuna esperienza corrisponde ai filtri selezionati</p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    filteredStats.map((experience, index) => (
+                      <motion.div key={experience.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
+                        <HRExperienceCard experience={experience} />
+                      </motion.div>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Preview Modal */}
+      <BaseModal open={!!previewExp} onClose={() => setPreviewExp(null)}>
+        {previewExp && (
+          <div className="flex flex-col h-full sm:max-h-[85vh] overflow-hidden">
+            <div className="absolute top-4 right-4 z-10">
+              <ModalCloseButton onClick={() => setPreviewExp(null)} />
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {previewExp.image_url && (
+                <AspectRatio ratio={16 / 9}>
+                  <img src={previewExp.image_url} alt={previewExp.title} className="object-cover w-full h-full" />
+                </AspectRatio>
+              )}
+              <div className="p-5 space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {(previewExp.categories?.name || previewExp.category) && (
+                    <Badge variant="outline">{previewExp.categories?.name || previewExp.category}</Badge>
+                  )}
+                </div>
+                <h2 className="text-xl font-bold text-foreground leading-tight">{previewExp.title}</h2>
+                {previewExp.description && (
+                  <p className="text-[15px] text-muted-foreground font-light leading-relaxed whitespace-pre-wrap">{previewExp.description}</p>
+                )}
+                {(previewExp.cities?.name || previewExp.city || previewExp.address) && (
+                  <div className="flex items-start gap-2 pt-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-muted-foreground">
+                      {previewExp.address && `${previewExp.address}, `}
+                      {previewExp.cities?.name || previewExp.city}
+                    </p>
+                  </div>
+                )}
+                {previewExp.sdgs && previewExp.sdgs.length > 0 && (
+                  <div className="pt-3 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Obiettivi SDG</p>
+                    <div className="flex flex-wrap gap-2">
+                      {previewExp.sdgs.map((sdg) => {
+                        const sdgInfo = getSDGInfo(sdg);
+                        return (
+                          <Badge key={sdg} variant="secondary" className="text-xs" title={sdgInfo?.name}>
+                            {sdg}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </BaseModal>
+    </HRLayout>
+  );
+}
+
+/* ── Sub-components ── */
+
+function CompactCard({ experience, index, actions }: {
+  experience: CatalogExperience;
+  index: number;
+  actions: React.ReactNode;
+}) {
+  const categoryName = experience.categories?.name || experience.category;
+  const cityName = experience.cities?.name || experience.city;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
+      className="group"
+    >
+      <BaseCardImage imageUrl={experience.image_url} alt={experience.title} aspectRatio="square" />
+      <div className="pt-2 space-y-1">
+        <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug">{experience.title}</h3>
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
+          {categoryName && <span className="truncate">{categoryName}</span>}
+          {categoryName && cityName && <span>·</span>}
+          {cityName && (
+            <span className="flex items-center gap-0.5 truncate">
+              <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
+              {cityName}
+            </span>
           )}
         </div>
-
+        <div className="pt-0.5">{actions}</div>
       </div>
-    </HRLayout>
+    </motion.div>
+  );
+}
+
+function CatalogFilters({ searchTerm, onSearchChange, categoryFilter, onCategoryChange, cityFilter, onCityChange, categories, cities }: {
+  searchTerm: string;
+  onSearchChange: (v: string) => void;
+  categoryFilter: string;
+  onCategoryChange: (v: string) => void;
+  cityFilter: string;
+  onCityChange: (v: string) => void;
+  categories: { id: string; name: string }[];
+  cities: { id: string; name: string }[];
+}) {
+  return (
+    <div className="flex flex-col sm:flex-row gap-3">
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input placeholder="Cerca esperienza..." value={searchTerm} onChange={(e) => onSearchChange(e.target.value)} className="pl-10" />
+      </div>
+      <Select value={categoryFilter} onValueChange={onCategoryChange}>
+        <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectValue placeholder="Categoria" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Tutte le categorie</SelectItem>
+          {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+        </SelectContent>
+      </Select>
+      <Select value={cityFilter} onValueChange={onCityChange}>
+        <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectValue placeholder="Città" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Tutte le città</SelectItem>
+          {cities.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }
