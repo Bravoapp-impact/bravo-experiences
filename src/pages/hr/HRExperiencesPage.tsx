@@ -461,8 +461,6 @@ export default function HRExperiencesPage() {
           <TabsContent value="statistiche" className="space-y-6 mt-4">
             {statsLoading ? (
               <LoadingState message="Caricamento statistiche..." />
-            ) : statsExperiences.length === 0 ? (
-              <EmptyState icon={Calendar} title="Nessun dato disponibile" description="Aggiungi esperienze al programma per visualizzare le statistiche" />
             ) : (
               <>
                 <HRExperienceMetrics
