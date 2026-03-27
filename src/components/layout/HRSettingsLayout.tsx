@@ -53,7 +53,7 @@ export default function HRSettingsLayout() {
         { beforeIndex: 9, label: "Iniziative" },
       ]}
     >
-      <div className="max-w-2xl">
+      <div className="max-w-4xl mx-auto">
         <Outlet />
       </div>
     </AdminLayout>
