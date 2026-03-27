@@ -361,13 +361,8 @@ export default function HRExperiencesPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="catalogo">Catalogo</TabsTrigger>
-            <TabsTrigger value="programma" className="gap-1.5">
+            <TabsTrigger value="programma">
               Il mio programma
-              {activatedIds.size > 0 && (
-                <Badge variant="secondary" className="h-5 min-w-[20px] px-1.5 text-[11px] font-semibold">
-                  {activatedIds.size}
-                </Badge>
-              )}
             </TabsTrigger>
             <TabsTrigger value="statistiche">Statistiche</TabsTrigger>
           </TabsList>
