@@ -6,6 +6,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { ExperienceSection } from "@/components/experiences/ExperienceSection";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { devLog } from "@/lib/logger";
 import type { Experience, ExperienceDate } from "@/types/experiences";
 
@@ -17,14 +18,39 @@ export default function Experiences() {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const { user } = useAuth();
   
 
   const fetchExperiences = async () => {
     setLoading(true);
 
     try {
-      // Fetch experiences with association details (RLS filters to user's company)
-      const { data: expData, error: expError } = await supabase
+      // First, get user's company_id to filter experiences
+      const { data: tenant } = await supabase
+        .from("user_tenants")
+        .select("company_id")
+        .eq("user_id", user!.id)
+        .single();
+
+      const companyId = tenant?.company_id;
+
+      // Get experience IDs curated for this company
+      let allowedExperienceIds: string[] | null = null;
+      if (companyId) {
+        const { data: ecData } = await supabase
+          .from("experience_companies")
+          .select("experience_id")
+          .eq("company_id", companyId);
+        allowedExperienceIds = (ecData ?? []).map((r) => r.experience_id);
+        if (allowedExperienceIds.length === 0) {
+          setExperiences([]);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Fetch experiences filtered to only those curated for this company
+      let query = supabase
         .from("experiences")
         .select(
           `
@@ -38,6 +64,11 @@ export default function Experiences() {
         .eq("status", "published")
         .order("created_at", { ascending: false });
 
+      if (allowedExperienceIds) {
+        query = query.in("id", allowedExperienceIds);
+      }
+
+      const { data: expData, error: expError } = await query;
       if (expError) throw expError;
 
       // Transform to include association logo and SDGs
