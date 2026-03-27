@@ -362,8 +362,8 @@ export default function HRExperiencesPage() {
 
     statsExperiences.forEach((exp) => {
       exp.dates.forEach((date) => {
-        const confirmed = date.bookings.filter((b) => b.status === "confirmed").length;
-        totalParticipations += confirmed;
+        const participated = date.bookings.filter((b) => ["confirmed", "completed", "verified"].includes(b.status)).length;
+        totalParticipations += participated;
         if (new Date(date.start_datetime) > now) {
           futureEvents++;
           if (date.max_participants > 0) {
