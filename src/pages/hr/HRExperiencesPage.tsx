@@ -90,23 +90,7 @@ export default function HRExperiencesPage() {
       setCategories(categoriesRes.data || []);
       setCities(citiesRes.data || []);
 
-      // Fetch experiences assigned to this company
-      const { data: experienceCompanies, error: ecError } = await supabase
-        .from("experience_companies")
-        .select("experience_id")
-        .eq("company_id", profile.company_id);
-
-      if (ecError) throw ecError;
-
-      const experienceIds = experienceCompanies?.map((ec) => ec.experience_id) || [];
-
-      if (experienceIds.length === 0) {
-        setExperiences([]);
-        setLoading(false);
-        return;
-      }
-
-      // Fetch experiences with related data
+      // Fetch published public experiences — RLS filters by company_service_config
       const { data: experiencesData, error: expError } = await supabase
         .from("experiences")
         .select(`
@@ -123,10 +107,17 @@ export default function HRExperiencesPage() {
           cities:city_id (name),
           categories:category_id (name)
         `)
-        .in("id", experienceIds)
+        .eq("status", "published")
+        .eq("visibility", "public")
         .order("created_at", { ascending: false });
 
-      if (expError) throw expError;
+      const expIds = (experiencesData || []).map((e) => e.id);
+
+      if (expIds.length === 0) {
+        setExperiences([]);
+        setLoading(false);
+        return;
+      }
 
       // Fetch company employees for filtering bookings
       const { data: companyProfiles } = await supabase
@@ -156,7 +147,7 @@ export default function HRExperiencesPage() {
             user_id
           )
         `)
-        .in("experience_id", experienceIds)
+        .in("experience_id", expIds)
         .order("start_datetime", { ascending: true });
 
       // Map dates to experiences and filter bookings to company employees
