@@ -114,6 +114,7 @@ export default function SettingsProfile() {
         fallbackInitials={getInitials()}
         title="Foto profilo"
         onUpload={handleAvatarUpload}
+        onRemove={handleAvatarRemove}
         uploading={uploading}
       />
 
