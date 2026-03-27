@@ -367,7 +367,7 @@ export default function HRExperiencesPage() {
         if (new Date(date.start_datetime) > now) {
           futureEvents++;
           if (date.max_participants > 0) {
-            totalFillRate += (confirmed / date.max_participants) * 100;
+            totalFillRate += (participated / date.max_participants) * 100;
             futureWithBookings++;
           }
         }
