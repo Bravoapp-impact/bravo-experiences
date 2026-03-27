@@ -31,7 +31,7 @@ export default function SettingsVolunteering() {
       <h2 className="text-lg font-semibold text-foreground">Volontariato aziendale</h2>
       <p className="text-sm text-muted-foreground mb-6">Configurazione del programma di volontariato</p>
 
-      <h3 className="text-sm font-semibold text-foreground mb-2">Budget ore</h3>
+      <h3 className="text-sm font-semibold text-foreground mb-3">Budget ore</h3>
       {loading ? (
         <Skeleton className="h-8 w-40" />
       ) : budgetHours !== null ? (
