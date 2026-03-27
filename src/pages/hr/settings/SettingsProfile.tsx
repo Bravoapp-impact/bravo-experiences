@@ -107,6 +107,27 @@ export default function SettingsProfile() {
     }
   };
 
+  const handleAvatarRemove = async () => {
+    if (!user) return;
+    setUploading(true);
+    try {
+      await supabase.storage.from("profile-avatars").remove([
+        `${user.id}/avatar.png`, `${user.id}/avatar.jpg`, `${user.id}/avatar.jpeg`,
+      ]);
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: null })
+        .eq("id", user.id);
+      if (error) throw error;
+      await refreshProfile();
+      toast.success("Immagine profilo rimossa!");
+    } catch {
+      toast.error("Errore durante la rimozione dell'immagine");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <SettingsPage title="Profilo personale" description="Gestisci le tue informazioni personali">
       <AvatarUploadBlock
