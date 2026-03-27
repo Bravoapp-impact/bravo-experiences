@@ -205,6 +205,7 @@ export default function HRExperiencesPage() {
       const uniqueExpIds = [...new Set((datesRaw || []).map((d) => d.experience_id))];
 
       if (uniqueExpIds.length === 0) {
+        devLog.warn("[Stats] Found", bookingsData.length, "bookings but 0 experience_dates resolved — possible RLS issue on experience_dates");
         setStatsExperiences([]);
         setStatsLoaded(true);
         setStatsLoading(false);
