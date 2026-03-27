@@ -152,10 +152,17 @@ const App = () => (
               path="/hr/impostazioni"
               element={
                 <ProtectedHRRoute>
-                  <HRSettingsPage />
+                  <HRSettingsLayout />
                 </ProtectedHRRoute>
               }
-            />
+            >
+              <Route index element={<Navigate to="profilo" replace />} />
+              <Route path="profilo" element={<SettingsProfile />} />
+              <Route path="tema" element={<SettingsTheme />} />
+              <Route path="generali" element={<SettingsGeneral />} />
+              <Route path="membri" element={<SettingsMembers />} />
+              <Route path="volontariato" element={<SettingsVolunteering />} />
+            </Route>
             {/* Super Admin Routes */}
             <Route
               path="/super-admin"
