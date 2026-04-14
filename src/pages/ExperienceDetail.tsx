@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { devLog } from "@/lib/logger";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, MapPin, Users, ChevronLeft, ChevronRight, Loader2, Clock, AlertTriangle, ExternalLink } from "lucide-react";
 import { format, isSameMonth, addMonths, subMonths, startOfMonth } from "date-fns";

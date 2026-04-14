@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { SuperAdminLayout } from "@/components/layout/SuperAdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { devLog } from "@/lib/logger";
 import {
   Card,
   CardContent,

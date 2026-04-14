@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { devLog } from "@/lib/logger";
 
 interface UseCrudStateOptions<T> {
   tableName: string;
@@ -66,7 +67,7 @@ export function useCrudState<T>({
       if (error) throw error;
       setItems((data as unknown as T[]) || []);
     } catch (error) {
-      console.error(`Error fetching ${tableName}:`, error);
+      console.error is not used anymore - replaced below
       toast({
         title: "Errore",
         description: `Impossibile caricare i dati`,
