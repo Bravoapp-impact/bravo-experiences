@@ -136,7 +136,7 @@ export function useCrudState<T>({
         onSuccess?.();
         return true;
       } catch (error) {
-        console.error(`Error saving ${tableName}:`, error);
+        devLog.error(`Error saving ${tableName}:`, error);
         toast({
           title: "Errore",
           description: "Impossibile salvare l'elemento",
@@ -176,7 +176,7 @@ export function useCrudState<T>({
         onSuccess?.();
         return true;
       } catch (error) {
-        console.error(`Error deleting ${tableName}:`, error);
+        devLog.error(`Error deleting ${tableName}:`, error);
         toast({
           title: "Errore",
           description: "Impossibile eliminare l'elemento",
