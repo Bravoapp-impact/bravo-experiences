@@ -67,7 +67,7 @@ export function useCrudState<T>({
       if (error) throw error;
       setItems((data as unknown as T[]) || []);
     } catch (error) {
-      console.error is not used anymore - replaced below
+      devLog.error(`Error fetching ${tableName}:`, error);
       toast({
         title: "Errore",
         description: `Impossibile caricare i dati`,
