@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { devLog } from "@/lib/logger";
 
 interface ProfileAvatarUploadProps {
   userId: string;
@@ -100,7 +101,7 @@ export function ProfileAvatarUpload({
       await onUploadComplete();
       toast.success("Immagine profilo aggiornata!");
     } catch (error) {
-      console.error("Error uploading avatar:", error);
+      devLog.error("Error uploading avatar:", error);
       toast.error("Errore durante il caricamento dell'immagine");
     } finally {
       setUploading(false);
@@ -132,7 +133,7 @@ export function ProfileAvatarUpload({
       await onUploadComplete();
       toast.success("Immagine profilo rimossa!");
     } catch (error) {
-      console.error("Error removing avatar:", error);
+      devLog.error("Error removing avatar:", error);
       toast.error("Errore durante la rimozione dell'immagine");
     } finally {
       setUploading(false);

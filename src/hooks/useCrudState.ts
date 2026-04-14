@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { devLog } from "@/lib/logger";
 
 interface UseCrudStateOptions<T> {
   tableName: string;
@@ -66,7 +67,7 @@ export function useCrudState<T>({
       if (error) throw error;
       setItems((data as unknown as T[]) || []);
     } catch (error) {
-      console.error(`Error fetching ${tableName}:`, error);
+      devLog.error(`Error fetching ${tableName}:`, error);
       toast({
         title: "Errore",
         description: `Impossibile caricare i dati`,
@@ -135,7 +136,7 @@ export function useCrudState<T>({
         onSuccess?.();
         return true;
       } catch (error) {
-        console.error(`Error saving ${tableName}:`, error);
+        devLog.error(`Error saving ${tableName}:`, error);
         toast({
           title: "Errore",
           description: "Impossibile salvare l'elemento",
@@ -175,7 +176,7 @@ export function useCrudState<T>({
         onSuccess?.();
         return true;
       } catch (error) {
-        console.error(`Error deleting ${tableName}:`, error);
+        devLog.error(`Error deleting ${tableName}:`, error);
         toast({
           title: "Errore",
           description: "Impossibile eliminare l'elemento",

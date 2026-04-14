@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { devLog } from "@/lib/logger";
 import { z } from "zod";
 
 const profileSchema = z.object({
@@ -72,7 +73,7 @@ export function ProfileEditForm({
       await onSave();
       toast.success("Profilo aggiornato con successo!");
     } catch (error) {
-      console.error("Error updating profile:", error);
+      devLog.error("Error updating profile:", error);
       toast.error("Errore durante l'aggiornamento del profilo");
     } finally {
       setSaving(false);
