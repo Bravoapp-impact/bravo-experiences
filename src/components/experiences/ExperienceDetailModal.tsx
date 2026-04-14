@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BaseModal, ModalCloseButton } from "@/components/common/BaseModal";
 import { BaseCardImage } from "@/components/common/BaseCardImage";
 import { supabase } from "@/integrations/supabase/client";
+import { devLog } from "@/lib/logger";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useHourBudget } from "@/hooks/useHourBudget";

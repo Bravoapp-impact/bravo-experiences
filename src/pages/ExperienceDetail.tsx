@@ -135,7 +135,7 @@ export default function ExperienceDetail() {
           setCurrentMonth(startOfMonth(new Date(datesWithCount[0].start_datetime)));
         }
       } catch (error) {
-        console.error("Error fetching dates:", error);
+        devLog.error("Error fetching dates:", error);
       } finally {
         setLoadingDates(false);
       }

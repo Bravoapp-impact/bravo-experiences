@@ -102,7 +102,7 @@ export default function EmailTemplatesPage() {
         .order("name");
 
       if (error) {
-        console.error("Error fetching companies:", error);
+        devLog.error("Error fetching companies:", error);
         toast({
           variant: "destructive",
           title: "Errore",

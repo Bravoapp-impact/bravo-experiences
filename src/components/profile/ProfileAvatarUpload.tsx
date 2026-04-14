@@ -100,7 +100,7 @@ export function ProfileAvatarUpload({
       await onUploadComplete();
       toast.success("Immagine profilo aggiornata!");
     } catch (error) {
-      console.error("Error uploading avatar:", error);
+      devLog.error("Error uploading avatar:", error);
       toast.error("Errore durante il caricamento dell'immagine");
     } finally {
       setUploading(false);
