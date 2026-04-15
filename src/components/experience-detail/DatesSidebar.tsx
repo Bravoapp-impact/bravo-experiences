@@ -35,7 +35,7 @@ export function DatesSidebar({
   const hasMore = dates.length > 5;
 
   return (
-    <div className="sticky top-8 self-start">
+    <div>
       <div className="border border-border rounded-2xl p-6 shadow-sm bg-card space-y-4">
         <h3 className="text-lg font-semibold text-foreground">Date disponibili</h3>
 
