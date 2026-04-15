@@ -390,29 +390,29 @@ export default function ExperienceDetail() {
           Torna al catalogo
         </button>
 
-        {/* Hero */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <HeroImage imageUrl={experience.image_url} alt={experience.title} />
+        {/* Split-screen hero: image left + header right on desktop */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="lg:flex lg:gap-10 lg:items-stretch"
+        >
+          <div className="lg:w-[55%] flex-shrink-0">
+            <HeroImage imageUrl={experience.image_url} alt={experience.title} />
+          </div>
+          <div className="mt-4 lg:mt-0 lg:w-[45%] lg:flex lg:flex-col lg:justify-center">
+            <ExperienceHeader
+              title={experience.title}
+              categoryName={experience.category_name ?? experience.category}
+              cityName={experience.city_name ?? experience.city}
+              defaultHours={experience.default_hours ?? null}
+              avgRating={avgRating}
+              reviewCount={reviewCount}
+              description={experience.description}
+            />
+          </div>
         </motion.div>
 
-        {/* Two-column layout */}
-        <div className="mt-6 lg:mt-8 lg:flex lg:gap-12">
-          {/* Main content */}
-          <div className="flex-1 min-w-0 space-y-8">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <ExperienceHeader
-                title={experience.title}
-                categoryName={experience.category_name ?? experience.category}
-                cityName={experience.city_name ?? experience.city}
-                defaultHours={experience.default_hours ?? null}
-                avgRating={avgRating}
-                reviewCount={reviewCount}
-              />
-            </motion.div>
+        <Separator className="my-8" />
 
             {experience.description && (
               <motion.div
