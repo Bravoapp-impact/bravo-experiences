@@ -67,7 +67,6 @@ export function RelatedExperiences({ currentExperienceId, cityId }: RelatedExper
 
   return (
     <section>
-      <Separator className="mb-8" />
       <h2 className="text-xl font-semibold text-foreground mb-6">
         Altre esperienze nella stessa città
       </h2>
