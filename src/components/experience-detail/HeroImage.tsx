@@ -7,7 +7,7 @@ interface HeroImageProps {
 
 export function HeroImage({ imageUrl, alt }: HeroImageProps) {
   return (
-    <div className="relative overflow-hidden rounded-xl lg:rounded-2xl bg-muted aspect-[4/3] lg:aspect-[16/10]">
+    <div className="relative overflow-hidden rounded-xl lg:rounded-2xl bg-muted aspect-[4/3] lg:aspect-square">
       {imageUrl ? (
         <img
           src={imageUrl}
