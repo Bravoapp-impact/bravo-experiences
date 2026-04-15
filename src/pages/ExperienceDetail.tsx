@@ -414,6 +414,9 @@ export default function ExperienceDetail() {
 
         <Separator className="my-8" />
 
+        {/* Two-column layout: content + sticky sidebar */}
+        <div className="lg:flex lg:gap-12">
+          <div className="flex-1 min-w-0 space-y-8">
             {experience.description && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
