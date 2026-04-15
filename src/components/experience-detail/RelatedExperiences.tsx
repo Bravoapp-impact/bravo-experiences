@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ExperienceCardCompact } from "@/components/experiences/ExperienceCardCompact";
 import { supabase } from "@/integrations/supabase/client";
 import type { Experience, ExperienceDate } from "@/types/experiences";
