@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ExperienceCardCompact } from "@/components/experiences/ExperienceCardCompact";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,7 +66,6 @@ export function RelatedExperiences({ currentExperienceId, cityId }: RelatedExper
 
   return (
     <section>
-      <Separator className="mb-8" />
       <h2 className="text-xl font-semibold text-foreground mb-6">
         Altre esperienze nella stessa città
       </h2>

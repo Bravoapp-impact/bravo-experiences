@@ -497,29 +497,29 @@ export default function ExperienceDetail() {
               </motion.div>
             )}
 
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <RelatedExperiences
-                currentExperienceId={experience.id}
-                cityId={experience.city_id ?? null}
-              />
-            </motion.div>
           </div>
 
           {/* Desktop sidebar */}
-          <div className="hidden lg:block w-[380px] flex-shrink-0">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <DatesSidebar {...dateProps} />
-            </motion.div>
-          </div>
+          <motion.div
+            className="hidden lg:block w-[380px] flex-shrink-0 sticky top-8 self-start"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <DatesSidebar {...dateProps} />
+          </motion.div>
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <RelatedExperiences
+            currentExperienceId={experience.id}
+            cityId={experience.city_id ?? null}
+          />
+        </motion.div>
       </div>
 
       {/* Mobile sticky CTA */}
