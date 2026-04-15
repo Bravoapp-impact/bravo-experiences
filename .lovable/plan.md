@@ -1,98 +1,130 @@
+# Piano: Riscrittura completa ExperienceDetail.tsx (Airbnb-style)
 
+## Panoramica
 
-# Piano: Consolidamento Design System e Componenti Riutilizzabili
+Riscrittura totale della pagina dettaglio esperienza (`/app/experiences/:id`) ispirata al layout Airbnb Experiences. Da una pagina semplice a colonna singola a un layout professionale con due colonne su desktop (contenuto + sidebar sticky) e colonna singola con CTA sticky su mobile.
 
-## Problema
+## Struttura del file
 
-Le pagine dell'app hanno pattern visivi ripetuti ma implementati in modo leggermente diverso ogni volta: header delle sezioni settings, layout avatar+upload, sezioni con titolo+descrizione+separator. Questo causa inconsistenze e codice duplicato. Il `docs/design-system.md` esiste ed è dettagliato ma manca di pattern per le pagine settings e di componenti riutilizzabili per quei pattern.
+Il file `ExperienceDetail.tsx` attuale (567 righe) verra riscritto completamente. Per mantenere il codice gestibile, le sezioni principali verranno estratte in sotto-componenti nella cartella `src/components/experience-detail/`.
 
-## Strategia
-
-Creare componenti riutilizzabili per i pattern più comuni e aggiornare il design system con le nuove convenzioni. Non tocchiamo le pagine consumer (già consolidate), ci concentriamo sulle aree admin/settings dove c'è più frammentazione.
-
-## Modifiche
-
-### 1. Nuovo componente `SettingsSection`
-
-Pattern che si ripete in tutte le pagine settings: titolo h3, descrizione opzionale, contenuto, separator opzionale in fondo.
-
-```tsx
-// src/components/common/SettingsSection.tsx
-<SettingsSection title="Budget ore" description="Descrizione opzionale">
-  {children}
-</SettingsSection>
+```text
+src/components/experience-detail/
+├── HeroImage.tsx            -- Immagine hero 4:3 con fallback
+├── ExperienceHeader.tsx     -- Titolo, categoria, citta, durata, rating
+├── WhatYouWillDo.tsx        -- Sezione "Cosa farai" con expand
+├── ParticipantInfo.tsx      -- Info utili come bullet list
+├── TagsSection.tsx          -- secondary_tags come badge
+├── ReviewsSection.tsx       -- Rating + lista recensioni
+├── MeetingPlace.tsx         -- Indirizzo + link Google Maps
+├── SdgSection.tsx           -- Badge SDG
+├── AssociationProfile.tsx   -- Mini profilo associazione
+├── RelatedExperiences.tsx   -- Carosello altre esperienze stessa citta
+├── DatesSidebar.tsx         -- Sidebar sticky desktop con date
+├── MobileDateDrawer.tsx     -- Drawer bottom-sheet mobile con date
+└── DateSlotCard.tsx         -- Card singola data (riusata in sidebar e drawer)
 ```
 
-Props: `title`, `description?`, `children`, `className?`. Gestisce `<h3>`, `<p>`, spacing e `<Separator>` automaticamente tra sezioni consecutive.
+## Layout
 
-### 2. Nuovo componente `SettingsPage`
+```text
+Desktop (lg+):
+┌─────────────────────────────────────────────┐
+│  ← Torna al catalogo                        │
+├─────────────────────────────────────────────┤
+│  [Hero Image - full width, aspect 16:10]    │
+├──────────────────────┬──────────────────────┤
+│  Contenuto (~60%)    │  Sidebar (~35%)      │
+│                      │  position: sticky    │
+│  - Titolo + key info │  top: 2rem           │
+│  - Cosa farai        │                      │
+│  - Info utili        │  - Prossime 5 date   │
+│  - Tag               │  - Mostra tutte      │
+│  - Recensioni        │  - Bottone Prenota   │
+│  - Luogo incontro    │  - Budget ore        │
+│  - SDGs              │                      │
+│  - Associazione      │                      │
+├──────────────────────┴──────────────────────┤
+│  Altre esperienze nella stessa citta        │
+└─────────────────────────────────────────────┘
 
-Wrapper per pagine settings con header consistente (h2 + descrizione + animazione).
-
-```tsx
-// src/components/common/SettingsPage.tsx
-<SettingsPage title="Profilo personale" description="Gestisci le tue informazioni">
-  <SettingsSection title="Avatar">...</SettingsSection>
-  <SettingsSection title="Dati personali">...</SettingsSection>
-</SettingsPage>
+Mobile:
+┌─────────────────────┐
+│ ← Torna al catalogo │
+│ [Hero full-width]   │
+│ Titolo + key info   │
+│ Cosa farai          │
+│ Info utili          │
+│ Tag                 │
+│ Recensioni          │
+│ Luogo incontro      │
+│ SDGs                │
+│ Associazione        │
+│ Altre esperienze    │
+│                     │
+│ ─── sticky bottom ──│
+│ [Vedi date]         │
+└─────────────────────┘
 ```
 
-Gestisce: `motion.div` con animazione standard, `h2 text-lg font-semibold`, `p text-sm text-muted-foreground`, `space-y-0` tra sezioni (il separator è dentro SettingsSection).
+## Query dati
 
-### 3. Nuovo componente `AvatarUploadBlock`
+La query principale carica l'esperienza con join su:
 
-Pattern ripetuto in SettingsProfile e SettingsGeneral: avatar + titolo + descrizione + bottone upload.
+- `associations` (nome, logo, description)
+- `categories` (nome)  
+- `cities` (nome)
 
-```tsx
-// src/components/common/AvatarUploadBlock.tsx
-<AvatarUploadBlock
-  imageUrl={profile?.avatar_url}
-  fallbackInitials="MR"
-  title="Foto profilo"
-  description="Supportiamo PNG e JPEG sotto 2MB"
-  onUpload={handleUpload}
-  uploading={uploading}
-/>
-```
+Query separate per:
 
-### 4. Nuovo componente `SettingsToggleRow`
+- **Date future**: `experience_dates` filtrate per `experience_id`, `start_datetime > now()`, con count booking confermati
+- **Recensioni**: `experience_reviews` join `bookings` join `experience_dates` join `profiles` (per nome/avatar reviewer), filtrate per `experience_id`
+- **Booking utente**: bookings dell'utente corrente per le date di questa esperienza
+- **Esperienze correlate**: experiences con stesso `city_id`, `status = published`, `visibility = public`, limit 6, esclusa quella corrente
 
-Pattern ripetuto in SettingsVolunteering: label a sinistra, Switch a destra.
+## Sezioni dettagliate
 
-```tsx
-// src/components/common/SettingsToggleRow.tsx
-<SettingsToggleRow
-  label="I dipendenti possono prenotarsi in autonomia"
-  checked={value}
-  onCheckedChange={setValue}
-/>
-```
+1. **Hero**: Aspect ratio `aspect-[16/10]` desktop, `aspect-[4/3]` mobile. Fallback con emoji e sfondo muted.
+2. **Header**: Titolo `text-2xl lg:text-3xl font-bold`. Sotto: categoria, citta, durata ore, rating medio (se ci sono recensioni).
+3. **Cosa farai**: Testo description con troncamento a ~5 righe e "Mostra altro" per espandere.
+4. **Info utili**: Solo se `participant_info` non e vuoto. Ogni riga diventa un bullet point.
+5. **Tag**: Solo se `secondary_tags` presente. Badge/chip con stile secondario.
+6. **Recensioni**: Header "★ X.XX · N recensioni". Griglia 1-2 colonne con avatar, nome, stelle, data relativa, testo. Max 6, poi "Mostra tutte le recensioni".
+7. **Luogo**: Indirizzo + link Google Maps.
+8. **SDGs**: Badge colorati come oggi.
+9. **Associazione**: Logo grande, nome, description breve, bottone "Scopri di piu".
+10. **Correlate**: Carosello orizzontale con ExperienceCardCompact esistente.
 
-### 5. Refactor pagine settings esistenti
+## Sidebar / CTA mobile
 
-Riscrivere le 5 pagine settings per usare i nuovi componenti. Nessun cambio funzionale, solo composizione con i nuovi building blocks.
+- **Desktop**: `position: sticky; top: 2rem`. Lista prime 5 date future. Ogni data mostra giorno/data in italiano, orario, posti disponibili (o "Tutto esaurito" / "Prenotato"). Click seleziona, appare bottone "Prenota". Budget ore mostrato se non unlimited.
+- **Mobile**: Barra fissa in basso con "Vedi date disponibili". Click apre Drawer (shadcn) con lista completa date + bottone Prenota.
 
-### 6. Aggiornamento `docs/design-system.md`
+## Logica booking
 
-Aggiungere sezione "Settings Pages" con:
-- Pattern `SettingsPage` + `SettingsSection`
-- Pattern `AvatarUploadBlock`
-- Pattern `SettingsToggleRow`
-- Regole spacing (separator `my-6` tra sezioni, `mb-6` dopo header pagina)
+Identica a quella attuale: insert in `bookings`, gestione errori (duplicato, budget), toast conferma, invocazione edge function `send-booking-confirmation`. Dopo il booking, aggiornamento stato locale (data prenotata, posti aggiornati).
+
+## Pagina successo
+
+Dopo prenotazione confermata: overlay/modale di successo con emoji, messaggio, bottoni "Le mie prenotazioni" e "Torna al catalogo" (come oggi).
 
 ## File coinvolti
 
-| File | Modifica |
-|------|----------|
-| `src/components/common/SettingsSection.tsx` | Nuovo |
-| `src/components/common/SettingsPage.tsx` | Nuovo |
-| `src/components/common/AvatarUploadBlock.tsx` | Nuovo |
-| `src/components/common/SettingsToggleRow.tsx` | Nuovo |
-| `src/pages/hr/settings/SettingsProfile.tsx` | Refactor con nuovi componenti |
-| `src/pages/hr/settings/SettingsGeneral.tsx` | Refactor con nuovi componenti |
-| `src/pages/hr/settings/SettingsMembers.tsx` | Refactor con nuovi componenti |
-| `src/pages/hr/settings/SettingsVolunteering.tsx` | Refactor con nuovi componenti |
-| `docs/design-system.md` | Aggiunta sezione Settings Pages |
 
-Nessuna modifica a database o RLS.
+| File                                     | Azione                                                                                                               |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `src/pages/ExperienceDetail.tsx`         | Riscrittura completa                                                                                                 |
+| `src/components/experience-detail/*.tsx` | 13 nuovi sotto-componenti                                                                                            |
+| `src/types/experiences.ts`               | Estensione con campi aggiuntivi (category_name, city_name, association data, secondary_tags, default_hours, city_id) |
 
+
+Nessuna modifica a database, RLS o routing.
+
+## Dipendenze
+
+- `date-fns` + locale `it` (gia presente)
+- `framer-motion` (gia presente)
+- shadcn `Drawer` (gia presente)
+- shadcn `Separator` (gia presente)
+- Hook `useHourBudget` (gia presente)
+- Hook `useIsMobile` (gia presente)
