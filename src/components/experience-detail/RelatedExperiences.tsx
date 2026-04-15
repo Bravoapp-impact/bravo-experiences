@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ExperienceCardCompact } from "@/components/experiences/ExperienceCardCompact";
 import { supabase } from "@/integrations/supabase/client";
