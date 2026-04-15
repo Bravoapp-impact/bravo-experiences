@@ -1,4 +1,4 @@
-import { MapPin, Clock, Star } from "lucide-react";
+import { Clock, Star } from "lucide-react";
 
 interface ExperienceHeaderProps {
   title: string;
@@ -7,6 +7,7 @@ interface ExperienceHeaderProps {
   defaultHours: number | null;
   avgRating: number | null;
   reviewCount: number;
+  description?: string | null;
 }
 
 export function ExperienceHeader({
@@ -16,16 +17,31 @@ export function ExperienceHeader({
   defaultHours,
   avgRating,
   reviewCount,
+  description,
 }: ExperienceHeaderProps) {
   const metaItems: string[] = [];
   if (categoryName) metaItems.push(categoryName);
   if (cityName) metaItems.push(cityName);
 
+  // Truncate description to ~2-3 lines
+  const shortDescription = description
+    ? description.length > 180
+      ? description.slice(0, 180).trimEnd() + "…"
+      : description
+    : null;
+
   return (
-    <div className="space-y-2">
-      <h1 className="text-2xl lg:text-3xl font-bold text-foreground leading-tight">
+    <div className="space-y-3 lg:flex lg:flex-col lg:justify-center">
+      <h1 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-foreground leading-tight">
         {title}
       </h1>
+
+      {shortDescription && (
+        <p className="text-sm lg:text-base text-muted-foreground leading-relaxed">
+          {shortDescription}
+        </p>
+      )}
+
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
         {avgRating !== null && reviewCount > 0 && (
           <>
