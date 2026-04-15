@@ -1,44 +1,62 @@
-import { useState, useEffect, useMemo } from "react";
-import { devLog } from "@/lib/logger";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Users, ChevronLeft, ChevronRight, Loader2, Clock, AlertTriangle, ExternalLink } from "lucide-react";
-import { format, isSameMonth, addMonths, subMonths, startOfMonth } from "date-fns";
-import { it } from "date-fns/locale";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { BaseCardImage } from "@/components/common/BaseCardImage";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useHourBudget } from "@/hooks/useHourBudget";
-import { SDG_DATA } from "@/lib/sdg-data";
-import type { Experience, ExperienceDate } from "@/types/experiences";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { devLog } from "@/lib/logger";
+import type { Experience, ExperienceDate, ExperienceReview } from "@/types/experiences";
 
-type PageStep = "detail" | "dates" | "success";
+// Sub-components
+import { HeroImage } from "@/components/experience-detail/HeroImage";
+import { ExperienceHeader } from "@/components/experience-detail/ExperienceHeader";
+import { WhatYouWillDo } from "@/components/experience-detail/WhatYouWillDo";
+import { ParticipantInfo } from "@/components/experience-detail/ParticipantInfo";
+import { TagsSection } from "@/components/experience-detail/TagsSection";
+import { ReviewsSection } from "@/components/experience-detail/ReviewsSection";
+import { MeetingPlace } from "@/components/experience-detail/MeetingPlace";
+import { SdgSection } from "@/components/experience-detail/SdgSection";
+import { AssociationProfile } from "@/components/experience-detail/AssociationProfile";
+import { RelatedExperiences } from "@/components/experience-detail/RelatedExperiences";
+import { DatesSidebar } from "@/components/experience-detail/DatesSidebar";
+import { MobileDateDrawer } from "@/components/experience-detail/MobileDateDrawer";
 
 export default function ExperienceDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const { remainingHours, isUnlimited, budgetHours, loading: budgetLoading } = useHourBudget();
 
   const [experience, setExperience] = useState<Experience | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  const [step, setStep] = useState<PageStep>("detail");
+  // Dates
+  const [dates, setDates] = useState<ExperienceDate[]>([]);
+  const [loadingDates, setLoadingDates] = useState(true);
   const [selectedDateId, setSelectedDateId] = useState<string | null>(null);
   const [isBooking, setIsBooking] = useState(false);
-  const [dates, setDates] = useState<ExperienceDate[]>([]);
-  const [loadingDates, setLoadingDates] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState<Date>(startOfMonth(new Date()));
   const [userBookedDateIds, setUserBookedDateIds] = useState<Set<string>>(new Set());
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Fetch experience
+  // Reviews
+  const [reviews, setReviews] = useState<ExperienceReview[]>([]);
+  const [avgRating, setAvgRating] = useState<number | null>(null);
+  const [reviewCount, setReviewCount] = useState(0);
+
+  // Success state
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // ─── Fetch experience ───
   useEffect(() => {
     if (!id) return;
 
@@ -50,9 +68,10 @@ export default function ExperienceDetail() {
           .select(`
             *,
             associations:association_id (
-              name,
-              logo_url
-            )
+              id, name, logo_url, description, website
+            ),
+            categories:category_id (name),
+            cities:city_id (name)
           `)
           .eq("id", id)
           .eq("status", "published")
@@ -63,18 +82,30 @@ export default function ExperienceDetail() {
           return;
         }
 
+        const assoc = data.associations as any;
+        const cat = data.categories as any;
+        const city = data.cities as any;
+
         setExperience({
           id: data.id,
           title: data.title,
           description: data.description,
           image_url: data.image_url,
-          association_name: (data.associations as any)?.name ?? data.association_name,
-          association_logo_url: (data.associations as any)?.logo_url ?? null,
-          city: data.city,
+          association_name: assoc?.name ?? data.association_name,
+          association_logo_url: assoc?.logo_url ?? null,
+          association_id: assoc?.id ?? data.association_id,
+          association_description: assoc?.description ?? null,
+          association_website: assoc?.website ?? null,
+          city: city?.name ?? data.city,
+          city_name: city?.name ?? data.city,
+          city_id: data.city_id,
           address: data.address,
-          category: data.category,
+          category: cat?.name ?? data.category,
+          category_name: cat?.name ?? data.category,
           sdgs: data.sdgs ?? [],
           participant_info: data.participant_info ?? null,
+          default_hours: data.default_hours,
+          secondary_tags: data.secondary_tags ?? null,
         });
       } catch {
         setNotFound(true);
@@ -86,18 +117,17 @@ export default function ExperienceDetail() {
     fetchExperience();
   }, [id]);
 
-  // Fetch dates when entering dates step
+  // ─── Fetch dates ───
   useEffect(() => {
-    if (!experience || step !== "dates") return;
+    if (!id) return;
 
     const fetchDates = async () => {
       setLoadingDates(true);
-      setSelectedDateId(null);
       try {
         const { data, error } = await supabase
           .from("experience_dates")
           .select("id, start_datetime, end_datetime, max_participants, volunteer_hours")
-          .eq("experience_id", experience.id)
+          .eq("experience_id", id)
           .gte("start_datetime", new Date().toISOString())
           .order("start_datetime", { ascending: true });
 
@@ -108,15 +138,17 @@ export default function ExperienceDetail() {
         const bookedByUser = new Set<string>();
 
         if (dateIds.length > 0) {
-          const { data: confirmedBookings } = await supabase
+          const { data: bookings } = await supabase
             .from("bookings")
             .select("experience_date_id, user_id")
             .in("experience_date_id", dateIds)
-            .eq("status", "confirmed");
+            .in("status", ["confirmed", "completed"]);
 
-          (confirmedBookings || []).forEach((b) => {
-            const prev = confirmedCountsMap.get(b.experience_date_id) || 0;
-            confirmedCountsMap.set(b.experience_date_id, prev + 1);
+          (bookings || []).forEach((b) => {
+            confirmedCountsMap.set(
+              b.experience_date_id,
+              (confirmedCountsMap.get(b.experience_date_id) || 0) + 1
+            );
             if (b.user_id === user?.id) {
               bookedByUser.add(b.experience_date_id);
             }
@@ -124,63 +156,113 @@ export default function ExperienceDetail() {
         }
 
         setUserBookedDateIds(bookedByUser);
-
-        const datesWithCount = (data || []).map((date) => ({
-          ...date,
-          confirmed_count: confirmedCountsMap.get(date.id) || 0,
-        }));
-
-        setDates(datesWithCount);
-
-        if (datesWithCount.length > 0) {
-          setCurrentMonth(startOfMonth(new Date(datesWithCount[0].start_datetime)));
-        }
-      } catch (error) {
-        devLog.error("Error fetching dates:", error);
+        setDates(
+          (data || []).map((d) => ({
+            ...d,
+            confirmed_count: confirmedCountsMap.get(d.id) || 0,
+          }))
+        );
+      } catch (err) {
+        devLog.error("Error fetching dates:", err);
       } finally {
         setLoadingDates(false);
       }
     };
 
     fetchDates();
-  }, [experience, step, user?.id]);
+  }, [id, user?.id, showSuccess]);
 
-  // Group dates by day within current month
-  const datesByDay = useMemo(() => {
-    const grouped = new Map<string, ExperienceDate[]>();
-    dates
-      .filter((date) => isSameMonth(new Date(date.start_datetime), currentMonth))
-      .forEach((date) => {
-        const dayKey = format(new Date(date.start_datetime), "yyyy-MM-dd");
-        const existing = grouped.get(dayKey) || [];
-        grouped.set(dayKey, [...existing, date]);
+  // ─── Fetch reviews ───
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchReviews = async () => {
+      // Get experience_date ids for this experience
+      const { data: dateIds } = await supabase
+        .from("experience_dates")
+        .select("id")
+        .eq("experience_id", id);
+
+      if (!dateIds?.length) return;
+
+      const edIds = dateIds.map((d) => d.id);
+
+      // Get bookings for those dates
+      const { data: bookingsData } = await supabase
+        .from("bookings")
+        .select("id, user_id, experience_date_id")
+        .in("experience_date_id", edIds);
+
+      if (!bookingsData?.length) return;
+
+      const bookingIds = bookingsData.map((b) => b.id);
+      const bookingUserMap = new Map(bookingsData.map((b) => [b.id, b.user_id]));
+
+      // Get reviews
+      const { data: reviewsData } = await supabase
+        .from("experience_reviews")
+        .select("id, rating, feedback_positive, feedback_improvement, would_recommend, created_at, booking_id")
+        .in("booking_id", bookingIds)
+        .order("created_at", { ascending: false });
+
+      if (!reviewsData?.length) return;
+
+      // Get reviewer profiles
+      const userIds = [...new Set(reviewsData.map((r) => bookingUserMap.get(r.booking_id)).filter(Boolean))] as string[];
+      const profileMap = new Map<string, { first_name: string | null; last_name: string | null; avatar_url: string | null }>();
+
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, first_name, last_name, avatar_url")
+          .in("id", userIds);
+
+        (profiles || []).forEach((p) => profileMap.set(p.id, p));
+      }
+
+      const mapped: ExperienceReview[] = reviewsData.map((r) => {
+        const userId = bookingUserMap.get(r.booking_id);
+        const profile = userId ? profileMap.get(userId) : undefined;
+        return {
+          id: r.id,
+          rating: r.rating,
+          feedback_positive: r.feedback_positive,
+          feedback_improvement: r.feedback_improvement,
+          would_recommend: r.would_recommend,
+          created_at: r.created_at,
+          reviewer_name: profile
+            ? [profile.first_name, profile.last_name].filter(Boolean).join(" ") || null
+            : null,
+          reviewer_avatar: profile?.avatar_url ?? null,
+        };
       });
-    return grouped;
-  }, [dates, currentMonth]);
 
-  const availableMonths = useMemo(() => {
-    const months = new Set<string>();
-    dates.forEach((date) => {
-      months.add(format(new Date(date.start_datetime), "yyyy-MM"));
-    });
-    return months;
-  }, [dates]);
+      setReviews(mapped);
+      setReviewCount(mapped.length);
+      if (mapped.length > 0) {
+        const sum = mapped.reduce((acc, r) => acc + r.rating, 0);
+        setAvgRating(sum / mapped.length);
+      }
+    };
 
-  const canGoBack = availableMonths.size > 0 &&
-    Array.from(availableMonths).some((m) => m < format(currentMonth, "yyyy-MM"));
-  const canGoForward = availableMonths.size > 0 &&
-    Array.from(availableMonths).some((m) => m > format(currentMonth, "yyyy-MM"));
+    fetchReviews();
+  }, [id]);
 
+  // ─── Booking ───
   const handleBook = async () => {
     if (!selectedDateId || !user) return;
 
     setIsBooking(true);
     try {
-      const { data: bookingData, error } = await supabase.from("bookings").insert({
-        user_id: user.id,
-        experience_date_id: selectedDateId,
-        status: "confirmed",
-      }).select().single();
+      const { data: bookingData, error } = await supabase
+        .from("bookings")
+        .insert({
+          user_id: user.id,
+          experience_date_id: selectedDateId,
+          status: "confirmed",
+        })
+        .select()
+        .single();
 
       if (error) {
         if (error.code === "23505") {
@@ -200,7 +282,9 @@ export default function ExperienceDetail() {
         description: "Ti aspettiamo per questa esperienza di volontariato.",
       });
 
-      setStep("success");
+      setSelectedDateId(null);
+      setDrawerOpen(false);
+      setShowSuccess(true);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -214,22 +298,31 @@ export default function ExperienceDetail() {
 
   const goBack = () => navigate("/app/experiences");
 
-  // Loading state
+  // ─── Loading ───
   if (loading) {
     return (
       <AppLayout>
-        <div className="max-w-lg mx-auto space-y-4">
-          <Skeleton className="h-8 w-40" />
-          <Skeleton className="aspect-square w-full rounded-xl" />
-          <Skeleton className="h-6 w-3/4" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-2/3" />
+        <div className="max-w-5xl mx-auto px-4 lg:px-8 space-y-6 py-4">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="w-full aspect-[4/3] lg:aspect-[16/10] rounded-xl" />
+          <Skeleton className="h-8 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+          <div className="flex gap-8">
+            <div className="flex-1 space-y-4">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+            <div className="hidden lg:block w-[380px]">
+              <Skeleton className="h-[300px] rounded-2xl" />
+            </div>
+          </div>
         </div>
       </AppLayout>
     );
   }
 
-  // Not found
+  // ─── Not found ───
   if (notFound || !experience) {
     return (
       <AppLayout>
@@ -248,8 +341,8 @@ export default function ExperienceDetail() {
     );
   }
 
-  // Success state
-  if (step === "success") {
+  // ─── Success state ───
+  if (showSuccess) {
     return (
       <AppLayout>
         <div className="max-w-lg mx-auto text-center py-16">
@@ -260,9 +353,7 @@ export default function ExperienceDetail() {
               Ti aspettiamo per <strong>{experience.title}</strong>. Riceverai un'email di conferma.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-              <Button onClick={() => navigate("/app/bookings")}>
-                Le mie prenotazioni
-              </Button>
+              <Button onClick={() => navigate("/app/bookings")}>Le mie prenotazioni</Button>
               <Button variant="outline" onClick={goBack}>
                 Torna al catalogo
               </Button>
@@ -273,294 +364,179 @@ export default function ExperienceDetail() {
     );
   }
 
-  // Build Google Maps link
-  const mapsQuery = [experience.address, experience.city].filter(Boolean).join(", ");
-  const mapsUrl = mapsQuery ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}` : null;
+  // Shared sidebar/drawer props
+  const dateProps = {
+    dates,
+    loading: loadingDates,
+    selectedDateId,
+    onSelectDate: setSelectedDateId,
+    onBook: handleBook,
+    isBooking,
+    userBookedDateIds,
+    remainingHours,
+    isUnlimited,
+    budgetHours,
+  };
 
   return (
     <AppLayout>
-      <div className="max-w-lg mx-auto pb-24">
+      <div className="max-w-5xl mx-auto px-4 lg:px-8 pb-28 lg:pb-12">
         {/* Back button */}
         <button
-          onClick={step === "dates" ? () => { setStep("detail"); setSelectedDateId(null); } : goBack}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+          onClick={goBack}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4 py-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          {step === "dates" ? "Torna ai dettagli" : "Torna al catalogo"}
+          Torna al catalogo
         </button>
 
-        {step === "detail" ? (
-          /* ─── DETAIL VIEW ─── */
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-            {/* Hero image */}
-            <BaseCardImage
-              imageUrl={experience.image_url}
-              alt={experience.title}
-              aspectRatio="square"
-              fallbackEmoji="🤝"
-              className="rounded-xl overflow-hidden"
-            />
+        {/* Hero */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <HeroImage imageUrl={experience.image_url} alt={experience.title} />
+        </motion.div>
 
-            {/* Category badge */}
-            {experience.category && (
-              <Badge variant="secondary" className="rounded-full">
-                {experience.category}
-              </Badge>
-            )}
+        {/* Two-column layout */}
+        <div className="mt-6 lg:mt-8 lg:flex lg:gap-12">
+          {/* Main content */}
+          <div className="flex-1 min-w-0 space-y-8">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <ExperienceHeader
+                title={experience.title}
+                categoryName={experience.category_name ?? experience.category}
+                cityName={experience.city_name ?? experience.city}
+                defaultHours={experience.default_hours ?? null}
+                avgRating={avgRating}
+                reviewCount={reviewCount}
+              />
+            </motion.div>
 
-            {/* Title */}
-            <h1 className="text-xl font-bold text-foreground leading-tight">
-              {experience.title}
-            </h1>
-
-            {/* Description */}
             {experience.description && (
-              <p className="text-[15px] text-muted-foreground font-light leading-relaxed">
-                {experience.description}
-              </p>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+              >
+                <WhatYouWillDo description={experience.description} />
+              </motion.div>
             )}
 
-            {/* Association */}
-            {experience.association_name && (
-              <div className="flex items-center gap-2 pt-2">
-                {experience.association_logo_url ? (
-                  <img
-                    src={experience.association_logo_url}
-                    alt=""
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                    <span className="text-sm">🏢</span>
-                  </div>
-                )}
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {experience.association_name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Associazione partner</p>
-                </div>
-              </div>
-            )}
-
-            {/* Address */}
-            {(experience.city || experience.address) && (
-              <div className="flex items-start gap-2 pt-2">
-                <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                {mapsUrl ? (
-                  <a
-                    href={mapsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                  >
-                    {experience.address && `${experience.address}, `}
-                    {experience.city}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    {experience.address && `${experience.address}, `}
-                    {experience.city}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Participant info */}
             {experience.participant_info && (
-              <div className="pt-3 space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Informazioni per i partecipanti
-                </p>
-                <p className="text-sm text-muted-foreground whitespace-pre-line">
-                  {experience.participant_info}
-                </p>
-              </div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <ParticipantInfo info={experience.participant_info} />
+              </motion.div>
             )}
 
-            {/* SDGs */}
+            {experience.secondary_tags && experience.secondary_tags.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+              >
+                <TagsSection tags={experience.secondary_tags} />
+              </motion.div>
+            )}
+
+            {reviews.length > 0 && avgRating !== null && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <ReviewsSection
+                  reviews={reviews}
+                  avgRating={avgRating}
+                  totalCount={reviewCount}
+                />
+              </motion.div>
+            )}
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35 }}
+            >
+              <MeetingPlace
+                address={experience.address}
+                cityName={experience.city_name ?? experience.city}
+              />
+            </motion.div>
+
             {experience.sdgs && experience.sdgs.length > 0 && (
-              <div className="pt-3 space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Obiettivi di sostenibilità
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {experience.sdgs.map((sdgCode) => {
-                    const sdg = SDG_DATA[sdgCode];
-                    if (!sdg) return null;
-                    return (
-                      <div
-                        key={sdgCode}
-                        className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium"
-                        style={{
-                          backgroundColor: `${sdg.color}15`,
-                          color: sdg.color,
-                        }}
-                      >
-                        <span>{sdg.icon}</span>
-                        <span>{sdg.name}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </motion.div>
-        ) : (
-          /* ─── DATE SELECTION VIEW ─── */
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-            <h2 className="text-lg font-semibold text-foreground">Seleziona una data</h2>
-
-            {/* Month navigation */}
-            <div className="flex items-center justify-between py-2">
-              <button
-                onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                disabled={!canGoBack}
-                className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
               >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <span className="text-base font-semibold capitalize">
-                {format(currentMonth, "MMMM yyyy", { locale: it })}
-              </span>
-              <button
-                onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                disabled={!canGoForward}
-                className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Hour budget banner */}
-            {!isUnlimited && !budgetLoading && (
-              <div>
-                {remainingHours <= 0 ? (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 text-destructive text-sm">
-                    <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-                    <span>Hai esaurito le {budgetHours} ore disponibili quest'anno</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-muted text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4 flex-shrink-0" />
-                    <span>Ore rimanenti: <strong className="text-foreground">{remainingHours}</strong> / {budgetHours}</span>
-                  </div>
-                )}
-              </div>
+                <SdgSection sdgs={experience.sdgs} />
+              </motion.div>
             )}
 
-            {/* Date slots */}
-            <div className="space-y-6">
-              {loadingDates ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="space-y-2">
-                      <Skeleton className="h-5 w-32" />
-                      <Skeleton className="h-16 w-full rounded-xl" />
-                    </div>
-                  ))}
-                </div>
-              ) : datesByDay.size > 0 ? (
-                Array.from(datesByDay.entries()).map(([dayKey, dayDates]) => (
-                  <div key={dayKey} className="space-y-3">
-                    <h4 className="text-base font-semibold text-foreground">
-                      {format(new Date(dayKey), "EEEE, d MMMM", { locale: it })}
-                    </h4>
-                    <div className="space-y-2">
-                      {dayDates.map((date) => {
-                        const availableSpots = date.max_participants - (date.confirmed_count || 0);
-                        const isFull = availableSpots <= 0;
-                        const isBookedByUser = userBookedDateIds.has(date.id);
-                        const dateHours = Number(date.volunteer_hours) || 0;
-                        const exceedsBudget = !isUnlimited && dateHours > remainingHours;
-                        const isDisabled = isFull || isBookedByUser || exceedsBudget;
-                        const isSelected = selectedDateId === date.id;
+            {experience.association_name && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45 }}
+              >
+                <AssociationProfile
+                  id={experience.association_id ?? null}
+                  name={experience.association_name}
+                  logoUrl={experience.association_logo_url ?? null}
+                  description={experience.association_description ?? null}
+                />
+              </motion.div>
+            )}
 
-                        return (
-                          <button
-                            key={date.id}
-                            disabled={isDisabled}
-                            onClick={() => setSelectedDateId(date.id)}
-                            className={`
-                              w-full p-4 rounded-2xl border text-left transition-all
-                              ${isSelected
-                                ? "border-primary bg-primary/5 ring-1 ring-primary"
-                                : "border-border hover:bg-muted/30"
-                              }
-                              ${isDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-                            `}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-base font-medium text-foreground">
-                                  {format(new Date(date.start_datetime), "HH:mm")}–
-                                  {format(new Date(date.end_datetime), "HH:mm")}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                {isBookedByUser ? (
-                                  <span className="text-primary font-medium">✓ Già prenotato</span>
-                                ) : exceedsBudget ? (
-                                  <span className="text-destructive font-medium text-xs">Ore insufficienti</span>
-                                ) : (
-                                  <>
-                                    <Users className="h-4 w-4" />
-                                    <span className={isFull ? "text-destructive font-medium" : ""}>
-                                      {isFull ? "Completo" : `${availableSpots} posti`}
-                                    </span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">
-                    Nessuna data disponibile in questo mese
-                  </p>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <RelatedExperiences
+                currentExperienceId={experience.id}
+                cityId={experience.city_id ?? null}
+              />
+            </motion.div>
+          </div>
+
+          {/* Desktop sidebar */}
+          <div className="hidden lg:block w-[380px] flex-shrink-0">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <DatesSidebar {...dateProps} />
+            </motion.div>
+          </div>
+        </div>
       </div>
 
-      {/* Fixed bottom CTA */}
-      {step === "detail" && (
-        <div className="fixed bottom-16 sm:bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border z-40">
-          <div className="max-w-lg mx-auto">
+      {/* Mobile sticky CTA */}
+      {isMobile && (
+        <>
+          <div className="fixed bottom-16 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border z-40">
             <Button
-              onClick={() => setStep("dates")}
+              onClick={() => setDrawerOpen(true)}
               className="w-full h-12 text-base font-medium rounded-xl"
             >
               Vedi date disponibili
             </Button>
           </div>
-        </div>
-      )}
 
-      {step === "dates" && (
-        <div className="fixed bottom-16 sm:bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border z-40">
-          <div className="max-w-lg mx-auto">
-            <Button
-              onClick={handleBook}
-              disabled={!selectedDateId || isBooking}
-              className="w-full h-12 text-base font-medium rounded-xl"
-            >
-              {isBooking ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                "Conferma prenotazione"
-              )}
-            </Button>
-          </div>
-        </div>
+          <MobileDateDrawer
+            open={drawerOpen}
+            onOpenChange={setDrawerOpen}
+            {...dateProps}
+          />
+        </>
       )}
     </AppLayout>
   );
