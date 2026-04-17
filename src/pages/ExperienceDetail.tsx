@@ -501,7 +501,7 @@ export default function ExperienceDetail() {
 
           {/* Desktop sidebar */}
           <motion.div
-            className="hidden lg:block w-[380px] flex-shrink-0 sticky top-8 self-start"
+            className="hidden lg:block w-[380px] flex-shrink-0 sticky top-24 self-start"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
