@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 
 interface AssociationProfileProps {
   id: string | null;
@@ -14,7 +13,6 @@ export function AssociationProfile({ id, name, logoUrl, description }: Associati
 
   return (
     <section>
-      <Separator className="mb-8" />
       <h2 className="text-xl font-semibold text-foreground mb-6">Organizzato da</h2>
       <div className="flex items-start gap-4">
         {logoUrl ? (
