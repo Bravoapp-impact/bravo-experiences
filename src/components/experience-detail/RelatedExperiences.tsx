@@ -26,29 +26,38 @@ export function RelatedExperiences({ currentExperienceId, cityId, companyId }: R
         .select(`
           id, title, description, image_url, association_name, city, address, category, sdgs,
           associations:association_id (logo_url),
-          experience_companies!inner (company_id)
+          experience_companies!inner (company_id),
+          experience_dates!inner (id, start_datetime)
         `)
         .eq("city_id", cityId)
         .eq("status", "published")
         .eq("visibility", "public")
         .neq("id", currentExperienceId)
         .eq("experience_companies.company_id", companyId)
+        .gte("experience_dates.start_datetime", new Date().toISOString())
         .limit(6);
 
       if (data) {
-        const mapped: Experience[] = data.map((e: any) => ({
-          id: e.id,
-          title: e.title,
-          description: e.description,
-          image_url: e.image_url,
-          association_name: e.association_name,
-          association_logo_url: (e.associations as any)?.logo_url ?? null,
-          city: e.city,
-          address: e.address,
-          category: e.category,
-          sdgs: e.sdgs ?? [],
-          experience_dates: [],
-        }));
+        // Deduplicate (inner join on dates may return duplicates)
+        const seen = new Set<string>();
+        const mapped: Experience[] = [];
+        for (const e of data as any[]) {
+          if (seen.has(e.id)) continue;
+          seen.add(e.id);
+          mapped.push({
+            id: e.id,
+            title: e.title,
+            description: e.description,
+            image_url: e.image_url,
+            association_name: e.association_name,
+            association_logo_url: (e.associations as any)?.logo_url ?? null,
+            city: e.city,
+            address: e.address,
+            category: e.category,
+            sdgs: e.sdgs ?? [],
+            experience_dates: [],
+          });
+        }
         setExperiences(mapped);
       }
       setLoading(false);
