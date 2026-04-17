@@ -36,6 +36,7 @@ import EmailTemplatesPage from "./pages/super-admin/EmailTemplatesPage";
 import AccessCodesPage from "./pages/super-admin/AccessCodesPage";
 import AssociationHome from "./pages/association/AssociationHome";
 import AssociationExperiencesPage from "./pages/association/AssociationExperiencesPage";
+import AssociationExperienceDetail from "./pages/association/AssociationExperienceDetail";
 import AssociationHistoryPage from "./pages/association/AssociationHistoryPage";
 import AssociationProfilePage from "./pages/association/AssociationProfilePage";
 import AssociationAdminProfile from "./pages/association/AssociationAdminProfile";
@@ -275,6 +276,14 @@ const App = () => (
               element={
                 <ProtectedAssociationRoute>
                   <AssociationExperiencesPage />
+                </ProtectedAssociationRoute>
+              }
+            />
+            <Route
+              path="/association/experiences/:id"
+              element={
+                <ProtectedAssociationRoute>
+                  <AssociationExperienceDetail />
                 </ProtectedAssociationRoute>
               }
             />
