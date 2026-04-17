@@ -486,63 +486,6 @@ export default function AssociationExperiencesPage() {
         )}
       </div>
 
-      {/* Preview Modal */}
-      <BaseModal open={!!selectedExperience} onClose={() => setSelectedExperience(null)}>
-        {selectedExperience && (
-          <div className="flex flex-col h-full sm:max-h-[85vh] overflow-hidden">
-            <div className="absolute top-4 right-4 z-10">
-              <ModalCloseButton onClick={() => setSelectedExperience(null)} />
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {selectedExperience.image_url && (
-                <AspectRatio ratio={16 / 9}>
-                  <img src={selectedExperience.image_url} alt={selectedExperience.title} className="object-cover w-full h-full" />
-                </AspectRatio>
-              )}
-              <div className="p-5 space-y-4">
-                <div className="flex flex-wrap gap-2">
-                  {(selectedExperience.categories?.name || selectedExperience.category) && (
-                    <Badge variant="outline">
-                      {selectedExperience.categories?.name || selectedExperience.category}
-                    </Badge>
-                  )}
-                </div>
-                <h2 className="text-xl font-bold text-foreground leading-tight">{selectedExperience.title}</h2>
-                {selectedExperience.description && (
-                  <p className="text-[15px] text-muted-foreground font-light leading-relaxed whitespace-pre-wrap">
-                    {selectedExperience.description}
-                  </p>
-                )}
-                {(selectedExperience.cities?.name || selectedExperience.city || selectedExperience.address) && (
-                  <div className="flex items-start gap-2 pt-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-muted-foreground">
-                      {selectedExperience.address && `${selectedExperience.address}, `}
-                      {selectedExperience.cities?.name || selectedExperience.city}
-                    </p>
-                  </div>
-                )}
-                {selectedExperience.sdgs && selectedExperience.sdgs.length > 0 && (
-                  <div className="pt-3 space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Obiettivi SDG</p>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedExperience.sdgs.map((sdg) => {
-                        const sdgInfo = getSDGInfo(sdg);
-                        return (
-                          <Badge key={sdg} variant="secondary" className="text-xs" title={sdgInfo?.name}>
-                            {sdg}
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </BaseModal>
-
       {/* Create Dialog */}
       <CreateExperienceDialog
         open={showCreateDialog}
@@ -737,10 +680,9 @@ function ActionButton({ tooltip, icon: Icon, onClick, className, disabled }: {
   );
 }
 
-function DraftActions({ exp, duplicating, onPreview, onEdit, onManageDates, onPublish, onDuplicate, onDelete }: {
+function DraftActions({ exp, duplicating, onEdit, onManageDates, onPublish, onDuplicate, onDelete }: {
   exp: Experience;
   duplicating: string | null;
-  onPreview: (e: Experience) => void;
   onEdit: (e: Experience) => void;
   onManageDates: (e: Experience) => void;
   onPublish: (e: Experience) => void;
@@ -749,7 +691,6 @@ function DraftActions({ exp, duplicating, onPreview, onEdit, onManageDates, onPu
 }) {
   return (
     <div className="flex items-center gap-0.5">
-      <ActionButton tooltip="Anteprima" icon={Eye} onClick={() => onPreview(exp)} className="hover:text-foreground" />
       <ActionButton tooltip="Modifica" icon={Pencil} onClick={() => onEdit(exp)} className="hover:text-foreground" />
       <ActionButton tooltip="Programma" icon={Calendar} onClick={() => onManageDates(exp)} className="hover:text-primary" />
       <ActionButton tooltip="Pubblica" icon={Send} onClick={() => onPublish(exp)} className="hover:text-green-600" />
@@ -765,10 +706,9 @@ function DraftActions({ exp, duplicating, onPreview, onEdit, onManageDates, onPu
   );
 }
 
-function PublishedActions({ exp, duplicating, onPreview, onEdit, onManageDates, onArchive, onDuplicate }: {
+function PublishedActions({ exp, duplicating, onEdit, onManageDates, onArchive, onDuplicate }: {
   exp: Experience;
   duplicating: string | null;
-  onPreview: (e: Experience) => void;
   onEdit: (e: Experience) => void;
   onManageDates: (e: Experience) => void;
   onArchive: (e: Experience) => void;
@@ -776,7 +716,6 @@ function PublishedActions({ exp, duplicating, onPreview, onEdit, onManageDates, 
 }) {
   return (
     <div className="flex items-center gap-0.5">
-      <ActionButton tooltip="Anteprima" icon={Eye} onClick={() => onPreview(exp)} className="hover:text-foreground" />
       <ActionButton tooltip="Modifica" icon={Pencil} onClick={() => onEdit(exp)} className="hover:text-foreground" />
       <ActionButton tooltip="Programma" icon={Calendar} onClick={() => onManageDates(exp)} className="hover:text-primary" />
       <ActionButton tooltip="Archivia" icon={Archive} onClick={() => onArchive(exp)} className="hover:text-amber-600" />
@@ -791,10 +730,9 @@ function PublishedActions({ exp, duplicating, onPreview, onEdit, onManageDates, 
   );
 }
 
-function ArchivedActions({ exp, duplicating, onPreview, onRepublish, onDuplicate, onDelete }: {
+function ArchivedActions({ exp, duplicating, onRepublish, onDuplicate, onDelete }: {
   exp: Experience;
   duplicating: string | null;
-  onPreview: (e: Experience) => void;
   onRepublish: (e: Experience) => void;
   onDuplicate: (e: Experience) => void;
   onDelete: (e: Experience) => void;
@@ -804,7 +742,6 @@ function ArchivedActions({ exp, duplicating, onPreview, onRepublish, onDuplicate
 
   return (
     <div className="flex items-center gap-0.5">
-      <ActionButton tooltip="Anteprima" icon={Eye} onClick={() => onPreview(exp)} className="hover:text-foreground" />
       <ActionButton tooltip="Ripubblica" icon={Send} onClick={() => onRepublish(exp)} className="hover:text-green-600" />
       <ActionButton
         tooltip="Duplica"
