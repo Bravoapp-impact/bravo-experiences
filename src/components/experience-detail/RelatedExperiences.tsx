@@ -72,7 +72,7 @@ export function RelatedExperiences({ currentExperienceId, cityId, companyId, cit
   return (
     <section>
       <h2 className="text-xl font-semibold text-foreground mb-6">
-        Altre esperienze nella stessa città
+        {cityName ? `Altre esperienze a ${cityName}` : "Altre esperienze nella stessa città"}
       </h2>
       {loading ? (
         <div className="flex gap-4 overflow-hidden">
@@ -81,10 +81,13 @@ export function RelatedExperiences({ currentExperienceId, cityId, companyId, cit
           ))}
         </div>
       ) : (
-        <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 scrollbar-hide">
-          {experiences.map((exp, i) => (
-            <ExperienceCardCompact key={exp.id} experience={exp} index={i} />
-          ))}
+        <div className="relative">
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 lg:pr-12 scrollbar-hide">
+            {experiences.map((exp, i) => (
+              <ExperienceCardCompact key={exp.id} experience={exp} index={i} />
+            ))}
+          </div>
+          <div className="hidden lg:block pointer-events-none absolute right-0 top-0 bottom-2 w-16 bg-gradient-to-l from-background to-transparent" />
         </div>
       )}
     </section>
