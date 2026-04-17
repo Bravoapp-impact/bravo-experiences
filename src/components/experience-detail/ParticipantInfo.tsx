@@ -1,5 +1,4 @@
 import { Info } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
 
 interface ParticipantInfoProps {
   info: string;
@@ -15,7 +14,6 @@ export function ParticipantInfo({ info }: ParticipantInfoProps) {
 
   return (
     <section>
-      <Separator className="mb-8" />
       <h2 className="text-xl font-semibold text-foreground mb-4">Informazioni utili</h2>
       <ul className="space-y-3">
         {lines.map((line, i) => (

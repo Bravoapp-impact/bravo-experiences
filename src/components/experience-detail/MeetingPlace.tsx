@@ -1,5 +1,4 @@
 import { MapPin, ExternalLink } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
 
 interface MeetingPlaceProps {
   address: string | null;
@@ -14,7 +13,6 @@ export function MeetingPlace({ address, cityName }: MeetingPlaceProps) {
 
   return (
     <section>
-      <Separator className="mb-8" />
       <h2 className="text-xl font-semibold text-foreground mb-4">Dove ci incontreremo</h2>
       <div className="flex items-start gap-3">
         <MapPin className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
