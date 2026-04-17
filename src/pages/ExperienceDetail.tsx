@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,17 +13,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { devLog } from "@/lib/logger";
 import type { Experience, ExperienceDate, ExperienceReview } from "@/types/experiences";
 
-// Sub-components
-import { HeroImage } from "@/components/experience-detail/HeroImage";
-import { ExperienceHeader } from "@/components/experience-detail/ExperienceHeader";
-import { WhatYouWillDo } from "@/components/experience-detail/WhatYouWillDo";
-import { ParticipantInfo } from "@/components/experience-detail/ParticipantInfo";
-import { TagsSection } from "@/components/experience-detail/TagsSection";
-import { ReviewsSection } from "@/components/experience-detail/ReviewsSection";
-import { MeetingPlace } from "@/components/experience-detail/MeetingPlace";
-import { SdgSection } from "@/components/experience-detail/SdgSection";
-import { AssociationProfile } from "@/components/experience-detail/AssociationProfile";
-import { RelatedExperiences } from "@/components/experience-detail/RelatedExperiences";
+import { ExperienceDetailContent } from "@/components/experience-detail/ExperienceDetailContent";
 import { DatesSidebar } from "@/components/experience-detail/DatesSidebar";
 import { MobileDateDrawer } from "@/components/experience-detail/MobileDateDrawer";
 
@@ -390,144 +379,23 @@ export default function ExperienceDetail() {
           Torna al catalogo
         </button>
 
-        {/* Split-screen hero: image left + header right on desktop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="lg:flex lg:gap-10 lg:items-stretch"
-        >
-          <div className="lg:w-[55%] flex-shrink-0">
-            <HeroImage imageUrl={experience.image_url} alt={experience.title} />
-          </div>
-          <div className="mt-4 lg:mt-0 lg:w-[45%] lg:flex lg:flex-col lg:justify-center">
-            <ExperienceHeader
-              title={experience.title}
-              categoryName={experience.category_name ?? experience.category}
-              cityName={experience.city_name ?? experience.city}
-              defaultHours={experience.default_hours ?? null}
-              avgRating={avgRating}
-              reviewCount={reviewCount}
-              description={experience.description}
-            />
-          </div>
-        </motion.div>
-
-        {/* Two-column layout: content + sticky sidebar */}
-        <div className="lg:flex lg:gap-12 mt-10">
-          <div className="flex-1 min-w-0">
-            {experience.description && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-              >
-                <Separator className="my-8 lg:hidden" />
-                <WhatYouWillDo description={experience.description} />
-              </motion.div>
-            )}
-
-            {experience.secondary_tags && experience.secondary_tags.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
-              >
-                <Separator className="my-8" />
-                <TagsSection tags={experience.secondary_tags} />
-              </motion.div>
-            )}
-
-            {reviews.length > 0 && avgRating !== null && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <Separator className="my-8" />
-                <ReviewsSection
-                  reviews={reviews}
-                  avgRating={avgRating}
-                  totalCount={reviewCount}
-                />
-              </motion.div>
-            )}
-
+        <ExperienceDetailContent
+          experience={experience}
+          reviews={reviews}
+          avgRating={avgRating}
+          reviewCount={reviewCount}
+          relatedCompanyId={profile?.company_id ?? null}
+          sidebarSlot={
             <motion.div
+              className="hidden lg:block w-[380px] flex-shrink-0 sticky top-24 self-start"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.35 }}
+              transition={{ delay: 0.2 }}
             >
-              <Separator className="my-8" />
-              <MeetingPlace
-                address={experience.address}
-                cityName={experience.city_name ?? experience.city}
-              />
+              <DatesSidebar {...dateProps} />
             </motion.div>
-
-            {experience.sdgs && experience.sdgs.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <Separator className="my-8" />
-                <SdgSection sdgs={experience.sdgs} />
-              </motion.div>
-            )}
-
-            {experience.association_name && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.45 }}
-              >
-                <Separator className="my-8" />
-                <AssociationProfile
-                  id={experience.association_id ?? null}
-                  name={experience.association_name}
-                  logoUrl={experience.association_logo_url ?? null}
-                  description={experience.association_description ?? null}
-                />
-              </motion.div>
-            )}
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <Separator className="my-8" />
-              <RelatedExperiences
-                currentExperienceId={experience.id}
-                cityId={experience.city_id ?? null}
-                companyId={profile?.company_id ?? null}
-                cityName={experience.city_name ?? experience.city ?? null}
-              />
-            </motion.div>
-
-          </div>
-
-          {/* Desktop sidebar */}
-          <motion.div
-            className="hidden lg:block w-[380px] flex-shrink-0 sticky top-24 self-start"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <DatesSidebar {...dateProps} />
-          </motion.div>
-        </div>
-
-        {experience.participant_info && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.55 }}
-          >
-            <Separator className="my-8" />
-            <ParticipantInfo info={experience.participant_info} />
-          </motion.div>
-        )}
+          }
+        />
       </div>
 
       {/* Mobile sticky CTA */}
