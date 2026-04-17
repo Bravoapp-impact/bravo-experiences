@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Star } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import type { ExperienceReview } from "@/types/experiences";
 
@@ -18,7 +17,6 @@ export function ReviewsSection({ reviews, avgRating, totalCount }: ReviewsSectio
 
   return (
     <section>
-      <Separator className="mb-8" />
       <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
         <Star className="h-5 w-5 fill-current" />
         {avgRating.toFixed(2)} · {totalCount} recensioni
