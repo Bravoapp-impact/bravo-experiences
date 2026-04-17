@@ -98,8 +98,7 @@ export default function HRExperiencesPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [cityFilter, setCityFilter] = useState("all");
 
-  // Preview modal
-  const [previewExp, setPreviewExp] = useState<CatalogExperience | null>(null);
+  const navigate = useNavigate();
 
   // Stats tab
   const [statsLoaded, setStatsLoaded] = useState(false);
@@ -475,25 +474,15 @@ export default function HRExperiencesPage() {
               <TooltipProvider delayDuration={300}>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {programExperiences.map((exp, i) => (
-                    <CompactCard key={exp.id} experience={exp} index={i} actions={
-                      <div className="flex items-center gap-0.5">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setPreviewExp(exp)}>
-                              <Eye className="h-3.5 w-3.5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Anteprima</TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => handleDeactivate(exp.id)}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Rimuovi dal programma</TooltipContent>
-                        </Tooltip>
-                      </div>
+                    <CompactCard key={exp.id} experience={exp} index={i} onOpen={() => navigate(`/hr/experiences/${exp.id}`)} actions={
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={(e) => { e.stopPropagation(); handleDeactivate(exp.id); }}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Rimuovi dal programma</TooltipContent>
+                      </Tooltip>
                     } />
                   ))}
                 </div>
