@@ -1,4 +1,4 @@
-import { Loader2, Calendar, Clock } from "lucide-react";
+import { Loader2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -29,7 +29,6 @@ export function HRMobileActionDrawer({
   isActive,
   isToggling,
   onToggle,
-  upcomingDatesCount,
   defaultHours,
 }: HRMobileActionDrawerProps) {
   return (
@@ -48,24 +47,14 @@ export function HRMobileActionDrawer({
               : "Attiva questa esperienza per renderla disponibile ai dipendenti della tua azienda."}
           </p>
 
-          <div className="space-y-2 pt-2 border-t border-border/50">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4 flex-shrink-0" />
-              <span>
-                {upcomingDatesCount === 0
-                  ? "Nessuna data programmata"
-                  : upcomingDatesCount === 1
-                  ? "1 data nei prossimi mesi"
-                  : `${upcomingDatesCount} date nei prossimi mesi`}
-              </span>
-            </div>
-            {defaultHours && defaultHours > 0 && (
+          {defaultHours && defaultHours > 0 && (
+            <div className="pt-2 border-t border-border/50">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4 flex-shrink-0" />
-                <span>Durata tipica: {defaultHours}h</span>
+                <span>Questa attività ha una durata di {defaultHours} ore</span>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         <DrawerFooter>
