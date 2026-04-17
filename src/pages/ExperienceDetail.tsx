@@ -414,13 +414,14 @@ export default function ExperienceDetail() {
 
         {/* Two-column layout: content + sticky sidebar */}
         <div className="lg:flex lg:gap-12">
-          <div className="flex-1 min-w-0 space-y-8">
+          <div className="flex-1 min-w-0">
             {experience.description && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
               >
+                <Separator className="my-8 lg:hidden" />
                 <WhatYouWillDo description={experience.description} />
               </motion.div>
             )}
@@ -431,6 +432,7 @@ export default function ExperienceDetail() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25 }}
               >
+                <Separator className="my-8" />
                 <TagsSection tags={experience.secondary_tags} />
               </motion.div>
             )}
@@ -441,6 +443,7 @@ export default function ExperienceDetail() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
+                <Separator className="my-8" />
                 <ReviewsSection
                   reviews={reviews}
                   avgRating={avgRating}
@@ -454,6 +457,7 @@ export default function ExperienceDetail() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35 }}
             >
+              <Separator className="my-8" />
               <MeetingPlace
                 address={experience.address}
                 cityName={experience.city_name ?? experience.city}
@@ -466,6 +470,7 @@ export default function ExperienceDetail() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               >
+                <Separator className="my-8" />
                 <SdgSection sdgs={experience.sdgs} />
               </motion.div>
             )}
@@ -476,6 +481,7 @@ export default function ExperienceDetail() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.45 }}
               >
+                <Separator className="my-8" />
                 <AssociationProfile
                   id={experience.association_id ?? null}
                   name={experience.association_name}
@@ -490,7 +496,7 @@ export default function ExperienceDetail() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
             >
-              <Separator className="mb-8" />
+              <Separator className="my-8" />
               <RelatedExperiences
                 currentExperienceId={experience.id}
                 cityId={experience.city_id ?? null}
