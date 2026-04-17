@@ -8,9 +8,10 @@ interface RelatedExperiencesProps {
   currentExperienceId: string;
   cityId: string | null;
   companyId: string | null;
+  cityName?: string | null;
 }
 
-export function RelatedExperiences({ currentExperienceId, cityId, companyId }: RelatedExperiencesProps) {
+export function RelatedExperiences({ currentExperienceId, cityId, companyId, cityName }: RelatedExperiencesProps) {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
 
