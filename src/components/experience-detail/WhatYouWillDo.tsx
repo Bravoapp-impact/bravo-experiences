@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Separator } from "@/components/ui/separator";
 
 interface WhatYouWillDoProps {
   description: string;
@@ -11,7 +10,6 @@ export function WhatYouWillDo({ description }: WhatYouWillDoProps) {
 
   return (
     <section>
-      <Separator className="mb-8" />
       <h2 className="text-xl font-semibold text-foreground mb-4">Cosa farai</h2>
       <div className="relative">
         <p
