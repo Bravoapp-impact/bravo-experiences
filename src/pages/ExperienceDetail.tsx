@@ -485,6 +485,19 @@ export default function ExperienceDetail() {
               </motion.div>
             )}
 
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <RelatedExperiences
+                currentExperienceId={experience.id}
+                cityId={experience.city_id ?? null}
+                companyId={profile?.company_id ?? null}
+                cityName={experience.city_name ?? experience.city ?? null}
+              />
+            </motion.div>
+
           </div>
 
           {/* Desktop sidebar */}
@@ -498,18 +511,16 @@ export default function ExperienceDetail() {
           </motion.div>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <Separator className="mb-8" />
-          <RelatedExperiences
-            currentExperienceId={experience.id}
-            cityId={experience.city_id ?? null}
-            companyId={profile?.company_id ?? null}
-          />
-        </motion.div>
+        {experience.participant_info && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55 }}
+          >
+            <Separator className="mt-16 mb-10" />
+            <ParticipantInfo info={experience.participant_info} />
+          </motion.div>
+        )}
       </div>
 
       {/* Mobile sticky CTA */}
