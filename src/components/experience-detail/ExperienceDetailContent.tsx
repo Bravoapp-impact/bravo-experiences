@@ -12,6 +12,7 @@ import { MeetingPlace } from "./MeetingPlace";
 import { SdgSection } from "./SdgSection";
 import { AssociationProfile } from "./AssociationProfile";
 import { RelatedExperiences } from "./RelatedExperiences";
+import { UpcomingDatesSection, type UpcomingDateItem } from "./UpcomingDatesSection";
 
 import type { Experience, ExperienceReview } from "@/types/experiences";
 
@@ -26,6 +27,13 @@ interface ExperienceDetailContentProps {
   sidebarSlot?: ReactNode;
   /** Optional slot rendered at the very end (e.g. MobileDateDrawer). */
   mobileDrawerSlot?: ReactNode;
+  /**
+   * Optional list of upcoming dates rendered as an informational
+   * "Quando si svolge" section in the main column (after MeetingPlace).
+   * Used by HR/association detail pages where there is no booking sidebar.
+   * If omitted, the section is not rendered (employee context).
+   */
+  upcomingDates?: UpcomingDateItem[];
 }
 
 /**
@@ -41,6 +49,7 @@ export function ExperienceDetailContent({
   relatedCompanyId = null,
   sidebarSlot,
   mobileDrawerSlot,
+  upcomingDates,
 }: ExperienceDetailContentProps) {
   return (
     <>
@@ -117,6 +126,17 @@ export function ExperienceDetailContent({
               cityName={experience.city_name ?? experience.city}
             />
           </motion.div>
+
+          {upcomingDates && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.38 }}
+            >
+              <Separator className="my-8" />
+              <UpcomingDatesSection dates={upcomingDates} />
+            </motion.div>
+          )}
 
           {experience.sdgs && experience.sdgs.length > 0 && (
             <motion.div
