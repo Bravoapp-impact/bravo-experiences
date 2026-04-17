@@ -1,17 +1,18 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AssociationLayout } from "@/components/layout/AssociationLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Loader2, MapPin, Eye, PackageOpen, Plus, Pencil, Trash2, FileText,
+  Loader2, MapPin, PackageOpen, Plus, Pencil, Trash2, FileText,
   CheckCircle2, Archive, ChevronRight, Calendar, Send, Copy, MoreHorizontal,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BaseCardImage } from "@/components/common/BaseCardImage";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { BaseModal, ModalCloseButton } from "@/components/common/BaseModal";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DeleteConfirmDialog } from "@/components/crud/DeleteConfirmDialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
