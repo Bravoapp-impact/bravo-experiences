@@ -2,19 +2,20 @@ import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ExperienceCardCompact } from "@/components/experiences/ExperienceCardCompact";
 import { supabase } from "@/integrations/supabase/client";
-import type { Experience, ExperienceDate } from "@/types/experiences";
+import type { Experience } from "@/types/experiences";
 
 interface RelatedExperiencesProps {
   currentExperienceId: string;
   cityId: string | null;
+  companyId: string | null;
 }
 
-export function RelatedExperiences({ currentExperienceId, cityId }: RelatedExperiencesProps) {
+export function RelatedExperiences({ currentExperienceId, cityId, companyId }: RelatedExperiencesProps) {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!cityId) {
+    if (!cityId || !companyId) {
       setLoading(false);
       return;
     }
@@ -25,13 +26,13 @@ export function RelatedExperiences({ currentExperienceId, cityId }: RelatedExper
         .select(`
           id, title, description, image_url, association_name, city, address, category, sdgs,
           associations:association_id (logo_url),
-          experience_dates!inner (id, start_datetime, end_datetime, max_participants)
+          experience_companies!inner (company_id)
         `)
         .eq("city_id", cityId)
         .eq("status", "published")
         .eq("visibility", "public")
         .neq("id", currentExperienceId)
-        .gte("experience_dates.start_datetime", new Date().toISOString())
+        .eq("experience_companies.company_id", companyId)
         .limit(6);
 
       if (data) {
@@ -46,13 +47,7 @@ export function RelatedExperiences({ currentExperienceId, cityId }: RelatedExper
           address: e.address,
           category: e.category,
           sdgs: e.sdgs ?? [],
-          experience_dates: (e.experience_dates || []).map((d: any) => ({
-            id: d.id,
-            start_datetime: d.start_datetime,
-            end_datetime: d.end_datetime,
-            max_participants: d.max_participants,
-            confirmed_count: 0,
-          })),
+          experience_dates: [],
         }));
         setExperiences(mapped);
       }
@@ -60,7 +55,7 @@ export function RelatedExperiences({ currentExperienceId, cityId }: RelatedExper
     };
 
     fetch();
-  }, [cityId, currentExperienceId]);
+  }, [cityId, currentExperienceId, companyId]);
 
   if (!loading && experiences.length === 0) return null;
 
