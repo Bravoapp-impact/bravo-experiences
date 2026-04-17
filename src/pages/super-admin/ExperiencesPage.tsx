@@ -295,11 +295,20 @@ export default function ExperiencesPage() {
   };
 
   const handleSave = async () => {
-    if (!formData.title.trim()) {
+    const trimmedTitle = formData.title.trim();
+    if (!trimmedTitle) {
       toast({
         variant: "destructive",
         title: "Errore",
         description: "Il titolo è obbligatorio",
+      });
+      return;
+    }
+    if (trimmedTitle.length < 20 || trimmedTitle.length > 80) {
+      toast({
+        variant: "destructive",
+        title: "Errore",
+        description: "Il titolo deve avere tra 20 e 80 caratteri",
       });
       return;
     }
@@ -802,7 +811,21 @@ export default function ExperiencesPage() {
                   setFormData({ ...formData, title: e.target.value })
                 }
                 placeholder="Titolo esperienza"
+                maxLength={80}
               />
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">Tra 20 e 80 caratteri</p>
+                <p
+                  className={`text-xs ${
+                    formData.title.trim().length > 0 &&
+                    (formData.title.trim().length < 20 || formData.title.trim().length > 80)
+                      ? "text-destructive"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {formData.title.trim().length}/80
+                </p>
+              </div>
             </div>
 
             <div className="space-y-2">

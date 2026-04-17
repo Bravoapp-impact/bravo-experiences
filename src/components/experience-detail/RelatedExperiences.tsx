@@ -140,7 +140,7 @@ export function RelatedExperiences({ currentExperienceId, cityId, companyId, cit
         <div className="relative">
           <div
             ref={scrollerRef}
-            className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 lg:pr-12 scrollbar-hide scroll-smooth"
+            className="flex items-start gap-3 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 lg:pr-12 scrollbar-hide scroll-smooth"
           >
             {experiences.map((exp, i) => (
               <ExperienceCardCompact key={exp.id} experience={exp} index={i} />
