@@ -1,4 +1,3 @@
-import { Separator } from "@/components/ui/separator";
 import { SDG_DATA } from "@/lib/sdg-data";
 
 interface SdgSectionProps {
@@ -11,7 +10,6 @@ export function SdgSection({ sdgs }: SdgSectionProps) {
 
   return (
     <section>
-      <Separator className="mb-8" />
       <h2 className="text-xl font-semibold text-foreground mb-4">Obiettivi di impatto</h2>
       <div className="flex flex-wrap gap-2">
         {validSdgs.map((sdg) => (
