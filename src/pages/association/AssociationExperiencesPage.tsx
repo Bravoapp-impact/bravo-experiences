@@ -1,17 +1,16 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AssociationLayout } from "@/components/layout/AssociationLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Loader2, MapPin, Eye, PackageOpen, Plus, Pencil, Trash2, FileText,
+  Loader2, MapPin, PackageOpen, Plus, Pencil, Trash2, FileText,
   CheckCircle2, Archive, ChevronRight, Calendar, Send, Copy, MoreHorizontal,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BaseCardImage } from "@/components/common/BaseCardImage";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { BaseModal, ModalCloseButton } from "@/components/common/BaseModal";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DeleteConfirmDialog } from "@/components/crud/DeleteConfirmDialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -23,7 +22,6 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { devLog } from "@/lib/logger";
-import { getSDGInfo } from "@/lib/sdg-data";
 import { CreateExperienceDialog } from "@/components/association/CreateExperienceDialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -55,10 +53,10 @@ interface Experience {
 
 export default function AssociationExperiencesPage() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [loading, setLoading] = useState(true);
   const [experiences, setExperiences] = useState<Experience[]>([]);
-  const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editExperience, setEditExperience] = useState<Experience | null>(null);
   const [deleteExperience, setDeleteExperience] = useState<Experience | null>(null);
@@ -366,12 +364,11 @@ export default function AssociationExperiencesPage() {
                         key={exp.id}
                         experience={exp}
                         index={i}
-                        onPreview={setSelectedExperience}
+                        onNavigate={() => navigate(`/association/experiences/${exp.id}`)}
                         actions={
                           isMobile ? (
                             <MobileActions
                               items={[
-                                { label: "Anteprima", icon: Eye, onClick: () => setSelectedExperience(exp) },
                                 { label: "Modifica", icon: Pencil, onClick: () => setEditExperience(exp) },
                                 { label: "Programma", icon: Calendar, onClick: () => setManageDatesExperience(exp) },
                                 { label: "Pubblica", icon: Send, onClick: () => setPublishExperience(exp) },
@@ -383,7 +380,6 @@ export default function AssociationExperiencesPage() {
                             <DraftActions
                               exp={exp}
                               duplicating={duplicating}
-                              onPreview={setSelectedExperience}
                               onEdit={setEditExperience}
                               onManageDates={setManageDatesExperience}
                               onPublish={setPublishExperience}
@@ -412,12 +408,11 @@ export default function AssociationExperiencesPage() {
                         key={exp.id}
                         experience={exp}
                         index={i}
-                        onPreview={setSelectedExperience}
+                        onNavigate={() => navigate(`/association/experiences/${exp.id}`)}
                         actions={
                           isMobile ? (
                             <MobileActions
                               items={[
-                                { label: "Anteprima", icon: Eye, onClick: () => setSelectedExperience(exp) },
                                 { label: "Modifica", icon: Pencil, onClick: () => setEditExperience(exp) },
                                 { label: "Programma", icon: Calendar, onClick: () => setManageDatesExperience(exp) },
                                 { label: "Archivia", icon: Archive, onClick: () => handleArchiveRequest(exp) },
@@ -428,7 +423,6 @@ export default function AssociationExperiencesPage() {
                             <PublishedActions
                               exp={exp}
                               duplicating={duplicating}
-                              onPreview={setSelectedExperience}
                               onEdit={setEditExperience}
                               onManageDates={setManageDatesExperience}
                               onArchive={handleArchiveRequest}
@@ -459,12 +453,11 @@ export default function AssociationExperiencesPage() {
                           key={exp.id}
                           experience={exp}
                           index={i}
-                          onPreview={setSelectedExperience}
+                          onNavigate={() => navigate(`/association/experiences/${exp.id}`)}
                           actions={
                             isMobile ? (
                               <MobileActions
                                 items={[
-                                  { label: "Anteprima", icon: Eye, onClick: () => setSelectedExperience(exp) },
                                   { label: "Ripubblica", icon: Send, onClick: () => setPublishExperience(exp) },
                                   { label: "Duplica", icon: Copy, onClick: () => handleDuplicate(exp) },
                                   ...(exp._hasBookings === false
@@ -476,7 +469,6 @@ export default function AssociationExperiencesPage() {
                               <ArchivedActions
                                 exp={exp}
                                 duplicating={duplicating}
-                                onPreview={setSelectedExperience}
                                 onRepublish={setPublishExperience}
                                 onDuplicate={handleDuplicate}
                                 onDelete={handleDeleteArchived}
@@ -493,63 +485,6 @@ export default function AssociationExperiencesPage() {
           </TooltipProvider>
         )}
       </div>
-
-      {/* Preview Modal */}
-      <BaseModal open={!!selectedExperience} onClose={() => setSelectedExperience(null)}>
-        {selectedExperience && (
-          <div className="flex flex-col h-full sm:max-h-[85vh] overflow-hidden">
-            <div className="absolute top-4 right-4 z-10">
-              <ModalCloseButton onClick={() => setSelectedExperience(null)} />
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {selectedExperience.image_url && (
-                <AspectRatio ratio={16 / 9}>
-                  <img src={selectedExperience.image_url} alt={selectedExperience.title} className="object-cover w-full h-full" />
-                </AspectRatio>
-              )}
-              <div className="p-5 space-y-4">
-                <div className="flex flex-wrap gap-2">
-                  {(selectedExperience.categories?.name || selectedExperience.category) && (
-                    <Badge variant="outline">
-                      {selectedExperience.categories?.name || selectedExperience.category}
-                    </Badge>
-                  )}
-                </div>
-                <h2 className="text-xl font-bold text-foreground leading-tight">{selectedExperience.title}</h2>
-                {selectedExperience.description && (
-                  <p className="text-[15px] text-muted-foreground font-light leading-relaxed whitespace-pre-wrap">
-                    {selectedExperience.description}
-                  </p>
-                )}
-                {(selectedExperience.cities?.name || selectedExperience.city || selectedExperience.address) && (
-                  <div className="flex items-start gap-2 pt-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-muted-foreground">
-                      {selectedExperience.address && `${selectedExperience.address}, `}
-                      {selectedExperience.cities?.name || selectedExperience.city}
-                    </p>
-                  </div>
-                )}
-                {selectedExperience.sdgs && selectedExperience.sdgs.length > 0 && (
-                  <div className="pt-3 space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Obiettivi SDG</p>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedExperience.sdgs.map((sdg) => {
-                        const sdgInfo = getSDGInfo(sdg);
-                        return (
-                          <Badge key={sdg} variant="secondary" className="text-xs" title={sdgInfo?.name}>
-                            {sdg}
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </BaseModal>
 
       {/* Create Dialog */}
       <CreateExperienceDialog
@@ -666,10 +601,10 @@ function StatusSection({ icon, title, count, iconClassName, children }: {
   );
 }
 
-function ExperienceCompactCard({ experience, index, onPreview, actions }: {
+function ExperienceCompactCard({ experience, index, onNavigate, actions }: {
   experience: Experience;
   index: number;
-  onPreview: (e: Experience) => void;
+  onNavigate: () => void;
   actions: React.ReactNode;
 }) {
   const categoryName = experience.categories?.name || experience.category;
@@ -682,26 +617,37 @@ function ExperienceCompactCard({ experience, index, onPreview, actions }: {
       transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
       className="group"
     >
-      <BaseCardImage
-        imageUrl={experience.image_url}
-        alt={experience.title}
-        aspectRatio="square"
-      />
-      <div className="pt-2 space-y-1">
-        <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug">
-          {experience.title}
-        </h3>
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
-          {categoryName && <span className="truncate">{categoryName}</span>}
-          {categoryName && cityName && <span>·</span>}
-          {cityName && (
-            <span className="flex items-center gap-0.5 truncate">
-              <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
-              {cityName}
-            </span>
-          )}
+      <button
+        type="button"
+        onClick={onNavigate}
+        className="block w-full text-left rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <BaseCardImage
+          imageUrl={experience.image_url}
+          alt={experience.title}
+          aspectRatio="square"
+        />
+        <div className="pt-2 space-y-1">
+          <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+            {experience.title}
+          </h3>
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
+            {categoryName && <span className="truncate">{categoryName}</span>}
+            {categoryName && cityName && <span>·</span>}
+            {cityName && (
+              <span className="flex items-center gap-0.5 truncate">
+                <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
+                {cityName}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="pt-0.5">{actions}</div>
+      </button>
+      <div
+        className="pt-0.5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {actions}
       </div>
     </motion.div>
   );
@@ -734,10 +680,9 @@ function ActionButton({ tooltip, icon: Icon, onClick, className, disabled }: {
   );
 }
 
-function DraftActions({ exp, duplicating, onPreview, onEdit, onManageDates, onPublish, onDuplicate, onDelete }: {
+function DraftActions({ exp, duplicating, onEdit, onManageDates, onPublish, onDuplicate, onDelete }: {
   exp: Experience;
   duplicating: string | null;
-  onPreview: (e: Experience) => void;
   onEdit: (e: Experience) => void;
   onManageDates: (e: Experience) => void;
   onPublish: (e: Experience) => void;
@@ -746,7 +691,6 @@ function DraftActions({ exp, duplicating, onPreview, onEdit, onManageDates, onPu
 }) {
   return (
     <div className="flex items-center gap-0.5">
-      <ActionButton tooltip="Anteprima" icon={Eye} onClick={() => onPreview(exp)} className="hover:text-foreground" />
       <ActionButton tooltip="Modifica" icon={Pencil} onClick={() => onEdit(exp)} className="hover:text-foreground" />
       <ActionButton tooltip="Programma" icon={Calendar} onClick={() => onManageDates(exp)} className="hover:text-primary" />
       <ActionButton tooltip="Pubblica" icon={Send} onClick={() => onPublish(exp)} className="hover:text-green-600" />
@@ -762,10 +706,9 @@ function DraftActions({ exp, duplicating, onPreview, onEdit, onManageDates, onPu
   );
 }
 
-function PublishedActions({ exp, duplicating, onPreview, onEdit, onManageDates, onArchive, onDuplicate }: {
+function PublishedActions({ exp, duplicating, onEdit, onManageDates, onArchive, onDuplicate }: {
   exp: Experience;
   duplicating: string | null;
-  onPreview: (e: Experience) => void;
   onEdit: (e: Experience) => void;
   onManageDates: (e: Experience) => void;
   onArchive: (e: Experience) => void;
@@ -773,7 +716,6 @@ function PublishedActions({ exp, duplicating, onPreview, onEdit, onManageDates, 
 }) {
   return (
     <div className="flex items-center gap-0.5">
-      <ActionButton tooltip="Anteprima" icon={Eye} onClick={() => onPreview(exp)} className="hover:text-foreground" />
       <ActionButton tooltip="Modifica" icon={Pencil} onClick={() => onEdit(exp)} className="hover:text-foreground" />
       <ActionButton tooltip="Programma" icon={Calendar} onClick={() => onManageDates(exp)} className="hover:text-primary" />
       <ActionButton tooltip="Archivia" icon={Archive} onClick={() => onArchive(exp)} className="hover:text-amber-600" />
@@ -788,10 +730,9 @@ function PublishedActions({ exp, duplicating, onPreview, onEdit, onManageDates, 
   );
 }
 
-function ArchivedActions({ exp, duplicating, onPreview, onRepublish, onDuplicate, onDelete }: {
+function ArchivedActions({ exp, duplicating, onRepublish, onDuplicate, onDelete }: {
   exp: Experience;
   duplicating: string | null;
-  onPreview: (e: Experience) => void;
   onRepublish: (e: Experience) => void;
   onDuplicate: (e: Experience) => void;
   onDelete: (e: Experience) => void;
@@ -801,7 +742,6 @@ function ArchivedActions({ exp, duplicating, onPreview, onRepublish, onDuplicate
 
   return (
     <div className="flex items-center gap-0.5">
-      <ActionButton tooltip="Anteprima" icon={Eye} onClick={() => onPreview(exp)} className="hover:text-foreground" />
       <ActionButton tooltip="Ripubblica" icon={Send} onClick={() => onRepublish(exp)} className="hover:text-green-600" />
       <ActionButton
         tooltip="Duplica"
