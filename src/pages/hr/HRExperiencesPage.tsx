@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Calendar, CheckCircle2, Eye, MapPin, PackageOpen, Plus, Search, Trash2,
+  Calendar, CheckCircle2, MapPin, PackageOpen, Plus, Search, Trash2,
 } from "lucide-react";
 import { HRLayout } from "@/components/layout/HRLayout";
 import { HRExperienceMetrics } from "@/components/hr/HRExperienceMetrics";
@@ -16,18 +17,13 @@ import { LoadingState } from "@/components/common/LoadingState";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BaseCardImage } from "@/components/common/BaseCardImage";
-import { BaseModal, ModalCloseButton } from "@/components/common/BaseModal";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { getSDGInfo } from "@/lib/sdg-data";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 
 /* ── Types ── */
 
