@@ -136,7 +136,12 @@ export function ExperienceForm({
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
-    if (!title.trim()) errs.title = "Il titolo è obbligatorio";
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) {
+      errs.title = "Il titolo è obbligatorio";
+    } else if (trimmedTitle.length < 20 || trimmedTitle.length > 80) {
+      errs.title = "Il titolo deve avere tra 20 e 80 caratteri";
+    }
     if (!description.trim()) errs.description = "La descrizione è obbligatoria";
     if (!categoryId) errs.categoryId = "Seleziona una categoria";
     if (!cityId) errs.cityId = "Seleziona una città";
@@ -199,14 +204,27 @@ export function ExperienceForm({
           <Label htmlFor="exp-title">Titolo *</Label>
           <Input
             id="exp-title"
-            placeholder="Es. Pulizia parco cittadino"
+            placeholder="Es. Pulizia parco cittadino con i bambini"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            maxLength={200}
+            maxLength={80}
           />
-          {errors.title && (
-            <p className="text-sm text-destructive">{errors.title}</p>
-          )}
+          <div className="flex items-center justify-between">
+            {errors.title ? (
+              <p className="text-sm text-destructive">{errors.title}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">Tra 20 e 80 caratteri</p>
+            )}
+            <p
+              className={`text-xs ${
+                title.trim().length > 0 && (title.trim().length < 20 || title.trim().length > 80)
+                  ? "text-destructive"
+                  : "text-muted-foreground"
+              }`}
+            >
+              {title.trim().length}/80
+            </p>
+          </div>
         </div>
 
         {/* Descrizione */}
