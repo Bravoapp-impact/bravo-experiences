@@ -658,10 +658,10 @@ function StatusSection({ icon, title, count, iconClassName, children }: {
   );
 }
 
-function ExperienceCompactCard({ experience, index, onPreview, actions }: {
+function ExperienceCompactCard({ experience, index, onNavigate, actions }: {
   experience: Experience;
   index: number;
-  onPreview: (e: Experience) => void;
+  onNavigate: () => void;
   actions: React.ReactNode;
 }) {
   const categoryName = experience.categories?.name || experience.category;
@@ -674,26 +674,37 @@ function ExperienceCompactCard({ experience, index, onPreview, actions }: {
       transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
       className="group"
     >
-      <BaseCardImage
-        imageUrl={experience.image_url}
-        alt={experience.title}
-        aspectRatio="square"
-      />
-      <div className="pt-2 space-y-1">
-        <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug">
-          {experience.title}
-        </h3>
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
-          {categoryName && <span className="truncate">{categoryName}</span>}
-          {categoryName && cityName && <span>·</span>}
-          {cityName && (
-            <span className="flex items-center gap-0.5 truncate">
-              <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
-              {cityName}
-            </span>
-          )}
+      <button
+        type="button"
+        onClick={onNavigate}
+        className="block w-full text-left rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <BaseCardImage
+          imageUrl={experience.image_url}
+          alt={experience.title}
+          aspectRatio="square"
+        />
+        <div className="pt-2 space-y-1">
+          <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+            {experience.title}
+          </h3>
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
+            {categoryName && <span className="truncate">{categoryName}</span>}
+            {categoryName && cityName && <span>·</span>}
+            {cityName && (
+              <span className="flex items-center gap-0.5 truncate">
+                <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
+                {cityName}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="pt-0.5">{actions}</div>
+      </button>
+      <div
+        className="pt-0.5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {actions}
       </div>
     </motion.div>
   );
