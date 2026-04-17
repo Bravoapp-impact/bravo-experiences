@@ -72,8 +72,12 @@ export function HRMobileActionDrawer({
           <Button
             onClick={onToggle}
             disabled={isToggling}
-            variant={isActive ? "outline" : "default"}
-            className="w-full h-12 text-base font-medium rounded-xl"
+            variant="outline"
+            className={
+              isActive
+                ? "w-full h-12 text-base font-medium rounded-xl border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                : "w-full h-12 text-base font-medium rounded-xl border-success/30 bg-success/10 text-success hover:bg-success/15 hover:text-success"
+            }
           >
             {isToggling ? (
               <Loader2 className="h-5 w-5 animate-spin" />
