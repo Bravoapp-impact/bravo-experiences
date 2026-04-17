@@ -31,7 +31,7 @@ import { MobileDateDrawer } from "@/components/experience-detail/MobileDateDrawe
 export default function ExperienceDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const { remainingHours, isUnlimited, budgetHours, loading: budgetLoading } = useHourBudget();
@@ -518,6 +518,7 @@ export default function ExperienceDetail() {
           <RelatedExperiences
             currentExperienceId={experience.id}
             cityId={experience.city_id ?? null}
+            companyId={profile?.company_id ?? null}
           />
         </motion.div>
       </div>
