@@ -347,7 +347,7 @@ export default function HRExperienceDetail() {
       {/* Mobile sticky CTA */}
       {isMobile && (
         <>
-          <div className="fixed bottom-16 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border z-40">
+          <div className="fixed bottom-0 left-0 right-0 p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] bg-background/95 backdrop-blur-sm border-t border-border z-40">
             <Button
               onClick={() =>
                 isActive ? setDrawerOpen(true) : handleToggle()
