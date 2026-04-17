@@ -344,8 +344,8 @@ export default function HRExperienceDetail() {
                 isActive ? setDrawerOpen(true) : handleToggle()
               }
               disabled={isToggling}
-              variant={isActive ? "outline" : "default"}
-              className="w-full h-12 text-base font-medium rounded-xl"
+              variant="outline"
+              className="w-full h-12 text-base font-medium rounded-xl border-success/30 bg-success/10 text-success hover:bg-success/15 hover:text-success"
             >
               {isActive ? (
                 <>
