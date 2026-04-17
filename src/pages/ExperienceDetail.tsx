@@ -413,7 +413,7 @@ export default function ExperienceDetail() {
         </motion.div>
 
         {/* Two-column layout: content + sticky sidebar */}
-        <div className="lg:flex lg:gap-12">
+        <div className="lg:flex lg:gap-12 mt-10">
           <div className="flex-1 min-w-0">
             {experience.description && (
               <motion.div
