@@ -425,16 +425,6 @@ export default function ExperienceDetail() {
               </motion.div>
             )}
 
-            {experience.participant_info && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <ParticipantInfo info={experience.participant_info} />
-              </motion.div>
-            )}
-
             {experience.secondary_tags && experience.secondary_tags.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
