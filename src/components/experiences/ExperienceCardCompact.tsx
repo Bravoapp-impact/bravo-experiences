@@ -10,9 +10,10 @@ import type { Experience, ExperienceDate } from "@/types/experiences";
 interface ExperienceCardCompactProps {
   experience: Experience;
   index: number;
+  className?: string;
 }
 
-export function ExperienceCardCompact({ experience, index }: ExperienceCardCompactProps) {
+export function ExperienceCardCompact({ experience, index, className }: ExperienceCardCompactProps) {
   const navigate = useNavigate();
   const nextDate = experience.experience_dates?.[0];
   const availableSpots = nextDate
@@ -32,7 +33,7 @@ export function ExperienceCardCompact({ experience, index }: ExperienceCardCompa
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
       onClick={() => navigate(`/app/experiences/${experience.id}`)}
-      className={`group flex-shrink-0 w-[145px] sm:w-[165px] md:w-[200px] text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 rounded-2xl ${isFull ? "opacity-60" : ""}`}
+      className={`group flex-shrink-0 ${className ?? "w-[145px] sm:w-[165px] md:w-[200px]"} text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 rounded-2xl ${isFull ? "opacity-60" : ""}`}
     >
       {/* Square Image with category badge + "Completo" overlay */}
       <div className="relative">
@@ -62,30 +63,32 @@ export function ExperienceCardCompact({ experience, index }: ExperienceCardCompa
 
       {/* Content */}
       <div className="pt-2 space-y-1">
-        {/* Title - regular weight, more natural */}
-        <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug transition-colors">
+        {/* Title - fixed 2-line height for alignment */}
+        <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug transition-colors min-h-[2.5rem]">
           {experience.title}
         </h3>
 
-        {/* Association with logo */}
-        {experience.association_name && (
-          <div className="flex items-center gap-1">
-            {experience.association_logo_url ? (
-              <img
-                src={experience.association_logo_url}
-                alt=""
-                className="w-3.5 h-3.5 rounded-full object-cover flex-shrink-0"
-              />
-            ) : (
-              <div className="w-3.5 h-3.5 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                <span className="text-[7px]">🏢</span>
-              </div>
-            )}
-            <p className="text-[11px] text-muted-foreground font-light truncate">
-              {experience.association_name}
-            </p>
-          </div>
-        )}
+        {/* Association with logo - reserved 1-line space */}
+        <div className="min-h-[1.25rem]">
+          {experience.association_name && (
+            <div className="flex items-center gap-1">
+              {experience.association_logo_url ? (
+                <img
+                  src={experience.association_logo_url}
+                  alt=""
+                  className="w-3.5 h-3.5 rounded-full object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="w-3.5 h-3.5 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                  <span className="text-[7px]">🏢</span>
+                </div>
+              )}
+              <p className="text-[11px] text-muted-foreground font-light truncate">
+                {experience.association_name}
+              </p>
+            </div>
+          )}
+        </div>
 
         {/* Date + Duration + Spots - lighter text */}
         {nextDate && (
