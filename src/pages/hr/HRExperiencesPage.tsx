@@ -429,11 +429,11 @@ export default function HRExperiencesPage() {
               <TooltipProvider delayDuration={300}>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {filteredCatalog.map((exp, i) => (
-                    <CompactCard key={exp.id} experience={exp} index={i} actions={
+                    <CompactCard key={exp.id} experience={exp} index={i} onOpen={() => navigate(`/hr/experiences/${exp.id}`)} actions={
                       activatedIds.has(exp.id) ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="inline-flex items-center gap-1 text-[11px] text-green-600 font-medium">
+                            <span className="inline-flex items-center gap-1 text-[11px] text-primary font-medium">
                               <CheckCircle2 className="h-3.5 w-3.5" />
                               Nel programma
                             </span>
@@ -447,7 +447,7 @@ export default function HRExperiencesPage() {
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7 text-muted-foreground hover:text-primary"
-                              onClick={() => handleActivate(exp.id)}
+                              onClick={(e) => { e.stopPropagation(); handleActivate(exp.id); }}
                             >
                               <Plus className="h-3.5 w-3.5" />
                             </Button>
