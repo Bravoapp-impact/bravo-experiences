@@ -17,7 +17,7 @@ export function SdgSection({ sdgs }: SdgSectionProps) {
         {validSdgs.map((sdg) => (
           <div
             key={sdg.code}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transform-gpu"
             style={{
               backgroundColor: `${sdg.color}15`,
               color: sdg.color,
