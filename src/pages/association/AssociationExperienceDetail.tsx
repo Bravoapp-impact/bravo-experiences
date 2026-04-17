@@ -18,6 +18,7 @@ import type { UpcomingDateItem } from "@/components/experience-detail/UpcomingDa
 import { AssociationDetailSidebar } from "@/components/association/AssociationDetailSidebar";
 import { AssociationMobileEditDrawer } from "@/components/association/AssociationMobileEditDrawer";
 import { CreateExperienceDialog } from "@/components/association/CreateExperienceDialog";
+import { ManageDatesDialog } from "@/components/association/ManageDatesDialog";
 
 interface ExperienceWithStatus extends Experience {
   status: string;
@@ -53,8 +54,9 @@ export default function AssociationExperienceDetail() {
   const [avgRating, setAvgRating] = useState<number | null>(null);
   const [reviewCount, setReviewCount] = useState(0);
 
-  // Edit dialog + mobile drawer
+  // Edit dialog + manage dates dialog + mobile drawer
   const [editOpen, setEditOpen] = useState(false);
+  const [datesOpen, setDatesOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // ─── Fetch experience ───
@@ -234,6 +236,29 @@ export default function AssociationExperienceDetail() {
     setEditOpen(true);
   };
 
+  const handleOpenDates = () => {
+    setDrawerOpen(false);
+    setDatesOpen(true);
+  };
+
+  const refetchDates = useCallback(async () => {
+    if (!id) return;
+    const { data } = await supabase
+      .from("experience_dates")
+      .select("id, start_datetime, end_datetime, volunteer_hours")
+      .eq("experience_id", id)
+      .gte("start_datetime", new Date().toISOString())
+      .order("start_datetime", { ascending: true });
+    setUpcomingDates(
+      (data || []).map((d) => ({
+        id: d.id,
+        start_datetime: d.start_datetime,
+        end_datetime: d.end_datetime,
+        volunteer_hours: d.volunteer_hours,
+      }))
+    );
+  }, [id]);
+
   // ─── Loading ───
   if (loading) {
     return (
@@ -288,6 +313,7 @@ export default function AssociationExperienceDetail() {
               <AssociationDetailSidebar
                 status={experience.status}
                 onEdit={handleOpenEdit}
+                onManageDates={handleOpenDates}
               />
             </motion.div>
           }
@@ -311,6 +337,7 @@ export default function AssociationExperienceDetail() {
             open={drawerOpen}
             onOpenChange={setDrawerOpen}
             onEdit={handleOpenEdit}
+            onManageDates={handleOpenDates}
           />
         </>
       )}
@@ -341,6 +368,20 @@ export default function AssociationExperienceDetail() {
         }
         isPublished={experience.status === "published"}
       />
+
+      {/* Manage dates dialog */}
+      {experience && (
+        <ManageDatesDialog
+          open={datesOpen}
+          onOpenChange={(open) => {
+            setDatesOpen(open);
+            if (!open) refetchDates();
+          }}
+          experienceId={experience.id}
+          experienceTitle={experience.title}
+          defaultMaxParticipants={experience.max_participants ?? null}
+        />
+      )}
     </AssociationLayout>
   );
 }
