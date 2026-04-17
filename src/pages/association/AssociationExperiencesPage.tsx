@@ -11,8 +11,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BaseCardImage } from "@/components/common/BaseCardImage";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DeleteConfirmDialog } from "@/components/crud/DeleteConfirmDialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -24,7 +22,6 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { devLog } from "@/lib/logger";
-import { getSDGInfo } from "@/lib/sdg-data";
 import { CreateExperienceDialog } from "@/components/association/CreateExperienceDialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
