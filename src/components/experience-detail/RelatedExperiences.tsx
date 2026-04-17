@@ -105,28 +105,28 @@ export function RelatedExperiences({ currentExperienceId, cityId, companyId, cit
         <h2 className="text-xl font-semibold text-foreground">
           {cityName ? `Altre esperienze a ${cityName}` : "Altre esperienze nella stessa città"}
         </h2>
-        <div className="hidden lg:flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="outline"
             size="icon"
-            className="h-9 w-9 rounded-full"
+            className="h-7 w-7 lg:h-9 lg:w-9 rounded-full"
             onClick={() => scrollBy(-1)}
             disabled={!canScrollLeft}
             aria-label="Scorri indietro"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
           </Button>
           <Button
             type="button"
             variant="outline"
             size="icon"
-            className="h-9 w-9 rounded-full"
+            className="h-7 w-7 lg:h-9 lg:w-9 rounded-full"
             onClick={() => scrollBy(1)}
             disabled={!canScrollRight}
             aria-label="Scorri avanti"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
           </Button>
         </div>
       </div>
