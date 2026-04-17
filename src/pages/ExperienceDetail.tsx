@@ -524,7 +524,7 @@ export default function ExperienceDetail() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.55 }}
           >
-            <Separator className="mt-16 mb-10" />
+            <Separator className="my-8" />
             <ParticipantInfo info={experience.participant_info} />
           </motion.div>
         )}
