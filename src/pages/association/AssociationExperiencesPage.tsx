@@ -53,10 +53,10 @@ interface Experience {
 
 export default function AssociationExperiencesPage() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [loading, setLoading] = useState(true);
   const [experiences, setExperiences] = useState<Experience[]>([]);
-  const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editExperience, setEditExperience] = useState<Experience | null>(null);
   const [deleteExperience, setDeleteExperience] = useState<Experience | null>(null);
@@ -364,12 +364,11 @@ export default function AssociationExperiencesPage() {
                         key={exp.id}
                         experience={exp}
                         index={i}
-                        onPreview={setSelectedExperience}
+                        onNavigate={() => navigate(`/association/experiences/${exp.id}`)}
                         actions={
                           isMobile ? (
                             <MobileActions
                               items={[
-                                { label: "Anteprima", icon: Eye, onClick: () => setSelectedExperience(exp) },
                                 { label: "Modifica", icon: Pencil, onClick: () => setEditExperience(exp) },
                                 { label: "Programma", icon: Calendar, onClick: () => setManageDatesExperience(exp) },
                                 { label: "Pubblica", icon: Send, onClick: () => setPublishExperience(exp) },
@@ -381,7 +380,6 @@ export default function AssociationExperiencesPage() {
                             <DraftActions
                               exp={exp}
                               duplicating={duplicating}
-                              onPreview={setSelectedExperience}
                               onEdit={setEditExperience}
                               onManageDates={setManageDatesExperience}
                               onPublish={setPublishExperience}
@@ -410,12 +408,11 @@ export default function AssociationExperiencesPage() {
                         key={exp.id}
                         experience={exp}
                         index={i}
-                        onPreview={setSelectedExperience}
+                        onNavigate={() => navigate(`/association/experiences/${exp.id}`)}
                         actions={
                           isMobile ? (
                             <MobileActions
                               items={[
-                                { label: "Anteprima", icon: Eye, onClick: () => setSelectedExperience(exp) },
                                 { label: "Modifica", icon: Pencil, onClick: () => setEditExperience(exp) },
                                 { label: "Programma", icon: Calendar, onClick: () => setManageDatesExperience(exp) },
                                 { label: "Archivia", icon: Archive, onClick: () => handleArchiveRequest(exp) },
@@ -426,7 +423,6 @@ export default function AssociationExperiencesPage() {
                             <PublishedActions
                               exp={exp}
                               duplicating={duplicating}
-                              onPreview={setSelectedExperience}
                               onEdit={setEditExperience}
                               onManageDates={setManageDatesExperience}
                               onArchive={handleArchiveRequest}
@@ -457,12 +453,11 @@ export default function AssociationExperiencesPage() {
                           key={exp.id}
                           experience={exp}
                           index={i}
-                          onPreview={setSelectedExperience}
+                          onNavigate={() => navigate(`/association/experiences/${exp.id}`)}
                           actions={
                             isMobile ? (
                               <MobileActions
                                 items={[
-                                  { label: "Anteprima", icon: Eye, onClick: () => setSelectedExperience(exp) },
                                   { label: "Ripubblica", icon: Send, onClick: () => setPublishExperience(exp) },
                                   { label: "Duplica", icon: Copy, onClick: () => handleDuplicate(exp) },
                                   ...(exp._hasBookings === false
@@ -474,7 +469,6 @@ export default function AssociationExperiencesPage() {
                               <ArchivedActions
                                 exp={exp}
                                 duplicating={duplicating}
-                                onPreview={setSelectedExperience}
                                 onRepublish={setPublishExperience}
                                 onDuplicate={handleDuplicate}
                                 onDelete={handleDeleteArchived}
