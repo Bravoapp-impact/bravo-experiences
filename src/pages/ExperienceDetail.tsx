@@ -490,6 +490,7 @@ export default function ExperienceDetail() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
             >
+              <Separator className="mb-8" />
               <RelatedExperiences
                 currentExperienceId={experience.id}
                 cityId={experience.city_id ?? null}

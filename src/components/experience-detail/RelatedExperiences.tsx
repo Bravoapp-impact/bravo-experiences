@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { ExperienceCardCompact } from "@/components/experiences/ExperienceCardCompact";
 import { supabase } from "@/integrations/supabase/client";
 import type { Experience } from "@/types/experiences";
@@ -14,6 +16,9 @@ interface RelatedExperiencesProps {
 export function RelatedExperiences({ currentExperienceId, cityId, companyId, cityName }: RelatedExperiencesProps) {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   useEffect(() => {
     if (!cityId || !companyId) {
@@ -39,7 +44,6 @@ export function RelatedExperiences({ currentExperienceId, cityId, companyId, cit
         .limit(6);
 
       if (data) {
-        // Deduplicate (inner join on dates may return duplicates)
         const seen = new Set<string>();
         const mapped: Experience[] = [];
         for (const e of data as any[]) {
@@ -67,13 +71,65 @@ export function RelatedExperiences({ currentExperienceId, cityId, companyId, cit
     fetch();
   }, [cityId, currentExperienceId, companyId]);
 
+  const updateScrollState = () => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+
+  useEffect(() => {
+    updateScrollState();
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", updateScrollState, { passive: true });
+    window.addEventListener("resize", updateScrollState);
+    return () => {
+      el.removeEventListener("scroll", updateScrollState);
+      window.removeEventListener("resize", updateScrollState);
+    };
+  }, [experiences.length]);
+
+  const scrollBy = (dir: 1 | -1) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const amount = Math.round(el.clientWidth * 0.8);
+    el.scrollBy({ left: dir * amount, behavior: "smooth" });
+  };
+
   if (!loading && experiences.length === 0) return null;
 
   return (
     <section>
-      <h2 className="text-xl font-semibold text-foreground mb-6">
-        {cityName ? `Altre esperienze a ${cityName}` : "Altre esperienze nella stessa città"}
-      </h2>
+      <div className="flex items-end justify-between mb-6 gap-4">
+        <h2 className="text-xl font-semibold text-foreground">
+          {cityName ? `Altre esperienze a ${cityName}` : "Altre esperienze nella stessa città"}
+        </h2>
+        <div className="hidden lg:flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 rounded-full"
+            onClick={() => scrollBy(-1)}
+            disabled={!canScrollLeft}
+            aria-label="Scorri indietro"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 rounded-full"
+            onClick={() => scrollBy(1)}
+            disabled={!canScrollRight}
+            aria-label="Scorri avanti"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
       {loading ? (
         <div className="flex gap-4 overflow-hidden">
           {[1, 2, 3].map((i) => (
@@ -82,7 +138,10 @@ export function RelatedExperiences({ currentExperienceId, cityId, companyId, cit
         </div>
       ) : (
         <div className="relative">
-          <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 lg:pr-12 scrollbar-hide">
+          <div
+            ref={scrollerRef}
+            className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 lg:pr-12 scrollbar-hide scroll-smooth"
+          >
             {experiences.map((exp, i) => (
               <ExperienceCardCompact key={exp.id} experience={exp} index={i} />
             ))}
