@@ -11,9 +11,11 @@ interface ExperienceCardCompactProps {
   experience: Experience;
   index: number;
   className?: string;
+  /** Base path for navigation (defaults to /app/experiences). */
+  linkPrefix?: string;
 }
 
-export function ExperienceCardCompact({ experience, index, className }: ExperienceCardCompactProps) {
+export function ExperienceCardCompact({ experience, index, className, linkPrefix = "/app/experiences" }: ExperienceCardCompactProps) {
   const navigate = useNavigate();
   const nextDate = experience.experience_dates?.[0];
   const availableSpots = nextDate
@@ -32,7 +34,7 @@ export function ExperienceCardCompact({ experience, index, className }: Experien
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
-      onClick={() => navigate(`/app/experiences/${experience.id}`)}
+      onClick={() => navigate(`${linkPrefix}/${experience.id}`)}
       className={`group flex-shrink-0 ${className ?? "w-[145px] sm:w-[165px] md:w-[200px]"} text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 rounded-2xl ${isFull ? "opacity-60" : ""}`}
     >
       {/* Square Image with category badge + "Completo" overlay */}
