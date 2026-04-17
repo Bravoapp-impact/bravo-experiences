@@ -16,6 +16,7 @@ import { ExperienceDetailContent } from "@/components/experience-detail/Experien
 import type { UpcomingDateItem } from "@/components/experience-detail/UpcomingDatesSection";
 import { HRSidebar } from "@/components/hr/HRSidebar";
 import { HRMobileActionDrawer } from "@/components/hr/HRMobileActionDrawer";
+import { HRRelatedExperiences } from "@/components/hr/HRRelatedExperiences";
 
 export default function HRExperienceDetail() {
   const { id } = useParams<{ id: string }>();
@@ -316,6 +317,14 @@ export default function HRExperienceDetail() {
           reviewCount={reviewCount}
           relatedCompanyId={profile?.company_id ?? null}
           upcomingDates={upcomingDates}
+          relatedExperiencesSlot={
+            <HRRelatedExperiences
+              currentExperienceId={experience.id}
+              cityId={experience.city_id ?? null}
+              companyId={profile?.company_id ?? null}
+              cityName={experience.city_name ?? experience.city ?? null}
+            />
+          }
           sidebarSlot={
             <motion.div
               className="hidden lg:block w-[380px] flex-shrink-0 sticky top-24 self-start"

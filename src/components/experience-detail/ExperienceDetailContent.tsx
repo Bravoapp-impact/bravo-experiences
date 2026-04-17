@@ -21,7 +21,7 @@ interface ExperienceDetailContentProps {
   reviews: ExperienceReview[];
   avgRating: number | null;
   reviewCount: number;
-  /** Company id used to filter related experiences (employee context). */
+  /** Company id used by the default employee related-experiences block. */
   relatedCompanyId?: string | null;
   /** Optional right-column slot (e.g. DatesSidebar for employees). */
   sidebarSlot?: ReactNode;
@@ -34,6 +34,12 @@ interface ExperienceDetailContentProps {
    * If omitted, the section is not rendered (employee context).
    */
   upcomingDates?: UpcomingDateItem[];
+  /**
+   * Optional override for the related-experiences block. If provided, this
+   * node is rendered in place of the default employee block — used by HR
+   * to show "esperienze da attivare" instead of "esperienze nella tua azienda".
+   */
+  relatedExperiencesSlot?: ReactNode;
 }
 
 /**
@@ -50,6 +56,7 @@ export function ExperienceDetailContent({
   sidebarSlot,
   mobileDrawerSlot,
   upcomingDates,
+  relatedExperiencesSlot,
 }: ExperienceDetailContentProps) {
   return (
     <>
@@ -171,12 +178,14 @@ export function ExperienceDetailContent({
             transition={{ delay: 0.5 }}
           >
             <Separator className="my-8" />
-            <RelatedExperiences
-              currentExperienceId={experience.id}
-              cityId={experience.city_id ?? null}
-              companyId={relatedCompanyId}
-              cityName={experience.city_name ?? experience.city ?? null}
-            />
+            {relatedExperiencesSlot ?? (
+              <RelatedExperiences
+                currentExperienceId={experience.id}
+                cityId={experience.city_id ?? null}
+                companyId={relatedCompanyId}
+                cityName={experience.city_name ?? experience.city ?? null}
+              />
+            )}
           </motion.div>
         </div>
 
