@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Calendar, CheckCircle2, Eye, MapPin, PackageOpen, Plus, Search, Trash2,
+  Calendar, CheckCircle2, MapPin, PackageOpen, Plus, Search, Trash2,
 } from "lucide-react";
 import { HRLayout } from "@/components/layout/HRLayout";
 import { HRExperienceMetrics } from "@/components/hr/HRExperienceMetrics";
@@ -16,18 +17,13 @@ import { LoadingState } from "@/components/common/LoadingState";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BaseCardImage } from "@/components/common/BaseCardImage";
-import { BaseModal, ModalCloseButton } from "@/components/common/BaseModal";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { getSDGInfo } from "@/lib/sdg-data";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 
 /* ── Types ── */
 
@@ -102,8 +98,7 @@ export default function HRExperiencesPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [cityFilter, setCityFilter] = useState("all");
 
-  // Preview modal
-  const [previewExp, setPreviewExp] = useState<CatalogExperience | null>(null);
+  const navigate = useNavigate();
 
   // Stats tab
   const [statsLoaded, setStatsLoaded] = useState(false);
@@ -434,11 +429,11 @@ export default function HRExperiencesPage() {
               <TooltipProvider delayDuration={300}>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {filteredCatalog.map((exp, i) => (
-                    <CompactCard key={exp.id} experience={exp} index={i} actions={
+                    <CompactCard key={exp.id} experience={exp} index={i} onOpen={() => navigate(`/hr/experiences/${exp.id}`)} actions={
                       activatedIds.has(exp.id) ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="inline-flex items-center gap-1 text-[11px] text-green-600 font-medium">
+                            <span className="inline-flex items-center gap-1 text-[11px] text-primary font-medium">
                               <CheckCircle2 className="h-3.5 w-3.5" />
                               Nel programma
                             </span>
@@ -452,7 +447,7 @@ export default function HRExperiencesPage() {
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7 text-muted-foreground hover:text-primary"
-                              onClick={() => handleActivate(exp.id)}
+                              onClick={(e) => { e.stopPropagation(); handleActivate(exp.id); }}
                             >
                               <Plus className="h-3.5 w-3.5" />
                             </Button>
@@ -479,25 +474,15 @@ export default function HRExperiencesPage() {
               <TooltipProvider delayDuration={300}>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {programExperiences.map((exp, i) => (
-                    <CompactCard key={exp.id} experience={exp} index={i} actions={
-                      <div className="flex items-center gap-0.5">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setPreviewExp(exp)}>
-                              <Eye className="h-3.5 w-3.5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Anteprima</TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => handleDeactivate(exp.id)}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Rimuovi dal programma</TooltipContent>
-                        </Tooltip>
-                      </div>
+                    <CompactCard key={exp.id} experience={exp} index={i} onOpen={() => navigate(`/hr/experiences/${exp.id}`)} actions={
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={(e) => { e.stopPropagation(); handleDeactivate(exp.id); }}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Rimuovi dal programma</TooltipContent>
+                      </Tooltip>
                     } />
                   ))}
                 </div>
@@ -557,68 +542,17 @@ export default function HRExperiencesPage() {
         </Tabs>
       </div>
 
-      {/* Preview Modal */}
-      <BaseModal open={!!previewExp} onClose={() => setPreviewExp(null)}>
-        {previewExp && (
-          <div className="flex flex-col h-full sm:max-h-[85vh] overflow-hidden">
-            <div className="absolute top-4 right-4 z-10">
-              <ModalCloseButton onClick={() => setPreviewExp(null)} />
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {previewExp.image_url && (
-                <AspectRatio ratio={16 / 9}>
-                  <img src={previewExp.image_url} alt={previewExp.title} className="object-cover w-full h-full" />
-                </AspectRatio>
-              )}
-              <div className="p-5 space-y-4">
-                <div className="flex flex-wrap gap-2">
-                  {(previewExp.categories?.name || previewExp.category) && (
-                    <Badge variant="outline">{previewExp.categories?.name || previewExp.category}</Badge>
-                  )}
-                </div>
-                <h2 className="text-xl font-bold text-foreground leading-tight">{previewExp.title}</h2>
-                {previewExp.description && (
-                  <p className="text-[15px] text-muted-foreground font-light leading-relaxed whitespace-pre-wrap">{previewExp.description}</p>
-                )}
-                {(previewExp.cities?.name || previewExp.city || previewExp.address) && (
-                  <div className="flex items-start gap-2 pt-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-muted-foreground">
-                      {previewExp.address && `${previewExp.address}, `}
-                      {previewExp.cities?.name || previewExp.city}
-                    </p>
-                  </div>
-                )}
-                {previewExp.sdgs && previewExp.sdgs.length > 0 && (
-                  <div className="pt-3 space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Obiettivi SDG</p>
-                    <div className="flex flex-wrap gap-2">
-                      {previewExp.sdgs.map((sdg) => {
-                        const sdgInfo = getSDGInfo(sdg);
-                        return (
-                          <Badge key={sdg} variant="secondary" className="text-xs" title={sdgInfo?.name}>
-                            {sdg}
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </BaseModal>
     </HRLayout>
   );
 }
 
 /* ── Sub-components ── */
 
-function CompactCard({ experience, index, actions }: {
+function CompactCard({ experience, index, actions, onOpen }: {
   experience: CatalogExperience;
   index: number;
   actions: React.ReactNode;
+  onOpen: () => void;
 }) {
   const categoryName = experience.categories?.name || experience.category;
   const cityName = experience.cities?.name || experience.city;
@@ -630,21 +564,29 @@ function CompactCard({ experience, index, actions }: {
       transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
       className="group"
     >
-      <BaseCardImage imageUrl={experience.image_url} alt={experience.title} aspectRatio="square" />
-      <div className="pt-2 space-y-1">
-        <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug">{experience.title}</h3>
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
-          {categoryName && <span className="truncate">{categoryName}</span>}
-          {categoryName && cityName && <span>·</span>}
-          {cityName && (
-            <span className="flex items-center gap-0.5 truncate">
-              <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
-              {cityName}
-            </span>
-          )}
+      <button
+        type="button"
+        onClick={onOpen}
+        className="block w-full text-left rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <BaseCardImage imageUrl={experience.image_url} alt={experience.title} aspectRatio="square" />
+        <div className="pt-2 space-y-1">
+          <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+            {experience.title}
+          </h3>
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
+            {categoryName && <span className="truncate">{categoryName}</span>}
+            {categoryName && cityName && <span>·</span>}
+            {cityName && (
+              <span className="flex items-center gap-0.5 truncate">
+                <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
+                {cityName}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="pt-0.5">{actions}</div>
-      </div>
+      </button>
+      <div className="pt-0.5">{actions}</div>
     </motion.div>
   );
 }
