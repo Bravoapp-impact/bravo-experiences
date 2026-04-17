@@ -1,20 +1,25 @@
 
+User has given precise implementation instructions. Simple plan to confirm approach.
 
-# Fix: doppio separatore, sidebar sticky, esperienze correlate
+## Modifiche
 
-## Problema 1: Doppio separatore
-C'è un `<Separator>` a riga 415 di `ExperienceDetail.tsx` e un altro dentro `RelatedExperiences.tsx` (riga 65). Rimuovo quello dentro `RelatedExperiences.tsx`.
+### 1. `src/components/experience-detail/RelatedExperiences.tsx`
+- Aggiungere prop `companyId: string | null`
+- Sostituire join `experience_dates!inner` con `experience_companies!inner (company_id)`
+- Filtrare con `.eq("experience_companies.company_id", companyId)`
+- Early return se `!cityId || !companyId`
+- Mapping con `experience_dates: []`
+- Aggiungere `companyId` alla dependency array dell'useEffect
 
-## Problema 2: Sidebar non sticky
-Il `DatesSidebar` ha internamente `sticky top-8 self-start`, ma è wrappato in un `<motion.div>` (riga 514) che non ha quelle classi. Il motion wrapper "consuma" l'altezza e impedisce lo sticky. Soluzione: aggiungere `sticky top-8 self-start` al `<motion.div>` wrapper oppure rimuovere il wrapper motion e lasciare che sia il div del DatesSidebar a gestire lo sticky.
-
-## Problema 3: Esperienze correlate non visibili
-`RelatedExperiences` è dentro la colonna sinistra del layout a due colonne (`lg:flex`), quindi è schiacciata al 60% e potrebbe non renderizzare correttamente. Va spostata **fuori** dal container `lg:flex`, in modo che sia full-width sotto il layout a due colonne.
+### 2. `src/pages/ExperienceDetail.tsx`
+- Importare/usare `profile` da `useAuth` (già presente)
+- Passare `companyId={profile?.company_id ?? null}` a `<RelatedExperiences>`
 
 ## File coinvolti
 
 | File | Modifica |
 |------|----------|
-| `src/pages/ExperienceDetail.tsx` | Spostare RelatedExperiences fuori dal layout a 2 colonne; fix motion wrapper sidebar |
-| `src/components/experience-detail/RelatedExperiences.tsx` | Rimuovere il Separator interno |
+| `src/components/experience-detail/RelatedExperiences.tsx` | Nuova prop `companyId`, query con join `experience_companies!inner` |
+| `src/pages/ExperienceDetail.tsx` | Passare `companyId` da `profile` al componente |
 
+Nessuna modifica DB/RLS.
