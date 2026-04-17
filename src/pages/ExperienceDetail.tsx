@@ -302,7 +302,7 @@ export default function ExperienceDetail() {
   if (loading) {
     return (
       <AppLayout>
-        <div className="max-w-5xl mx-auto px-4 lg:px-8 space-y-6 py-4">
+        <div className="max-w-6xl mx-auto px-4 lg:px-8 space-y-6 py-4">
           <Skeleton className="h-6 w-32" />
           <Skeleton className="w-full aspect-[4/3] lg:aspect-[16/10] rounded-xl" />
           <Skeleton className="h-8 w-3/4" />
@@ -380,7 +380,7 @@ export default function ExperienceDetail() {
 
   return (
     <AppLayout>
-      <div className="max-w-5xl mx-auto px-4 lg:px-8 pb-28 lg:pb-12">
+      <div className="max-w-6xl mx-auto px-4 lg:px-8 pb-28 lg:pb-12">
         {/* Back button */}
         <button
           onClick={goBack}
