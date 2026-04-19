@@ -9,6 +9,7 @@
  *
  *   queryClient.invalidateQueries({ queryKey: experienceKeys.all })
  *   queryClient.invalidateQueries({ queryKey: experienceKeys.related() })
+ *   queryClient.invalidateQueries({ queryKey: experienceKeys.catalogs() })
  */
 
 export interface RelatedExperiencesParams {
@@ -32,4 +33,11 @@ export const experienceKeys = {
     ctx: "employee" | "hr",
     params: RelatedExperiencesParams,
   ) => [...experienceKeys.related(), ctx, params] as const,
+
+  // Catalog: per-user list of experiences activated by their tenant.
+  // `catalogs()` lets future HR mutations (activate/deactivate experience
+  // for a company) invalidate every employee catalog at once.
+  catalogs: () => [...experienceKeys.all, "catalog"] as const,
+  catalogFor: (ctx: "employee", userId: string) =>
+    [...experienceKeys.catalogs(), ctx, userId] as const,
 };
