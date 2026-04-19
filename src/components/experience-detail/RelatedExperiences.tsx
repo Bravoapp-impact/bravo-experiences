@@ -1,5 +1,5 @@
 import { RelatedExperiencesList } from "./RelatedExperiencesList";
-import { useRelatedExperiencesForEmployee } from "@/hooks/useRelatedExperiences";
+import { useRelatedExperiencesForEmployee } from "@/hooks/queries/experiences/useRelatedExperiences";
 
 interface RelatedExperiencesProps {
   currentExperienceId: string;
@@ -18,7 +18,7 @@ export function RelatedExperiences({
   companyId,
   cityName,
 }: RelatedExperiencesProps) {
-  const { experiences, loading } = useRelatedExperiencesForEmployee({
+  const { data: experiences = [], isLoading } = useRelatedExperiencesForEmployee({
     currentExperienceId,
     cityId,
     companyId,
@@ -27,7 +27,7 @@ export function RelatedExperiences({
   return (
     <RelatedExperiencesList
       experiences={experiences}
-      loading={loading}
+      loading={isLoading}
       title={cityName ? `Altre esperienze a ${cityName}` : "Altre esperienze nella stessa città"}
     />
   );
