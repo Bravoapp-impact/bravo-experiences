@@ -1,5 +1,5 @@
 import { RelatedExperiencesList } from "@/components/experience-detail/RelatedExperiencesList";
-import { useRelatedExperiencesForHR } from "@/hooks/useRelatedExperiences";
+import { useRelatedExperiencesForHR } from "@/hooks/queries/experiences/useRelatedExperiences";
 
 interface HRRelatedExperiencesProps {
   currentExperienceId: string;
@@ -18,7 +18,7 @@ export function HRRelatedExperiences({
   companyId,
   cityName,
 }: HRRelatedExperiencesProps) {
-  const { experiences, loading } = useRelatedExperiencesForHR({
+  const { data: experiences = [], isLoading } = useRelatedExperiencesForHR({
     currentExperienceId,
     cityId,
     companyId,
@@ -27,7 +27,7 @@ export function HRRelatedExperiences({
   return (
     <RelatedExperiencesList
       experiences={experiences}
-      loading={loading}
+      loading={isLoading}
       title={cityName ? `Altre esperienze da attivare a ${cityName}` : "Altre esperienze da attivare"}
       linkPrefix="/hr/experiences"
     />
