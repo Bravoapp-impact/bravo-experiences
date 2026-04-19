@@ -1,134 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ExperienceSection } from "@/components/experiences/ExperienceSection";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { devLog } from "@/lib/logger";
-import type { Experience, ExperienceDate } from "@/types/experiences";
-
-interface ExperienceDateRow extends ExperienceDate {
-  experience_id: string;
-}
+import { useEmployeeCatalog } from "@/hooks/queries/experiences/useEmployeeCatalog";
 
 export default function Experiences() {
-  const [experiences, setExperiences] = useState<Experience[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const { user } = useAuth();
-  
 
-  const fetchExperiences = async () => {
-    setLoading(true);
-
-    try {
-      // First, get user's company_id to filter experiences
-      const { data: tenant } = await supabase
-        .from("user_tenants")
-        .select("company_id")
-        .eq("user_id", user!.id)
-        .single();
-
-      const companyId = tenant?.company_id;
-
-      // Get experience IDs curated for this company
-      let allowedExperienceIds: string[] | null = null;
-      if (companyId) {
-        const { data: ecData } = await supabase
-          .from("experience_companies")
-          .select("experience_id")
-          .eq("company_id", companyId);
-        allowedExperienceIds = (ecData ?? []).map((r) => r.experience_id);
-        if (allowedExperienceIds.length === 0) {
-          setExperiences([]);
-          setLoading(false);
-          return;
-        }
-      }
-
-      // Fetch experiences filtered to only those curated for this company
-      let query = supabase
-        .from("experiences")
-        .select(
-          `
-          *,
-          associations:association_id (
-            name,
-            logo_url
-          )
-        `,
-        )
-        .eq("status", "published")
-        .order("created_at", { ascending: false });
-
-      if (allowedExperienceIds) {
-        query = query.in("id", allowedExperienceIds);
-      }
-
-      const { data: expData, error: expError } = await query;
-      if (expError) throw expError;
-
-      // Transform to include association logo and SDGs
-      const baseExperiences = (expData ?? []).map((exp: any) => ({
-        id: exp.id,
-        title: exp.title,
-        description: exp.description,
-        image_url: exp.image_url,
-        association_name: exp.associations?.name ?? exp.association_name,
-        association_logo_url: exp.associations?.logo_url ?? null,
-        city: exp.city,
-        address: exp.address,
-        category: exp.category,
-        sdgs: exp.sdgs ?? [],
-        participant_info: exp.participant_info ?? null,
-      })) as Experience[];
-
-      if (baseExperiences.length === 0) {
-        setExperiences([]);
-        return;
-      }
-
-      // Fetch dates separately to ensure date-level RLS is applied (company isolation)
-      const experienceIds = baseExperiences.map((e) => e.id);
-      const { data: datesData, error: datesError } = await supabase
-        .from("experience_dates")
-        .select("id, experience_id, start_datetime, end_datetime, max_participants")
-        .in("experience_id", experienceIds)
-        .gte("start_datetime", new Date().toISOString())
-        .order("start_datetime", { ascending: true });
-
-      if (datesError) throw datesError;
-
-      const datesByExperienceId = new Map<string, ExperienceDate[]>();
-      (datesData as ExperienceDateRow[] | null)?.forEach((d) => {
-        const { experience_id, ...date } = d;
-        const list = datesByExperienceId.get(experience_id) ?? [];
-        list.push(date);
-        datesByExperienceId.set(experience_id, list);
-      });
-
-      const experiencesWithDates = baseExperiences
-        .map((exp) => ({
-          ...exp,
-          experience_dates: datesByExperienceId.get(exp.id) ?? [],
-        }))
-        .filter((exp) => exp.experience_dates.length > 0);
-
-      setExperiences(experiencesWithDates);
-    } catch (error) {
-      devLog.error("Error fetching experiences:", error);
-      setExperiences([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchExperiences();
-  }, []);
+  const { data: experiences = [], isLoading: loading } = useEmployeeCatalog(user?.id);
 
   const filteredExperiences = experiences.filter(
     (exp) =>
