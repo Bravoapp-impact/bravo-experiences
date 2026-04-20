@@ -27,7 +27,7 @@ const sidebarItems: SidebarItem[] = [
   { label: "Richieste Accesso", icon: Inbox, href: "/super-admin/access-requests" },
   { label: "Città", icon: MapPin, href: "/super-admin/cities" },
   { label: "Categorie", icon: Tag, href: "/super-admin/categories" },
-  { label: "Email Templates", icon: Mail, href: "/super-admin/email-templates" },
+  { label: "Email per azienda", icon: Mail, href: "/super-admin/email-settings" },
 ];
 
 export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
