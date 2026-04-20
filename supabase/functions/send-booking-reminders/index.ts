@@ -3,18 +3,18 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const formatDate = (dateStr: string): string => {
   const date = new Date(dateStr);
-  const options: Intl.DateTimeFormatOptions = {
+  return date.toLocaleDateString("it-IT", {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
-  };
-  return date.toLocaleDateString("it-IT", options);
+  });
 };
 
 const formatTime = (dateStr: string): string => {
@@ -23,7 +23,6 @@ const formatTime = (dateStr: string): string => {
 };
 
 serve(async (req: Request): Promise<Response> => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -32,55 +31,45 @@ serve(async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
-    // Authenticate the request - only super_admin can trigger reminders manually
+    // Authenticate caller (super_admin only for manual bulk trigger; cron uses service role)
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ error: "Authentication required" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Authentication required" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Validate JWT and get user
     const authSupabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    
     const { data: { user }, error: userError } = await authSupabase.auth.getUser();
-    
     if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Invalid authentication" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Invalid authentication" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Use service role client for database operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check if user is super_admin (only super_admins can trigger bulk reminders)
+    // Only super_admin may trigger reminders manually
     const { data: userRole } = await supabase.rpc("get_user_role", { user_uuid: user.id });
     if (userRole !== "super_admin") {
-      return new Response(
-        JSON.stringify({ error: "Not authorized" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Not authorized" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     console.log("Starting reminder check at:", new Date().toISOString());
 
-    // Get all email settings to know reminder hours for each company
-    const { data: allSettings, error: settingsError } = await supabase
+    // Per-company reminder settings
+    const { data: allSettings } = await supabase
       .from("email_settings")
       .select("company_id, reminder_enabled, reminder_hours_before");
 
-    if (settingsError) {
-      console.error("Error fetching email settings:", settingsError);
-    }
-
-    // Create a map of company_id -> settings
     const settingsMap = new Map<string, { enabled: boolean; hours: number }>();
     for (const setting of allSettings || []) {
       settingsMap.set(setting.company_id, {
@@ -89,13 +78,9 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Default reminder hours if no settings exist
     const defaultReminderHours = 24;
-
-    // Get all confirmed bookings for experience dates happening soon
-    // We'll check for various time windows based on company settings
     const now = new Date();
-    const maxHoursAhead = 48; // Look up to 48 hours ahead to cover all settings
+    const maxHoursAhead = 48;
     const maxTime = new Date(now.getTime() + maxHoursAhead * 60 * 60 * 1000);
 
     const { data: upcomingDates, error: datesError } = await supabase
@@ -125,34 +110,24 @@ serve(async (req: Request): Promise<Response> => {
       throw new Error(`Error fetching experience dates: ${datesError.message}`);
     }
 
-    console.log(`Found ${upcomingDates?.length || 0} upcoming experience dates`);
-
     let emailsSent = 0;
     let emailsSkipped = 0;
 
     for (const expDate of upcomingDates || []) {
-      // Get settings for this company
+      // Per-company opt-out gate
       const companySettings = expDate.company_id ? settingsMap.get(expDate.company_id) : null;
       const reminderEnabled = companySettings?.enabled ?? true;
       const reminderHours = companySettings?.hours ?? defaultReminderHours;
 
-      if (!reminderEnabled) {
-        console.log(`Reminders disabled for company ${expDate.company_id}`);
-        continue;
-      }
+      if (!reminderEnabled) continue;
 
-      // Check if this date is within the reminder window
+      // Send only inside the configured 1h window before event
       const dateTime = new Date(expDate.start_datetime);
       const hoursUntilEvent = (dateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-      // Only send reminder if within the hour window (e.g., between 24h and 23h before)
       if (hoursUntilEvent > reminderHours || hoursUntilEvent < reminderHours - 1) {
         continue;
       }
 
-      console.log(`Processing reminders for date ${expDate.id}, ${hoursUntilEvent.toFixed(1)} hours until event`);
-
-      // Get all confirmed bookings for this date
       const { data: bookings, error: bookingsError } = await supabase
         .from("bookings")
         .select("id, user_id")
@@ -165,21 +140,19 @@ serve(async (req: Request): Promise<Response> => {
       }
 
       for (const booking of bookings || []) {
-        // Check if reminder was already sent
+        // Anti-duplication via email_logs
         const { data: existingLog } = await supabase
           .from("email_logs")
           .select("id")
           .eq("booking_id", booking.id)
           .eq("email_type", "booking_reminder")
-          .single();
+          .maybeSingle();
 
         if (existingLog) {
-          console.log(`Reminder already sent for booking ${booking.id}`);
           emailsSkipped++;
           continue;
         }
 
-        // Get user profile
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("email, first_name, last_name, company_id")
@@ -191,122 +164,57 @@ serve(async (req: Request): Promise<Response> => {
           continue;
         }
 
-        // Get email template
+        // Optional company-level template overrides (legacy fallback)
         const { data: template } = await supabase
           .from("email_templates")
-          .select("subject, intro_text, closing_text")
+          .select("intro_text, closing_text")
           .eq("company_id", profile.company_id)
           .eq("template_type", "booking_reminder")
-          .single();
+          .maybeSingle();
 
         const experience = expDate.experiences as any;
-        const subject = template?.subject || `Promemoria: ${experience?.title} - Domani!`;
-        const introText =
-          template?.intro_text ||
-          `Ciao ${profile.first_name || ""},\n\nTi ricordiamo che domani hai un'esperienza di volontariato!`;
-        const closingText =
-          template?.closing_text || "Non vediamo l'ora di vederti! Grazie per il tuo impegno.\n\nIl team Bravo!";
+        const introText = template?.intro_text
+          ? template.intro_text.replace("${profile.first_name || \"\"}", profile.first_name ?? "")
+          : undefined;
+        const closingText = template?.closing_text ?? undefined;
 
-        // Build email HTML
-        const emailHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Promemoria Esperienza</title>
-</head>
-<body style="font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #4F4F4F; max-width: 560px; margin: 0 auto; padding: 20px;">
-  <img src="https://cyazgtnjtnyxscfzsasp.supabase.co/storage/v1/object/public/email-assets/bravo-logo-icon.png" alt="Bravo!" height="28" style="margin-bottom: 8px;" />
-  <h1 style="color: #373737; margin: 0 0 16px 0; font-size: 22px; font-weight: bold;">Promemoria</h1>
-  
-  <p style="white-space: pre-line; margin-bottom: 24px;">${introText}</p>
-  
-  <div style="background: white; border-radius: 8px; padding: 24px; border: 1px solid #CFCFCF; margin-bottom: 24px;">
-    <h2 style="margin: 0 0 16px 0; color: #373737; font-size: 18px;">${experience?.title}</h2>
-    
-    ${experience?.category ? `<p style="margin: 0 0 12px 0; color: #4F4F4F;"><strong>Categoria:</strong> ${experience.category}</p>` : ""}
-    ${experience?.association_name ? `<p style="margin: 0 0 12px 0; color: #4F4F4F;"><strong>Associazione:</strong> ${experience.association_name}</p>` : ""}
-    
-    <div style="padding: 16px; border-radius: 8px; margin: 16px 0; border: 1px solid #CFCFCF;">
-      <p style="margin: 0 0 8px 0; color: #4F4F4F;"><strong>📅 Data:</strong> ${formatDate(expDate.start_datetime)}</p>
-      <p style="margin: 0; color: #4F4F4F;"><strong>🕐 Orario:</strong> ${formatTime(expDate.start_datetime)} - ${formatTime(expDate.end_datetime)}</p>
-    </div>
-    
-    ${
-      experience?.participant_info
-        ? `
-    <div style="padding: 16px; border-radius: 8px; margin: 16px 0; border: 1px solid #CFCFCF;">
-      <p style="margin: 0 0 8px 0; color: #4F4F4F;"><strong>📋 Informazioni utili:</strong></p>
-      <p style="margin: 0; white-space: pre-line; color: #4F4F4F;">${experience.participant_info}</p>
-    </div>
-    `
-        : ""
-    }
-    ${
-      experience?.city || experience?.address
-        ? `
-    <div style="margin-top: 16px;">
-      <p style="margin: 0; color: #4F4F4F;"><strong>📍 Luogo:</strong></p>
-      ${experience.city ? `<p style="margin: 4px 0 0 0; color: #4F4F4F;">${experience.city}</p>` : ""}
-      ${experience.address ? `<p style="margin: 4px 0 0 0; color: #999;">${experience.address}</p>` : ""}
-    </div>
-    `
-        : ""
-    }
-  </div>
-  
-  <p style="white-space: pre-line; margin-bottom: 24px;">${closingText}</p>
-  
-  <div style="border-top: 1px solid #e5e5e5; padding-top: 16px;">
-    <p style="color: #999; margin: 0; font-size: 12px;">
-      Questa email è stata inviata automaticamente da Bravo! - La piattaforma per il volontariato aziendale
-    </p>
-  </div>
-</body>
-</html>
-        `;
+        const templateData = {
+          firstName: profile.first_name ?? "",
+          experienceTitle: experience?.title,
+          category: experience?.category,
+          associationName: experience?.association_name,
+          startDateLong: formatDate(expDate.start_datetime),
+          startTime: formatTime(expDate.start_datetime),
+          endTime: formatTime(expDate.end_datetime),
+          city: experience?.city,
+          address: experience?.address,
+          participantInfo: experience?.participant_info,
+          introText,
+          closingText,
+        };
 
-        // Check if we have Resend API key
-        if (!resendApiKey) {
-          console.log("RESEND_API_KEY not configured, logging reminder instead");
-          console.log("Would send reminder to:", profile.email);
+        const { error: invokeError } = await supabase.functions.invoke(
+          "send-transactional-email",
+          {
+            body: {
+              templateName: "booking-reminder",
+              recipientEmail: profile.email,
+              idempotencyKey: `booking-reminder-${booking.id}`,
+              templateData,
+            },
+          },
+        );
 
+        if (invokeError) {
+          console.error(`Failed to enqueue reminder for ${profile.email}:`, invokeError);
           await supabase.from("email_logs").insert({
             booking_id: booking.id,
             email_type: "booking_reminder",
-            status: "simulated",
+            status: "failed",
           });
-
-          emailsSent++;
           continue;
         }
 
-        // Send email via Resend
-        const emailResponse = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${resendApiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from: "Bravo! <hello@notifications.bravoapp.it>",
-            to: [profile.email],
-            subject: subject,
-            html: emailHtml,
-          }),
-        });
-
-        const emailResult = await emailResponse.json();
-
-        if (!emailResponse.ok) {
-          console.error(`Failed to send reminder to ${profile.email}:`, emailResult);
-          continue;
-        }
-
-        console.log(`Reminder sent to ${profile.email}`);
-
-        // Log the sent email
         await supabase.from("email_logs").insert({
           booking_id: booking.id,
           email_type: "booking_reminder",
@@ -320,18 +228,14 @@ serve(async (req: Request): Promise<Response> => {
     console.log(`Reminder job complete. Sent: ${emailsSent}, Skipped: ${emailsSkipped}`);
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        emails_sent: emailsSent,
-        emails_skipped: emailsSkipped,
-      }),
+      JSON.stringify({ success: true, emails_sent: emailsSent, emails_skipped: emailsSkipped }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error: unknown) {
     console.error("Error in send-booking-reminders:", error);
-    return new Response(
-      JSON.stringify({ error: "An unexpected error occurred" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "An unexpected error occurred" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
