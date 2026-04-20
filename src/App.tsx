@@ -32,7 +32,7 @@ import UsersPage from "./pages/super-admin/UsersPage";
 import AssociationsPage from "./pages/super-admin/AssociationsPage";
 import CitiesPage from "./pages/super-admin/CitiesPage";
 import CategoriesPage from "./pages/super-admin/CategoriesPage";
-import EmailTemplatesPage from "./pages/super-admin/EmailTemplatesPage";
+import EmailSettingsPage from "./pages/super-admin/EmailSettingsPage";
 import AccessCodesPage from "./pages/super-admin/AccessCodesPage";
 import AssociationHome from "./pages/association/AssociationHome";
 import AssociationExperiencesPage from "./pages/association/AssociationExperiencesPage";
@@ -233,10 +233,10 @@ const App = () => (
               }
             />
             <Route
-              path="/super-admin/email-templates"
+              path="/super-admin/email-settings"
               element={
                 <ProtectedSuperAdminRoute>
-                  <EmailTemplatesPage />
+                  <EmailSettingsPage />
                 </ProtectedSuperAdminRoute>
               }
             />
