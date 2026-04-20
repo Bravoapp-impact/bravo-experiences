@@ -164,19 +164,8 @@ serve(async (req: Request): Promise<Response> => {
           continue;
         }
 
-        // Optional company-level template overrides (legacy fallback)
-        const { data: template } = await supabase
-          .from("email_templates")
-          .select("intro_text, closing_text")
-          .eq("company_id", profile.company_id)
-          .eq("template_type", "booking_reminder")
-          .maybeSingle();
-
+        // Email copy comes from the hardcoded React Email template — no per-company overrides.
         const experience = expDate.experiences as any;
-        const introText = template?.intro_text
-          ? template.intro_text.replace("${profile.first_name || \"\"}", profile.first_name ?? "")
-          : undefined;
-        const closingText = template?.closing_text ?? undefined;
 
         const templateData = {
           firstName: profile.first_name ?? "",
@@ -189,8 +178,6 @@ serve(async (req: Request): Promise<Response> => {
           city: experience?.city,
           address: experience?.address,
           participantInfo: experience?.participant_info,
-          introText,
-          closingText,
         };
 
         const { error: invokeError } = await supabase.functions.invoke(

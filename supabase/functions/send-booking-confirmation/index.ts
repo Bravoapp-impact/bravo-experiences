@@ -149,21 +149,8 @@ serve(async (req: Request): Promise<Response> => {
       }
     }
 
-    // Optional company-level template overrides (legacy, kept as fallback)
-    let introText: string | undefined;
-    let closingText: string | undefined;
-    if (profile.company_id) {
-      const { data: template } = await supabase
-        .from("email_templates")
-        .select("intro_text, closing_text")
-        .eq("company_id", profile.company_id)
-        .eq("template_type", "booking_confirmation")
-        .single();
-      introText = template?.intro_text ?? undefined;
-      closingText = template?.closing_text ?? undefined;
-    }
-
-    // Delegate sending to native transactional email pipeline
+    // Delegate sending to native transactional email pipeline.
+    // Email copy comes from the hardcoded React Email template — no per-company overrides.
     const templateData = {
       firstName: profile.first_name ?? "",
       experienceTitle: experience.title,
@@ -175,10 +162,6 @@ serve(async (req: Request): Promise<Response> => {
       city: experience.city,
       address: experience.address,
       description: experience.description,
-      introText: introText
-        ? introText.replace("${profile.first_name || \"\"}", profile.first_name ?? "")
-        : undefined,
-      closingText,
     };
 
     const { error: invokeError } = await supabase.functions.invoke("send-transactional-email", {
