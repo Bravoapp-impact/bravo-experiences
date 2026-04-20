@@ -498,47 +498,6 @@ export type Database = {
           },
         ]
       }
-      email_templates: {
-        Row: {
-          closing_text: string | null
-          company_id: string
-          created_at: string
-          id: string
-          intro_text: string | null
-          subject: string
-          template_type: string
-          updated_at: string
-        }
-        Insert: {
-          closing_text?: string | null
-          company_id: string
-          created_at?: string
-          id?: string
-          intro_text?: string | null
-          subject: string
-          template_type: string
-          updated_at?: string
-        }
-        Update: {
-          closing_text?: string | null
-          company_id?: string
-          created_at?: string
-          id?: string
-          intro_text?: string | null
-          subject?: string
-          template_type?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "email_templates_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       email_unsubscribe_tokens: {
         Row: {
           created_at: string
