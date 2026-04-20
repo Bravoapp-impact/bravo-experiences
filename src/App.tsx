@@ -52,6 +52,7 @@ import SettingsDisabled from "./pages/hr/settings/SettingsDisabled";
 import AccessRequestsPage from "./pages/super-admin/AccessRequestsPage";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
+import Unsubscribe from "./pages/Unsubscribe";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route
               path="/app/experiences"
               element={
