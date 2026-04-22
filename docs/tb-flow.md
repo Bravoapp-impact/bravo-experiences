@@ -432,3 +432,44 @@ Responsabile del documento: Filippo (product owner).
 ---
 
 *Versione 1.0 — Aprile 2026*
+
+---
+
+## Appendice A — Decisioni emerse in fase di implementazione
+
+Aggiornamento: 22 Aprile 2026
+
+### A.1 Tag secondari unificati
+
+I tag secondari (`secondary_tags`) sono condivisi tra `experiences` e `tb_formats`. Non esiste un enum DB: restano come `text[]`. La costante TypeScript `AVAILABLE_TAGS` in `src/lib/tags.ts` è la sorgente di verità.
+
+Set unificato:
+`Outdoor, Indoor, Manuale, Creativo, Formativo, Intergenerazionale, Animali, Gruppo, Accessibile, Fisica, Inclusione, Sostenibilità, Cultura locale, Culinario, Sportivo`
+
+Il campo `activity_type` proposto inizialmente per `tb_formats` è stato rimosso. Al suo posto si usa `secondary_tags` (stesso array `text[]` delle experiences). La costante è importata ovunque.
+
+### A.2 Categorie condivise
+
+`tb_formats.category_id` punta alla tabella `categories` esistente — stesse categorie del volontariato. Nessuna categoria nuova per il TB in V1.
+
+### A.3 Mapping associazioni dal CSV
+
+Il campo `association_names` del CSV storico viene usato per popolare `tb_format_associations`, matchando per nome con la tabella `associations` esistente.
+
+### A.4 Rimozione `company_service_config`
+
+Il business model prevede che la subscription dia accesso a tutte le funzionalità. Il gating per servizio (`company_service_config`) è stato rimosso. Le RLS policies su `experiences` per HR Admin ora controllano solo `status = 'published' AND visibility = 'public'`.
+
+### A.5 Route naming
+
+Le route TB seguono la tassonomia esistente dell'app:
+- `/super-admin/team-building/...` (non `/admin/...`)
+- `/hr/team-building/...`
+
+### A.6 `user_events` — tabella analytics trasversale
+
+Creata come tabella cross-cutting nel primo step di migrazione. Usata sia da TB che potenzialmente da volontariato e altri verticali futuri.
+
+### A.7 Post-vendita e partecipanti
+
+Punto aperto: la pagina di iscrizione evento (`/iscrizione-evento/{slug}`) è pubblica e non richiede login. I partecipanti TB non diventano necessariamente employee nel sistema. Da rivalutare in V2.
