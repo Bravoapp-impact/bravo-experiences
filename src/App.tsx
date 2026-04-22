@@ -50,6 +50,8 @@ import SettingsMembers from "./pages/hr/settings/SettingsMembers";
 import SettingsVolunteering from "./pages/hr/settings/SettingsVolunteering";
 import SettingsDisabled from "./pages/hr/settings/SettingsDisabled";
 import AccessRequestsPage from "./pages/super-admin/AccessRequestsPage";
+import TBFormatsPage from "./pages/super-admin/TBFormatsPage";
+import TBFormatDetailPage from "./pages/super-admin/TBFormatDetailPage";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
 import Unsubscribe from "./pages/Unsubscribe";
@@ -253,6 +255,22 @@ const App = () => (
               element={
                 <ProtectedSuperAdminRoute>
                   <AccessRequestsPage />
+                </ProtectedSuperAdminRoute>
+              }
+            />
+            <Route
+              path="/super-admin/team-building/formats"
+              element={
+                <ProtectedSuperAdminRoute>
+                  <TBFormatsPage />
+                </ProtectedSuperAdminRoute>
+              }
+            />
+            <Route
+              path="/super-admin/team-building/formats/:id"
+              element={
+                <ProtectedSuperAdminRoute>
+                  <TBFormatDetailPage />
                 </ProtectedSuperAdminRoute>
               }
             />
