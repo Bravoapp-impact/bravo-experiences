@@ -1,12 +1,12 @@
 # Sistema Operativo Bravo! — Principi e architettura del prodotto
 
-*Documento di riferimento — Aprile 2026*
+_Documento di riferimento — Aprile 2026_
 
 ---
 
 ## Premessa
 
-Questo documento fissa la cornice entro cui ogni decisione di prodotto si prende. Non è un trattato di architettura né un documento commerciale: è la bussola che tiene insieme verticali, flussi, attori e scelte tecniche. Quando un nuovo pezzo di prodotto va progettato — un verticale nuovo, un flusso nuovo, una feature nuova — questo doc dice *dove* si colloca nel sistema e *quali principi* deve rispettare per non rompere la coerenza. Tutto il resto (`tb-flow.md`, `volunteering.md`, roadmap, specifiche) si aggancia qui.
+Questo documento fissa la cornice entro cui ogni decisione di prodotto si prende. Non è un trattato di architettura né un documento commerciale: è la bussola che tiene insieme verticali, flussi, attori e scelte tecniche. Quando un nuovo pezzo di prodotto va progettato — un verticale nuovo, un flusso nuovo, una feature nuova — questo doc dice _dove_ si colloca nel sistema e _quali principi_ deve rispettare per non rompere la coerenza. Tutto il resto (`tb-flow.md`, `volunteering.md`, roadmap, specifiche) si aggancia qui.
 
 ---
 
@@ -34,15 +34,15 @@ Il sistema esiste perché mette in relazione quattro attori, ciascuno con la pro
 
 Il posizionamento esterno, nella forma Dunford che Bravo! ha adottato, è:
 
-> *Per le aziende con 50+ dipendenti che vogliono ingaggiare le proprie persone generando un impatto positivo sul territorio, Bravo! è la soluzione che permette di ideare, strutturare e gestire facilmente attività di social engagement. A differenza di organizzare queste attività in autonomia o con partner sempre diversi, Bravo! unisce una tecnologia intuitiva, un team di esperti e un network di enti no-profit locali verificati, per garantire iniziative ad alto impatto e misurabili.*
+> _Per le aziende con 50+ dipendenti che vogliono ingaggiare le proprie persone generando un impatto positivo sul territorio, Bravo! è un la soluzione che permette di ideare, strutturare e gestire attività di Corporate Social Engagement con il territorio. A differenza di organizzare queste attività in autonomia o con partner sempre diversi, Bravo! fornisce una piattaforma di gestione completa, un team di supporto dedicato e una rete di enti no profit locali verificati, per costruire un percorso di impatto tarato sui bisogni dell'azienda, strutturato e misurabile, che diventa parte della cultura aziendale._
 
 Tre elementi di questo posizionamento devono guidare ogni scelta di prodotto.
 
-*Coinvolgere le persone e il territorio* è il **perché** — la motivazione del buyer, non un benefit laterale. Ogni flusso deve facilitare questo incontro, non altre logiche (compliance, reporting, CSR per la CSR).
+_Coinvolgere le persone e il territorio_ è il **perché** — la motivazione del buyer, non un benefit laterale. Ogni flusso deve facilitare questo incontro, non altre logiche (compliance, reporting, CSR per la CSR).
 
-*Ideare, strutturare, gestire* è il **cosa** — i tre momenti in cui la piattaforma entra nel lavoro dell'azienda. Non "trovare" (che è quello che fa Google), non "donare" (che è il modello americano). Ideare, strutturare, gestire.
+_Ideare, strutturare, gestire_ è il **cosa** — i tre momenti in cui la piattaforma entra nel lavoro dell'azienda. Non "trovare" (che è quello che fa Google), non "donare" (che è il modello americano). Ideare, strutturare, gestire.
 
-*Tecnologia + team + network* è il **come** — nessuno dei tre da solo basta. Una piattaforma senza rete fallisce (Benevity in Italia). Una rete senza piattaforma non scala. Un team senza entrambi è un'agenzia. Bravo! è il sistema che tiene insieme i tre.
+_Tecnologia + team + network_ è il **come** — nessuno dei tre da solo basta. Una piattaforma senza rete fallisce (Benevity in Italia). Una rete senza piattaforma non scala. Un team senza entrambi è un'agenzia. Bravo! è il sistema che tiene insieme i tre.
 
 ### 1.4 La bussola
 
@@ -84,23 +84,23 @@ Un **verticale** è una linea di servizio con una sua logica di consumo, un suo 
 
 **Team Building.** In costruzione. Logica: richiesta su commissione, matching da catalogo di format, preventivo in-app, accettazione, esecuzione evento una tantum. Costruzione imminente per mostrarlo a potenziali clienti.
 
-**Formazione, Consulenza, Gadget solidali.** In backlog. Arriveranno dopo che volontariato e TB sono stabili.
+**Formazione, Consulenza,...** In backlog. Arriveranno dopo che volontariato e TB sono stabili.
 
 ### 3.2 Cosa definisce un verticale
 
 Quando si aggiunge un verticale, il suo documento dedicato (`<verticale>-flow.md`) deve rispondere a sei domande:
 
-*Gli oggetti propri.* Ogni verticale ha le sue tabelle (es. `experiences` + `experience_dates` per il volontariato; `tb_formats` + `tb_requests` + `tb_proposals` + `tb_quotes` per il TB). Non si forzano dentro tabelle esistenti per "risparmiare": un verticale pulito ha i suoi oggetti. Il riuso sta negli oggetti dominio condivisi (capitolo 2) e nelle infrastrutture trasversali (capitolo 4), non nello schema specifico del verticale.
+_Gli oggetti propri._ Ogni verticale ha le sue tabelle (es. `experiences` + `experience_dates` per il volontariato; `tb_formats` + `tb_requests` + `tb_proposals` + `tb_quotes` per il TB). Non si forzano dentro tabelle esistenti per "risparmiare": un verticale pulito ha i suoi oggetti. Il riuso sta negli oggetti dominio condivisi (capitolo 2) e nelle infrastrutture trasversali (capitolo 4), non nello schema specifico del verticale.
 
-*Gli stati e il flusso.* Dalla prima apertura (l'HR apre una pagina) alla chiusura (il servizio è erogato), quali sono gli stati intermedi, chi li fa avanzare, cosa succede in ciascuno.
+_Gli stati e il flusso._ Dalla prima apertura (l'HR apre una pagina) alla chiusura (il servizio è erogato), quali sono gli stati intermedi, chi li fa avanzare, cosa succede in ciascuno.
 
-*Chi vede cosa.* Quali attori sono coinvolti, in quali fasi, con quale visibilità dei dati (vedi capitolo 5).
+_Chi vede cosa._ Quali attori sono coinvolti, in quali fasi, con quale visibilità dei dati (vedi capitolo 5).
 
-*La UI dedicata.* Le pagine che i quattro attori vedono per operare su quel verticale, su desktop e su mobile.
+_La UI dedicata._ Le pagine che i quattro attori vedono per operare su quel verticale, su desktop e su mobile.
 
-*Le email e notifiche.* Quali eventi del verticale generano email transazionali, con quali template, secondo il pattern già consolidato (vedi 4.4).
+_Le email e notifiche._ Quali eventi del verticale generano email transazionali, con quali template, secondo il pattern già consolidato (vedi 4.4).
 
-*Gli eventi analytics.* Quali momenti del flusso vanno loggati in `user_events` per il cruscotto super admin (vedi 4.5).
+_Gli eventi analytics._ Quali momenti del flusso vanno loggati in `user_events` per il cruscotto super admin (vedi 4.5).
 
 **Principio.** Quando si aggiunge un verticale si parte dal doc dedicato, che risponde a queste sei domande. Senza il doc, non si inizia a costruire.
 
@@ -120,23 +120,23 @@ Lo stato dell'onboarding — e, più in generale, lo **stato di attivazione** di
 
 Il preventivo è **un oggetto di prodotto, non un allegato**. Per ogni verticale che preveda un'offerta economica (tutti tranne il volontariato base in licenza), il preventivo ha una struttura comune.
 
-*Header.* A chi è destinato, da chi è emesso, quando, con che numero/riferimento.
+_Header._ A chi è destinato, da chi è emesso, quando, con che numero/riferimento.
 
-*Items.* Le voci che compongono il prezzo. Ogni voce può riferirsi a un'esperienza/format, a un'ETS erogante, a una quantità (partecipanti, ore, pezzi), a un prezzo. Le voci possono essere collegate a oggetti del verticale (un format TB, un'esperienza di formazione) oppure libere (logistica, trasporti, "varie ed eventuali").
+_Items._ Le voci che compongono il prezzo. Ogni voce può riferirsi a un'esperienza/format, a un'ETS erogante, a una quantità (partecipanti, ore, pezzi), a un prezzo. Le voci possono essere collegate a oggetti del verticale (un format TB, un'esperienza di formazione) oppure libere (logistica, trasporti, "varie ed eventuali").
 
-*Totale.* Calcolato, non digitato. Con eventuali sconti, IVA, eccetera.
+_Totale._ Calcolato, non digitato. Con eventuali sconti, IVA, eccetera.
 
-*Stato.* `draft` → `sent` → `viewed` → `accepted` / `rejected` / `modification_requested`.
+_Stato._ `draft` → `sent` → `viewed` → `accepted` / `rejected` / `modification_requested`.
 
-*Firma.* Record di accettazione. In V1 può essere manuale (super admin carica PDF firmato o conferma firma avvenuta fuori app), in V2 è un clic in-app vincolante con log, in V3 può essere DocuSign/firma qualificata.
+_Firma._ Record di accettazione. In V1 può essere manuale (super admin carica PDF firmato o conferma firma avvenuta fuori app), in V2 potrà essere un clic in-app con log, o DocuSign/firma qualificata.
 
-*Principio di visibilità.* Il cliente non vede il margine Bravo! scomposto, vede i prezzi finali per voce. L'ETS non vede il prezzo finale fatturato al cliente, vede solo quello che incassa. Il super admin vede tutto. Questo si riflette in RLS e in logica di visualizzazione (capitolo 5).
+_Principio di visibilità._ Il cliente non vede il margine Bravo! scomposto, vede i prezzi finali per voce. L'ETS non vede il prezzo finale fatturato al cliente, vede solo quello che incassa. Il super admin vede tutto. Questo si riflette in RLS e in logica di visualizzazione (capitolo 5).
 
 Il PDF del preventivo, dove serve, viene **generato** dall'app a partire dai dati strutturati, non caricato a mano. Questo richiede edge function di generazione PDF; va nel backlog ma non è bloccante per la V1.
 
 ### 4.3 Contratto
 
-In V1 il contratto coincide con la firma del preventivo, via PDF scambiato fuori dall'app per la firma legale, registrato dentro l'app come evento. In V2 la firma è in-app con clic vincolante (IP + timestamp + user_id + versione del preventivo firmato loggati). La parte legale della V2 va verificata con l'avvocato di Bravo! prima di rilasciare. Nel frattempo il sistema registra l'accettazione come evento di prodotto: consente all'HR di vedere "preventivo accettato" e al super admin di procedere con l'esecuzione.
+In V1 il contratto coincide con la firma del preventivo, via PDF scambiato fuori dall'app per la firma legale, registrato dentro l'app come evento. In V2 capiremo come gestirlo in app. Nel frattempo il sistema registra l'accettazione come evento di prodotto: consente all'HR di vedere "preventivo accettato" e al super admin di procedere con l'esecuzione.
 
 ### 4.4 Email transazionali
 
@@ -146,15 +146,15 @@ Le email del verticale TB (richiesta quotazione a ETS, preventivo pronto per HR,
 
 ### 4.5 Analytics di prodotto
 
-Questo è il capitolo che nella roadmap v6 era stato rinviato e che ora promuoviamo a pilastro trasversale. Il principio è semplice: **ogni azione significativa dell'utente genera un evento** in una tabella `user_events`. Non è analytics di marketing, è analytics operative per il super admin — il cruscotto con cui Bravo! si accorge che un cliente si è fermato e lo richiama.
+Il principio è semplice: **ogni azione significativa dell'utente genera un evento** in una tabella `user_events`. Non è analytics di marketing, è analytics operative per il super admin — il cruscotto con cui Bravo! si accorge che un cliente si è fermato e lo richiama.
 
 Gli eventi hanno: `user_id`, `company_id`, `event_type` (es. `tb_request_submitted`, `tb_quote_viewed`, `tb_quote_accepted`, `volunteering_experience_viewed`, `login`), `context` JSONB con informazioni specifiche, timestamp.
 
 Sopra questa tabella vivono due viste.
 
-*Cruscotto super admin "stato aziende".* Per ogni azienda cliente, l'ultimo evento significativo, lo stadio del funnel TB/volontariato, i giorni dall'ultima interazione. Permette di vedere "Mario di AziendaX ha aperto il preventivo 4 giorni fa e non ha ancora risposto" e di agire.
+_Cruscotto super admin "stato aziende"._ Per ogni azienda cliente, l'ultimo evento significativo, lo stadio del funnel TB/volontariato, i giorni dall'ultima interazione. Permette di vedere "Mario di AziendaX ha aperto il preventivo 4 giorni fa e non ha ancora risposto" e di agire.
 
-*Analytics operative per l'HR.* Quanti dipendenti si sono attivati, quale percentuale ha prenotato almeno un'esperienza, eccetera. Non è marketing, è visibilità sul programma.
+_Analytics operative per l'HR._ Quanti dipendenti si sono attivati, quale percentuale ha prenotato almeno un'esperienza, eccetera. Non è marketing, è visibilità sul programma.
 
 In V1 il cruscotto è una pagina super admin che legge direttamente da `user_events`. Se i volumi crescono, si può integrare PostHog o Mixpanel inviando gli stessi eventi in parallelo. La tabella resta la fonte di verità interna.
 
@@ -192,8 +192,6 @@ Lo stato dei verticali oggi, in forma essenziale, per orientarsi quando si rileg
 
 **Consulenza.** Backlog. Servizi di progettazione di strategia di impatto. Meno transazionale, più relazionale. Forse non diventerà mai un verticale autonomo — potrebbe vivere come servizio legato alla subscription premium.
 
-**Gadget solidali / shop.** Backlog. Catalogo di prodotti realizzati da cooperative sociali o ETS, acquistabili dalle aziende per regalistica aziendale o gift corporate. Logica di e-commerce classica, tecnicamente distante dal resto. Ultimo in ordine.
-
 **Apertura B2C.** Non è un verticale, è un'evoluzione del modello: permettere al singolo cittadino (non tramite azienda) di accedere ad alcune esperienze. Scelta strategica non comunicata esternamente oggi, ma che informa le scelte architetturali (es. un `profile` senza `company_id` deve poter esistere). Temporalmente: dopo che almeno tre verticali sono stabili.
 
 ---
@@ -212,4 +210,4 @@ Questo è un documento **vivo**: va aggiornato quando il sistema cambia. Un doc 
 
 ---
 
-*Versione 1.0 — Aprile 2026*
+_Versione 1.0 — Aprile 2026_
