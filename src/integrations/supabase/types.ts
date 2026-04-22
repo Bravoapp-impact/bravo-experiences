@@ -330,41 +330,6 @@ export type Database = {
         }
         Relationships: []
       }
-      company_service_config: {
-        Row: {
-          company_id: string
-          created_at: string
-          enabled: boolean
-          id: string
-          service_type: string
-          updated_at: string
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          enabled?: boolean
-          id?: string
-          service_type?: string
-          updated_at?: string
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          enabled?: boolean
-          id?: string
-          service_type?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "company_service_config_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       email_logs: {
         Row: {
           booking_id: string
