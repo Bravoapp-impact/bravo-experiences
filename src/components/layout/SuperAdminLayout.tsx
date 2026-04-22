@@ -10,6 +10,7 @@ import {
   KeyRound,
   Inbox,
   Home,
+  LayoutGrid,
 } from "lucide-react";
 import { AdminLayout, SidebarItem } from "./AdminLayout";
 
@@ -28,6 +29,7 @@ const sidebarItems: SidebarItem[] = [
   { label: "Città", icon: MapPin, href: "/super-admin/cities" },
   { label: "Categorie", icon: Tag, href: "/super-admin/categories" },
   { label: "Email per azienda", icon: Mail, href: "/super-admin/email-settings" },
+  { label: "Catalogo TB", icon: LayoutGrid, href: "/super-admin/team-building/formats" },
 ];
 
 export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
@@ -40,6 +42,7 @@ export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
       sectionLabels={[
         { beforeIndex: 1, label: "Marketplace" },
         { beforeIndex: 5, label: "Configurazione" },
+        { beforeIndex: 10, label: "Team Building" },
       ]}
     >
       {children}
