@@ -106,22 +106,8 @@ interface Experience {
   category?: string | null;
 }
 
-// Available secondary tags for experiences
-const AVAILABLE_TAGS = [
-  "Outdoor",
-  "Indoor", 
-  "Manuale",
-  "Creativo",
-  "Formativo",
-  "Intergenerazionale",
-  "Animali",
-  "Gruppo",
-  "Accessibile",
-  "Fisica",
-  "Inclusione",
-  "Sostenibilità",
-  "Cultura locale",
-] as const;
+// Unified secondary tags — shared across experiences and tb_formats
+import { AVAILABLE_TAGS } from "@/lib/tags";
 
 interface Company {
   id: string;

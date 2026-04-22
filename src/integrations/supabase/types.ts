@@ -330,41 +330,6 @@ export type Database = {
         }
         Relationships: []
       }
-      company_service_config: {
-        Row: {
-          company_id: string
-          created_at: string
-          enabled: boolean
-          id: string
-          service_type: string
-          updated_at: string
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          enabled?: boolean
-          id?: string
-          service_type?: string
-          updated_at?: string
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          enabled?: boolean
-          id?: string
-          service_type?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "company_service_config_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       email_logs: {
         Row: {
           booking_id: string
@@ -872,6 +837,712 @@ export type Database = {
           id?: string
           metadata?: Json | null
           reason?: string
+        }
+        Relationships: []
+      }
+      tb_contracts: {
+        Row: {
+          contract_pdf_url: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          quote_id: string
+          request_id: string
+          signature_method: string
+          signed_at: string | null
+          signer_ip: string | null
+          signer_profile_id: string | null
+          signer_user_agent: string | null
+          terms_version_signed: string | null
+        }
+        Insert: {
+          contract_pdf_url?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          quote_id: string
+          request_id: string
+          signature_method?: string
+          signed_at?: string | null
+          signer_ip?: string | null
+          signer_profile_id?: string | null
+          signer_user_agent?: string | null
+          terms_version_signed?: string | null
+        }
+        Update: {
+          contract_pdf_url?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          quote_id?: string
+          request_id?: string
+          signature_method?: string
+          signed_at?: string | null
+          signer_ip?: string | null
+          signer_profile_id?: string | null
+          signer_user_agent?: string | null
+          terms_version_signed?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tb_contracts_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "tb_quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_contracts_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "tb_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tb_event_participants: {
+        Row: {
+          created_at: string
+          dietary_restrictions: string | null
+          email: string
+          event_id: string
+          first_name: string
+          id: string
+          last_name: string
+          privacy_accepted: boolean
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          dietary_restrictions?: string | null
+          email: string
+          event_id: string
+          first_name: string
+          id?: string
+          last_name: string
+          privacy_accepted?: boolean
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          dietary_restrictions?: string | null
+          email?: string
+          event_id?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          privacy_accepted?: boolean
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tb_event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "tb_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tb_events: {
+        Row: {
+          contract_id: string | null
+          created_at: string
+          id: string
+          location_address: string | null
+          location_name: string | null
+          max_participants: number | null
+          public_slug: string | null
+          request_id: string
+          scheduled_datetime: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          contract_id?: string | null
+          created_at?: string
+          id?: string
+          location_address?: string | null
+          location_name?: string | null
+          max_participants?: number | null
+          public_slug?: string | null
+          request_id: string
+          scheduled_datetime?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          contract_id?: string | null
+          created_at?: string
+          id?: string
+          location_address?: string | null
+          location_name?: string | null
+          max_participants?: number | null
+          public_slug?: string | null
+          request_id?: string
+          scheduled_datetime?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tb_events_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "tb_contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "tb_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tb_format_associations: {
+        Row: {
+          association_id: string
+          created_at: string
+          format_id: string
+          id: string
+        }
+        Insert: {
+          association_id: string
+          created_at?: string
+          format_id: string
+          id?: string
+        }
+        Update: {
+          association_id?: string
+          created_at?: string
+          format_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tb_format_associations_association_id_fkey"
+            columns: ["association_id"]
+            isOneToOne: false
+            referencedRelation: "associations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_format_associations_association_id_fkey"
+            columns: ["association_id"]
+            isOneToOne: false
+            referencedRelation: "associations_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_format_associations_format_id_fkey"
+            columns: ["format_id"]
+            isOneToOne: false
+            referencedRelation: "tb_formats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tb_format_cities: {
+        Row: {
+          city_id: string
+          created_at: string
+          format_id: string
+          id: string
+        }
+        Insert: {
+          city_id: string
+          created_at?: string
+          format_id: string
+          id?: string
+        }
+        Update: {
+          city_id?: string
+          created_at?: string
+          format_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tb_format_cities_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_format_cities_format_id_fkey"
+            columns: ["format_id"]
+            isOneToOne: false
+            referencedRelation: "tb_formats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tb_formats: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          description: string | null
+          duration_hours: number | null
+          extra_services: Json | null
+          id: string
+          image_url: string | null
+          location_type: string
+          participants_max: number | null
+          participants_min: number | null
+          price_range_max: number | null
+          price_range_min: number | null
+          sdgs: string[] | null
+          secondary_tags: string[] | null
+          services: Json | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          duration_hours?: number | null
+          extra_services?: Json | null
+          id?: string
+          image_url?: string | null
+          location_type?: string
+          participants_max?: number | null
+          participants_min?: number | null
+          price_range_max?: number | null
+          price_range_min?: number | null
+          sdgs?: string[] | null
+          secondary_tags?: string[] | null
+          services?: Json | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          duration_hours?: number | null
+          extra_services?: Json | null
+          id?: string
+          image_url?: string | null
+          location_type?: string
+          participants_max?: number | null
+          participants_min?: number | null
+          price_range_max?: number | null
+          price_range_min?: number | null
+          sdgs?: string[] | null
+          secondary_tags?: string[] | null
+          services?: Json | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tb_formats_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tb_matching_decisions: {
+        Row: {
+          association_id: string | null
+          context: Json | null
+          created_at: string
+          decided_by: string | null
+          decision: string
+          decision_reason: string | null
+          format_id: string | null
+          id: string
+          request_id: string
+        }
+        Insert: {
+          association_id?: string | null
+          context?: Json | null
+          created_at?: string
+          decided_by?: string | null
+          decision: string
+          decision_reason?: string | null
+          format_id?: string | null
+          id?: string
+          request_id: string
+        }
+        Update: {
+          association_id?: string | null
+          context?: Json | null
+          created_at?: string
+          decided_by?: string | null
+          decision?: string
+          decision_reason?: string | null
+          format_id?: string | null
+          id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tb_matching_decisions_association_id_fkey"
+            columns: ["association_id"]
+            isOneToOne: false
+            referencedRelation: "associations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_matching_decisions_association_id_fkey"
+            columns: ["association_id"]
+            isOneToOne: false
+            referencedRelation: "associations_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_matching_decisions_format_id_fkey"
+            columns: ["format_id"]
+            isOneToOne: false
+            referencedRelation: "tb_formats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_matching_decisions_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "tb_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tb_proposals: {
+        Row: {
+          admin_notes: string | null
+          association_visibility: string
+          client_decision_at: string | null
+          client_notes: string | null
+          client_status: string
+          created_at: string
+          format_id: string
+          id: string
+          override_association_id: string | null
+          priority: number
+          request_id: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          association_visibility?: string
+          client_decision_at?: string | null
+          client_notes?: string | null
+          client_status?: string
+          created_at?: string
+          format_id: string
+          id?: string
+          override_association_id?: string | null
+          priority?: number
+          request_id: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          association_visibility?: string
+          client_decision_at?: string | null
+          client_notes?: string | null
+          client_status?: string
+          created_at?: string
+          format_id?: string
+          id?: string
+          override_association_id?: string | null
+          priority?: number
+          request_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tb_proposals_format_id_fkey"
+            columns: ["format_id"]
+            isOneToOne: false
+            referencedRelation: "tb_formats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_proposals_override_association_id_fkey"
+            columns: ["override_association_id"]
+            isOneToOne: false
+            referencedRelation: "associations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_proposals_override_association_id_fkey"
+            columns: ["override_association_id"]
+            isOneToOne: false
+            referencedRelation: "associations_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_proposals_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "tb_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tb_quote_items: {
+        Row: {
+          association_id: string | null
+          created_at: string
+          description: string
+          display_order: number
+          id: string
+          notes: string | null
+          proposal_id: string | null
+          quantity: number
+          quote_id: string
+          total_ets: number | null
+          total_final: number | null
+          unit_price_ets: number | null
+          unit_price_final: number | null
+        }
+        Insert: {
+          association_id?: string | null
+          created_at?: string
+          description: string
+          display_order?: number
+          id?: string
+          notes?: string | null
+          proposal_id?: string | null
+          quantity?: number
+          quote_id: string
+          total_ets?: number | null
+          total_final?: number | null
+          unit_price_ets?: number | null
+          unit_price_final?: number | null
+        }
+        Update: {
+          association_id?: string | null
+          created_at?: string
+          description?: string
+          display_order?: number
+          id?: string
+          notes?: string | null
+          proposal_id?: string | null
+          quantity?: number
+          quote_id?: string
+          total_ets?: number | null
+          total_final?: number | null
+          unit_price_ets?: number | null
+          unit_price_final?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tb_quote_items_association_id_fkey"
+            columns: ["association_id"]
+            isOneToOne: false
+            referencedRelation: "associations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_quote_items_association_id_fkey"
+            columns: ["association_id"]
+            isOneToOne: false
+            referencedRelation: "associations_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_quote_items_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "tb_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "tb_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tb_quotes: {
+        Row: {
+          bravo_margin_amount: number | null
+          bravo_margin_percent: number | null
+          client_decision_notes: string | null
+          created_at: string
+          created_by: string | null
+          decided_at: string | null
+          id: string
+          pdf_url: string | null
+          request_id: string
+          sent_at: string | null
+          status: string
+          terms_text: string | null
+          total_amount_ets: number | null
+          total_amount_final: number | null
+          updated_at: string
+          valid_until: string | null
+          version: number
+          viewed_at: string | null
+        }
+        Insert: {
+          bravo_margin_amount?: number | null
+          bravo_margin_percent?: number | null
+          client_decision_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          id?: string
+          pdf_url?: string | null
+          request_id: string
+          sent_at?: string | null
+          status?: string
+          terms_text?: string | null
+          total_amount_ets?: number | null
+          total_amount_final?: number | null
+          updated_at?: string
+          valid_until?: string | null
+          version?: number
+          viewed_at?: string | null
+        }
+        Update: {
+          bravo_margin_amount?: number | null
+          bravo_margin_percent?: number | null
+          client_decision_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          id?: string
+          pdf_url?: string | null
+          request_id?: string
+          sent_at?: string | null
+          status?: string
+          terms_text?: string | null
+          total_amount_ets?: number | null
+          total_amount_final?: number | null
+          updated_at?: string
+          valid_until?: string | null
+          version?: number
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tb_quotes_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "tb_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tb_requests: {
+        Row: {
+          assigned_admin_id: string | null
+          budget_estimate: number | null
+          company_id: string
+          created_at: string
+          description: string | null
+          extra_services: Json | null
+          id: string
+          internal_notes: string | null
+          notes: string | null
+          participants_max: number | null
+          participants_min: number | null
+          preferred_city_id: string | null
+          preferred_location_type: string | null
+          preferred_period_from: string | null
+          preferred_period_to: string | null
+          requested_by: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_admin_id?: string | null
+          budget_estimate?: number | null
+          company_id: string
+          created_at?: string
+          description?: string | null
+          extra_services?: Json | null
+          id?: string
+          internal_notes?: string | null
+          notes?: string | null
+          participants_max?: number | null
+          participants_min?: number | null
+          preferred_city_id?: string | null
+          preferred_location_type?: string | null
+          preferred_period_from?: string | null
+          preferred_period_to?: string | null
+          requested_by: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_admin_id?: string | null
+          budget_estimate?: number | null
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          extra_services?: Json | null
+          id?: string
+          internal_notes?: string | null
+          notes?: string | null
+          participants_max?: number | null
+          participants_min?: number | null
+          preferred_city_id?: string | null
+          preferred_location_type?: string | null
+          preferred_period_from?: string | null
+          preferred_period_to?: string | null
+          requested_by?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tb_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_requests_preferred_city_id_fkey"
+            columns: ["preferred_city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_events: {
+        Row: {
+          created_at: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          user_id?: string
         }
         Relationships: []
       }
