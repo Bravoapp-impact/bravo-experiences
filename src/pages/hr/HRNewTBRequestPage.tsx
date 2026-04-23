@@ -259,7 +259,7 @@ export default function HRNewTBRequestPage() {
                 <label
                   key={goal}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-colors text-sm",
+                    "flex items-center gap-2.5 px-3 py-1.5 rounded-md border cursor-pointer transition-colors text-sm",
                     form.goals.includes(goal)
                       ? "border-primary bg-primary/5"
                       : "border-border hover:bg-muted/30"
@@ -290,7 +290,7 @@ export default function HRNewTBRequestPage() {
                 <label
                   key={cat.id}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-colors text-sm",
+                    "flex items-center gap-2.5 px-3 py-1.5 rounded-md border cursor-pointer transition-colors text-sm",
                     form.noActivityInMind
                       ? "opacity-40 pointer-events-none"
                       : form.preferredActivities.includes(cat.id)
@@ -313,7 +313,7 @@ export default function HRNewTBRequestPage() {
               ))}
               <label
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-colors text-sm mt-1",
+                  "flex items-center gap-2.5 px-3 py-1.5 rounded-md border cursor-pointer transition-colors text-sm mt-1",
                   form.noActivityInMind
                     ? "border-primary bg-primary/5"
                     : "border-border hover:bg-muted/30"
@@ -484,7 +484,7 @@ export default function HRNewTBRequestPage() {
                   <label
                     key={svc.key}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-colors text-sm",
+                      "flex items-center gap-2.5 px-3 py-1.5 rounded-md border cursor-pointer transition-colors text-sm",
                       form.extraServices[svc.key]
                         ? "border-primary bg-primary/5"
                         : "border-border hover:bg-muted/30"
