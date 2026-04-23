@@ -89,12 +89,12 @@ Campi principali:
 - `id`, `company_id`, `created_by` (profile_id dell'HR o, se compilato a nome cliente, del super admin)
 - `title` — identificativo umano della richiesta (es. "TB primavera 2026 - team Marketing")
 - `status` enum: `draft`, `submitted`, `in_matching`, `proposals_sent`, `proposals_reviewed`, `quote_requested`, `quote_in_composition`, `quote_sent`, `quote_accepted`, `quote_rejected`, `signed`, `event_scheduled`, `completed`, `cancelled`
-- `participants_min`, `participants_max`
+- `participants_min`, `participants_max` — calcolati automaticamente dal numero indicativo inserito dall'HR (±10%). L'HR inserisce un singolo numero (es. 50) e il sistema salva `participants_min = 45`, `participants_max = 55`.
 - `preferred_period_from`, `preferred_period_to` — flessibile: l'HR può dire "settembre o ottobre" senza doversi impegnare su una settimana specifica
 - `budget_estimate` — cifra indicativa che l'HR dichiara
-- `preferred_city_id` — città preferita
-- `preferred_location_type` — preferenza location (`indoor`, `outdoor`, `both`)
-- `extra_services` JSONB — oggetto con chiavi come `{lunch: true, transport: false, location_rental: true, catering_social: true, notes: "..."}`. JSONB per non dover creare colonne per ogni possibile servizio.
+- `preferred_city_id` — città preferita (non più usato nel brief; mantenuto per compatibilità)
+- `preferred_location_type` — non più raccolto nel brief HR (resta nei `tb_formats` per il catalogo). Campo mantenuto nel DB per compatibilità.
+- `extra_services` JSONB — oggetto con chiavi come `{lunch: true, transport: false, location_rental: true, catering_social: true, places: ["Milano", "Roma"], goals: [...], notes: "..."}`. JSONB per non dover creare colonne per ogni possibile servizio. Il campo `places` contiene le località selezionate dall'HR (multi-selezione da lista province italiane).
 - `notes` — note libere dell'HR
 - `assigned_admin_id` — super admin assegnato al caso, nullable finché non assegnato
 - `created_at`, `updated_at`
@@ -195,7 +195,9 @@ Il flusso ha otto fasi, in sequenza lineare con possibili ritorni.
 
 ### Fase 1 — Brief (HR → `tb_request` in stato `submitted`)
 
-L'HR apre la pagina "Richiedi un Team Building" nell'app. Compila un form guidato: tipo di attività, range partecipanti, periodo preferito, budget, location, servizi extra (pranzo, trasporti, location…), note libere. Salva. Il form genera una riga in `tb_requests` con `status = submitted`.
+L'HR apre la pagina "Richiedi un Team Building" nell'app. Compila un form guidato a step: nome evento, obiettivi, tipo di attività preferito (opzionale), **numero indicativo di partecipanti** (il sistema calcola automaticamente un range ±10%), periodo preferito (mesi), **luoghi** (selezione multipla da lista province italiane), budget indicativo, servizi extra (pranzo, trasporti, location…), note libere. Salva. Il form genera una riga in `tb_requests` con `status = submitted`.
+
+**Nota:** la tipologia location (indoor/outdoor) non viene più raccolta nel brief HR. Resta come attributo dei `tb_formats` nel catalogo per il filtro di matching del super admin.
 
 Il super admin riceve notifica (email + badge in app). La `tb_request` è in coda di lavorazione.
 
