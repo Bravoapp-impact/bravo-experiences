@@ -66,7 +66,7 @@ export default function TBFormatsPage() {
   const fetchData = async () => {
     try {
       const [fmtRes, catRes, citRes, assRes] = await Promise.all([
-        supabase.from("tb_formats").select("*").order("created_at", { ascending: false }),
+        supabase.from("tb_formats").select("*, tb_format_cities(city_id)").order("created_at", { ascending: false }),
         supabase.from("categories").select("id, name, default_sdgs").order("name"),
         supabase.from("cities").select("id, name").order("name"),
         supabase.from("associations").select("id, name").order("name"),
