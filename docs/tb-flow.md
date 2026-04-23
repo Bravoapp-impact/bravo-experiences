@@ -52,7 +52,7 @@ Campi principali:
 
 - `id`, `title`, `description`, `image_url`
 - `category_id` → riferimento a `categories` (trasversale al sistema)
-- `secondary_tags` (`text[]`) → tag secondari condivisi con le `experiences`. La sorgente di verità del set di tag è la costante TypeScript `AVAILABLE_TAGS` in `src/lib/tags.ts`.
+- `secondary_tags` (`text[]`) → tag secondari condivisi con le `experiences`. La sorgente di verità del set di tag è la costante TypeScript `AVAILABLE_TAGS` in `src/lib/tags.ts`. **Nota:** i valori "Indoor" e "Outdoor" sono stati rimossi dai tag e sostituiti dal campo dedicato `location_type` (vedi A.8).
 - `location_type` enum: `indoor`, `outdoor`, `both`
 - `participants_min`, `participants_max` — range indicativo di pax sostenibile
 - `duration_hours` — durata indicativa
@@ -89,11 +89,11 @@ Campi principali:
 - `id`, `company_id`, `created_by` (profile_id dell'HR o, se compilato a nome cliente, del super admin)
 - `title` — identificativo umano della richiesta (es. "TB primavera 2026 - team Marketing")
 - `status` enum: `draft`, `submitted`, `in_matching`, `proposals_sent`, `proposals_reviewed`, `quote_requested`, `quote_in_composition`, `quote_sent`, `quote_accepted`, `quote_rejected`, `signed`, `event_scheduled`, `completed`, `cancelled`
-- `activity_type` — stesso enum di `tb_formats.activity_type`, valore scelto dall'HR nel brief
 - `participants_min`, `participants_max`
 - `preferred_period_from`, `preferred_period_to` — flessibile: l'HR può dire "settembre o ottobre" senza doversi impegnare su una settimana specifica
 - `budget_estimate` — cifra indicativa che l'HR dichiara
-- `location_city_id` — città preferita
+- `preferred_city_id` — città preferita
+- `preferred_location_type` — preferenza location (`indoor`, `outdoor`, `both`)
 - `extra_services` JSONB — oggetto con chiavi come `{lunch: true, transport: false, location_rental: true, catering_social: true, notes: "..."}`. JSONB per non dover creare colonne per ogni possibile servizio.
 - `notes` — note libere dell'HR
 - `assigned_admin_id` — super admin assegnato al caso, nullable finché non assegnato
@@ -201,7 +201,7 @@ Il super admin riceve notifica (email + badge in app). La `tb_request` è in cod
 
 ### Fase 2 — Matching (Super Admin → proposte create)
 
-Il super admin apre la richiesta nel pannello "Richieste TB". Vede i parametri del brief. L'app mostra automaticamente il catalogo `tb_formats` filtrato sui parametri: stesso `activity_type`, città compatibile, budget range compatibile, partecipanti range compatibile. Ogni format visto in questo filtro genera una riga `tb_matching_decisions` con `decision = shown_in_filter`.
+Il super admin apre la richiesta nel pannello "Richieste TB". Vede i parametri del brief. L'app mostra automaticamente il catalogo `tb_formats` filtrato sui parametri: città compatibile, budget range compatibile, partecipanti range compatibile. Ogni format visto in questo filtro genera una riga `tb_matching_decisions` con `decision = shown_in_filter`.
 
 Il super admin sceglie 3-5 format. Per ciascuno, se il format ha `association_id` null, sceglie **quale ETS** assegnare tra quelle in `tb_format_associations` (o inserisce un'ETS custom). Ogni scelta genera un `tb_proposal` e una riga `tb_matching_decisions` con `decision = selected_as_proposal`. Può aggiungere note per il cliente su ciascuna proposta.
 
@@ -319,18 +319,18 @@ Ancora in fase di lavorazione e da affinare. Sono sicuramente necessarie 3 pagin
 
 ### 6.2 Lato Super Admin
 
-**`/admin/team-building/richieste`** — tabella di tutte le `tb_requests` con filtri per stato, azienda, assigned_admin. Colonne: azienda, titolo, stato, giorni fermi in stato corrente, alert se oltre soglia. Click → dettaglio richiesta.
+**`/super-admin/team-building/richieste`** — tabella di tutte le `tb_requests` con filtri per stato, azienda, assigned_admin. Colonne: azienda, titolo, stato, giorni fermi in stato corrente, alert se oltre soglia. Click → dettaglio richiesta.
 
-**`/admin/team-building/richieste/{id}`** — workspace del caso. A sinistra pannello informativo (brief, storia, eventi). Al centro, sezione operativa dinamica in base a stato:
+**`/super-admin/team-building/richieste/{id}`** — workspace del caso. A sinistra pannello informativo (brief, storia, eventi). Al centro, sezione operativa dinamica in base a stato:
 
 - Stato `submitted` o `in_matching`: filtro catalogo + selezione proposte
 - Stato `proposals_reviewed`: lista proposte con pulsante "Richiedi quotazione ETS" per ciascuna interessata
 - Stato `quote_in_composition`: editor preventivo
 - Stato `signed`: pannello esecuzione evento
 
-**`/admin/team-building/formats`** — gestione catalogo TB (CRUD dei `tb_formats`). Qui il super admin crea, modifica, archivia i format, gestisce le ETS associate, le città, i range.
+**`/super-admin/team-building/formats`** — gestione catalogo TB (CRUD dei `tb_formats`). Qui il super admin crea, modifica, archivia i format, gestisce le ETS associate, le città, i range.
 
-**`/admin/team-building/matching-lab`** — (opzionale, V1.5) pannello analytics del matching: quante decisioni scartano quali format, quali format emergono ma non vengono mai scelti dal cliente. Utile per capire il catalogo.
+**`/super-admin/team-building/matching-lab`** — (opzionale, V1.5) pannello analytics del matching: quante decisioni scartano quali format, quali format emergono ma non vengono mai scelti dal cliente. Utile per capire il catalogo.
 
 ### 6.3 Lato ETS (V2)
 
@@ -378,7 +378,7 @@ Ogni momento chiave del flusso genera un evento in `user_events`. Elenco base pe
 - `tb_event_participant_registered`
 - `tb_event_completed`
 
-**Cruscotto super admin.** Una pagina `/admin/analytics/aziende-tb` che legge `user_events` e restituisce, per ogni azienda con almeno una `tb_request`:
+**Cruscotto super admin.** Una pagina `/super-admin/analytics/aziende-tb` che legge `user_events` e restituisce, per ogni azienda con almeno una `tb_request`:
 
 - stato corrente della richiesta più recente
 - giorni da ultimo evento significativo
@@ -429,7 +429,7 @@ I CSV storici con i format TB esistenti (Cartapesta, Cooking class, Dragon Boat,
 2. Matchare le città con `cities.id`. Se città assente, crearla.
 3. Matchare categoria con `categories.id`. Se manca una categoria TB-specifica, aggiungerla.
 4. Pulire/normalizzare range partecipanti e range prezzo.
-5. Assegnare `activity_type` a ogni format (lavoro manuale di super admin, ~100-200 format in totale?).
+5. Assegnare tag secondari e `location_type` a ogni format (lavoro manuale di super admin).
 
 **Modalità import.** Script SQL o edge function dedicata che legge CSV e insert-a. Da eseguire manualmente dal super admin, con preview dei risultati prima del commit. Non automatizzare questo step: la qualità del catalogo iniziale è decisiva per il matching, val la pena controllare riga per riga.
 
@@ -447,22 +447,22 @@ Responsabile del documento: Filippo (product owner).
 
 ---
 
-_Versione 1.0 — Aprile 2026_
+_Versione 1.1 — Aprile 2026_
 
 ---
 
 ## Appendice A — Decisioni emerse in fase di implementazione
 
-Aggiornamento: 22 Aprile 2026
+Aggiornamento: 23 Aprile 2026
 
 ### A.1 Tag secondari unificati
 
 I tag secondari (`secondary_tags`) sono condivisi tra `experiences` e `tb_formats`. Non esiste un enum DB: restano come `text[]`. La costante TypeScript `AVAILABLE_TAGS` in `src/lib/tags.ts` è la sorgente di verità.
 
-Set unificato:
-`Outdoor, Indoor, Manuale, Creativo, Formativo, Intergenerazionale, Animali, Gruppo, Accessibile, Fisica, Inclusione, Sostenibilità, Cultura locale, Culinario, Sportivo`
+Set unificato (13 tag tematici):
+`Manuale, Creativo, Formativo, Intergenerazionale, Animali, Gruppo, Accessibile, Fisica, Inclusione, Sostenibilità, Cultura locale, Culinario, Sportivo`
 
-Il campo `activity_type` proposto inizialmente per `tb_formats` è stato rimosso. Al suo posto si usa `secondary_tags` (stesso array `text[]` delle experiences). La costante è importata ovunque.
+I valori "Indoor" e "Outdoor" sono stati rimossi dal set di tag e sostituiti dal campo dedicato `location_type` (vedi A.8).
 
 ### A.2 Categorie condivise
 
@@ -490,3 +490,7 @@ Creata come tabella cross-cutting nel primo step di migrazione. Usata sia da TB 
 ### A.7 Post-vendita e partecipanti
 
 Punto aperto: la pagina di iscrizione evento (`/iscrizione-evento/{slug}`) è pubblica e non richiede login. I partecipanti TB non diventano necessariamente employee nel sistema. Da rivalutare in V2.
+
+### A.8 Unificazione `location_type`
+
+Il campo `location_type` (valori: `indoor`, `outdoor`, `both`) è stato aggiunto anche alla tabella `experiences`, sostituendo i tag "Indoor" e "Outdoor" che sono stati rimossi da `AVAILABLE_TAGS`. La sorgente di verità per il set di tag ora contiene 13 voci tematiche, senza i valori di location. Il campo `location_type` è la fonte unica per distinguere attività indoor, outdoor o entrambe, sia per le experiences che per i tb_formats.

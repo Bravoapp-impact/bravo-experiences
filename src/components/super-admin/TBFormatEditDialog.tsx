@@ -19,13 +19,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Lightbulb } from "lucide-react";
+import { Loader2, Lightbulb, Plus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { devLog } from "@/lib/logger";
 import { LogoUpload } from "@/components/super-admin/LogoUpload";
 import { AVAILABLE_TAGS } from "@/lib/tags";
 import { getAllSDGs } from "@/lib/sdg-data";
+import { validateFormatPublish } from "@/lib/tb-format-validation";
 
 interface Category {
   id: string;
@@ -91,6 +92,14 @@ const STATUS_OPTIONS = [
 
 const EMPTY_ARRAY: string[] = [];
 
+function parseJsonItems(jsonData: any): string[] {
+  if (!jsonData) return [];
+  if (typeof jsonData === "object" && Array.isArray(jsonData.items)) {
+    return jsonData.items.filter((i: any) => typeof i === "string" && i.trim());
+  }
+  return [];
+}
+
 export function TBFormatEditDialog({
   open,
   onOpenChange,
@@ -122,6 +131,11 @@ export function TBFormatEditDialog({
     status: "draft",
   });
 
+  const [serviceItems, setServiceItems] = useState<string[]>([]);
+  const [extraServiceItems, setExtraServiceItems] = useState<string[]>([]);
+  const [newService, setNewService] = useState("");
+  const [newExtraService, setNewExtraService] = useState("");
+
   const [selectedCityIds, setSelectedCityIds] = useState<string[]>([]);
   const [selectedAssociationIds, setSelectedAssociationIds] = useState<string[]>([]);
 
@@ -145,6 +159,8 @@ export function TBFormatEditDialog({
         price_range_max: format.price_range_max?.toString() || "",
         status: format.status,
       });
+      setServiceItems(parseJsonItems(format.services));
+      setExtraServiceItems(parseJsonItems(format.extra_services));
       setSelectedCityIds(initialCityIds);
       setSelectedAssociationIds(initialAssociationIds);
       setSuggestedSdgs([]);
@@ -164,10 +180,14 @@ export function TBFormatEditDialog({
         price_range_max: "",
         status: "draft",
       });
+      setServiceItems([]);
+      setExtraServiceItems([]);
       setSelectedCityIds([]);
       setSelectedAssociationIds([]);
       setSuggestedSdgs([]);
     }
+    setNewService("");
+    setNewExtraService("");
   }, [open, format, initialCityIds, initialAssociationIds]);
 
   const handleCategoryChange = (categoryId: string) => {
@@ -210,10 +230,43 @@ export function TBFormatEditDialog({
     );
   };
 
+  const addService = () => {
+    const trimmed = newService.trim();
+    if (trimmed && !serviceItems.includes(trimmed)) {
+      setServiceItems((prev) => [...prev, trimmed]);
+      setNewService("");
+    }
+  };
+
+  const addExtraService = () => {
+    const trimmed = newExtraService.trim();
+    if (trimmed && !extraServiceItems.includes(trimmed)) {
+      setExtraServiceItems((prev) => [...prev, trimmed]);
+      setNewExtraService("");
+    }
+  };
+
   const handleSave = async () => {
     if (!formData.title.trim()) {
       toast({ variant: "destructive", title: "Errore", description: "Il titolo è obbligatorio" });
       return;
+    }
+
+    // Validate if publishing
+    if (formData.status === "published") {
+      const { valid, missing } = validateFormatPublish(
+        { ...formData, category_id: formData.category_id || null },
+        selectedCityIds.length,
+        selectedAssociationIds.length,
+      );
+      if (!valid) {
+        toast({
+          variant: "destructive",
+          title: "Impossibile pubblicare",
+          description: `Campi mancanti: ${missing.join(", ")}`,
+        });
+        return;
+      }
     }
 
     setSaving(true);
@@ -232,6 +285,8 @@ export function TBFormatEditDialog({
         price_range_min: formData.price_range_min ? parseFloat(formData.price_range_min) : null,
         price_range_max: formData.price_range_max ? parseFloat(formData.price_range_max) : null,
         status: formData.status,
+        services: { items: serviceItems },
+        extra_services: { items: extraServiceItems },
       };
 
       let formatId: string;
@@ -470,6 +525,70 @@ export function TBFormatEditDialog({
                 step="0.01"
               />
             </div>
+          </div>
+
+          {/* Services included */}
+          <div className="space-y-2">
+            <Label>Servizi inclusi</Label>
+            <div className="flex gap-2">
+              <Input
+                value={newService}
+                onChange={(e) => setNewService(e.target.value)}
+                placeholder="es. Istruttore esperto"
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addService(); } }}
+              />
+              <Button type="button" variant="outline" size="icon" onClick={addService} className="flex-shrink-0">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            {serviceItems.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-1">
+                {serviceItems.map((item, i) => (
+                  <Badge key={i} variant="secondary" className="gap-1 pr-1">
+                    {item}
+                    <button
+                      type="button"
+                      onClick={() => setServiceItems((prev) => prev.filter((_, j) => j !== i))}
+                      className="ml-1 rounded-full hover:bg-muted p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Extra services */}
+          <div className="space-y-2">
+            <Label>Servizi extra</Label>
+            <div className="flex gap-2">
+              <Input
+                value={newExtraService}
+                onChange={(e) => setNewExtraService(e.target.value)}
+                placeholder="es. Pranzo con prodotti locali"
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addExtraService(); } }}
+              />
+              <Button type="button" variant="outline" size="icon" onClick={addExtraService} className="flex-shrink-0">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            {extraServiceItems.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-1">
+                {extraServiceItems.map((item, i) => (
+                  <Badge key={i} variant="outline" className="gap-1 pr-1">
+                    {item}
+                    <button
+                      type="button"
+                      onClick={() => setExtraServiceItems((prev) => prev.filter((_, j) => j !== i))}
+                      className="ml-1 rounded-full hover:bg-muted p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Status */}
