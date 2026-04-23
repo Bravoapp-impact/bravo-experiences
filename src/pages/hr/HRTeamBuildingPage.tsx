@@ -1,16 +1,14 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Briefcase, Plus, Clock, CheckCircle2, Send, FileText, ArrowRight } from "lucide-react";
+import { UsersRound, Plus, Clock, CheckCircle2, Send, FileText, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 import { HRLayout } from "@/components/layout/HRLayout";
 import { PageHeader } from "@/components/common/PageHeader";
-import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingState } from "@/components/common/LoadingState";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { TBBriefWizard } from "@/components/hr/TBBriefWizard";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -26,9 +24,9 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
 
 export default function HRTeamBuildingPage() {
   const { profile } = useAuth();
-  const [wizardOpen, setWizardOpen] = useState(false);
+  const navigate = useNavigate();
 
-  const { data: requests, isLoading, refetch } = useQuery({
+  const { data: requests, isLoading } = useQuery({
     queryKey: ["tb-requests", profile?.company_id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -51,7 +49,7 @@ export default function HRTeamBuildingPage() {
             <PageHeader
               title="Team building sociali"
               actions={
-                <Button size="sm" onClick={() => setWizardOpen(true)}>
+                <Button size="sm" onClick={() => navigate("/hr/team-building/nuova-richiesta")}>
                   <Plus className="h-4 w-4 mr-1.5" />
                   Nuova richiesta
                 </Button>
@@ -69,7 +67,7 @@ export default function HRTeamBuildingPage() {
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="h-9 w-9 rounded-lg bg-orange-50 flex items-center justify-center shrink-0">
-                        <Briefcase className="h-4 w-4 text-orange-500" />
+                        <UsersRound className="h-4 w-4 text-orange-500" />
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">{req.title}</p>
@@ -98,7 +96,7 @@ export default function HRTeamBuildingPage() {
         ) : (
           <div className="flex flex-col items-center justify-center text-center py-20 px-4 max-w-md mx-auto">
             <div className="h-16 w-16 rounded-2xl bg-orange-50 flex items-center justify-center mb-6">
-              <Briefcase className="h-8 w-8 text-orange-500" />
+              <UsersRound className="h-8 w-8 text-orange-500" />
             </div>
             <h2 className="text-xl font-semibold mb-2">
               Organizza il team building sociale perfetto per il tuo team
@@ -106,22 +104,13 @@ export default function HRTeamBuildingPage() {
             <p className="text-sm text-muted-foreground mb-8">
               Raccontaci cosa cerchi e ti proporremo le idee migliori per il tuo team
             </p>
-            <Button onClick={() => setWizardOpen(true)} size="lg">
+            <Button onClick={() => navigate("/hr/team-building/nuova-richiesta")} size="lg">
               Inizia ora
               <ArrowRight className="h-4 w-4 ml-1.5" />
             </Button>
           </div>
         )}
       </div>
-
-      <TBBriefWizard
-        open={wizardOpen}
-        onOpenChange={setWizardOpen}
-        onSuccess={() => {
-          refetch();
-          setWizardOpen(false);
-        }}
-      />
     </HRLayout>
   );
 }

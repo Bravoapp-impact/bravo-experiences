@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -7,13 +8,8 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { HRLayout } from "@/components/layout/HRLayout";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +31,16 @@ import {
 
 const TOTAL_STEPS = 7;
 
+const STEP_LABELS = [
+  "Evento",
+  "Obiettivi",
+  "Attività",
+  "Partecipanti",
+  "Quando e dove",
+  "Budget",
+  "Riepilogo",
+];
+
 const GOALS = [
   "Sviluppare competenze e soft skills",
   "Promuovere l'impegno per la sostenibilità ambientale",
@@ -53,12 +59,6 @@ const EXTRA_SERVICES_OPTIONS = [
   { key: "venue_rental", label: "Noleggio location" },
   { key: "social_catering", label: "Catering sociale" },
 ];
-
-interface TBBriefWizardProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
-}
 
 interface FormState {
   title: string;
@@ -92,7 +92,8 @@ const initialForm: FormState = {
   notes: "",
 };
 
-export function TBBriefWizard({ open, onOpenChange, onSuccess }: TBBriefWizardProps) {
+export default function HRNewTBRequestPage() {
+  const navigate = useNavigate();
   const { user, profile } = useAuth();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(initialForm);
@@ -115,16 +116,6 @@ export function TBBriefWizard({ open, onOpenChange, onSuccess }: TBBriefWizardPr
       return data;
     },
   });
-
-  const reset = () => {
-    setStep(1);
-    setForm(initialForm);
-  };
-
-  const handleClose = (open: boolean) => {
-    if (!open) reset();
-    onOpenChange(open);
-  };
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -190,9 +181,8 @@ export function TBBriefWizard({ open, onOpenChange, onSuccess }: TBBriefWizardPr
 
       if (error) throw error;
       toast.success("Richiesta inviata con successo!");
-      reset();
-      onSuccess();
-    } catch (err: any) {
+      navigate("/hr/team-building");
+    } catch {
       toast.error("Errore nell'invio della richiesta");
     } finally {
       setSubmitting(false);
@@ -549,32 +539,58 @@ export function TBBriefWizard({ open, onOpenChange, onSuccess }: TBBriefWizardPr
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="sr-only">Brief team building</DialogTitle>
-          {/* Progress bar */}
-          <div className="flex gap-1">
-            {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-              <div
-                key={i}
-                className={cn(
-                  "h-1 flex-1 rounded-full transition-colors",
-                  i < step ? "bg-primary" : "bg-muted"
+    <HRLayout>
+      <div className="max-w-xl mx-auto py-6 space-y-6">
+        {/* Stepper dots */}
+        <div className="flex items-center justify-center gap-0">
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => {
+            const stepNum = i + 1;
+            const isCompleted = stepNum < step;
+            const isCurrent = stepNum === step;
+            return (
+              <div key={i} className="flex items-center">
+                <div className="flex flex-col items-center">
+                  <div
+                    className={cn(
+                      "h-3 w-3 rounded-full transition-all duration-300",
+                      isCompleted
+                        ? "bg-primary"
+                        : isCurrent
+                        ? "bg-primary ring-4 ring-primary/20"
+                        : "bg-muted-foreground/20"
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      "text-[10px] mt-1.5 whitespace-nowrap",
+                      isCurrent ? "text-foreground font-medium" : "text-muted-foreground"
+                    )}
+                  >
+                    {STEP_LABELS[i]}
+                  </span>
+                </div>
+                {i < TOTAL_STEPS - 1 && (
+                  <div
+                    className={cn(
+                      "h-px w-8 mx-1 transition-colors duration-300 -mt-4",
+                      stepNum < step ? "bg-primary" : "bg-muted-foreground/20"
+                    )}
+                  />
                 )}
-              />
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground pt-1">Passo {step} di {TOTAL_STEPS}</p>
-        </DialogHeader>
+              </div>
+            );
+          })}
+        </div>
 
-        <div className="py-2">{renderStep()}</div>
+        {/* Step content */}
+        <div className="bg-background">{renderStep()}</div>
 
+        {/* Navigation */}
         <div className="flex justify-between pt-2">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => (step === 1 ? handleClose(false) : setStep(step - 1))}
+            onClick={() => (step === 1 ? navigate("/hr/team-building") : setStep(step - 1))}
             disabled={submitting}
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
@@ -592,8 +608,8 @@ export function TBBriefWizard({ open, onOpenChange, onSuccess }: TBBriefWizardPr
             </Button>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </HRLayout>
   );
 }
 
