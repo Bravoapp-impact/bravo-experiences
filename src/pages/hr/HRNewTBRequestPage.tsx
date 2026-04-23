@@ -254,7 +254,7 @@ export default function HRNewTBRequestPage() {
                 Che obiettivo/i vuoi raggiungere con "{form.title}"?
               </p>
             </div>
-            <div className="grid gap-1.5">
+            <div className="grid gap-1">
               {GOALS.map((goal) => (
                 <label
                   key={goal}
@@ -285,7 +285,7 @@ export default function HRNewTBRequestPage() {
                 Hai già in mente qualche attività per il tuo team?
               </p>
             </div>
-            <div className="grid gap-1.5">
+            <div className="grid gap-1">
               {categories?.map((cat) => (
                 <label
                   key={cat.id}
@@ -479,7 +479,7 @@ export default function HRNewTBRequestPage() {
             </div>
             <div>
               <Label className="mb-2 block">Servizi aggiuntivi</Label>
-              <div className="grid gap-1.5">
+              <div className="grid gap-1">
                 {EXTRA_SERVICES_OPTIONS.map((svc) => (
                   <label
                     key={svc.key}
