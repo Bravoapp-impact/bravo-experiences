@@ -1,82 +1,65 @@
 
 
-# Piano: Flag "Tutta Italia" per TB Formats
+# Piano: Import Catalogo TB da CSV Storico
 
 ## Panoramica
 
-Aggiungere un campo booleano `nationwide` alla tabella `tb_formats`. Quando attivo, il format è erogabile in tutta Italia e la sezione città nel form viene disabilitata/nascosta. La validazione di pubblicazione considera il flag come alternativa alla presenza di città nella bridge table.
+Utilizzare lo script Python fornito (`generate_import_sql.py`) per importare i dati dal CSV della vecchia piattaforma nella tabella `tb_formats` e relative bridge tables. Lo script necessita di alcune correzioni prima dell'esecuzione.
 
 ---
 
-## 1 — Migrazione DB
+## Problemi da correggere nello script
 
-```sql
-ALTER TABLE tb_formats
-ADD COLUMN nationwide boolean NOT NULL DEFAULT false;
-```
+1. **Colonna `is_nationwide` → `nationwide`**: lo script usa `is_nationwide` ma la colonna nel DB si chiama `nationwide`. Da rinominare nel SQL generato.
 
-Nessuna modifica RLS necessaria (stesse policy esistenti coprono la nuova colonna).
+2. **Città mancanti nel DB**: il DB contiene solo 3 città (Carpi, Milano, Soliera). Il CSV referenzia ~18 province (BA, BG, BI, BO, BS, GE, LC, MI, MN, MO, PR, RA, RE, RM, RN, TO, TV, VR). Bisogna inserire le città mancanti prima dell'import.
 
----
+3. **Associazioni mancanti**: il DB ha solo associazioni di test. Il match ILIKE non troverà quasi nulla. I format entreranno come draft senza ETS — corretto per design (il Super Admin le assegnerà poi).
 
-## 2 — Interfaccia TBFormat
-
-**File**: `src/components/super-admin/TBFormatEditDialog.tsx`
-
-- Aggiungere `nationwide` all'interfaccia `TBFormat`
-- Aggiungere `nationwide` al `formData` state (default `false`)
-- Aggiungere un `Checkbox` / `Switch` "Erogabile in tutta Italia" **prima** della griglia delle città
-- Quando `nationwide` è attivo:
-  - Nascondere la griglia di selezione città
-  - Svuotare `selectedCityIds` (opzionale: lasciarli ma ignorarli)
-- Nel payload di salvataggio, includere `nationwide`
-- Quando `nationwide` è true, **non inserire righe** in `tb_format_cities` (e fare il delete delle eventuali esistenti)
+4. **Path CSV e output**: adattare ai path del sandbox (`/tmp/`).
 
 ---
 
-## 3 — Validazione pubblicazione
+## Passi di esecuzione
 
-**File**: `src/lib/tb-format-validation.ts`
+### Passo 1 — Inserire le città mancanti
 
-Aggiungere `nationwide` al tipo del parametro `format`. La regola "Almeno una città" diventa:
+Inserire nella tabella `cities` le città capoluogo di provincia referenziate nel CSV che non esistono ancora: Bari, Bergamo, Biella, Bologna, Brescia, Genova, Lecco, Mantova, Modena, Parma, Ravenna, Reggio Emilia, Roma, Rimini, Torino, Treviso, Verona.
 
-```
-if (!format.nationwide && cityCount === 0) missing.push("Almeno una città o 'Tutta Italia'");
-```
+### Passo 2 — Correggere e lanciare lo script Python
 
-Tutti i punti che chiamano `validateFormatPublish` passano già il format — basta aggiungere il campo.
+- Copiare il CSV nel sandbox
+- Correggere lo script: `is_nationwide` → `nationwide`, path aggiornati
+- Eseguire lo script per generare il file SQL
+- Verificare l'output generato (numero di format, warnings)
 
----
+### Passo 3 — Eseguire l'SQL di import
 
-## 4 — Pagina dettaglio
+Lanciare l'SQL generato come migration (contiene solo INSERT, nessuna modifica schema — ma dato che abbiamo bisogno di eseguire DO blocks con logica procedurale, useremo una migration).
 
-**File**: `src/pages/super-admin/TBFormatDetailPage.tsx`
+### Passo 4 — Verifiche post-import
 
-- Includere `nationwide` nel fetch
-- Se `nationwide` è true, mostrare un badge "Tutta Italia" al posto della lista città (es. `Badge` con icona `MapPin` e testo "Disponibile in tutta Italia")
-
----
-
-## 5 — Pagina lista
-
-**File**: `src/pages/super-admin/TBFormatsPage.tsx`
-
-- Includere `nationwide` nel fetch dei formati
-- Nella colonna o nei badge di riga, se `nationwide` è true mostrare "Tutta Italia" invece del conteggio città
-- Passare `nationwide` a `validateFormatPublish` nelle azioni rapide
+- Conteggio format per stato (`draft` / `archived`)
+- Format senza ETS in bridge (atteso: quasi tutti, visto che le associazioni reali non sono ancora nel DB)
+- Format `nationwide` = true
+- Format senza città in bridge (per province non mappate)
 
 ---
 
-## Riepilogo file
+## Stato risultante
 
-| File | Modifica |
+Tutti i format entrano in **draft** (tranne i `rejected` del CSV → `archived`). Il campo `category_id` resta NULL — la validazione impedisce la pubblicazione finché il Super Admin non assegna categoria, ETS e verifica i dati.
+
+---
+
+## File coinvolti
+
+| Azione | File |
 |---|---|
-| Migrazione SQL | `ADD COLUMN nationwide boolean NOT NULL DEFAULT false` |
-| `src/components/super-admin/TBFormatEditDialog.tsx` | Campo nell'interfaccia, switch nel form, logica salvataggio |
-| `src/lib/tb-format-validation.ts` | Accettare `nationwide` come alternativa a città |
-| `src/pages/super-admin/TBFormatDetailPage.tsx` | Badge "Tutta Italia" nel dettaglio |
-| `src/pages/super-admin/TBFormatsPage.tsx` | Indicatore nella lista, passaggio a validazione |
+| Script Python (corretto) | `/tmp/generate_import_sql.py` |
+| CSV sorgente | copiato da upload |
+| SQL generato | `/tmp/import-tb-formats.sql` |
+| Migration | `supabase/migrations/...` (per le città + import) |
 
-### Nessun impatto su altre pagine
-Il flag è specifico dei TB formats e non tocca experiences né altre sezioni.
+Nessuna modifica al codice dell'app — solo dati.
 
