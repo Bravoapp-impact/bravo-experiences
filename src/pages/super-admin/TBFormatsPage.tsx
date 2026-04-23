@@ -33,6 +33,7 @@ interface Category {
 }
 interface City { id: string; name: string; }
 interface Association { id: string; name: string; }
+type TBFormatWithCities = TBFormat & { tb_format_cities?: { city_id: string }[] };
 
 const LOCATION_LABELS: Record<string, string> = {
   indoor: "Indoor",
