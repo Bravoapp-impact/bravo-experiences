@@ -45,7 +45,7 @@ export default function TBFormatsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [formats, setFormats] = useState<TBFormat[]>([]);
+  const [formats, setFormats] = useState<TBFormatWithCities[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [associations, setAssociations] = useState<Association[]>([]);
@@ -78,7 +78,7 @@ export default function TBFormatsPage() {
       if (citRes.error) throw citRes.error;
       if (assRes.error) throw assRes.error;
 
-      setFormats(fmtRes.data as TBFormat[] || []);
+      setFormats(fmtRes.data as TBFormatWithCities[] || []);
       setCategories(catRes.data || []);
       setCities(citRes.data || []);
       setAssociations(assRes.data || []);
