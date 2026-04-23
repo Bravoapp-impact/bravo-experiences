@@ -1,65 +1,133 @@
-
-
-# Piano: Import Catalogo TB da CSV Storico
+# Piano: Pagina HR "Team Building Sociali" — Landing + Brief Guidato
 
 ## Panoramica
 
-Utilizzare lo script Python fornito (`generate_import_sql.py`) per importare i dati dal CSV della vecchia piattaforma nella tabella `tb_formats` e relative bridge tables. Lo script necessita di alcune correzioni prima dell'esecuzione.
+Creare la pagina `/hr/team-building` che l'HR vede cliccando "Team building sociali" nella sidebar. La pagina ha una missione chiara: guidare l'HR a compilare il **brief** che genera una `tb_request`. Se non ci sono richieste attive, la pagina mostra un unico CTA per iniziare il percorso guidato. Se ci sono richieste esistenti, mostra la lista con stati e azioni contestuali.
+
+In questa prima iterazione ci concentriamo sulla **landing page** e sul **form di brief guidato** (Fase 1 del flusso TB).
 
 ---
 
-## Problemi da correggere nello script
+## Struttura della pagina
 
-1. **Colonna `is_nationwide` → `nationwide`**: lo script usa `is_nationwide` ma la colonna nel DB si chiama `nationwide`. Da rinominare nel SQL generato.
+### Stato "nessuna richiesta" (empty state)
 
-2. **Città mancanti nel DB**: il DB contiene solo 3 città (Carpi, Milano, Soliera). Il CSV referenzia ~18 province (BA, BG, BI, BO, BS, GE, LC, MI, MN, MO, PR, RA, RE, RM, RN, TO, TV, VR). Bisogna inserire le città mancanti prima dell'import.
+Pagina pulita, centrata, con:
 
-3. **Associazioni mancanti**: il DB ha solo associazioni di test. Il match ILIKE non troverà quasi nulla. I format entreranno come draft senza ETS — corretto per design (il Super Admin le assegnerà poi).
+- Illustrazione/icona evocativa
+- Titolo: "Organizza il team building sociale perfetto per il tuo team"
+- Sottotitolo breve che spiega il processo: "Raccontaci cosa cerchi e ti proporremo le idee migliori per il tuo team"
+- Un unico bottone primario: "Inizia ora"
+- Il bottone apre il form guidato a step
 
-4. **Path CSV e output**: adattare ai path del sandbox (`/tmp/`).
+### Stato "con richieste esistenti"
+
+- Header con bottone "Nuova richiesta"
+- Lista card delle `tb_requests` dell'azienda, con: titolo, stato (badge colorato), data creazione, CTA contestuale
+- Click su card → futura pagina dettaglio (per ora solo navigazione predisposta)
+
+### Form di **brief** guidato (multi-step)
+
+Form modale o pagina dedicata (`/hr/team-building/nuova-richiesta`) a step, con progress indicator. Ogni step raccoglie un pezzo del brief mappato ai campi di `tb_requests`:
+
+**Step 1 — Il tuo evento**
+
+- `title` — nome identificativo (es. "TB Primavera - Team Marketing")
+- Copy di supporto: "Dai un nome a questo evento. Es: "TB Primavera - Team Marketing""
+
+**Step 2 — Obiettivo da raggiungere**
+
+- Copy di supporto: "Che obiettivo/i vuoi raggiungere con [`title`]?"
+- `goal` -- multi-select fra i seguenti:
+  - Sviluppare competenze e soft skills
+  - Promuovere l'impegno per la sostenibilià ambientale
+  - Rafforzare lo spirito di squadra e il team
+  - Migliorare il clima aziendale e il senso di appartenenza
+  - Lavorare sui valori dell'inclusione e diversità
+  - Ridurre le barriere e le gerarchie aziendali
+  - Facilitare l'incontro e la conoscenza reciproca
+  - Vivere un momento di benessere e svago
+  - Potenziare l'immagine dell'azienda
+
+**Step 3 — Punto di partenza**
+
+- Copy di supporto: "Hai già in mente qualche attività per il tuo team?"
+- `preferred_activities`  -- multi select  delle [categorie + descrizioni delle categorie] + opzione "Non ho ancora nessuna attività in mente"
+
+**Step 4 — Partecipanti**
+
+- `participants_min` / `participants_max` — range con due input numerici
+- Copy di supporto: "Indica il range di persone che pensi parteciperanno all'evento"
+
+**Step 5 — Quando e dove**
+
+- Copy di supporto: "Seleziona quando e dove vorresti realizzare l'evento"
+
+- `preferred_period_from` / `preferred_period_to` — date picker per range
+- `preferred_city_id` — select dalle città disponibili
+- `preferred_location_type` — scelta tra Indoor / Outdoor / Indifferente
+
+**Step 6 — Budget e servizi**
+
+- `budget_estimate` — input numerico con placeholder "Budget indicativo in €"
+- `extra_services` — checkbox per: Pranzo, Trasporto, Noleggio location, Catering sociale
+- `notes` — textarea per note libere
+
+**Step 5 — Riepilogo e invio**
+
+- Recap visivo di tutte le risposte
+- Bottone "Invia richiesta" → INSERT in `tb_requests` con `status = 'submitted'`
+- Toast di conferma + redirect alla lista
+
+&nbsp;
+
+Il campo `description` non viene compilato, non chiediamo all'utente di scrivere nulla.
 
 ---
 
-## Passi di esecuzione
+## Passi di implementazione
 
-### Passo 1 — Inserire le città mancanti
+### 1 — RLS per HR su tb_requests (nessuna modifica necessaria)
 
-Inserire nella tabella `cities` le città capoluogo di provincia referenziate nel CSV che non esistono ancora: Bari, Bergamo, Biella, Bologna, Brescia, Genova, Lecco, Mantova, Modena, Parma, Ravenna, Reggio Emilia, Roma, Rimini, Torino, Treviso, Verona.
+Le policy RLS per INSERT, SELECT e UPDATE su `tb_requests` filtrate per `company_id` sono già in posto. Nessuna migrazione DB necessaria.
 
-### Passo 2 — Correggere e lanciare lo script Python
+### 2 — Abilitare la voce sidebar
 
-- Copiare il CSV nel sandbox
-- Correggere lo script: `is_nationwide` → `nationwide`, path aggiornati
-- Eseguire lo script per generare il file SQL
-- Verificare l'output generato (numero di format, warnings)
+In `HRLayout.tsx`, cambiare la voce "Team building sociali" da `disabled: true, href: "#"` a `href: "/hr/team-building"`, rimuovere `disabled` e `badge: "Presto"`.
 
-### Passo 3 — Eseguire l'SQL di import
+### 3 — Creare la pagina principale
 
-Lanciare l'SQL generato come migration (contiene solo INSERT, nessuna modifica schema — ma dato che abbiamo bisogno di eseguire DO blocks con logica procedurale, useremo una migration).
+Nuovo file `src/pages/hr/HRTeamBuildingPage.tsx`:
 
-### Passo 4 — Verifiche post-import
+- Fetch delle `tb_requests` dell'azienda (la RLS filtra automaticamente)
+- Empty state se nessuna richiesta
+- Lista card se ci sono richieste
+- Bottone per aprire il **brief**
 
-- Conteggio format per stato (`draft` / `archived`)
-- Format senza ETS in bridge (atteso: quasi tutti, visto che le associazioni reali non sono ancora nel DB)
-- Format `nationwide` = true
-- Format senza città in bridge (per province non mappate)
+### 4 — Creare il form di **brief**
 
----
+Nuovo file `src/components/hr/TBBriefWizard.tsx`:
 
-## Stato risultante
+- Componente multi-step con state interno
+- Fetch delle città per il select (dalla tabella `cities`)
+- Validazione per step con zod
+- Al submit: INSERT in `tb_requests` con `company_id` e `requested_by` dall'auth context
 
-Tutti i format entrano in **draft** (tranne i `rejected` del CSV → `archived`). Il campo `category_id` resta NULL — la validazione impedisce la pubblicazione finché il Super Admin non assegna categoria, ETS e verifica i dati.
+### 5 — Aggiungere la route
+
+In `App.tsx`, aggiungere la route `/hr/team-building` protetta con `ProtectedHRRoute`.
 
 ---
 
 ## File coinvolti
 
-| Azione | File |
-|---|---|
-| Script Python (corretto) | `/tmp/generate_import_sql.py` |
-| CSV sorgente | copiato da upload |
-| SQL generato | `/tmp/import-tb-formats.sql` |
-| Migration | `supabase/migrations/...` (per le città + import) |
 
-Nessuna modifica al codice dell'app — solo dati.
+| File                                  | Modifica                      |
+| ------------------------------------- | ----------------------------- |
+| `src/components/layout/HRLayout.tsx`  | Abilitare voce sidebar        |
+| `src/pages/hr/HRTeamBuildingPage.tsx` | **Nuovo** — pagina principale |
+| `src/components/hr/TBBriefWizard.tsx` | **Nuovo** — form multi-step   |
+| `src/App.tsx`                         | Aggiungere route              |
 
+
+Nessuna migrazione DB. Nessuna modifica RLS.
