@@ -3,8 +3,6 @@
  * Single source of truth. Import from here.
  */
 export const AVAILABLE_TAGS = [
-  "Outdoor",
-  "Indoor",
   "Manuale",
   "Creativo",
   "Formativo",

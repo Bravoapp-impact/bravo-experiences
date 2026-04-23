@@ -1,4 +1,11 @@
-import { Clock, Star } from "lucide-react";
+import { Clock, MapPin, Star } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+
+const LOCATION_LABELS: Record<string, string> = {
+  indoor: "Indoor",
+  outdoor: "Outdoor",
+  both: "Indoor / Outdoor",
+};
 
 interface ExperienceHeaderProps {
   title: string;
@@ -8,6 +15,7 @@ interface ExperienceHeaderProps {
   avgRating: number | null;
   reviewCount: number;
   description?: string | null;
+  locationType?: string | null;
 }
 
 export function ExperienceHeader({
@@ -18,6 +26,7 @@ export function ExperienceHeader({
   avgRating,
   reviewCount,
   description,
+  locationType,
 }: ExperienceHeaderProps) {
   const metaItems: string[] = [];
   if (categoryName) metaItems.push(categoryName);
@@ -66,6 +75,15 @@ export function ExperienceHeader({
             <span className="flex items-center gap-1">
               <Clock className="h-3.5 w-3.5" />
               {defaultHours}h
+            </span>
+          </>
+        )}
+        {locationType && locationType !== "both" && (
+          <>
+            <span>·</span>
+            <span className="flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5" />
+              {LOCATION_LABELS[locationType] ?? locationType}
             </span>
           </>
         )}
