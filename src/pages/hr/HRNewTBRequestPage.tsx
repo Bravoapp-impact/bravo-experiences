@@ -66,11 +66,9 @@ interface FormState {
   goals: string[];
   preferredActivities: string[];
   noActivityInMind: boolean;
-  participantsMin: string;
-  participantsMax: string;
+  participantsCount: string;
   selectedMonths: number[];
-  province: string;
-  locationType: string;
+  places: string[];
   budgetEstimate: string;
   extraServices: Record<string, boolean>;
   notes: string;
@@ -81,11 +79,9 @@ const initialForm: FormState = {
   goals: [],
   preferredActivities: [],
   noActivityInMind: false,
-  participantsMin: "",
-  participantsMax: "",
+  participantsCount: "",
   selectedMonths: [],
-  province: "",
-  locationType: "",
+  places: [],
   budgetEstimate: "",
   extraServices: {},
   notes: "",
@@ -146,13 +142,26 @@ export default function HRNewTBRequestPage() {
     );
   };
 
+  const togglePlace = (place: string) => {
+    update(
+      "places",
+      form.places.includes(place)
+        ? form.places.filter((p) => p !== place)
+        : [...form.places, place]
+    );
+  };
+
+  const participantsNum = Number(form.participantsCount);
+  const participantsMin = participantsNum > 0 ? Math.round(participantsNum * 0.9) : 0;
+  const participantsMax = participantsNum > 0 ? Math.round(participantsNum * 1.1) : 0;
+
   const canNext = (): boolean => {
     switch (step) {
       case 1: return form.title.trim().length > 0;
       case 2: return form.goals.length > 0;
       case 3: return form.noActivityInMind || form.preferredActivities.length > 0;
-      case 4: return !!form.participantsMin && !!form.participantsMax && Number(form.participantsMin) > 0 && Number(form.participantsMax) >= Number(form.participantsMin);
-      case 5: return form.selectedMonths.length > 0 && form.province.length > 0 && form.locationType.length > 0;
+      case 4: return participantsNum > 0;
+      case 5: return form.selectedMonths.length > 0 && form.places.length > 0;
       case 6: return form.budgetEstimate.trim().length > 0;
       default: return true;
     }
