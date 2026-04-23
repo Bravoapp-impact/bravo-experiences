@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Edit, Trash2, Clock, Users, MapPin, Euro, Calendar,
+  CheckCircle, PlusCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ import { devLog } from "@/lib/logger";
 import { TBFormatEditDialog, type TBFormat } from "@/components/super-admin/TBFormatEditDialog";
 import { TagsSection } from "@/components/experience-detail/TagsSection";
 import { SdgSection } from "@/components/experience-detail/SdgSection";
+import { validateFormatPublish } from "@/lib/tb-format-validation";
 import { format as fmtDate } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -32,6 +34,14 @@ const LOCATION_LABELS: Record<string, string> = {
   outdoor: "Outdoor",
   both: "Indoor / Outdoor",
 };
+
+function parseJsonItems(jsonData: any): string[] {
+  if (!jsonData) return [];
+  if (typeof jsonData === "object" && Array.isArray(jsonData.items)) {
+    return jsonData.items.filter((i: any) => typeof i === "string" && i.trim());
+  }
+  return [];
+}
 
 export default function TBFormatDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -121,13 +131,31 @@ export default function TBFormatDetailPage() {
 
   const handleStatusChange = async (newStatus: string) => {
     if (!formatData) return;
+
+    // Validate before publishing
+    if (newStatus === "published") {
+      const { valid, missing } = validateFormatPublish(
+        formatData,
+        linkedCityIds.length,
+        linkedAssociationIds.length,
+      );
+      if (!valid) {
+        toast({
+          variant: "destructive",
+          title: "Impossibile pubblicare",
+          description: `Campi mancanti: ${missing.join(", ")}`,
+        });
+        return;
+      }
+    }
+
     try {
       const { error } = await supabase
         .from("tb_formats")
         .update({ status: newStatus })
         .eq("id", formatData.id);
       if (error) throw error;
-      toast({ title: "Stato aggiornato", description: `Format ${newStatus === "published" ? "pubblicato" : "archiviato"}` });
+      toast({ title: "Stato aggiornato", description: `Format ${newStatus === "published" ? "pubblicato" : newStatus === "archived" ? "archiviato" : "riportato in bozza"}` });
       fetchAll();
     } catch (error: any) {
       toast({ variant: "destructive", title: "Errore", description: error.message });
@@ -182,6 +210,8 @@ export default function TBFormatDetailPage() {
   }
 
   const categoryName = getCategoryName();
+  const servicesList = parseJsonItems(formatData.services);
+  const extraServicesList = parseJsonItems(formatData.extra_services);
 
   return (
     <SuperAdminLayout>
@@ -283,6 +313,38 @@ export default function TBFormatDetailPage() {
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
                 <Separator className="my-8" />
                 <SdgSection sdgs={formatData.sdgs} />
+              </motion.div>
+            )}
+
+            {/* Services included */}
+            {servicesList.length > 0 && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
+                <Separator className="my-8" />
+                <h2 className="text-lg font-semibold mb-3">Servizi inclusi</h2>
+                <ul className="space-y-2">
+                  {servicesList.map((item, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            )}
+
+            {/* Extra services */}
+            {extraServicesList.length > 0 && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
+                <Separator className="my-8" />
+                <h2 className="text-lg font-semibold mb-3">Servizi extra</h2>
+                <ul className="space-y-2">
+                  {extraServicesList.map((item, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <PlusCircle className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </motion.div>
             )}
 

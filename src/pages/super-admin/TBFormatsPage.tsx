@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plus, Search, Eye, Edit, Trash2, Users, Clock, MapPin } from "lucide-react";
+import {
+  Plus, Search, Eye, Edit, Trash2, Users, Clock, MapPin,
+  Send, Archive, RotateCcw, Loader2,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { devLog } from "@/lib/logger";
 import { TBFormatEditDialog, type TBFormat } from "@/components/super-admin/TBFormatEditDialog";
+import { validateFormatPublish } from "@/lib/tb-format-validation";
 
 interface Category {
   id: string;
@@ -53,6 +57,7 @@ export default function TBFormatsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState<TBFormat | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [quickActionLoading, setQuickActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -102,10 +107,51 @@ export default function TBFormatsPage() {
     }
   };
 
+  const handleQuickStatusChange = async (fmt: TBFormat, newStatus: string) => {
+    setQuickActionLoading(fmt.id);
+    try {
+      // For publishing, validate first
+      if (newStatus === "published") {
+        const [citRes, assRes] = await Promise.all([
+          supabase.from("tb_format_cities").select("city_id").eq("format_id", fmt.id),
+          supabase.from("tb_format_associations").select("association_id").eq("format_id", fmt.id),
+        ]);
+        const cityCount = (citRes.data || []).length;
+        const assocCount = (assRes.data || []).length;
+
+        const { valid, missing } = validateFormatPublish(fmt, cityCount, assocCount);
+        if (!valid) {
+          toast({
+            variant: "destructive",
+            title: "Impossibile pubblicare",
+            description: `Campi mancanti: ${missing.join(", ")}`,
+          });
+          return;
+        }
+      }
+
+      const { error } = await supabase
+        .from("tb_formats")
+        .update({ status: newStatus })
+        .eq("id", fmt.id);
+      if (error) throw error;
+
+      toast({
+        title: "Stato aggiornato",
+        description: `Format ${newStatus === "published" ? "pubblicato" : newStatus === "archived" ? "archiviato" : "riportato in bozza"}`,
+      });
+      fetchData();
+    } catch (error: any) {
+      devLog.error("Error changing format status:", error);
+      toast({ variant: "destructive", title: "Errore", description: error.message });
+    } finally {
+      setQuickActionLoading(null);
+    }
+  };
+
   const handleDelete = async () => {
     if (!selectedFormat) return;
     try {
-      // Delete junction tables first
       await supabase.from("tb_format_cities").delete().eq("format_id", selectedFormat.id);
       await supabase.from("tb_format_associations").delete().eq("format_id", selectedFormat.id);
 
@@ -128,6 +174,53 @@ export default function TBFormatsPage() {
     const matchesCategory = categoryFilter === "all" || f.category_id === categoryFilter;
     return matchesSearch && matchesStatus && matchesCategory;
   });
+
+  const getQuickAction = (fmt: TBFormat) => {
+    const isLoading = quickActionLoading === fmt.id;
+    if (fmt.status === "draft") {
+      return (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-primary"
+          onClick={() => handleQuickStatusChange(fmt, "published")}
+          title="Pubblica"
+          disabled={isLoading}
+        >
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        </Button>
+      );
+    }
+    if (fmt.status === "published") {
+      return (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => handleQuickStatusChange(fmt, "archived")}
+          title="Archivia"
+          disabled={isLoading}
+        >
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
+        </Button>
+      );
+    }
+    if (fmt.status === "archived") {
+      return (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => handleQuickStatusChange(fmt, "draft")}
+          title="Riattiva come bozza"
+          disabled={isLoading}
+        >
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+        </Button>
+      );
+    }
+    return null;
+  };
 
   return (
     <SuperAdminLayout>
@@ -207,7 +300,7 @@ export default function TBFormatsPage() {
                       <TableHead>Location</TableHead>
                       <TableHead>Partecipanti</TableHead>
                       <TableHead>Stato</TableHead>
-                      <TableHead className="w-28">Azioni</TableHead>
+                      <TableHead className="w-36">Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -289,6 +382,7 @@ export default function TBFormatsPage() {
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
+                              {getQuickAction(fmt)}
                               <Button
                                 variant="ghost"
                                 size="icon"
