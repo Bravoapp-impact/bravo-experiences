@@ -89,6 +89,8 @@ const STATUS_OPTIONS = [
   { value: "archived", label: "Archiviato" },
 ];
 
+const EMPTY_ARRAY: string[] = [];
+
 export function TBFormatEditDialog({
   open,
   onOpenChange,
@@ -97,14 +99,13 @@ export function TBFormatEditDialog({
   cities,
   associations,
   onSaved,
-  initialCityIds = [],
-  initialAssociationIds = [],
+  initialCityIds = EMPTY_ARRAY,
+  initialAssociationIds = EMPTY_ARRAY,
 }: TBFormatEditDialogProps) {
   const { toast } = useToast();
   const allSDGs = getAllSDGs();
   const [saving, setSaving] = useState(false);
   const [suggestedSdgs, setSuggestedSdgs] = useState<string[]>([]);
-
   const [formData, setFormData] = useState({
     title: "",
     description: "",
