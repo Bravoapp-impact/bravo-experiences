@@ -200,7 +200,7 @@ export default function HRNewTBRequestPage() {
             <div>
               <h3 className="text-lg font-semibold">Il tuo evento</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Dai un nome a questo evento. Es: "TB Primavera - Team Marketing"
+                Dai un nome all'evento che vorresti realizzare.
               </p>
             </div>
             <div>
