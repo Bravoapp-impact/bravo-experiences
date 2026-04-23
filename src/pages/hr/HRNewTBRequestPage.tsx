@@ -565,8 +565,8 @@ export default function HRNewTBRequestPage() {
             {step === TOTAL_STEPS ? (
               submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null
             ) : null}
-            {step === TOTAL_STEPS ? "Invia richiesta" : "Avanti"}
-            {step < TOTAL_STEPS && <ArrowRight className="h-4 w-4 ml-1" />}
+            Avanti
+            <ArrowRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
       </div>
