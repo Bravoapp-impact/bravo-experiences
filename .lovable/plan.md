@@ -1,125 +1,105 @@
 
 
-# Step 2 (rivisto) — Super Admin: Catalogo TB Formats
+# Piano: Unificare location_type su experiences e tb_formats
 
 ## Panoramica
 
-Invece di una singola pagina CRUD con dialog, creiamo **due pagine** che seguono lo stesso pattern delle experiences:
-
-1. **Lista** (`/super-admin/team-building/formats`) — tabella con filtri, ricerca, azioni
-2. **Dettaglio** (`/super-admin/team-building/formats/:id`) — layout stile ExperienceDetail (hero image, sezioni informative, sidebar con azioni admin)
-
-Il form di edit viene aperto come **dialog** dalla pagina di dettaglio (stesso pattern di `AssociationExperienceDetail` che apre `CreateExperienceDialog` per l'editing).
+Aggiungere `location_type` alla tabella `experiences` (come gia esiste in `tb_formats`), rimuovere "Indoor" e "Outdoor" da `AVAILABLE_TAGS`, e aggiornare tutte le UI coinvolte — inclusa la sezione Team Building.
 
 ---
 
-## 2.1 — Sidebar: aggiungere sezione Team Building
+## 1 — Migrazione DB
 
-**File**: `src/components/layout/SuperAdminLayout.tsx`
+```sql
+ALTER TABLE experiences ADD COLUMN location_type text NOT NULL DEFAULT 'both';
 
-Aggiungere una nuova sezione "Team Building" con:
-- "Catalogo TB" → `/super-admin/team-building/formats` (icona: `LayoutGrid`)
+-- Migrare dati esistenti dai tag
+UPDATE experiences SET location_type = 'indoor'
+WHERE secondary_tags @> ARRAY['Indoor'] AND NOT secondary_tags @> ARRAY['Outdoor'];
 
-Nuovo `sectionLabel` con `label: "Team Building"` prima dell'indice corretto.
+UPDATE experiences SET location_type = 'outdoor'
+WHERE secondary_tags @> ARRAY['Outdoor'] AND NOT secondary_tags @> ARRAY['Indoor'];
 
----
+UPDATE experiences SET location_type = 'both'
+WHERE secondary_tags @> ARRAY['Indoor'] AND secondary_tags @> ARRAY['Outdoor'];
 
-## 2.2 — Pagina Lista `TBFormatsPage`
-
-**File**: `src/pages/super-admin/TBFormatsPage.tsx`
-
-Pattern identico a `ExperiencesPage` ma semplificato (no date, no visibility):
-
-- **Tabella** con colonne: Immagine thumbnail + Titolo, Categoria, Location type, Range partecipanti, Stato, Azioni
-- **Filtri**: ricerca testuale + stato (draft/published/archived) + categoria
-- **Azioni riga**: Modifica (apre dialog), Dettaglio (naviga a `/super-admin/team-building/formats/:id`), Elimina
-- **CTA "Nuovo format"** in alto a destra: apre dialog di creazione
-- **Dialog creazione/modifica** con tutti i campi (stessi del piano precedente: titolo, descrizione, immagine, categoria, tag, SDGs, location type, partecipanti, durata, prezzo, stato, citta multi-select, associazioni multi-select)
-
-Lookup da caricare: `categories`, `cities`, `associations`.
+-- Rimuovere Indoor/Outdoor dai tag
+UPDATE experiences
+SET secondary_tags = array_remove(array_remove(secondary_tags, 'Indoor'), 'Outdoor')
+WHERE secondary_tags && ARRAY['Indoor', 'Outdoor'];
+```
 
 ---
 
-## 2.3 — Pagina Dettaglio `TBFormatDetailPage`
+## 2 — Aggiornare `AVAILABLE_TAGS`
 
-**File**: `src/pages/super-admin/TBFormatDetailPage.tsx`
+**File**: `src/lib/tags.ts`
 
-Layout ispirato a `ExperienceDetailContent` ma adattato ai campi di `tb_formats`:
+Rimuovere "Indoor" e "Outdoor". Set finale (13 tag):
+Manuale, Creativo, Formativo, Intergenerazionale, Animali, Gruppo, Accessibile, Fisica, Inclusione, Sostenibilita, Cultura locale, Culinario, Sportivo.
 
-### Hero split-screen (come ExperienceDetail)
-- **Sinistra**: immagine hero del format
-- **Destra**: titolo, categoria (badge), location type (badge Indoor/Outdoor/Entrambi), range partecipanti, durata, range prezzo, stato (badge colorato)
-
-### Colonna principale (sezioni con Separator)
-- **Descrizione** — "Cosa farete" (come WhatYouWillDo)
-- **Tag secondari** — badge grid (come TagsSection)
-- **SDGs** — griglia SDG (come SdgSection)
-- **Servizi inclusi / Extra** — lista da `services` e `extra_services` JSONB
-- **Citta disponibili** — lista delle citta collegate (da `tb_format_cities` + join `cities`)
-- **Associazioni erogabili** — lista delle ETS collegate (da `tb_format_associations` + join `associations`, con logo e nome)
-
-### Sidebar destra (sticky, come HRSidebar/AssociationDetailSidebar)
-- Pulsante "Modifica" → apre dialog di edit (riusa lo stesso dialog della lista)
-- Pulsante "Pubblica" / "Archivia" (cambio stato rapido)
-- Pulsante "Elimina" con conferma
-- Info rapide: data creazione, ultimo aggiornamento
-
-### Navigazione
-- Freccia indietro → torna alla lista
-- Badge stato in alto accanto al titolo (come AssociationExperienceDetail)
+**Impatto automatico**: sia `ExperiencesPage` che `TBFormatEditDialog` importano da questo file — i tag Indoor/Outdoor spariranno da entrambi i form senza modifiche aggiuntive.
 
 ---
 
-## 2.4 — Componente condiviso: `TBFormatEditDialog`
+## 3 — Super Admin: Form Experiences
 
-**File**: `src/components/super-admin/TBFormatEditDialog.tsx`
+**File**: `src/pages/super-admin/ExperiencesPage.tsx`
 
-Dialog di creazione/modifica estratto come componente separato, usato sia dalla lista che dal dettaglio. Stessa struttura del dialog in ExperiencesPage ma con i campi di tb_formats.
-
-Gestisce il salvataggio del record principale + tabelle ponte (`tb_format_cities`, `tb_format_associations`) con strategia delete + re-insert.
-
----
-
-## 2.5 — Route in App.tsx
-
-Aggiungere:
-- `/super-admin/team-building/formats` → `TBFormatsPage`
-- `/super-admin/team-building/formats/:id` → `TBFormatDetailPage`
-
-Entrambe protette da `ProtectedSuperAdminRoute`.
+- Aggiungere `location_type` al form state (default `"both"`)
+- Aggiungere Select "Tipo location" con opzioni Indoor / Outdoor / Entrambi (stesso pattern gia usato in `TBFormatEditDialog`)
+- Salvare il campo nel record experience
 
 ---
 
-## Dettaglio tecnico
+## 4 — Tipo Experience + fetch dettaglio
 
-### File da creare
-| File | Descrizione |
-|---|---|
-| `src/pages/super-admin/TBFormatsPage.tsx` | Lista + dialog di creazione |
-| `src/pages/super-admin/TBFormatDetailPage.tsx` | Dettaglio format stile ExperienceDetail |
-| `src/components/super-admin/TBFormatEditDialog.tsx` | Dialog edit condiviso |
+**File**: `src/types/experiences.ts` — aggiungere `location_type?: string`
 
-### File da modificare
+**File che fetchano il dettaglio** (aggiungere `location_type` alla select):
+- `src/pages/ExperienceDetail.tsx`
+- `src/pages/association/AssociationExperienceDetail.tsx`
+- `src/pages/hr/HRExperienceDetail.tsx`
+
+---
+
+## 5 — Badge location_type nelle pagine dettaglio
+
+**File**: `src/components/experience-detail/ExperienceDetailContent.tsx`
+
+Aggiungere badge location type nell'header (Indoor / Outdoor / Entrambi) — stesso stile gia usato in `TBFormatDetailPage`.
+
+---
+
+## 6 — Sezione Team Building: gia allineata
+
+La sezione TB **non richiede modifiche funzionali**:
+- `TBFormatEditDialog` ha gia il Select `location_type` separato dai tag
+- `TBFormatDetailPage` mostra gia il badge location type
+- `TBFormatsPage` mostra gia la colonna location type nella tabella
+
+L'unico effetto e che la griglia tag nel dialog di edit non mostrera piu "Indoor" e "Outdoor" (perche rimossi da `AVAILABLE_TAGS`), eliminando la duplicazione che aveva generato la domanda iniziale.
+
+---
+
+## 7 — Form Associazioni
+
+Il form associazioni (`ExperienceForm.tsx`) non gestisce tag secondari ne location_type. Le nuove esperienze create dalle associazioni avranno `location_type = 'both'` (default DB). Il Super Admin potra aggiornarlo. Aggiungere il campo al form associazioni e un task separato futuro.
+
+---
+
+## Riepilogo file
+
 | File | Modifica |
 |---|---|
-| `src/components/layout/SuperAdminLayout.tsx` | Voce sidebar "Catalogo TB" |
-| `src/App.tsx` | 2 nuove route |
+| Migrazione SQL | ADD COLUMN + data migration + tag cleanup |
+| `src/lib/tags.ts` | Rimuovere "Indoor" e "Outdoor" |
+| `src/types/experiences.ts` | Aggiungere `location_type` |
+| `src/pages/super-admin/ExperiencesPage.tsx` | Select location_type nel form |
+| `src/components/experience-detail/ExperienceDetailContent.tsx` | Badge location type |
+| `src/pages/ExperienceDetail.tsx` | Fetch location_type |
+| `src/pages/association/AssociationExperienceDetail.tsx` | Fetch location_type |
+| `src/pages/hr/HRExperienceDetail.tsx` | Fetch location_type |
 
-### Nessuna migrazione DB
-Tutte le tabelle esistono gia dallo Step 1.
-
-### Pattern riutilizzati
-- Layout hero split-screen da `ExperienceDetailContent`
-- Sezioni con `Separator` + `motion.div` animate
-- `TagsSection` e `SdgSection` riutilizzabili direttamente (ricevono array di stringhe)
-- `LogoUpload` per immagine
-- `AVAILABLE_TAGS` da `src/lib/tags.ts`
-- `getAllSDGs()` da `src/lib/sdg-data.ts`
-- `PageHeader` per la lista
-- Badge stato con stesso pattern colori di ExperiencesPage
-
-### Complessita
-- Il dialog di edit gestisce 2 tabelle ponte oltre al record principale
-- La pagina dettaglio fa un fetch con join su `categories`, `cities` (via `tb_format_cities`), `associations` (via `tb_format_associations`)
-- Nessun impatto sulle pagine esistenti
+Nessuna modifica a file TB (`TBFormatEditDialog`, `TBFormatDetailPage`, `TBFormatsPage`) — gia allineati.
 
