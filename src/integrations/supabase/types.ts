@@ -621,6 +621,7 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          location_type: string
           max_participants: number | null
           participant_info: string | null
           price_per_participant: number | null
@@ -645,6 +646,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          location_type?: string
           max_participants?: number | null
           participant_info?: string | null
           price_per_participant?: number | null
@@ -669,6 +671,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          location_type?: string
           max_participants?: number | null
           participant_info?: string | null
           price_per_participant?: number | null
