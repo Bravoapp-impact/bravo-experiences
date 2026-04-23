@@ -178,6 +178,14 @@ const App = () => (
               <Route path="membri" element={<SettingsMembers />} />
               <Route path="volontariato" element={<SettingsVolunteering />} />
             </Route>
+            <Route
+              path="/hr/team-building"
+              element={
+                <ProtectedHRRoute>
+                  <HRTeamBuildingPage />
+                </ProtectedHRRoute>
+              }
+            />
             {/* Super Admin Routes */}
             <Route
               path="/super-admin"
