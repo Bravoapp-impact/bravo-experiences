@@ -78,6 +78,15 @@ export function ExperienceHeader({
             </span>
           </>
         )}
+        {locationType && locationType !== "both" && (
+          <>
+            <span>·</span>
+            <span className="flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5" />
+              {LOCATION_LABELS[locationType] ?? locationType}
+            </span>
+          </>
+        )}
       </div>
     </div>
   );
