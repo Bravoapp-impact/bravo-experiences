@@ -64,6 +64,7 @@ export default function HRTeamBuildingPage() {
                   <Card
                     key={req.id}
                     className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/hr/team-building/${req.id}`)}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="h-9 w-9 rounded-lg bg-orange-50 flex items-center justify-center shrink-0">

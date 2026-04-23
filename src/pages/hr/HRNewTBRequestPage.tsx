@@ -189,7 +189,7 @@ export default function HRNewTBRequestPage() {
         preferred_activities: form.noActivityInMind ? ["none"] : form.preferredActivities,
       };
 
-      const { error } = await supabase.from("tb_requests").insert({
+      const { data: inserted, error } = await supabase.from("tb_requests").insert({
         title: form.title.trim(),
         company_id: profile.company_id,
         requested_by: user.id,
@@ -203,11 +203,21 @@ export default function HRNewTBRequestPage() {
         extra_services: { ...extraServices, places: form.places },
         notes: form.notes.trim() || null,
         status: "submitted",
-      });
+      }).select("id").single();
 
       if (error) throw error;
+
+      // Trigger automatic matching
+      try {
+        await supabase.rpc("match_tb_formats_for_request", {
+          p_request_id: inserted.id,
+        });
+      } catch {
+        // Matching is best-effort; don't block the flow
+      }
+
       toast.success("Richiesta inviata con successo!");
-      navigate("/hr/team-building");
+      navigate(`/hr/team-building/${inserted.id}`);
     } catch {
       toast.error("Errore nell'invio della richiesta");
     } finally {
