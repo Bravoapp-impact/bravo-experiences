@@ -1666,6 +1666,28 @@ export type Database = {
       }
       get_my_role: { Args: never; Returns: string }
       get_role_from_jwt: { Args: never; Returns: string }
+      get_tb_proposal_details: {
+        Args: { p_request_id: string }
+        Returns: {
+          client_notes: string
+          client_status: string
+          format_category_id: string
+          format_category_name: string
+          format_description: string
+          format_duration_hours: number
+          format_id: string
+          format_image_url: string
+          format_location_type: string
+          format_participants_max: number
+          format_participants_min: number
+          format_sdgs: string[]
+          format_secondary_tags: string[]
+          format_services: Json
+          format_title: string
+          priority: number
+          proposal_id: string
+        }[]
+      }
       get_user_association_id: { Args: { user_uuid: string }; Returns: string }
       get_user_company_id: { Args: { user_uuid: string }; Returns: string }
       get_user_role: { Args: { user_uuid: string }; Returns: string }
@@ -1698,6 +1720,10 @@ export type Database = {
       make_current_fiscal_year_start: {
         Args: { p_fiscal_start: string }
         Returns: string
+      }
+      match_tb_formats_for_request: {
+        Args: { p_request_id: string }
+        Returns: undefined
       }
       move_to_dlq: {
         Args: {
