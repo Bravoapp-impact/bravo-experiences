@@ -136,7 +136,7 @@ export default function TBFormatDetailPage() {
     if (newStatus === "published") {
       const { valid, missing } = validateFormatPublish(
         formatData,
-        linkedCityIds.length,
+        formatData.nationwide ? 1 : linkedCityIds.length,
         linkedAssociationIds.length,
       );
       if (!valid) {
@@ -349,18 +349,25 @@ export default function TBFormatDetailPage() {
             )}
 
             {/* Cities */}
-            {linkedCities.length > 0 && (
+            {(formatData.nationwide || linkedCities.length > 0) && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
                 <Separator className="my-8" />
                 <h2 className="text-lg font-semibold mb-3">Città disponibili</h2>
-                <div className="flex flex-wrap gap-2">
-                  {linkedCities.map((city) => (
-                    <Badge key={city.id} variant="outline">
-                      <MapPin className="h-3 w-3 mr-1" />
-                      {city.name}
-                    </Badge>
-                  ))}
-                </div>
+                {formatData.nationwide ? (
+                  <Badge className="bg-primary/10 text-primary border-primary/20">
+                    <MapPin className="h-3 w-3 mr-1" />
+                    Disponibile in tutta Italia
+                  </Badge>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {linkedCities.map((city) => (
+                      <Badge key={city.id} variant="outline">
+                        <MapPin className="h-3 w-3 mr-1" />
+                        {city.name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </motion.div>
             )}
 
