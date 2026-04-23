@@ -48,12 +48,15 @@ export default function HRTeamBuildingPage() {
       <div className="space-y-6">
         {hasRequests ? (
           <>
-            <PageHeader title="Team building sociali">
-              <Button size="sm" onClick={() => setWizardOpen(true)}>
-                <Plus className="h-4 w-4 mr-1.5" />
-                Nuova richiesta
-              </Button>
-            </PageHeader>
+            <PageHeader
+              title="Team building sociali"
+              actions={
+                <Button size="sm" onClick={() => setWizardOpen(true)}>
+                  <Plus className="h-4 w-4 mr-1.5" />
+                  Nuova richiesta
+                </Button>
+              }
+            />
 
             <div className="grid gap-3">
               {requests.map((req) => {
