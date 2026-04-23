@@ -396,20 +396,6 @@ export default function HRNewTBRequestPage() {
             {/* Place multi-select */}
             <div>
               <Label className="mb-1.5 block">In quale/i luogo/i vorresti organizzare l'evento?</Label>
-              {form.places.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-2">
-                  {form.places.map((place) => (
-                    <Badge
-                      key={place}
-                      variant="secondary"
-                      className="cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
-                      onClick={() => togglePlace(place)}
-                    >
-                      {place} ×
-                    </Badge>
-                  ))}
-                </div>
-              )}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -444,6 +430,20 @@ export default function HRNewTBRequestPage() {
                   <p className="px-3 py-2 text-sm text-muted-foreground">Nessun luogo trovato</p>
                 )}
               </div>
+              {form.places.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {form.places.map((place) => (
+                    <Badge
+                      key={place}
+                      variant="secondary"
+                      className="cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
+                      onClick={() => togglePlace(place)}
+                    >
+                      {place} ×
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         );
