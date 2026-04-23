@@ -33,7 +33,7 @@ interface Category {
 }
 interface City { id: string; name: string; }
 interface Association { id: string; name: string; }
-type TBFormatWithCities = TBFormat & { tb_format_cities?: { city_id: string }[] };
+
 
 const LOCATION_LABELS: Record<string, string> = {
   indoor: "Indoor",
@@ -45,7 +45,7 @@ export default function TBFormatsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [formats, setFormats] = useState<TBFormatWithCities[]>([]);
+  const [formats, setFormats] = useState<TBFormat[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [associations, setAssociations] = useState<Association[]>([]);
@@ -67,7 +67,7 @@ export default function TBFormatsPage() {
   const fetchData = async () => {
     try {
       const [fmtRes, catRes, citRes, assRes] = await Promise.all([
-        supabase.from("tb_formats").select("*, tb_format_cities(city_id)").order("created_at", { ascending: false }),
+        supabase.from("tb_formats").select("*").order("created_at", { ascending: false }),
         supabase.from("categories").select("id, name, default_sdgs").order("name"),
         supabase.from("cities").select("id, name").order("name"),
         supabase.from("associations").select("id, name").order("name"),
@@ -78,7 +78,7 @@ export default function TBFormatsPage() {
       if (citRes.error) throw citRes.error;
       if (assRes.error) throw assRes.error;
 
-      setFormats(fmtRes.data as TBFormatWithCities[] || []);
+      setFormats(fmtRes.data as TBFormat[] || []);
       setCategories(catRes.data || []);
       setCities(citRes.data || []);
       setAssociations(assRes.data || []);
@@ -298,7 +298,7 @@ export default function TBFormatsPage() {
                     <TableRow className="bg-muted/50">
                       <TableHead>Format</TableHead>
                       <TableHead>Categoria</TableHead>
-                      <TableHead>Città</TableHead>
+                      
                       <TableHead>Partecipanti</TableHead>
                       <TableHead>Stato</TableHead>
                       <TableHead className="w-36">Azioni</TableHead>
@@ -347,19 +347,6 @@ export default function TBFormatsPage() {
                             <Badge variant="outline" className="capitalize">
                               {getCategoryName(fmt.category_id)}
                             </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {fmt.nationwide ? (
-                              <Badge variant="secondary" className="text-xs">
-                                <MapPin className="h-3 w-3 mr-1" />Tutta Italia
-                              </Badge>
-                            ) : (
-                              <span className="text-sm text-muted-foreground">
-                                {fmt.tb_format_cities?.length
-                                  ? `${fmt.tb_format_cities.length} ${fmt.tb_format_cities.length === 1 ? "città" : "città"}`
-                                  : "—"}
-                              </span>
-                            )}
                           </TableCell>
                           <TableCell>
                             {fmt.participants_min || fmt.participants_max
