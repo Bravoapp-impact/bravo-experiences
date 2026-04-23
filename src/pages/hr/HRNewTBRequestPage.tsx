@@ -254,12 +254,12 @@ export default function HRNewTBRequestPage() {
                 Che obiettivo/i vuoi raggiungere con "{form.title}"?
               </p>
             </div>
-            <div className="grid gap-1">
+            <div className="grid gap-2">
               {GOALS.map((goal) => (
                 <label
                   key={goal}
                   className={cn(
-                    "flex items-center gap-2.5 px-3 py-1.5 rounded-md border cursor-pointer transition-colors text-sm",
+                    "flex items-center gap-3 px-3 py-3 rounded-lg border cursor-pointer transition-colors text-sm",
                     form.goals.includes(goal)
                       ? "border-primary bg-primary/5"
                       : "border-border hover:bg-muted/30"
@@ -285,12 +285,12 @@ export default function HRNewTBRequestPage() {
                 Hai già in mente qualche attività per il tuo team?
               </p>
             </div>
-            <div className="grid gap-1">
+            <div className="grid gap-2">
               {categories?.map((cat) => (
                 <label
                   key={cat.id}
                   className={cn(
-                    "flex items-center gap-2.5 px-3 py-1.5 rounded-md border cursor-pointer transition-colors text-sm",
+                    "flex items-center gap-3 px-3 py-3 rounded-lg border cursor-pointer transition-colors text-sm",
                     form.noActivityInMind
                       ? "opacity-40 pointer-events-none"
                       : form.preferredActivities.includes(cat.id)
@@ -313,7 +313,7 @@ export default function HRNewTBRequestPage() {
               ))}
               <label
                 className={cn(
-                  "flex items-center gap-2.5 px-3 py-1.5 rounded-md border cursor-pointer transition-colors text-sm mt-1",
+                  "flex items-center gap-3 px-3 py-3 rounded-lg border cursor-pointer transition-colors text-sm mt-1",
                   form.noActivityInMind
                     ? "border-primary bg-primary/5"
                     : "border-border hover:bg-muted/30"
@@ -479,12 +479,12 @@ export default function HRNewTBRequestPage() {
             </div>
             <div>
               <Label className="mb-2 block">Servizi aggiuntivi</Label>
-              <div className="grid gap-1">
+              <div className="grid gap-2">
                 {EXTRA_SERVICES_OPTIONS.map((svc) => (
                   <label
                     key={svc.key}
                     className={cn(
-                      "flex items-center gap-2.5 px-3 py-1.5 rounded-md border cursor-pointer transition-colors text-sm",
+                      "flex items-center gap-3 px-3 py-3 rounded-lg border cursor-pointer transition-colors text-sm",
                       form.extraServices[svc.key]
                         ? "border-primary bg-primary/5"
                         : "border-border hover:bg-muted/30"
