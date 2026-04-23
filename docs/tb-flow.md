@@ -1,6 +1,6 @@
 # Team Building — Flusso di prodotto
 
-*Documento di progettazione — Aprile 2026*
+_Documento di progettazione — Aprile 2026_
 
 ---
 
@@ -52,19 +52,33 @@ Campi principali:
 
 - `id`, `title`, `description`, `image_url`
 - `category_id` → riferimento a `categories` (trasversale al sistema)
-- `association_id` → riferimento a `associations`, **nullable**. Alcuni format storici (es. "Cartapesta") sono "format Bravo!" che possiamo erogare con ETS diverse caso per caso. Altri sono legati a un'ETS specifica (es. "Dragon Boat con Navigli Clean Up")
-- `available_associations` (tabella ponte `tb_format_associations`) → lista di ETS che possono erogare quel format quando `association_id` è null. Serve per il filtro di matching.
+- `secondary_tags` (`text[]`) → tag secondari condivisi con le `experiences`. La sorgente di verità del set di tag è la costante TypeScript `AVAILABLE_TAGS` in `src/lib/tags.ts`.
 - `location_type` enum: `indoor`, `outdoor`, `both`
-- `city_ids` (tabella ponte `tb_format_cities`) → città in cui il format è erogabile
-- `activity_type` enum: `ambientale`, `sociale`, `artistica`, `sportiva`, `culinaria`, `manuale`, `altro` — serve per il filtro primario nel matching. Simile ai tag secondari delle `experience`.
 - `participants_min`, `participants_max` — range indicativo di pax sostenibile
 - `duration_hours` — durata indicativa
 - `price_range_min`, `price_range_max` — **a titolo indicativo**, non è il prezzo effettivo che si applica al cliente. Serve per il filtro budget.
 - `sdgs` (array)
+- `services` JSONB → cosa include il format di default (es. istruttore esperto, materiali, assicurazione). Struttura in V1: `{"items": ["stringa1", "stringa2", ...]}`. Se in futuro servirà struttura più ricca (nome + descrizione, prezzo opzionale), si migra senza toccare la colonna.
+- `extra_services` JSONB → servizi aggiuntivi opzionali offerti col format (es. pranzo con prodotti locali, trasporto, materiale fotografico). Stessa struttura di `services`. Distinti da `tb_requests.extra_services`, che invece rappresentano le richieste dell'HR nel brief.
 - `status` enum: `draft`, `published`, `archived`
 - `created_at`, `updated_at`
 
-**Principio di separazione.** Un `tb_format` NON è un'`experience`. Sono due oggetti diversi con cicli di vita diversi. Se un giorno un format TB diventa erogabile anche in modalità volontariato (improbabile, ma possibile), si crea un'`experience` corrispondente con i propri dati.
+**Relazione format ↔ ETS erogabili.** Passa esclusivamente dalla tabella ponte `tb_format_associations`. Non esiste un campo `association_id` diretto su `tb_formats`: sia i format "Bravo!" erogabili con più ETS sia quelli legati a una singola ETS (es. "Dragon Boat con Navigli Clean Up") si rappresentano con una o più righe in bridge. Per risolvere quale ETS mostrare in una `tb_proposal`: se `override_association_id` è valorizzato si usa quello, altrimenti si legge dalla bridge del format. Se la bridge è vuota e non c'è override, la proposta non è in uno stato valido per essere inviata al cliente.
+
+**Relazione format ↔ città erogabili.** Passa dalla tabella ponte `tb_format_cities`. Un format può essere erogato in più città.
+
+**Requisiti per lo stato `published`.** Un format può restare in `draft` con qualunque livello di completezza. Al passaggio a `published` deve soddisfare i seguenti requisiti minimi, che garantiscono che sia filtrabile in Fase 2 di matching:
+
+- `title` non vuoto
+- `category_id` valorizzato
+- `participants_min` e `participants_max` entrambi valorizzati
+- `price_range_min` e `price_range_max` entrambi valorizzati
+- almeno una città in `tb_format_cities`
+- almeno un'ETS in `tb_format_associations`
+
+La validazione è applicata lato client (UI super admin), sia nel dialog di edit sia nelle azioni rapide dalla lista catalogo. Nessun trigger DB in V1: il super admin può, se serve, forzare stati via SQL.
+
+**Principio di separazione.** Un `tb_format` non è un'`experience`. Sono due oggetti diversi con cicli di vita diversi. Se un giorno un format TB diventasse erogabile anche in modalità volontariato (improbabile ma possibile), si crea un'`experience` corrispondente con i propri dati.
 
 ### 3.2 `tb_requests` — il caso aperto
 
@@ -94,7 +108,7 @@ Le "Best Ideas" del whiteboard. Ogni riga è un format proposto al cliente per u
 Campi principali:
 
 - `id`, `tb_request_id`, `tb_format_id`
-- `override_association_id` — nullable, usato quando il `tb_format` ha `association_id` null e il super admin sta scegliendo *in questo caso* quale ETS proporre. Se valorizzato, prevale sul valore del format.
+- `override_association_id` — nullable, usato quando il `tb_format` ha `association_id` null e il super admin sta scegliendo _in questo caso_ quale ETS proporre. Se valorizzato, prevale sul valore del format.
 - `priority` — ordine di visualizzazione al cliente (1 è la prima scheda)
 - `admin_notes` — note che il super admin vuole comunicare al cliente su questa proposta (es. "Versione custom per 80 pax con parte di briefing finale")
 - `client_status` enum: `pending`, `interested`, `needs_clarification`, `declined` — selezione del cliente sulla scheda
@@ -102,7 +116,7 @@ Campi principali:
 - `association_visibility` enum: `visible`, `hidden` — controllo granulare sulla visibilità del nome ETS in questa proposta specifica. Default `visible`. Il DB è flessibile per test A/B o scelte caso per caso.
 - `created_at`, `updated_at`
 
-Per risolvere quale ETS mostrare in UI: `COALESCE(override_association_id, tb_format.association_id)`. Se entrambi sono null, significa che il super admin non ha ancora assegnato un'ETS — condizione di errore, la proposta non dovrebbe essere inviata al cliente finché non c'è un ETS.
+Per risolvere quale ETS mostrare in una proposta: se `override_association_id` è valorizzato si usa quello, altrimenti si legge dalla tabella ponte `tb_format_associations` del format collegato. Se entrambi sono vuoti, la proposta non è in uno stato valido per essere inviata al cliente — il super admin deve prima assegnare un'ETS.
 
 ### 3.4 `tb_quotes` + `tb_quote_items` — il preventivo
 
@@ -258,16 +272,16 @@ Dopo l'evento, super admin (o in V2, l'ETS) conferma "evento concluso". `tb_requ
 
 ### Quadro riassuntivo fasi → attori
 
-| Fase | HR | Super Admin | ETS |
-|---|---|---|---|
-| 1. Brief | Compila form | Riceve notifica | — |
-| 2. Matching | — | Filtra catalogo, crea proposte | — |
-| 3. Proposte al cliente | Marca interesse per scheda | Riceve notifica | — |
-| 4. Quotazione ETS | — | Invia email a ETS (V1) / notifica ETS (V2) | Riceve, risponde con prezzo |
-| 5. Composizione preventivo | — | Compone items, margini | — |
-| 6. Decisione cliente | Accetta / modifica / rifiuta | — | — |
-| 7. Firma | (V2: firma in-app) | Gestisce PDF (V1) | — |
-| 8. Esecuzione | Dashboard evento, condivide link iscrizione | Conferma data, supporta | (V2: vede iscritti) |
+| Fase                       | HR                                          | Super Admin                                | ETS                         |
+| -------------------------- | ------------------------------------------- | ------------------------------------------ | --------------------------- |
+| 1. Brief                   | Compila form                                | Riceve notifica                            | —                           |
+| 2. Matching                | —                                           | Filtra catalogo, crea proposte             | —                           |
+| 3. Proposte al cliente     | Marca interesse per scheda                  | Riceve notifica                            | —                           |
+| 4. Quotazione ETS          | —                                           | Invia email a ETS (V1) / notifica ETS (V2) | Riceve, risponde con prezzo |
+| 5. Composizione preventivo | —                                           | Compone items, margini                     | —                           |
+| 6. Decisione cliente       | Accetta / modifica / rifiuta                | —                                          | —                           |
+| 7. Firma                   | (V2: firma in-app)                          | Gestisce PDF (V1)                          | —                           |
+| 8. Esecuzione              | Dashboard evento, condivide link iscrizione | Conferma data, supporta                    | (V2: vede iscritti)         |
 
 ---
 
@@ -298,6 +312,7 @@ Ancora in fase di lavorazione e da affinare. Sono sicuramente necessarie 3 pagin
 **`/hr/team-building/nuova`** — form brief guidato. UX a step o a pagina singola scorrevole: tipo attività (scelta da enum con icone), partecipanti (range con slider), periodo, budget, città, servizi extra (checkbox), note. Salva e invia.
 
 **`/hr/team-building/{id}`** — pagina della singola richiesta, con sezioni dinamiche in base allo stato:
+
 - Se `proposals_sent`: vista delle 3-5 schede "Best Ideas" con selezione client_status
 - Se `quote_sent`: vista del preventivo (con pulsante "Accetta" e alternative)
 - Se `signed`: dashboard evento (countdown, iscritti, link condivisibile, template comunicazione)
@@ -307,6 +322,7 @@ Ancora in fase di lavorazione e da affinare. Sono sicuramente necessarie 3 pagin
 **`/admin/team-building/richieste`** — tabella di tutte le `tb_requests` con filtri per stato, azienda, assigned_admin. Colonne: azienda, titolo, stato, giorni fermi in stato corrente, alert se oltre soglia. Click → dettaglio richiesta.
 
 **`/admin/team-building/richieste/{id}`** — workspace del caso. A sinistra pannello informativo (brief, storia, eventi). Al centro, sezione operativa dinamica in base a stato:
+
 - Stato `submitted` o `in_matching`: filtro catalogo + selezione proposte
 - Stato `proposals_reviewed`: lista proposte con pulsante "Richiedi quotazione ETS" per ciascuna interessata
 - Stato `quote_in_composition`: editor preventivo
@@ -431,7 +447,7 @@ Responsabile del documento: Filippo (product owner).
 
 ---
 
-*Versione 1.0 — Aprile 2026*
+_Versione 1.0 — Aprile 2026_
 
 ---
 
@@ -463,6 +479,7 @@ Il business model prevede che la subscription dia accesso a tutte le funzionalit
 ### A.5 Route naming
 
 Le route TB seguono la tassonomia esistente dell'app:
+
 - `/super-admin/team-building/...` (non `/admin/...`)
 - `/hr/team-building/...`
 
