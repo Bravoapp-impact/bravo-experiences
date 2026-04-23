@@ -972,6 +972,7 @@ export default function ExperiencesPage() {
                   <SelectItem value="both">Entrambi</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
 
             <div className="space-y-2">
               <Label>Tag Secondari (opzionali)</Label>
