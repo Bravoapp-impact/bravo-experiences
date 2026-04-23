@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { it } from "date-fns/locale";
-import { CalendarIcon, ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,12 +14,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -29,17 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const TOTAL_STEPS = 7;
-
-const STEP_LABELS = [
-  "Evento",
-  "Obiettivi",
-  "Attività",
-  "Partecipanti",
-  "Quando e dove",
-  "Budget",
-  "Riepilogo",
-];
+const TOTAL_STEPS = 6;
 
 const GOALS = [
   "Sviluppare competenze e soft skills",
@@ -60,6 +43,30 @@ const EXTRA_SERVICES_OPTIONS = [
   { key: "social_catering", label: "Catering sociale" },
 ];
 
+const MONTHS = [
+  "Gennaio", "Febbraio", "Marzo", "Aprile",
+  "Maggio", "Giugno", "Luglio", "Agosto",
+  "Settembre", "Ottobre", "Novembre", "Dicembre",
+];
+
+const ITALIAN_PROVINCES = [
+  "Agrigento","Alessandria","Ancona","Aosta","Arezzo","Ascoli Piceno","Asti",
+  "Avellino","Bari","Barletta-Andria-Trani","Belluno","Benevento","Bergamo",
+  "Biella","Bologna","Bolzano","Brescia","Brindisi","Cagliari","Caltanissetta",
+  "Campobasso","Caserta","Catania","Catanzaro","Chieti","Como","Cosenza",
+  "Cremona","Crotone","Cuneo","Enna","Fermo","Ferrara","Firenze","Foggia",
+  "Forlì-Cesena","Frosinone","Genova","Gorizia","Grosseto","Imperia","Isernia",
+  "L'Aquila","La Spezia","Latina","Lecce","Lecco","Livorno","Lodi","Lucca",
+  "Macerata","Mantova","Massa-Carrara","Matera","Messina","Milano","Modena",
+  "Monza e Brianza","Napoli","Novara","Nuoro","Oristano","Padova","Palermo",
+  "Parma","Pavia","Perugia","Pesaro e Urbino","Pescara","Piacenza","Pisa",
+  "Pistoia","Pordenone","Potenza","Prato","Ragusa","Ravenna","Reggio Calabria",
+  "Reggio Emilia","Rieti","Rimini","Roma","Rovigo","Salerno","Sassari","Savona",
+  "Siena","Siracusa","Sondrio","Sud Sardegna","Taranto","Teramo","Terni",
+  "Torino","Trapani","Trento","Treviso","Trieste","Udine","Varese","Venezia",
+  "Verbano-Cusio-Ossola","Vercelli","Verona","Vibo Valentia","Vicenza","Viterbo",
+];
+
 interface FormState {
   title: string;
   goals: string[];
@@ -67,9 +74,8 @@ interface FormState {
   noActivityInMind: boolean;
   participantsMin: string;
   participantsMax: string;
-  periodFrom: Date | undefined;
-  periodTo: Date | undefined;
-  cityId: string;
+  selectedMonths: number[];
+  province: string;
   locationType: string;
   budgetEstimate: string;
   extraServices: Record<string, boolean>;
@@ -83,9 +89,8 @@ const initialForm: FormState = {
   noActivityInMind: false,
   participantsMin: "",
   participantsMax: "",
-  periodFrom: undefined,
-  periodTo: undefined,
-  cityId: "",
+  selectedMonths: [],
+  province: "",
   locationType: "",
   budgetEstimate: "",
   extraServices: {},
@@ -98,15 +103,7 @@ export default function HRNewTBRequestPage() {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(initialForm);
   const [submitting, setSubmitting] = useState(false);
-
-  const { data: cities } = useQuery({
-    queryKey: ["cities"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("cities").select("id, name").order("name");
-      if (error) throw error;
-      return data;
-    },
-  });
+  const [provinceSearch, setProvinceSearch] = useState("");
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -116,6 +113,12 @@ export default function HRNewTBRequestPage() {
       return data;
     },
   });
+
+  const filteredProvinces = useMemo(() => {
+    if (!provinceSearch.trim()) return ITALIAN_PROVINCES;
+    const q = provinceSearch.toLowerCase();
+    return ITALIAN_PROVINCES.filter((p) => p.toLowerCase().includes(q));
+  }, [provinceSearch]);
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -140,15 +143,23 @@ export default function HRNewTBRequestPage() {
     update("noActivityInMind", !form.noActivityInMind);
   };
 
+  const toggleMonth = (monthIdx: number) => {
+    update(
+      "selectedMonths",
+      form.selectedMonths.includes(monthIdx)
+        ? form.selectedMonths.filter((m) => m !== monthIdx)
+        : [...form.selectedMonths, monthIdx].sort((a, b) => a - b)
+    );
+  };
+
   const canNext = (): boolean => {
     switch (step) {
       case 1: return form.title.trim().length > 0;
       case 2: return form.goals.length > 0;
       case 3: return form.noActivityInMind || form.preferredActivities.length > 0;
       case 4: return !!form.participantsMin && !!form.participantsMax && Number(form.participantsMin) > 0 && Number(form.participantsMax) >= Number(form.participantsMin);
-      case 5: return true;
-      case 6: return true;
-      case 7: return true;
+      case 5: return form.selectedMonths.length > 0 && form.province.length > 0 && form.locationType.length > 0;
+      case 6: return form.budgetEstimate.trim().length > 0;
       default: return true;
     }
   };
@@ -157,6 +168,18 @@ export default function HRNewTBRequestPage() {
     if (!user || !profile?.company_id) return;
     setSubmitting(true);
     try {
+      // Build period from/to from selected months
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const sortedMonths = [...form.selectedMonths].sort((a, b) => a - b);
+      const firstMonth = sortedMonths[0];
+      const lastMonth = sortedMonths[sortedMonths.length - 1];
+      // If earliest month is before current month, use next year
+      const year = firstMonth < now.getMonth() ? currentYear + 1 : currentYear;
+      const periodFrom = new Date(year, firstMonth, 1);
+      const periodToYear = lastMonth < firstMonth ? year + 1 : year;
+      const periodTo = new Date(periodToYear, lastMonth + 1, 0); // last day of month
+
       const extraServices = {
         ...form.extraServices,
         goals: form.goals,
@@ -169,12 +192,12 @@ export default function HRNewTBRequestPage() {
         requested_by: user.id,
         participants_min: form.participantsMin ? Number(form.participantsMin) : null,
         participants_max: form.participantsMax ? Number(form.participantsMax) : null,
-        preferred_period_from: form.periodFrom ? format(form.periodFrom, "yyyy-MM-dd") : null,
-        preferred_period_to: form.periodTo ? format(form.periodTo, "yyyy-MM-dd") : null,
-        preferred_city_id: form.cityId || null,
+        preferred_period_from: format(periodFrom, "yyyy-MM-dd"),
+        preferred_period_to: format(periodTo, "yyyy-MM-dd"),
+        preferred_city_id: null,
         preferred_location_type: form.locationType || null,
         budget_estimate: form.budgetEstimate ? Number(form.budgetEstimate) : null,
-        extra_services: extraServices,
+        extra_services: { ...extraServices, province: form.province },
         notes: form.notes.trim() || null,
         status: "submitted",
       });
@@ -189,8 +212,13 @@ export default function HRNewTBRequestPage() {
     }
   };
 
-  const getCategoryName = (id: string) => categories?.find((c) => c.id === id)?.name ?? id;
-  const getCityName = (id: string) => cities?.find((c) => c.id === id)?.name ?? id;
+  const handleNext = () => {
+    if (step === TOTAL_STEPS) {
+      handleSubmit();
+    } else {
+      setStep(step + 1);
+    }
+  };
 
   const renderStep = () => {
     switch (step) {
@@ -226,12 +254,12 @@ export default function HRNewTBRequestPage() {
                 Che obiettivo/i vuoi raggiungere con "{form.title}"?
               </p>
             </div>
-            <div className="grid gap-2">
+            <div className="grid gap-1.5">
               {GOALS.map((goal) => (
                 <label
                   key={goal}
                   className={cn(
-                    "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors text-sm",
+                    "flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-colors text-sm",
                     form.goals.includes(goal)
                       ? "border-primary bg-primary/5"
                       : "border-border hover:bg-muted/30"
@@ -257,12 +285,12 @@ export default function HRNewTBRequestPage() {
                 Hai già in mente qualche attività per il tuo team?
               </p>
             </div>
-            <div className="grid gap-2">
+            <div className="grid gap-1.5">
               {categories?.map((cat) => (
                 <label
                   key={cat.id}
                   className={cn(
-                    "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors text-sm",
+                    "flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-colors text-sm",
                     form.noActivityInMind
                       ? "opacity-40 pointer-events-none"
                       : form.preferredActivities.includes(cat.id)
@@ -285,7 +313,7 @@ export default function HRNewTBRequestPage() {
               ))}
               <label
                 className={cn(
-                  "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors text-sm mt-2",
+                  "flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-colors text-sm mt-1",
                   form.noActivityInMind
                     ? "border-primary bg-primary/5"
                     : "border-border hover:bg-muted/30"
@@ -341,76 +369,77 @@ export default function HRNewTBRequestPage() {
 
       case 5:
         return (
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
               <h3 className="text-lg font-semibold">Quando e dove</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 Seleziona quando e dove vorresti realizzare l'evento
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Data inizio (indicativa)</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn("w-full justify-start text-left font-normal mt-1.5", !form.periodFrom && "text-muted-foreground")}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {form.periodFrom ? format(form.periodFrom, "d MMM yyyy", { locale: it }) : "Seleziona"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={form.periodFrom}
-                      onSelect={(d) => update("periodFrom", d)}
-                      disabled={(date) => date < new Date()}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div>
-                <Label>Data fine (indicativa)</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn("w-full justify-start text-left font-normal mt-1.5", !form.periodTo && "text-muted-foreground")}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {form.periodTo ? format(form.periodTo, "d MMM yyyy", { locale: it }) : "Seleziona"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={form.periodTo}
-                      onSelect={(d) => update("periodTo", d)}
-                      disabled={(date) => date < (form.periodFrom || new Date())}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
+
+            {/* Month selector */}
             <div>
-              <Label>Città preferita</Label>
-              <Select value={form.cityId} onValueChange={(v) => update("cityId", v)}>
-                <SelectTrigger className="mt-1.5">
-                  <SelectValue placeholder="Seleziona una città" />
-                </SelectTrigger>
-                <SelectContent className="z-[200]">
-                  {cities?.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="mb-2 block">In che mese/i vorresti organizzarlo?</Label>
+              <div className="grid grid-cols-4 gap-2">
+                {MONTHS.map((month, idx) => (
+                  <button
+                    key={month}
+                    type="button"
+                    onClick={() => toggleMonth(idx)}
+                    className={cn(
+                      "py-2 px-1 rounded-lg border text-sm font-medium transition-colors",
+                      form.selectedMonths.includes(idx)
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:bg-muted/30"
+                    )}
+                  >
+                    {month.slice(0, 3)}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* Province search */}
+            <div>
+              <Label className="mb-1.5 block">In che provincia vorresti organizzare l'evento?</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cerca provincia..."
+                  value={provinceSearch}
+                  onChange={(e) => setProvinceSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <div className="mt-2 max-h-40 overflow-y-auto border rounded-lg">
+                {filteredProvinces.map((prov) => (
+                  <button
+                    key={prov}
+                    type="button"
+                    onClick={() => {
+                      update("province", prov);
+                      setProvinceSearch("");
+                    }}
+                    className={cn(
+                      "w-full text-left px-3 py-1.5 text-sm transition-colors",
+                      form.province === prov
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "hover:bg-muted/50"
+                    )}
+                  >
+                    {prov}
+                  </button>
+                ))}
+                {filteredProvinces.length === 0 && (
+                  <p className="px-3 py-2 text-sm text-muted-foreground">Nessuna provincia trovata</p>
+                )}
+              </div>
+              {form.province && (
+                <p className="text-sm text-primary mt-1.5">Selezionata: <span className="font-medium">{form.province}</span></p>
+              )}
+            </div>
+
+            {/* Location type */}
             <div>
               <Label>Tipologia location</Label>
               <Select value={form.locationType} onValueChange={(v) => update("locationType", v)}>
@@ -450,12 +479,12 @@ export default function HRNewTBRequestPage() {
             </div>
             <div>
               <Label className="mb-2 block">Servizi aggiuntivi</Label>
-              <div className="grid gap-2">
+              <div className="grid gap-1.5">
                 {EXTRA_SERVICES_OPTIONS.map((svc) => (
                   <label
                     key={svc.key}
                     className={cn(
-                      "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors text-sm",
+                      "flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-colors text-sm",
                       form.extraServices[svc.key]
                         ? "border-primary bg-primary/5"
                         : "border-border hover:bg-muted/30"
@@ -487,52 +516,6 @@ export default function HRNewTBRequestPage() {
           </div>
         );
 
-      case 7:
-        return (
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold">Riepilogo</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Verifica i dati prima di inviare la richiesta
-              </p>
-            </div>
-            <div className="space-y-3 text-sm">
-              <RecapRow label="Evento" value={form.title} />
-              <RecapRow label="Obiettivi" value={form.goals.join(", ")} />
-              <RecapRow
-                label="Attività"
-                value={
-                  form.noActivityInMind
-                    ? "Nessuna preferenza"
-                    : form.preferredActivities.map(getCategoryName).join(", ")
-                }
-              />
-              <RecapRow label="Partecipanti" value={`${form.participantsMin} – ${form.participantsMax}`} />
-              {form.periodFrom && (
-                <RecapRow
-                  label="Periodo"
-                  value={`${format(form.periodFrom, "d MMM yyyy", { locale: it })}${form.periodTo ? ` – ${format(form.periodTo, "d MMM yyyy", { locale: it })}` : ""}`}
-                />
-              )}
-              {form.cityId && <RecapRow label="Città" value={getCityName(form.cityId)} />}
-              {form.locationType && (
-                <RecapRow
-                  label="Location"
-                  value={form.locationType === "indoor" ? "Indoor" : form.locationType === "outdoor" ? "Outdoor" : "Indifferente"}
-                />
-              )}
-              {form.budgetEstimate && <RecapRow label="Budget" value={`€ ${Number(form.budgetEstimate).toLocaleString("it-IT")}`} />}
-              {Object.entries(form.extraServices).some(([, v]) => v) && (
-                <RecapRow
-                  label="Servizi"
-                  value={EXTRA_SERVICES_OPTIONS.filter((s) => form.extraServices[s.key]).map((s) => s.label).join(", ")}
-                />
-              )}
-              {form.notes && <RecapRow label="Note" value={form.notes} />}
-            </div>
-          </div>
-        );
-
       default:
         return null;
     }
@@ -541,38 +524,28 @@ export default function HRNewTBRequestPage() {
   return (
     <HRLayout>
       <div className="max-w-xl mx-auto py-6 space-y-6">
-        {/* Stepper dots */}
-        <div className="flex items-center justify-center gap-0">
+        {/* Stepper dots — no labels, equal spacing */}
+        <div className="flex items-center justify-center">
           {Array.from({ length: TOTAL_STEPS }).map((_, i) => {
             const stepNum = i + 1;
             const isCompleted = stepNum < step;
             const isCurrent = stepNum === step;
             return (
               <div key={i} className="flex items-center">
-                <div className="flex flex-col items-center">
-                  <div
-                    className={cn(
-                      "h-3 w-3 rounded-full transition-all duration-300",
-                      isCompleted
-                        ? "bg-primary"
-                        : isCurrent
-                        ? "bg-primary ring-4 ring-primary/20"
-                        : "bg-muted-foreground/20"
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      "text-[10px] mt-1.5 whitespace-nowrap",
-                      isCurrent ? "text-foreground font-medium" : "text-muted-foreground"
-                    )}
-                  >
-                    {STEP_LABELS[i]}
-                  </span>
-                </div>
+                <div
+                  className={cn(
+                    "h-3 w-3 rounded-full transition-all duration-300",
+                    isCompleted
+                      ? "bg-primary"
+                      : isCurrent
+                      ? "bg-primary ring-4 ring-primary/20"
+                      : "bg-muted-foreground/20"
+                  )}
+                />
                 {i < TOTAL_STEPS - 1 && (
                   <div
                     className={cn(
-                      "h-px w-8 mx-1 transition-colors duration-300 -mt-4",
+                      "h-px w-10 mx-1 transition-colors duration-300",
                       stepNum < step ? "bg-primary" : "bg-muted-foreground/20"
                     )}
                   />
@@ -596,29 +569,15 @@ export default function HRNewTBRequestPage() {
             <ArrowLeft className="h-4 w-4 mr-1" />
             {step === 1 ? "Annulla" : "Indietro"}
           </Button>
-          {step < TOTAL_STEPS ? (
-            <Button size="sm" onClick={() => setStep(step + 1)} disabled={!canNext()}>
-              Avanti
-              <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
-          ) : (
-            <Button size="sm" onClick={handleSubmit} disabled={submitting}>
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Check className="h-4 w-4 mr-1" />}
-              Invia richiesta
-            </Button>
-          )}
+          <Button size="sm" onClick={handleNext} disabled={!canNext() || submitting}>
+            {step === TOTAL_STEPS ? (
+              submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null
+            ) : null}
+            {step === TOTAL_STEPS ? "Invia richiesta" : "Avanti"}
+            {step < TOTAL_STEPS && <ArrowRight className="h-4 w-4 ml-1" />}
+          </Button>
         </div>
       </div>
     </HRLayout>
-  );
-}
-
-function RecapRow({ label, value }: { label: string; value: string }) {
-  if (!value) return null;
-  return (
-    <div className="flex gap-2">
-      <span className="font-medium text-muted-foreground w-24 shrink-0">{label}</span>
-      <span>{value}</span>
-    </div>
   );
 }
