@@ -162,6 +162,7 @@ export default function ExperiencesPage() {
     sdgs: [] as string[],
     participant_info: "",
     secondary_tags: [] as string[],
+    location_type: "both",
   });
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -246,6 +247,7 @@ export default function ExperiencesPage() {
         sdgs: experience.sdgs || [],
         participant_info: experience.participant_info || "",
         secondary_tags: experience.secondary_tags || [],
+        location_type: (experience as any).location_type || "both",
       });
       setSuggestedSdgs([]);
     } else {
@@ -262,6 +264,7 @@ export default function ExperiencesPage() {
         sdgs: [],
         participant_info: "",
         secondary_tags: [],
+        location_type: "both",
       });
       setSuggestedSdgs([]);
     }
@@ -313,6 +316,7 @@ export default function ExperiencesPage() {
         sdgs: formData.sdgs.length > 0 ? formData.sdgs : null,
         participant_info: formData.participant_info.trim() || null,
         secondary_tags: formData.secondary_tags.length > 0 ? formData.secondary_tags : null,
+        location_type: formData.location_type,
       };
 
       if (selectedExperience) {
