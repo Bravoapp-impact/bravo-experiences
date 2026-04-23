@@ -307,7 +307,7 @@ export default function TBFormatsPage() {
                   <TableBody>
                     {loading ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8">Caricamento...</TableCell>
+                        <TableCell colSpan={5} className="text-center py-8">Caricamento...</TableCell>
                       </TableRow>
                     ) : filteredFormats.length === 0 ? (
                       <TableRow>
