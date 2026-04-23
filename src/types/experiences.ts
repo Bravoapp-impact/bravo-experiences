@@ -31,6 +31,7 @@ export interface Experience {
   city_id?: string | null;
   default_hours?: number | null;
   secondary_tags?: string[] | null;
+  location_type?: string | null;
   association_id?: string | null;
   association_description?: string | null;
   association_website?: string | null;

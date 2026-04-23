@@ -95,6 +95,7 @@ export default function ExperienceDetail() {
           participant_info: data.participant_info ?? null,
           default_hours: data.default_hours,
           secondary_tags: data.secondary_tags ?? null,
+          location_type: data.location_type ?? null,
         });
       } catch {
         setNotFound(true);
