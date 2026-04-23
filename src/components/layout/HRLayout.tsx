@@ -1,11 +1,11 @@
 import { ReactNode } from "react";
 import {
   BarChart3,
-  Calendar,
+  Heart,
   Users,
   Home,
   LayoutGrid,
-  Briefcase,
+  UsersRound,
   GraduationCap,
   ShoppingBag,
   CalendarDays,
