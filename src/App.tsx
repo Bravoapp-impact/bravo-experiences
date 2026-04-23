@@ -187,6 +187,14 @@ const App = () => (
                 </ProtectedHRRoute>
               }
             />
+            <Route
+              path="/hr/team-building/nuova-richiesta"
+              element={
+                <ProtectedHRRoute>
+                  <HRNewTBRequestPage />
+                </ProtectedHRRoute>
+              }
+            />
             {/* Super Admin Routes */}
             <Route
               path="/super-admin"
