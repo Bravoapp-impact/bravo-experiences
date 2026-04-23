@@ -956,6 +956,24 @@ export default function ExperiencesPage() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="location_type">Tipo location</Label>
+              <Select
+                value={formData.location_type}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, location_type: value })
+                }
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="indoor">Indoor</SelectItem>
+                  <SelectItem value="outdoor">Outdoor</SelectItem>
+                  <SelectItem value="both">Entrambi</SelectItem>
+                </SelectContent>
+              </Select>
+
+            <div className="space-y-2">
               <Label>Tag Secondari (opzionali)</Label>
               <p className="text-xs text-muted-foreground mb-2">
                 Aggiungi tag per migliorare la ricerca delle esperienze
