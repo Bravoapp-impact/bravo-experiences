@@ -24,6 +24,7 @@ import HRExperiencesPage from "./pages/hr/HRExperiencesPage";
 import HRExperienceDetail from "./pages/hr/HRExperienceDetail";
 import HRTeamBuildingPage from "./pages/hr/HRTeamBuildingPage";
 import HRNewTBRequestPage from "./pages/hr/HRNewTBRequestPage";
+import HRTBRequestDetailPage from "./pages/hr/HRTBRequestDetailPage";
 import HREmployeesPage from "./pages/hr/HREmployeesPage";
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import SuperAdminProfile from "./pages/super-admin/SuperAdminProfile";
