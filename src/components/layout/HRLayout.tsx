@@ -26,7 +26,7 @@ const sidebarItems: SidebarItem[] = [
   { label: "Home", icon: Home, href: "/hr", iconColor: "text-violet-500" },
   // section label "Iniziative" before index 3
   { label: "Volontariato aziendale", icon: Calendar, href: "/hr/volontariato", iconColor: "text-green-500" },
-  { label: "Team building sociali", icon: Briefcase, href: "#", disabled: true, badge: "Presto" },
+  { label: "Team building sociali", icon: Briefcase, href: "/hr/team-building", iconColor: "text-orange-500" },
   { label: "Formazione", icon: GraduationCap, href: "#", disabled: true, badge: "Presto" },
   { label: "Negozio solidale", icon: ShoppingBag, href: "#", disabled: true, badge: "Presto" },
   // section label "Gestione" before index 7

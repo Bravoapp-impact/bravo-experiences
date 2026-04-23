@@ -22,6 +22,7 @@ import HRDashboard from "./pages/HRDashboard";
 import HRHomePage from "./pages/hr/HRHomePage";
 import HRExperiencesPage from "./pages/hr/HRExperiencesPage";
 import HRExperienceDetail from "./pages/hr/HRExperienceDetail";
+import HRTeamBuildingPage from "./pages/hr/HRTeamBuildingPage";
 import HREmployeesPage from "./pages/hr/HREmployeesPage";
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import SuperAdminProfile from "./pages/super-admin/SuperAdminProfile";
@@ -177,6 +178,14 @@ const App = () => (
               <Route path="membri" element={<SettingsMembers />} />
               <Route path="volontariato" element={<SettingsVolunteering />} />
             </Route>
+            <Route
+              path="/hr/team-building"
+              element={
+                <ProtectedHRRoute>
+                  <HRTeamBuildingPage />
+                </ProtectedHRRoute>
+              }
+            />
             {/* Super Admin Routes */}
             <Route
               path="/super-admin"
