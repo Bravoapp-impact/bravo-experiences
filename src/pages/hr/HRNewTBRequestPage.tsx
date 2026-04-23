@@ -2,14 +2,14 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { ArrowLeft, ArrowRight, Loader2, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { HRLayout } from "@/components/layout/HRLayout";
+import { StepWizard } from "@/components/common/StepWizard";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -515,61 +515,17 @@ export default function HRNewTBRequestPage() {
 
   return (
     <HRLayout>
-      <div className="max-w-xl mx-auto py-6 space-y-6">
-        {/* Stepper dots — no labels, equal spacing */}
-        <div className="flex items-center justify-center">
-          {Array.from({ length: TOTAL_STEPS }).map((_, i) => {
-            const stepNum = i + 1;
-            const isCompleted = stepNum < step;
-            const isCurrent = stepNum === step;
-            return (
-              <div key={i} className="flex items-center">
-                <div
-                  className={cn(
-                    "h-3 w-3 rounded-full transition-all duration-300",
-                    isCompleted
-                      ? "bg-primary"
-                      : isCurrent
-                      ? "bg-primary ring-4 ring-primary/20"
-                      : "bg-muted-foreground/20"
-                  )}
-                />
-                {i < TOTAL_STEPS - 1 && (
-                  <div
-                    className={cn(
-                      "h-px w-10 mx-1 transition-colors duration-300",
-                      stepNum < step ? "bg-primary" : "bg-muted-foreground/20"
-                    )}
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Step content */}
-        <div className="bg-background">{renderStep()}</div>
-
-        {/* Navigation */}
-        <div className="flex justify-between pt-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => (step === 1 ? navigate("/hr/team-building") : setStep(step - 1))}
-            disabled={submitting}
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            {step === 1 ? "Annulla" : "Indietro"}
-          </Button>
-          <Button size="sm" onClick={handleNext} disabled={!canNext() || submitting}>
-            {step === TOTAL_STEPS ? (
-              submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null
-            ) : null}
-            Avanti
-            <ArrowRight className="h-4 w-4 ml-1" />
-          </Button>
-        </div>
-      </div>
+      <StepWizard
+        totalSteps={TOTAL_STEPS}
+        currentStep={step}
+        onNext={handleNext}
+        onBack={() => (step === 1 ? navigate("/hr/team-building") : setStep(step - 1))}
+        canNext={canNext()}
+        submitting={submitting}
+        backLabel={step === 1 ? "Annulla" : "Indietro"}
+      >
+        {renderStep()}
+      </StepWizard>
     </HRLayout>
   );
 }
