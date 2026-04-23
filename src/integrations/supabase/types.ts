@@ -1096,6 +1096,7 @@ export type Database = {
           id: string
           image_url: string | null
           location_type: string
+          nationwide: boolean
           participants_max: number | null
           participants_min: number | null
           price_range_max: number | null
@@ -1116,6 +1117,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           location_type?: string
+          nationwide?: boolean
           participants_max?: number | null
           participants_min?: number | null
           price_range_max?: number | null
@@ -1136,6 +1138,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           location_type?: string
+          nationwide?: boolean
           participants_max?: number | null
           participants_min?: number | null
           price_range_max?: number | null
