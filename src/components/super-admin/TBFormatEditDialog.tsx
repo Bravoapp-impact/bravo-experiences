@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -61,6 +62,7 @@ export interface TBFormat {
   status: string;
   services: any;
   extra_services: any;
+  nationwide: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -129,6 +131,7 @@ export function TBFormatEditDialog({
     price_range_min: "",
     price_range_max: "",
     status: "draft",
+    nationwide: false,
   });
 
   const [serviceItems, setServiceItems] = useState<string[]>([]);
@@ -158,6 +161,7 @@ export function TBFormatEditDialog({
         price_range_min: format.price_range_min?.toString() || "",
         price_range_max: format.price_range_max?.toString() || "",
         status: format.status,
+        nationwide: format.nationwide ?? false,
       });
       setServiceItems(parseJsonItems(format.services));
       setExtraServiceItems(parseJsonItems(format.extra_services));
@@ -179,6 +183,7 @@ export function TBFormatEditDialog({
         price_range_min: "",
         price_range_max: "",
         status: "draft",
+        nationwide: false,
       });
       setServiceItems([]);
       setExtraServiceItems([]);
@@ -255,8 +260,8 @@ export function TBFormatEditDialog({
     // Validate if publishing
     if (formData.status === "published") {
       const { valid, missing } = validateFormatPublish(
-        { ...formData, category_id: formData.category_id || null },
-        selectedCityIds.length,
+        { ...formData, category_id: formData.category_id || null, nationwide: formData.nationwide },
+        formData.nationwide ? 1 : selectedCityIds.length,
         selectedAssociationIds.length,
       );
       if (!valid) {
@@ -287,6 +292,7 @@ export function TBFormatEditDialog({
         status: formData.status,
         services: { items: serviceItems },
         extra_services: { items: extraServiceItems },
+        nationwide: formData.nationwide,
       };
 
       let formatId: string;
@@ -308,9 +314,9 @@ export function TBFormatEditDialog({
         formatId = data.id;
       }
 
-      // Sync junction tables: cities
+      // Sync junction tables: cities (skip if nationwide)
       await supabase.from("tb_format_cities").delete().eq("format_id", formatId);
-      if (selectedCityIds.length > 0) {
+      if (!formData.nationwide && selectedCityIds.length > 0) {
         const { error: citiesError } = await supabase
           .from("tb_format_cities")
           .insert(selectedCityIds.map((city_id) => ({ format_id: formatId, city_id })));
@@ -609,21 +615,30 @@ export function TBFormatEditDialog({
             </Select>
           </div>
 
-          {/* Cities multi-select */}
+          {/* Nationwide switch + Cities multi-select */}
           <div className="space-y-2">
             <Label>Città disponibili</Label>
-            <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto border rounded-md p-3">
-              {cities.map((city) => (
-                <Badge
-                  key={city.id}
-                  variant={selectedCityIds.includes(city.id) ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleCity(city.id)}
-                >
-                  {city.name}
-                </Badge>
-              ))}
-            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Switch
+                checked={formData.nationwide}
+                onCheckedChange={(checked) => setFormData({ ...formData, nationwide: checked })}
+              />
+              <span className="text-sm">Erogabile in tutta Italia</span>
+            </label>
+            {!formData.nationwide && (
+              <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto border rounded-md p-3">
+                {cities.map((city) => (
+                  <Badge
+                    key={city.id}
+                    variant={selectedCityIds.includes(city.id) ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => toggleCity(city.id)}
+                  >
+                    {city.name}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Associations multi-select */}

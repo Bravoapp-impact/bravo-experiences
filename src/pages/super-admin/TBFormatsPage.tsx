@@ -119,7 +119,7 @@ export default function TBFormatsPage() {
         const cityCount = (citRes.data || []).length;
         const assocCount = (assRes.data || []).length;
 
-        const { valid, missing } = validateFormatPublish(fmt, cityCount, assocCount);
+        const { valid, missing } = validateFormatPublish(fmt, fmt.nationwide ? 1 : cityCount, assocCount);
         if (!valid) {
           toast({
             variant: "destructive",

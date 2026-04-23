@@ -10,6 +10,7 @@ export function validateFormatPublish(
     participants_max: number | string | null;
     price_range_min: number | string | null;
     price_range_max: number | string | null;
+    nationwide?: boolean;
   },
   cityCount: number,
   associationCount: number,
@@ -22,7 +23,7 @@ export function validateFormatPublish(
   if (!format.participants_max) missing.push("Partecipanti max");
   if (!format.price_range_min) missing.push("Prezzo min");
   if (!format.price_range_max) missing.push("Prezzo max");
-  if (cityCount === 0) missing.push("Almeno una città");
+  if (!format.nationwide && cityCount === 0) missing.push("Almeno una città o 'Tutta Italia'");
   if (associationCount === 0) missing.push("Almeno un'associazione");
 
   return { valid: missing.length === 0, missing };
