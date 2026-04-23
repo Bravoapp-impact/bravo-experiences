@@ -298,7 +298,7 @@ export default function TBFormatsPage() {
                     <TableRow className="bg-muted/50">
                       <TableHead>Format</TableHead>
                       <TableHead>Categoria</TableHead>
-                      <TableHead>Città</TableHead>
+                      
                       <TableHead>Partecipanti</TableHead>
                       <TableHead>Stato</TableHead>
                       <TableHead className="w-36">Azioni</TableHead>
@@ -347,19 +347,6 @@ export default function TBFormatsPage() {
                             <Badge variant="outline" className="capitalize">
                               {getCategoryName(fmt.category_id)}
                             </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {fmt.nationwide ? (
-                              <Badge variant="secondary" className="text-xs">
-                                <MapPin className="h-3 w-3 mr-1" />Tutta Italia
-                              </Badge>
-                            ) : (
-                              <span className="text-sm text-muted-foreground">
-                                {fmt.tb_format_cities?.length
-                                  ? `${fmt.tb_format_cities.length} ${fmt.tb_format_cities.length === 1 ? "città" : "città"}`
-                                  : "—"}
-                              </span>
-                            )}
                           </TableCell>
                           <TableCell>
                             {fmt.participants_min || fmt.participants_max
