@@ -196,6 +196,14 @@ const App = () => (
                 </ProtectedHRRoute>
               }
             />
+            <Route
+              path="/hr/team-building/:id"
+              element={
+                <ProtectedHRRoute>
+                  <HRTBRequestDetailPage />
+                </ProtectedHRRoute>
+              }
+            />
             {/* Super Admin Routes */}
             <Route
               path="/super-admin"
