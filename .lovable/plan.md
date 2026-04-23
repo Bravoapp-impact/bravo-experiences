@@ -1,47 +1,72 @@
 
 
-## Piano: Modifiche al wizard TB e aggiornamento documentazione
+## Piano: Componente Wizard riutilizzabile
 
-### Modifica 1 — Partecipanti: da range a singolo numero indicativo
+### Cosa estrarre
 
-**Cosa cambia:** Lo step 4 attualmente chiede min e max separati. Diventerà un singolo campo numerico ("Quante persone pensi parteciperanno?"). Sotto l'input, quando l'utente inserisce un numero (es. 50), viene mostrato un testo informativo: "Range stimato: 45 – 55 partecipanti" (±10%).
+Un componente `StepWizard` generico che gestisce la struttura comune del wizard: stepper dots, navigazione avanti/indietro, layout container. Il contenuto di ogni step resta responsabilità del componente chiamante.
 
-**Dettagli tecnici:**
-- Rimuovere `participantsMin` e `participantsMax` dal form state, sostituire con `participantsCount: string`
-- Calcolare min/max automaticamente al submit: `Math.round(N * 0.9)` / `Math.round(N * 1.1)`
-- Aggiornare `canNext()` per step 4: basta che `participantsCount` sia > 0
-- Il DB riceve sempre `participants_min` e `participants_max` calcolati dal singolo valore
+### API proposta
 
-### Modifica 2 — Luoghi: selezione multipla e rinominare da "provincia" a "luogo"
+```tsx
+<StepWizard
+  totalSteps={6}
+  currentStep={step}
+  onNext={() => ...}
+  onBack={() => ...}
+  canNext={true}
+  submitting={false}
+  backLabel="Annulla"       // opzionale, default "Indietro"
+  nextLabel="Avanti"        // opzionale, default "Avanti"
+  onCancel={() => navigate(-1)}  // opzionale, per step 1
+>
+  {/* contenuto dello step corrente */}
+</StepWizard>
+```
 
-**Cosa cambia:** Attualmente si seleziona una sola provincia. Diventa multi-select: l'utente può scegliere più luoghi dalla lista province italiane. L'etichetta diventa "In quale/i luogo/i vorresti organizzare l'evento?".
+### Cosa include il componente
 
-**Dettagli tecnici:**
-- Rinominare `province: string` → `places: string[]` nel form state
-- La lista rimane `ITALIAN_PROVINCES` ma le voci si selezionano/deselezionano con checkbox (come i goals)
-- Mostrare i luoghi selezionati come badge sotto la barra di ricerca
-- Aggiornare `canNext()` per step 5: richiede `places.length > 0`
-- Al submit, salvare array in `extra_services.places` (al posto di `extra_services.province`)
+1. **Stepper dots** — la barra di progresso con pallini e linee connesse, identica a quella attuale
+2. **Container del contenuto** — il wrapper `bg-background` che renderizza `children`
+3. **Barra di navigazione** — bottoni Indietro/Avanti con gestione loading, icone freccia, disabilitazione
 
-### Modifica 3 — Rimuovere selezione tipologia location (indoor/outdoor)
+### Cosa NON include
 
-**Cosa cambia:** Eliminare completamente il blocco Select per "Tipologia location" dallo step 5.
-
-**Dettagli tecnici:**
-- Rimuovere `locationType` dal form state e da `initialForm`
-- Rimuovere il blocco JSX del Select indoor/outdoor
-- Rimuovere dalla validazione `canNext()` step 5 il check su `locationType`
-- Non inviare più `preferred_location_type` al DB nel submit
-
-### Modifica 4 — Aggiornamento `docs/tb-flow.md`
-
-Aggiornare la sezione 3.2 (`tb_requests`) e la Fase 1 del flusso per riflettere:
-- Il brief raccoglie un singolo numero indicativo di partecipanti (il range viene calcolato ±10%)
-- La selezione del luogo è multi-provincia (non singola)
-- La tipologia location (indoor/outdoor) non viene più raccolta nel brief HR (resta nei `tb_formats` per il catalogo)
+- Il layout esterno (HRLayout, AppLayout) — resta nel chiamante
+- La logica di form state e validazione — resta nel chiamante
+- Il contenuto degli step — passato come children
 
 ### File coinvolti
 
-- `src/pages/hr/HRNewTBRequestPage.tsx` — tutte le modifiche UI e logica
-- `docs/tb-flow.md` — aggiornamento documentazione
+| File | Azione |
+|------|--------|
+| `src/components/common/StepWizard.tsx` | Nuovo componente |
+| `src/pages/hr/HRNewTBRequestPage.tsx` | Refactor per usare StepWizard |
+
+### Struttura del componente
+
+```tsx
+interface StepWizardProps {
+  totalSteps: number;
+  currentStep: number;
+  onNext: () => void;
+  onBack: () => void;
+  canNext: boolean;
+  submitting?: boolean;
+  backLabel?: string;   // per step 1 ("Annulla")
+  nextLabel?: string;
+  className?: string;
+  children: React.ReactNode;
+}
+```
+
+Il componente renderizza:
+- `max-w-xl mx-auto py-6 space-y-6` come container
+- Stepper dots con logica completed/current/future
+- Children al centro
+- Footer con i due bottoni
+
+### Impatto su HRNewTBRequestPage
+
+La pagina si semplifica: rimuove tutto il JSX di stepper e navigazione, mantiene solo `renderStep()` e la logica di form/submit, e wrappa il tutto in `<StepWizard>`.
 
