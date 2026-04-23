@@ -14,13 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 const TOTAL_STEPS = 6;
 
@@ -72,11 +66,9 @@ interface FormState {
   goals: string[];
   preferredActivities: string[];
   noActivityInMind: boolean;
-  participantsMin: string;
-  participantsMax: string;
+  participantsCount: string;
   selectedMonths: number[];
-  province: string;
-  locationType: string;
+  places: string[];
   budgetEstimate: string;
   extraServices: Record<string, boolean>;
   notes: string;
@@ -87,11 +79,9 @@ const initialForm: FormState = {
   goals: [],
   preferredActivities: [],
   noActivityInMind: false,
-  participantsMin: "",
-  participantsMax: "",
+  participantsCount: "",
   selectedMonths: [],
-  province: "",
-  locationType: "",
+  places: [],
   budgetEstimate: "",
   extraServices: {},
   notes: "",
@@ -152,13 +142,26 @@ export default function HRNewTBRequestPage() {
     );
   };
 
+  const togglePlace = (place: string) => {
+    update(
+      "places",
+      form.places.includes(place)
+        ? form.places.filter((p) => p !== place)
+        : [...form.places, place]
+    );
+  };
+
+  const participantsNum = Number(form.participantsCount);
+  const participantsMin = participantsNum > 0 ? Math.round(participantsNum * 0.9) : 0;
+  const participantsMax = participantsNum > 0 ? Math.round(participantsNum * 1.1) : 0;
+
   const canNext = (): boolean => {
     switch (step) {
       case 1: return form.title.trim().length > 0;
       case 2: return form.goals.length > 0;
       case 3: return form.noActivityInMind || form.preferredActivities.length > 0;
-      case 4: return !!form.participantsMin && !!form.participantsMax && Number(form.participantsMin) > 0 && Number(form.participantsMax) >= Number(form.participantsMin);
-      case 5: return form.selectedMonths.length > 0 && form.province.length > 0 && form.locationType.length > 0;
+      case 4: return participantsNum > 0;
+      case 5: return form.selectedMonths.length > 0 && form.places.length > 0;
       case 6: return form.budgetEstimate.trim().length > 0;
       default: return true;
     }
@@ -190,14 +193,14 @@ export default function HRNewTBRequestPage() {
         title: form.title.trim(),
         company_id: profile.company_id,
         requested_by: user.id,
-        participants_min: form.participantsMin ? Number(form.participantsMin) : null,
-        participants_max: form.participantsMax ? Number(form.participantsMax) : null,
+        participants_min: participantsNum > 0 ? participantsMin : null,
+        participants_max: participantsNum > 0 ? participantsMax : null,
         preferred_period_from: format(periodFrom, "yyyy-MM-dd"),
         preferred_period_to: format(periodTo, "yyyy-MM-dd"),
         preferred_city_id: null,
-        preferred_location_type: form.locationType || null,
+        preferred_location_type: null,
         budget_estimate: form.budgetEstimate ? Number(form.budgetEstimate) : null,
-        extra_services: { ...extraServices, province: form.province },
+        extra_services: { ...extraServices, places: form.places },
         notes: form.notes.trim() || null,
         status: "submitted",
       });
@@ -335,34 +338,25 @@ export default function HRNewTBRequestPage() {
             <div>
               <h3 className="text-lg font-semibold">Partecipanti</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Indica il range di persone che pensi parteciperanno all'evento
+                Quante persone pensi parteciperanno all'evento?
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="pmin">Minimo</Label>
-                <Input
-                  id="pmin"
-                  type="number"
-                  min={1}
-                  placeholder="Es: 10"
-                  value={form.participantsMin}
-                  onChange={(e) => update("participantsMin", e.target.value)}
-                  className="mt-1.5"
-                />
-              </div>
-              <div>
-                <Label htmlFor="pmax">Massimo</Label>
-                <Input
-                  id="pmax"
-                  type="number"
-                  min={1}
-                  placeholder="Es: 30"
-                  value={form.participantsMax}
-                  onChange={(e) => update("participantsMax", e.target.value)}
-                  className="mt-1.5"
-                />
-              </div>
+            <div>
+              <Label htmlFor="pcount">Numero indicativo di partecipanti</Label>
+              <Input
+                id="pcount"
+                type="number"
+                min={1}
+                placeholder="Es: 50"
+                value={form.participantsCount}
+                onChange={(e) => update("participantsCount", e.target.value)}
+                className="mt-1.5"
+              />
+              {participantsNum > 0 && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Range stimato: <span className="font-medium text-foreground">{participantsMin} – {participantsMax} partecipanti</span>
+                </p>
+              )}
             </div>
           </div>
         );
@@ -399,13 +393,27 @@ export default function HRNewTBRequestPage() {
               </div>
             </div>
 
-            {/* Province search */}
+            {/* Place multi-select */}
             <div>
-              <Label className="mb-1.5 block">In che provincia vorresti organizzare l'evento?</Label>
+              <Label className="mb-1.5 block">In quale/i luogo/i vorresti organizzare l'evento?</Label>
+              {form.places.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {form.places.map((place) => (
+                    <Badge
+                      key={place}
+                      variant="secondary"
+                      className="cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
+                      onClick={() => togglePlace(place)}
+                    >
+                      {place} ×
+                    </Badge>
+                  ))}
+                </div>
+              )}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Cerca provincia..."
+                  placeholder="Cerca luogo..."
                   value={provinceSearch}
                   onChange={(e) => setProvinceSearch(e.target.value)}
                   className="pl-9"
@@ -416,42 +424,26 @@ export default function HRNewTBRequestPage() {
                   <button
                     key={prov}
                     type="button"
-                    onClick={() => {
-                      update("province", prov);
-                      setProvinceSearch("");
-                    }}
+                    onClick={() => togglePlace(prov)}
                     className={cn(
-                      "w-full text-left px-3 py-1.5 text-sm transition-colors",
-                      form.province === prov
+                      "w-full text-left px-3 py-1.5 text-sm transition-colors flex items-center gap-2",
+                      form.places.includes(prov)
                         ? "bg-primary/10 text-primary font-medium"
                         : "hover:bg-muted/50"
                     )}
                   >
+                    <Checkbox
+                      checked={form.places.includes(prov)}
+                      onCheckedChange={() => togglePlace(prov)}
+                      className="pointer-events-none"
+                    />
                     {prov}
                   </button>
                 ))}
                 {filteredProvinces.length === 0 && (
-                  <p className="px-3 py-2 text-sm text-muted-foreground">Nessuna provincia trovata</p>
+                  <p className="px-3 py-2 text-sm text-muted-foreground">Nessun luogo trovato</p>
                 )}
               </div>
-              {form.province && (
-                <p className="text-sm text-primary mt-1.5">Selezionata: <span className="font-medium">{form.province}</span></p>
-              )}
-            </div>
-
-            {/* Location type */}
-            <div>
-              <Label>Tipologia location</Label>
-              <Select value={form.locationType} onValueChange={(v) => update("locationType", v)}>
-                <SelectTrigger className="mt-1.5">
-                  <SelectValue placeholder="Seleziona" />
-                </SelectTrigger>
-                <SelectContent className="z-[200]">
-                  <SelectItem value="indoor">Indoor</SelectItem>
-                  <SelectItem value="outdoor">Outdoor</SelectItem>
-                  <SelectItem value="both">Indifferente</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
         );
