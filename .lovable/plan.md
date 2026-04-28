@@ -1,45 +1,85 @@
-## Diagnosi
+## Piano: Vista dettaglio format per HR + immagini di prova
 
-Ho indagato il database e ho trovato perché **nessuna richiesta restituisce proposte**:
+### Obiettivo
 
-1. **Causa principale (bloccante)**: tutti i 70 `tb_formats` nel DB hanno `status = 'draft'`. La funzione di matching filtra solo i `published`, quindi non trova mai nulla. La tabella `tb_proposals` è infatti vuota (0 righe) nonostante 6 richieste inviate.
-2. **Match per provincia troppo stretto**: la funzione richiede che la città del format abbia `province` esattamente uguale a uno dei `places` selezionati dall'HR. Se un format è collegato (in `tb_format_cities`) solo a città dentro una provincia, e nessuna città di quella provincia è registrata, non matcha.
-3. **Nessun fallback**: se zero format passano il filtro città, l'HR vede una pagina vuota. Mancano i format `nationwide` come "rete di sicurezza".
-4. **Inconsistenza storica**: alcune vecchie richieste salvavano `province` (stringa) invece di `places` (array). Le nuove dal wizard usano correttamente `places`, quindi non è un problema per il futuro.
+L'HR deve poter aprire il dettaglio di un singolo format proposto in una pagina dedicata (stesso layout della pagina super-admin `/super-admin/team-building/formats/:id`), nascondendo le informazioni riservate (associazioni erogatrici, prezzi). Da lì può marcare il format come "Mi interessa" o "Non interessato". Inoltre popoliamo i 70 format esistenti con immagini placeholder.
 
-## Cosa propongo di fare
+---
 
-### Fix 1 — Pubblicare automaticamente i format esistenti (data fix)
+### Modifica 1 — Nuova route HR per il dettaglio proposta
 
-Migration una-tantum che porta tutti i 70 `tb_formats` da `draft` a `published`. Sono i format già caricati come catalogo iniziale, quindi è ragionevole pubblicarli in blocco. Il super admin potrà poi spegnerli singolarmente.
+Aggiungere route in `src/App.tsx`:
 
-### Fix 2 — Rendere il matching più permissivo (modifica funzione)
+```
+/hr/team-building/:requestId/proposte/:proposalId  →  HRTBProposalDetailPage
+```
 
-Riscrivere `match_tb_formats_for_request` con questa logica:
+### Modifica 2 — Nuova pagina `HRTBProposalDetailPage`
 
-- **Filtro città allargato**: un format matcha se è `nationwide = true` **OPPURE** ha almeno una città in `tb_format_cities` la cui `province` è tra i `places` richiesti.
-- **Fallback automatico**: se dopo il filtro città restano zero format, ripiegare sui format `nationwide` (per non lasciare HR a mani vuote).
-- **Logging**: aggiungere `RAISE LOG` con conteggi intermedi per facilitare debug futuro.
+File: `src/pages/hr/HRTBProposalDetailPage.tsx`
 
-### Fix 3 — Re-trigger matching sulle richieste esistenti
+Struttura visiva clonata da `TBFormatDetailPage` ma adattata all'HR:
+- **Layout**: `HRLayout` invece di `SuperAdminLayout`
+- **Hero split**: immagine (55%) + titolo, badge categoria, badge location, partecipanti, durata
+- **Cosa farete**: descrizione completa
+- **Tag secondari**: visibili
+- **SDG**: visibili
+- **Servizi inclusi**: visibili
+- **Sidebar destra (sticky)** con due CTA invece di Modifica/Elimina:
+  - `Mi interessa` / `Interessato ✓` (toggle, stesso comportamento del card)
+  - `Non interessato` (variant outline / ghost)
+  - In fondo: link "Torna alle proposte"
 
-Per le 6 richieste già esistenti, eseguire un loop nella migration che chiama il matching dopo aver applicato i fix, così l'HR vede subito le proposte (limitatamente a quelle con `places` valido).
+**Informazioni NASCOSTE all'HR:**
+- Range prezzo (€80–€80 / persona)
+- Lista associazioni erogatrici
+- Città disponibili (in questa fase del flusso non rilevanti — HR ha già indicato i suoi luoghi nel brief)
+- Status del format (draft/published/archived) e date di creazione
+- Servizi extra (sono leve di pricing per le quotazioni)
 
-### Fix 4 — Migliorare UX pagina dettaglio quando zero proposte
+**Data fetching**: usa la stessa RPC `get_tb_proposal_details(p_request_id)` già in uso, filtrando per `proposal_id` dal URL. Nessuna modifica DB necessaria — la RPC già esclude prezzi e associazioni.
 
-In `HRTBRequestDetailPage.tsx` aggiungere uno stato esplicito quando la richiesta è `submitted`/`proposals_ready` ma `tb_proposals` è vuota: messaggio del tipo "Stiamo ancora lavorando alla selezione, ti contatteremo a breve" + bottone per contattare il team. Evita la pagina che sembra "rotta".
+### Modifica 3 — Card cliccabili in `HRTBRequestDetailPage`
 
-## File coinvolti
+Nel file `src/pages/hr/HRTBRequestDetailPage.tsx`:
+- Rimuovere il `Dialog` di anteprima (righe 278–335) e lo state `detailProposal`
+- Cambiare il click sul `ProposalCard` perché navighi a `/hr/team-building/:id/proposte/:proposalId` invece di aprire il modal
+- Mantenere intatti i pulsanti "Mi interessa" / "Non interessato" sulla card della lista (azione rapida senza aprire dettaglio)
 
+### Modifica 4 — Immagini placeholder per i 70 format
 
-| File                                     | Azione                                                                                         |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Migration SQL                            | Pubblicare format + riscrivere `match_tb_formats_for_request` + re-run sulle request esistenti |
-| `src/pages/hr/HRTBRequestDetailPage.tsx` | Empty state migliore quando 0 proposte                                                         |
+Migration SQL: aggiornare `tb_formats.image_url` per i record con `image_url IS NULL`, assegnando un'immagine Unsplash coerente con la categoria. Strategia:
 
+```sql
+UPDATE tb_formats f
+SET image_url = CASE c.name
+  WHEN 'Natura e ambiente' THEN 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1200'
+  WHEN 'Cucina e cibo'     THEN 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1200'
+  WHEN 'Arte e creatività' THEN 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=1200'
+  WHEN 'Sport e movimento' THEN 'https://images.unsplash.com/photo-1526676037777-05a232554f77?w=1200'
+  WHEN 'Workshop e formazione' THEN 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200'
+  WHEN 'Solidarietà'       THEN 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1200'
+  ELSE 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200'
+END
+FROM categories c
+WHERE f.category_id = c.id AND f.image_url IS NULL;
+```
 
-## Cosa NON cambiamo
+(I nomi esatti delle categorie verranno verificati prima di scrivere la migration; gli URL sono stabili Unsplash.)
 
-- La struttura della funzione `get_tb_proposal_details` resta uguale (funziona già correttamente)
-- Il wizard di submit resta uguale (salva già `places` correttamente)
-- Le RLS restano invariate
+---
+
+### File toccati
+
+| File | Tipo |
+|---|---|
+| `src/App.tsx` | Nuova route HR |
+| `src/pages/hr/HRTBProposalDetailPage.tsx` | Nuovo |
+| `src/pages/hr/HRTBRequestDetailPage.tsx` | Rimozione modal, navigate al detail |
+| `supabase/migrations/...sql` | UPDATE `tb_formats.image_url` per i record nulli |
+
+### Note
+
+- La RPC `get_tb_proposal_details` esiste già, restituisce solo dati del format senza prezzi né associazioni — perfetta per HR.
+- Nessuna modifica RLS necessaria (HR continua a NON poter leggere `tb_formats` direttamente).
+- Le immagini placeholder restano modificabili dal super-admin via `TBFormatEditDialog`.
