@@ -10,6 +10,7 @@ import { z } from "zod";
 import SettingsPage from "@/components/common/SettingsPage";
 import SettingsSection from "@/components/common/SettingsSection";
 import AvatarUploadBlock from "@/components/common/AvatarUploadBlock";
+import { ChangePasswordCard } from "@/components/profile/ChangePasswordCard";
 
 const profileSchema = z.object({
   firstName: z.string().trim().min(1, "Il nome è obbligatorio").max(50, "Max 50 caratteri"),
@@ -177,15 +178,9 @@ export default function SettingsProfile() {
         </div>
       </SettingsSection>
 
-      <SettingsSection title="Sicurezza" separator={false}>
-        <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Password</Label>
-          <div className="flex items-center gap-2">
-            <Input type="password" value="••••••••" readOnly className="bg-muted/30 flex-1" />
-            <Button variant="outline" size="sm" disabled>Cambia password</Button>
-          </div>
-        </div>
-      </SettingsSection>
+      {profile?.email && (
+        <ChangePasswordCard email={profile.email} cardClassName="border-0 shadow-none bg-transparent p-0" />
+      )}
     </SettingsPage>
   );
 }
