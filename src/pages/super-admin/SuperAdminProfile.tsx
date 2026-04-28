@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ProfileAvatarUpload } from "@/components/profile/ProfileAvatarUpload";
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
 import { EnrollMFA } from "@/components/auth/EnrollMFA";
+import { ChangePasswordCard } from "@/components/profile/ChangePasswordCard";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -99,6 +100,17 @@ export default function SuperAdminProfile() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Change Password */}
+        {profile?.email && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22 }}
+          >
+            <ChangePasswordCard email={profile.email} />
+          </motion.div>
+        )}
 
         {/* MFA Security */}
         <motion.div
