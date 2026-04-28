@@ -211,7 +211,7 @@ export default function HRTBRequestDetailPage() {
                 <ProposalCard
                   key={p.proposal_id}
                   proposal={p}
-                  onOpenDetail={() => setDetailProposal(p)}
+                  onOpenDetail={() => navigate(`/hr/team-building/${id}/proposte/${p.proposal_id}`)}
                   onToggleInterest={() => {
                     const newStatus = p.client_status === "interested" ? "pending" : "interested";
                     updateProposalStatus.mutate({ proposalId: p.proposal_id, status: newStatus });
@@ -266,65 +266,6 @@ export default function HRTBRequestDetailPage() {
           </Card>
         )}
       </div>
-
-      {/* Detail dialog */}
-      <Dialog open={!!detailProposal} onOpenChange={() => setDetailProposal(null)}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-          {detailProposal && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{detailProposal.format_title}</DialogTitle>
-              </DialogHeader>
-              {detailProposal.format_image_url && (
-                <img
-                  src={detailProposal.format_image_url}
-                  alt={detailProposal.format_title}
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-              )}
-              <div className="space-y-4 mt-2">
-                {detailProposal.format_description && (
-                  <p className="text-sm text-muted-foreground">
-                    {detailProposal.format_description}
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-2">
-                  {detailProposal.format_category_name && (
-                    <Badge variant="secondary">{detailProposal.format_category_name}</Badge>
-                  )}
-                  {detailProposal.format_duration_hours && (
-                    <Badge variant="outline">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {detailProposal.format_duration_hours}h
-                    </Badge>
-                  )}
-                  {detailProposal.format_participants_min && detailProposal.format_participants_max && (
-                    <Badge variant="outline">
-                      <Users className="h-3 w-3 mr-1" />
-                      {detailProposal.format_participants_min}–{detailProposal.format_participants_max} pax
-                    </Badge>
-                  )}
-                </div>
-                {detailProposal.format_services &&
-                  (detailProposal.format_services as { items?: string[] }).items &&
-                  (detailProposal.format_services as { items?: string[] }).items!.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium mb-1">Cosa include</p>
-                      <ul className="text-sm text-muted-foreground space-y-1">
-                        {(detailProposal.format_services as { items: string[] }).items.map((s, i) => (
-                          <li key={i} className="flex items-start gap-1.5">
-                            <Check className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-                            {s}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </HRLayout>
   );
 }
