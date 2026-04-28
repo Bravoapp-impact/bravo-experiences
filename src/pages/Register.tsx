@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { AccessRequestModal } from "@/components/auth/AccessRequestModal";
+import { PasswordStrengthInput } from "@/components/auth/PasswordStrengthInput";
 import { signUp, validateAccessCode } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { evaluatePassword } from "@/lib/password-policy";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -81,6 +83,16 @@ export default function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!evaluatePassword(formData.password).isValid) {
+      toast({
+        variant: "destructive",
+        title: "Password non sicura",
+        description: "La password deve rispettare tutti i requisiti minimi indicati.",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -274,31 +286,15 @@ export default function Register() {
           </div>
 
           {/* Password */}
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Minimo 8 caratteri"
-                value={formData.password}
-                onChange={handleChange}
-                className="pl-10 pr-10"
-                minLength={8}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
+          <PasswordStrengthInput
+            id="password"
+            label="Password"
+            value={formData.password}
+            onChange={(val) => setFormData((prev) => ({ ...prev, password: val }))}
+            placeholder="Crea una password sicura"
+            autoComplete="new-password"
+            required
+          />
         </motion.div>
 
         <motion.div
