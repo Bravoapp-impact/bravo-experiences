@@ -1,25 +1,14 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import {
-  ArrowLeft,
-  Clock,
-  Users,
-  MapPin,
-  Calendar,
-  CheckCircle,
-  Heart,
-  X,
-} from "lucide-react";
+import { ArrowLeft, Heart, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { HRLayout } from "@/components/layout/HRLayout";
 import { LoadingState } from "@/components/common/LoadingState";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
-import { TagsSection } from "@/components/experience-detail/TagsSection";
-import { SdgSection } from "@/components/experience-detail/SdgSection";
+import { TBFormatDetailContent } from "@/components/tb-format-detail/TBFormatDetailContent";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -42,12 +31,6 @@ interface ProposalDetail {
   format_secondary_tags: string[] | null;
   format_services: { items?: string[] } | null;
 }
-
-const LOCATION_LABELS: Record<string, string> = {
-  indoor: "Indoor",
-  outdoor: "Outdoor",
-  both: "Indoor / Outdoor",
-};
 
 export default function HRTBProposalDetailPage() {
   const { id, proposalId } = useParams<{ id: string; proposalId: string }>();
@@ -118,10 +101,26 @@ export default function HRTBProposalDetailPage() {
   const isDeclined = proposal.client_status === "declined";
   const services = proposal.format_services?.items || [];
 
+  const onInterested = () =>
+    updateStatus.mutate(isInterested ? "pending" : "interested");
+  const onDeclined = () =>
+    updateStatus.mutate(isDeclined ? "pending" : "declined");
+
+  const headerExtras = (isInterested || isDeclined) ? (
+    <div className="flex items-center gap-2 flex-wrap">
+      {isInterested && (
+        <Badge className="bg-primary/10 text-primary border-primary/20">
+          <Heart className="h-3 w-3 mr-1 fill-current" />
+          Interessato
+        </Badge>
+      )}
+      {isDeclined && <Badge variant="secondary">Scartata</Badge>}
+    </div>
+  ) : null;
+
   return (
     <HRLayout>
-      <div className="max-w-5xl mx-auto">
-        {/* Back */}
+      <div className="max-w-6xl mx-auto px-4 lg:px-8 pb-32 lg:pb-12">
         <button
           onClick={() => navigate(`/hr/team-building/${id}`)}
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4 py-2"
@@ -130,181 +129,99 @@ export default function HRTBProposalDetailPage() {
           Torna alle proposte
         </button>
 
-        {/* Hero */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="lg:flex lg:gap-10 lg:items-stretch"
-        >
-          <div className="lg:w-[55%] flex-shrink-0">
-            {proposal.format_image_url ? (
-              <img
-                src={proposal.format_image_url}
-                alt={proposal.format_title}
-                className="w-full aspect-[16/10] object-cover rounded-xl"
-              />
-            ) : (
-              <div className="w-full aspect-[16/10] rounded-xl bg-muted/30 flex items-center justify-center">
-                <Calendar className="h-16 w-16 text-muted-foreground/30" />
-              </div>
-            )}
-          </div>
-
-          <div className="mt-4 lg:mt-0 lg:w-[45%] lg:flex lg:flex-col lg:justify-center space-y-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              {proposal.format_category_name && (
-                <Badge variant="outline">{proposal.format_category_name}</Badge>
-              )}
-              <Badge variant="outline">
-                <MapPin className="h-3 w-3 mr-1" />
-                {LOCATION_LABELS[proposal.format_location_type] || proposal.format_location_type}
-              </Badge>
-              {isInterested && (
-                <Badge className="bg-primary/10 text-primary border-primary/20">
-                  <Heart className="h-3 w-3 mr-1 fill-current" />
-                  Interessato
-                </Badge>
-              )}
-              {isDeclined && (
-                <Badge variant="secondary">Scartata</Badge>
-              )}
-            </div>
-
-            <h1 className="text-2xl font-bold tracking-tight">{proposal.format_title}</h1>
-
-            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-              {(proposal.format_participants_min || proposal.format_participants_max) && (
-                <span className="flex items-center gap-1">
-                  <Users className="h-4 w-4" />
-                  {proposal.format_participants_min || "—"} – {proposal.format_participants_max || "—"} persone
-                </span>
-              )}
-              {proposal.format_duration_hours && (
-                <span className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  {proposal.format_duration_hours}h
-                </span>
-              )}
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Content + sidebar */}
-        <div className="lg:flex lg:gap-12 mt-10">
-          <div className="flex-1 min-w-0">
-            {proposal.format_description && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                <h2 className="text-lg font-semibold mb-3">Cosa farete</h2>
-                <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
-                  {proposal.format_description}
-                </p>
-              </motion.div>
-            )}
-
-            {proposal.format_secondary_tags && proposal.format_secondary_tags.length > 0 && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-                <Separator className="my-8" />
-                <TagsSection tags={proposal.format_secondary_tags} />
-              </motion.div>
-            )}
-
-            {proposal.format_sdgs && proposal.format_sdgs.length > 0 && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                <Separator className="my-8" />
-                <SdgSection sdgs={proposal.format_sdgs} />
-              </motion.div>
-            )}
-
-            {services.length > 0 && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
-                <Separator className="my-8" />
-                <h2 className="text-lg font-semibold mb-3">Cosa include</h2>
-                <ul className="space-y-2">
-                  {services.map((item, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            )}
-
-            <div className="h-12" />
-          </div>
-
-          {/* Sidebar */}
-          <motion.div
-            className="hidden lg:block w-[300px] flex-shrink-0 sticky top-24 self-start"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Card className="border-border/50">
-              <CardContent className="p-5 space-y-3">
-                <p className="text-sm font-medium">Cosa ne pensi?</p>
-                <p className="text-xs text-muted-foreground">
-                  Segna le proposte che ti interessano: potrai poi richiedere una quotazione dedicata.
-                </p>
-                <Button
-                  className="w-full gap-2"
-                  variant={isInterested ? "default" : "outline"}
-                  onClick={() =>
-                    updateStatus.mutate(isInterested ? "pending" : "interested")
-                  }
-                  disabled={updateStatus.isPending}
-                >
-                  <Heart className={cn("h-4 w-4", isInterested && "fill-current")} />
-                  {isInterested ? "Interessato ✓" : "Mi interessa"}
-                </Button>
-                {!isDeclined ? (
+        <TBFormatDetailContent
+          format={{
+            id: proposal.format_id,
+            title: proposal.format_title,
+            description: proposal.format_description,
+            image_url: proposal.format_image_url,
+            category_name: proposal.format_category_name,
+            location_type: proposal.format_location_type,
+            duration_hours: proposal.format_duration_hours,
+            participants_min: proposal.format_participants_min,
+            participants_max: proposal.format_participants_max,
+            sdgs: proposal.format_sdgs,
+            secondary_tags: proposal.format_secondary_tags,
+          }}
+          services={services}
+          headerExtras={headerExtras}
+          sidebarSlot={
+            <motion.div
+              className="hidden lg:block w-[380px] flex-shrink-0 sticky top-24 self-start"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card className="border-border/50">
+                <CardContent className="p-5 space-y-3">
+                  <p className="text-sm font-semibold">Cosa ne pensi?</p>
+                  <p className="text-xs text-muted-foreground">
+                    Segna le proposte che ti interessano: potrai poi richiedere una quotazione dedicata.
+                  </p>
+                  <Button
+                    className="w-full gap-2"
+                    variant={isInterested ? "default" : "outline"}
+                    onClick={onInterested}
+                    disabled={updateStatus.isPending}
+                  >
+                    <Heart className={cn("h-4 w-4", isInterested && "fill-current")} />
+                    {isInterested ? "Interessato ✓" : "Mi interessa"}
+                  </Button>
                   <Button
                     className="w-full gap-2"
                     variant="ghost"
-                    onClick={() => updateStatus.mutate("declined")}
+                    onClick={onDeclined}
                     disabled={updateStatus.isPending}
                   >
+                    {isDeclined ? (
+                      "Annulla scelta"
+                    ) : (
+                      <>
+                        <X className="h-4 w-4" />
+                        Non mi interessa
+                      </>
+                    )}
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/hr/team-building/${id}`)}
+                    className="block w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors pt-2"
+                  >
+                    Torna alle proposte
+                  </button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          }
+          mobileDrawerSlot={
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] z-40 space-y-2">
+              <Button
+                className="w-full gap-2 h-12"
+                variant={isInterested ? "default" : "outline"}
+                onClick={onInterested}
+                disabled={updateStatus.isPending}
+              >
+                <Heart className={cn("h-4 w-4", isInterested && "fill-current")} />
+                {isInterested ? "Interessato ✓" : "Mi interessa"}
+              </Button>
+              <Button
+                className="w-full gap-2"
+                variant="ghost"
+                onClick={onDeclined}
+                disabled={updateStatus.isPending}
+              >
+                {isDeclined ? (
+                  "Annulla scelta"
+                ) : (
+                  <>
                     <X className="h-4 w-4" />
                     Non mi interessa
-                  </Button>
-                ) : (
-                  <Button
-                    className="w-full gap-2"
-                    variant="ghost"
-                    onClick={() => updateStatus.mutate("pending")}
-                    disabled={updateStatus.isPending}
-                  >
-                    Annulla scelta
-                  </Button>
+                  </>
                 )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-        {/* Mobile sticky actions */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border p-3 flex gap-2 z-40">
-          <Button
-            className="flex-1 gap-2"
-            variant={isInterested ? "default" : "outline"}
-            onClick={() =>
-              updateStatus.mutate(isInterested ? "pending" : "interested")
-            }
-            disabled={updateStatus.isPending}
-          >
-            <Heart className={cn("h-4 w-4", isInterested && "fill-current")} />
-            {isInterested ? "Interessato" : "Mi interessa"}
-          </Button>
-          {!isDeclined && (
-            <Button
-              variant="ghost"
-              onClick={() => updateStatus.mutate("declined")}
-              disabled={updateStatus.isPending}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+              </Button>
+            </div>
+          }
+        />
       </div>
     </HRLayout>
   );

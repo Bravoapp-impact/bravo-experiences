@@ -2,15 +2,16 @@ import { useState } from "react";
 
 interface WhatYouWillDoProps {
   description: string;
+  title?: string;
 }
 
-export function WhatYouWillDo({ description }: WhatYouWillDoProps) {
+export function WhatYouWillDo({ description, title = "Cosa farai" }: WhatYouWillDoProps) {
   const [expanded, setExpanded] = useState(false);
   const isLong = description.length > 400;
 
   return (
     <section>
-      <h2 className="text-xl font-semibold text-foreground mb-4">Cosa farai</h2>
+      <h2 className="text-xl font-semibold text-foreground mb-4">{title}</h2>
       <div className="relative">
         <p
           className={`text-[15px] text-muted-foreground leading-relaxed whitespace-pre-line ${
