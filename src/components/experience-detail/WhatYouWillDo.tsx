@@ -11,7 +11,7 @@ export function WhatYouWillDo({ description, title = "Cosa farai" }: WhatYouWill
 
   return (
     <section>
-      <h2 className="text-xl font-semibold text-foreground mb-4">Cosa farai</h2>
+      <h2 className="text-xl font-semibold text-foreground mb-4">{title}</h2>
       <div className="relative">
         <p
           className={`text-[15px] text-muted-foreground leading-relaxed whitespace-pre-line ${
