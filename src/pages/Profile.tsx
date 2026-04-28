@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileAvatarUpload } from "@/components/profile/ProfileAvatarUpload";
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
 import { EnrollMFA } from "@/components/auth/EnrollMFA";
+import { ChangePasswordCard } from "@/components/profile/ChangePasswordCard";
 import { useAuth } from "@/hooks/useAuth";
 import { useHourBudget } from "@/hooks/useHourBudget";
 
@@ -187,6 +188,17 @@ export default function Profile() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Change Password */}
+        {profile?.email && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.27 }}
+          >
+            <ChangePasswordCard email={profile.email} />
+          </motion.div>
+        )}
 
         {/* MFA Security */}
         <motion.div
