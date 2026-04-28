@@ -10,6 +10,7 @@ import { z } from "zod";
 import SettingsPage from "@/components/common/SettingsPage";
 import SettingsSection from "@/components/common/SettingsSection";
 import AvatarUploadBlock from "@/components/common/AvatarUploadBlock";
+import { ChangePasswordCard } from "@/components/profile/ChangePasswordCard";
 
 const profileSchema = z.object({
   firstName: z.string().trim().min(1, "Il nome è obbligatorio").max(50, "Max 50 caratteri"),
