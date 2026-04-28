@@ -178,15 +178,9 @@ export default function SettingsProfile() {
         </div>
       </SettingsSection>
 
-      <SettingsSection title="Sicurezza" separator={false}>
-        <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Password</Label>
-          <div className="flex items-center gap-2">
-            <Input type="password" value="••••••••" readOnly className="bg-muted/30 flex-1" />
-            <Button variant="outline" size="sm" disabled>Cambia password</Button>
-          </div>
-        </div>
-      </SettingsSection>
+      {profile?.email && (
+        <ChangePasswordCard email={profile.email} cardClassName="border-0 shadow-none bg-transparent p-0" />
+      )}
     </SettingsPage>
   );
 }
