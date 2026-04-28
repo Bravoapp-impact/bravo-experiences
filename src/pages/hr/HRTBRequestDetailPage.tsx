@@ -261,10 +261,16 @@ export default function HRTBRequestDetailPage() {
             )}
           </div>
         ) : (
-          <Card className="p-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              Stiamo selezionando le migliori proposte per il tuo evento. Torna a breve!
-            </p>
+          <Card className="p-8 text-center space-y-3">
+            <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+              <Clock className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-sm font-medium">Stiamo lavorando alla tua selezione</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Il nostro team sta valutando le migliori proposte per il tuo evento. Ti contatteremo a breve.
+              </p>
+            </div>
           </Card>
         )}
       </div>
