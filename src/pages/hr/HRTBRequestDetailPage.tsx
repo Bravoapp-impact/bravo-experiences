@@ -21,14 +21,7 @@ import { LoadingState } from "@/components/common/LoadingState";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface ProposalDetail {
@@ -56,7 +49,6 @@ export default function HRTBRequestDetailPage() {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const queryClient = useQueryClient();
-  const [detailProposal, setDetailProposal] = useState<ProposalDetail | null>(null);
 
   const { data: request, isLoading: loadingRequest } = useQuery({
     queryKey: ["tb-request", id],
