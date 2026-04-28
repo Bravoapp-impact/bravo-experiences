@@ -2,9 +2,10 @@ import { useState } from "react";
 
 interface WhatYouWillDoProps {
   description: string;
+  title?: string;
 }
 
-export function WhatYouWillDo({ description }: WhatYouWillDoProps) {
+export function WhatYouWillDo({ description, title = "Cosa farai" }: WhatYouWillDoProps) {
   const [expanded, setExpanded] = useState(false);
   const isLong = description.length > 400;
 
