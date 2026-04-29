@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
 import {
   ArrowLeft,
   Building2,
   Calendar,
+  CheckCircle2,
   ClipboardList,
   Clock,
   FileText,
@@ -14,6 +16,7 @@ import {
   Sparkles,
   Users,
   Wallet,
+  XCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SuperAdminLayout } from "@/components/layout/SuperAdminLayout";
@@ -23,6 +26,10 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { getTBStatusMeta } from "@/lib/tb-status";
+import { QuoteEditor } from "@/components/super-admin/tb-quote-editor/QuoteEditor";
+import { QuoteReadOnlyView } from "@/components/super-admin/tb-quote-editor/QuoteReadOnlyView";
+import { QuoteHistoryAccordion } from "@/components/super-admin/tb-quote-editor/QuoteHistoryAccordion";
+import { devLog } from "@/lib/logger";
 
 interface StatusLogEntry {
   id: string;
