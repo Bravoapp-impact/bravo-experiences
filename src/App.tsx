@@ -56,6 +56,8 @@ import SettingsDisabled from "./pages/hr/settings/SettingsDisabled";
 import AccessRequestsPage from "./pages/super-admin/AccessRequestsPage";
 import TBFormatsPage from "./pages/super-admin/TBFormatsPage";
 import TBFormatDetailPage from "./pages/super-admin/TBFormatDetailPage";
+import TBRequestsPage from "./pages/super-admin/TBRequestsPage";
+import TBRequestDetailPage from "./pages/super-admin/TBRequestDetailPage";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
 import Unsubscribe from "./pages/Unsubscribe";
@@ -307,6 +309,22 @@ const App = () => (
               element={
                 <ProtectedSuperAdminRoute>
                   <TBFormatDetailPage />
+                </ProtectedSuperAdminRoute>
+              }
+            />
+            <Route
+              path="/super-admin/team-building/richieste"
+              element={
+                <ProtectedSuperAdminRoute>
+                  <TBRequestsPage />
+                </ProtectedSuperAdminRoute>
+              }
+            />
+            <Route
+              path="/super-admin/team-building/richieste/:id"
+              element={
+                <ProtectedSuperAdminRoute>
+                  <TBRequestDetailPage />
                 </ProtectedSuperAdminRoute>
               }
             />
