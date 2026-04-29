@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
 import {
   ArrowLeft,
   Building2,
   Calendar,
+  CheckCircle2,
   ClipboardList,
   Clock,
   FileText,
@@ -14,6 +16,7 @@ import {
   Sparkles,
   Users,
   Wallet,
+  XCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SuperAdminLayout } from "@/components/layout/SuperAdminLayout";
@@ -23,6 +26,10 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { getTBStatusMeta } from "@/lib/tb-status";
+import { QuoteEditor } from "@/components/super-admin/tb-quote-editor/QuoteEditor";
+import { QuoteReadOnlyView } from "@/components/super-admin/tb-quote-editor/QuoteReadOnlyView";
+import { QuoteHistoryAccordion } from "@/components/super-admin/tb-quote-editor/QuoteHistoryAccordion";
+import { devLog } from "@/lib/logger";
 
 interface StatusLogEntry {
   id: string;
@@ -185,6 +192,8 @@ export default function TBRequestDetailPage() {
           <div className="lg:col-span-2">
             <StatusSection
               status={request.status}
+              requestId={id!}
+              request={request}
               proposals={proposals ?? []}
               quoteHistory={quoteHistory ?? []}
             />
@@ -333,13 +342,48 @@ function TimelineCard({ log }: { log: StatusLogEntry[] }) {
 // ────────────────────────────────────────────────────────────────────────────
 function StatusSection({
   status,
+  requestId,
+  request,
   proposals,
   quoteHistory,
 }: {
   status: string;
+  requestId: string;
+  request: any;
   proposals: any[];
   quoteHistory: QuoteHistoryEntry[];
 }) {
+  const queryClient = useQueryClient();
+  const [composing, setComposing] = useState(false);
+
+  const supersedeMutation = useMutation({
+    mutationFn: async (oldQuoteId: string) => {
+      const { data, error } = await supabase.rpc("admin_supersede_and_create_new_version", {
+        p_old_quote_id: oldQuoteId,
+      });
+      if (error) throw error;
+      return (data?.[0] ?? null) as any;
+    },
+    onSuccess: () => {
+      toast.success("Nuova versione creata");
+      queryClient.invalidateQueries({ queryKey: ["super-admin-tb-request", requestId] });
+      queryClient.invalidateQueries({ queryKey: ["tb-quote-history", requestId] });
+      queryClient.invalidateQueries({ queryKey: ["super-admin-tb-quote-history", requestId] });
+      queryClient.invalidateQueries({ queryKey: ["super-admin-tb-status-log", requestId] });
+    },
+    onError: (err: any) => {
+      devLog.error("supersede error", err);
+      toast.error("Errore creazione nuova versione", { description: err?.message ?? "Riprova" });
+    },
+  });
+
+  // Helpers per estrarre quote dallo storico (history è ordinata DESC per version)
+  const draftQuote = quoteHistory.find((q) => q.status === "draft");
+  const sentQuote = quoteHistory.find((q) => q.status === "sent" || q.status === "viewed");
+  const acceptedQuote = quoteHistory.find((q) => q.status === "accepted");
+  const rejectedQuote = quoteHistory.find((q) => q.status === "rejected");
+  const modificationQuote = quoteHistory.find((q) => q.status === "modification_requested");
+
   switch (status) {
     case "draft":
       return (
@@ -377,32 +421,156 @@ function StatusSection({
         />
       );
 
-    case "quote_requested":
+    case "quote_requested": {
+      if (composing) {
+        const interested = proposals.filter((p) => p.client_status === "interested");
+        const initialItems = interested.map((p) => ({
+          proposal_id: p.id,
+          description: p.tb_formats?.title ?? "Servizio",
+          quantity: request.participants_min ?? 1,
+        }));
+        return (
+          <div className="space-y-4">
+            <QuoteEditor
+              requestId={requestId}
+              quoteId={null}
+              initialProposalItems={initialItems.length > 0 ? initialItems : undefined}
+            />
+            <QuoteHistoryAccordion requestId={requestId} />
+          </div>
+        );
+      }
       return (
         <InfoCard
           icon={<Inbox />}
           title="Quotazione ETS in corso"
-          description="Stai aspettando il prezzo dell'ETS via email. Quando arriva, componi il preventivo per il cliente."
-          ctaLabel="Componi preventivo"
-          onCta={placeholderToast}
+          description="L'ETS ha ricevuto la richiesta. Quando hai i prezzi, componi il preventivo per il cliente."
+          ctaLabel="Avvia composizione"
+          onCta={() => setComposing(true)}
         />
       );
+    }
 
-    case "quote_in_composition":
-    case "quote_sent":
-      return (
-        <div className="space-y-4">
+    case "quote_in_composition": {
+      if (!draftQuote) {
+        return (
           <InfoCard
             icon={<FileText />}
-            title="Editor preventivo"
-            description="L'editor del preventivo sarà disponibile nel prossimo aggiornamento."
-            comingSoon
+            title="Bozza non trovata"
+            description="Ricarica la pagina per riprendere la composizione."
+            ctaLabel="Ricarica"
+            onCta={() => window.location.reload()}
           />
-          {quoteHistory.length > 0 && <QuoteHistoryCard quoteHistory={quoteHistory} />}
+        );
+      }
+      return (
+        <div className="space-y-4">
+          <QuoteEditor requestId={requestId} quoteId={draftQuote.id} />
+          <QuoteHistoryAccordion requestId={requestId} />
+        </div>
+      );
+    }
+
+    case "modification_requested": {
+      // Il workflow: dopo che HR chiede modifiche, super-admin clicca "Crea nuova versione"
+      // → admin_supersede_and_create_new_version → request status diventa quote_in_composition.
+      // Quindi questo branch in pratica è uno step intermedio dove ci si aspetta sia il quote
+      // status='modification_requested' (request.status NON viene mai impostato a questo
+      // valore lato HR — vedi hr_decide_on_quote che lo mappa a quote_in_composition).
+      // Fallback difensivo: mostra il pannello modifiche + pulsante per creare nuova versione.
+      const modQuote = modificationQuote;
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Modifiche richieste dal cliente</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {modQuote?.client_decision_notes && (
+              <div className="rounded-md bg-amber-50 border border-amber-200 p-3 whitespace-pre-line">
+                {modQuote.client_decision_notes}
+              </div>
+            )}
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                onClick={() => modQuote && supersedeMutation.mutate(modQuote.id)}
+                disabled={!modQuote || supersedeMutation.isPending}
+              >
+                Crea nuova versione
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    case "quote_sent": {
+      return (
+        <div className="space-y-4">
+          <QuoteSentReadOnly quoteId={sentQuote?.id ?? null} />
+          <QuoteHistoryAccordion requestId={requestId} />
+        </div>
+      );
+    }
+
+    case "quote_accepted":
+      return (
+        <div className="space-y-4">
+          <Card className="border-emerald-200 bg-emerald-50/40">
+            <CardContent className="pt-5 flex items-center gap-3">
+              <CheckCircle2 className="h-5 w-5 text-emerald-700" />
+              <div>
+                <p className="font-semibold text-emerald-900">Preventivo accettato</p>
+                {acceptedQuote?.decided_at && (
+                  <p className="text-xs text-emerald-800">
+                    {format(new Date(acceptedQuote.decided_at), "d MMMM yyyy", { locale: it })}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          <QuoteSentReadOnly quoteId={acceptedQuote?.id ?? null} />
+          <QuoteHistoryAccordion requestId={requestId} />
         </div>
       );
 
-    case "quote_accepted":
+    case "quote_rejected":
+      return (
+        <div className="space-y-4">
+          <Card className="border-red-200 bg-red-50/40">
+            <CardContent className="pt-5 space-y-3">
+              <div className="flex items-center gap-3">
+                <XCircle className="h-5 w-5 text-red-700" />
+                <div>
+                  <p className="font-semibold text-red-900">Preventivo rifiutato</p>
+                  {rejectedQuote?.decided_at && (
+                    <p className="text-xs text-red-800">
+                      {format(new Date(rejectedQuote.decided_at), "d MMMM yyyy", { locale: it })}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {rejectedQuote?.client_decision_notes && (
+                <div className="rounded-md bg-white/70 border border-red-200 p-3 text-sm whitespace-pre-line">
+                  {rejectedQuote.client_decision_notes}
+                </div>
+              )}
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={() => rejectedQuote && supersedeMutation.mutate(rejectedQuote.id)}
+                  disabled={!rejectedQuote || supersedeMutation.isPending}
+                >
+                  Crea nuovo preventivo
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          <QuoteSentReadOnly quoteId={rejectedQuote?.id ?? null} />
+          <QuoteHistoryAccordion requestId={requestId} />
+        </div>
+      );
+
     case "signed":
     case "event_scheduled":
     case "completed":
@@ -414,29 +582,9 @@ function StatusSection({
             description="La gestione di questa fase sarà disponibile nei prossimi aggiornamenti."
             comingSoon
           />
-          {quoteHistory.length > 0 && <QuoteHistoryCard quoteHistory={quoteHistory} />}
+          <QuoteHistoryAccordion requestId={requestId} />
         </div>
       );
-
-    case "quote_rejected": {
-      const lastRejected = quoteHistory.find((q) => q.status === "rejected");
-      return (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Richiesta chiusa</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <p className="text-muted-foreground">Il cliente ha rifiutato il preventivo.</p>
-            {lastRejected?.client_decision_notes && (
-              <div className="rounded-md bg-muted/50 p-3">
-                <p className="text-xs text-muted-foreground mb-1">Motivo dichiarato</p>
-                <p className="whitespace-pre-line">{lastRejected.client_decision_notes}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      );
-    }
 
     case "cancelled":
       return (
@@ -456,6 +604,32 @@ function StatusSection({
         />
       );
   }
+}
+
+// Wrapper read-only che fetcha quote + items
+function QuoteSentReadOnly({ quoteId }: { quoteId: string | null }) {
+  const { data: quote, isLoading: lq } = useQuery({
+    queryKey: ["tb-quote-full", quoteId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_tb_quote_full_for_admin", { p_quote_id: quoteId! });
+      if (error) throw error;
+      return (data?.[0] ?? null) as any;
+    },
+    enabled: !!quoteId,
+  });
+  const { data: items, isLoading: li } = useQuery({
+    queryKey: ["tb-quote-items", quoteId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_tb_quote_items_full_for_admin", { p_quote_id: quoteId! });
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+    enabled: !!quoteId,
+  });
+  if (!quoteId) return null;
+  if (lq || li) return <Skeleton className="h-48" />;
+  if (!quote) return <p className="text-sm text-muted-foreground">Preventivo non trovato.</p>;
+  return <QuoteReadOnlyView quote={quote} items={items ?? []} />;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -567,32 +741,3 @@ function ProposalsCard({
   );
 }
 
-function QuoteHistoryCard({ quoteHistory }: { quoteHistory: QuoteHistoryEntry[] }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Storia preventivi</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {quoteHistory.map((q) => (
-          <div
-            key={q.id}
-            className="flex items-center justify-between p-3 rounded-md border bg-card"
-          >
-            <div className="min-w-0">
-              <p className="text-sm font-medium">Versione {q.version}</p>
-              <p className="text-xs text-muted-foreground">
-                {q.total_amount_final
-                  ? `€ ${Number(q.total_amount_final).toLocaleString("it-IT")}`
-                  : "—"}
-              </p>
-            </div>
-            <Badge variant="outline" className="text-xs">
-              {q.status}
-            </Badge>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
-}

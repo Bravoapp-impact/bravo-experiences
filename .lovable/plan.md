@@ -1,238 +1,234 @@
 
-# Scaffolding super-admin TB Requests — piano rivisto
+# Editor preventivi TB super-admin — piano
 
-Aggiustamenti applicati: VIEW dedicata per "giorni in stato", backfill in transazione con LOCK, ordine di esecuzione documentato.
+Sostituisce i placeholder "in arrivo" degli stati `quote_*` del workspace `TBRequestDetailPage` con un editor reale che chiama solo le RPC esistenti (`admin_save_tb_quote_draft`, `admin_send_tb_quote`, `admin_supersede_and_create_new_version`).
+
+---
 
 ## 0. Risposte alle verifiche
 
-**PageHeader condiviso** ✅ `src/components/common/PageHeader.tsx`. Riusato.
+**(1) zod / react-hook-form**
+- `zod` è già usato (3 file: `ProfileEditForm`, `AccessRequestModal`, `SettingsProfile`) — sempre con `safeParse` manuale, mai con `zodResolver`.
+- `react-hook-form` è installato (7.61.1) ma usato solo dalle UI primitive `src/components/ui/form.tsx`. Nessun consumer reale di `useFieldArray` nel codebase.
+- **Decisione**: usiamo `react-hook-form` + `useFieldArray` (è il pattern dichiarato dal brief, è la libreria già in dipendenze, ed è oggettivamente più robusta di gestire un array con `useState` per un form complesso). Per la validazione usiamo **`zodResolver` da `@hookform/resolvers/zod`**. Verifica al primo passo dell'implementazione che `@hookform/resolvers` sia tra le deps di `package.json`; se manca lo aggiungiamo (è una dep ufficiale RHF, ~5kb). Se preferisci evitare nuove dep, fallback: validazione manuale con `zod.safeParse` dentro gli handler salva/invia (pattern coerente col resto del codebase, ma perdiamo l'integrazione `FormMessage` automatica).
 
-**Pattern status → label/color**: esiste solo un `statusConfig` locale in `HRTeamBuildingPage` con 7 stati legacy (incompleto). Nessun file `src/lib/tb-status.ts`. Lo creiamo come single source of truth con `Record<TBRequestStatus, ...>` esaustivo verificato dal compiler TypeScript.
+**(2) Derivazione versione precedente**
+La RPC `get_tb_quote_history_for_admin(p_request_id)` restituisce `(id, version, status, total_amount_final, total_amount_ets, sent_at, decided_at, client_decision_notes, created_at, updated_at)` ordinata `ORDER BY version DESC`. Confermato leggendo la migration. Quindi:
+```ts
+const previous = history.find(h => h.version === currentVersion - 1);
+// previous.id → fetch dettaglio via get_tb_quote_full_for_admin + get_tb_quote_items_full_for_admin
+```
+Nessun bisogno di RPC nuove. La history espone già `client_decision_notes` e `decided_at` della v_n-1, quindi il pannello "Modifiche richieste" può essere alimentato direttamente dalla history senza un fetch full extra (lo facciamo solo se l'utente apre "Vedi versione precedente").
 
-**Backfill volume**: 6 `tb_requests` totali, tutte in `proposals_sent`. Backfill istantaneo.
+**(3) Calcoli live dei totali**
+Pattern: `useWatch({ control, name: 'items' })` (più performante di `watch()` perché re-renderizza solo i sottoscrittori), poi `useMemo` per i totali. La row `QuoteItemRow` fa il proprio `useWatch` su `items.${index}` per i totali di riga, così solo la riga modificata si re-renderizza, non tutta la lista. Pattern idiomatico RHF, niente di custom.
 
-**Pattern view nel codebase**: ✅ esiste `public.associations_public` (vedi `supabase/migrations/20260128142727_*.sql`) creata con `WITH (security_invoker=on)`. **Importante correzione al brief utente**: il default Postgres per le view è `security_invoker=off` (la view gira con i privilegi del *creator* — di solito postgres superuser — bypassando di fatto le RLS della tabella sottostante). Per ereditare correttamente le RLS del chiamante serve `security_invoker=on`, che è anche il pattern già adottato nel progetto. **Useremo `security_invoker=on`** per `tb_requests_with_status_since`, così la view rispetta le RLS di `tb_requests` (super_admin vede tutto, HR vede solo la propria company se in futuro userà la view, employee non vede nulla).
+**(4) Salva bozza vs Invia**
+Conferma la tua proposta: **salvataggio bozza permissivo, invio restrittivo**.
+- Salva bozza: validazione minima (description non vuota su almeno una riga, oppure zero righe consentite). Quantità/prezzi possono essere NULL/0 senza bloccare. Razionale: l'admin compone in fasi, prima inserisce le voci, poi attende i prezzi ETS, poi torna e completa.
+- Invia: schema zod completo (vedi sotto), totale finale > 0, valid_until ≥ oggi, almeno 1 item con quantity > 0 e prezzi >= 0.
 
-**Esaustività mappa stati**: garantita dal compiler via `Record<TBRequestStatus, TBStatusMeta>` su union literal di 15 valori.
+Implementazione: **due schemi zod separati** (`draftSchema` lasco, `sendSchema` stretto) e due handler che validano col proprio schema prima di chiamare la RPC. `zodResolver` sul form usa solo `draftSchema` (così `FormMessage` non sputa errori "richiesto" mentre digiti); l'handler "Invia" fa `sendSchema.safeParse` esplicito e in caso di errori li popola via `form.setError` per visualizzarli inline.
+
+**(5) Stato `modification_requested` non mappato in `tb-status.ts`**
+Ho controllato: `modification_requested` compare nelle migration RPC ma **NON** è nella `TBRequestStatus` union di `src/lib/tb-status.ts`. Va aggiunto, altrimenti il branch del nuovo `StatusSection` non lo riconosce e cade nel fallback "Stato non riconosciuto". Aggiunta nel file dei deliverables (vedi sotto).
 
 ---
 
-## PARTE 1 — Migration SQL
+## 1. Architettura
 
-File unico: `supabase/migrations/<timestamp>_tb_request_status_log.sql`
-
-In testa al file, blocco di commento che fissa l'**ordine di esecuzione obbligatorio**:
-
-```sql
--- =====================================================================
--- TB REQUEST STATUS LOG — migration
--- =====================================================================
--- ORDINE DI ESECUZIONE OBBLIGATORIO (NON RIORDINARE):
---   1.1  Tabella tb_request_status_log + indici + RLS
---   1.2  Trigger function + trigger AFTER INSERT/UPDATE su tb_requests
---   1.3  Backfill (in transazione con LOCK su tb_requests)
---   1.4  RPC get_tb_request_status_log_for_admin
---   1.5  Scalar function get_tb_request_current_status_since
---          + view tb_requests_with_status_since
---
--- MOTIVO: il trigger (1.2) deve esistere PRIMA del backfill (1.3).
--- Se il backfill girasse prima del trigger, ogni nuova request creata
--- nella finestra [backfill, trigger] non sarebbe loggata e produrrebbe
--- cronologia incompleta.
--- =====================================================================
+```text
+TBRequestDetailPage (page, gestisce fetch e routing per status)
+  └─ <StatusSection status={request.status}>
+       ├─ status='quote_requested' → <EditorEmpty onStart={...}>
+       ├─ status='quote_in_composition' (con quote draft attiva)
+       │     → <QuoteEditor quoteId=draftId requestId=...>
+       ├─ status='quote_sent'         → <QuoteReadOnlyView quoteId=sentId>
+       ├─ status='quote_accepted'     → <QuoteReadOnlyView + badge verde>
+       ├─ status='quote_rejected'     → <QuoteReadOnlyView + CTA "Crea nuovo">
+       └─ status='modification_requested'
+             → <QuoteEditor quoteId=newDraftId
+                            previousClientNotes=...
+                            previousDecidedAt=... >
+       └─ <QuoteHistoryAccordion> (in fondo, per tutti gli stati B–F)
 ```
 
-### Blocco 1.1 — Tabella, indici, RLS
+`QuoteEditor` è il componente che fa il lavoro pesante. Sotto, struttura interna:
 
-Tabella `tb_request_status_log` con FK CASCADE su tb_requests, indici su `request_id` e `changed_at DESC`, RLS:
-- Super admin: SELECT + INSERT (no UPDATE/DELETE — append-only)
-- HR: SELECT solo log delle richieste della propria company (via JOIN `tb_requests.company_id = get_user_company_id(auth.uid())`)
-
-### Blocco 1.2 — Trigger function + trigger
-
-`log_tb_request_status_change()` SECURITY DEFINER. Due trigger separati:
-- `AFTER INSERT ON tb_requests`: log con `from_status=NULL, to_status=NEW.status`
-- `AFTER UPDATE OF status ON tb_requests`: log solo se `OLD.status IS DISTINCT FROM NEW.status`
-
-`changed_by = auth.uid()` (può essere NULL per insert sistemici via service role).
-
-### Blocco 1.3 — Backfill in transazione con LOCK
-
-```sql
-BEGIN;
-  -- LOCK SHARE MODE: blocca UPDATE concorrenti su tb_requests durante il backfill
-  -- ma permette altre SELECT. Per 6 righe è zero costo.
-  LOCK TABLE public.tb_requests IN SHARE MODE;
-
-  INSERT INTO public.tb_request_status_log (request_id, from_status, to_status, changed_at, changed_by)
-  SELECT r.id, NULL, r.status, r.created_at, NULL
-  FROM public.tb_requests r
-  WHERE NOT EXISTS (
-    SELECT 1 FROM public.tb_request_status_log l WHERE l.request_id = r.id
-  );
-COMMIT;
-```
-
-Razionale LOCK: senza il LOCK, una `tb_requests UPDATE` concorrente potrebbe far scattare il trigger (1.2) tra la SELECT del backfill e l'INSERT, producendo o un duplicato di entry "inizio" o un buco. Con SHARE MODE le UPDATE concorrenti aspettano il commit del backfill. Per 6 righe la transazione dura millisecondi.
-
-### Blocco 1.4 — RPC get_tb_request_status_log_for_admin
-
-`SECURITY DEFINER`, super_admin only, restituisce log + `changed_by_name` via LEFT JOIN profiles (concat first_name+last_name, fallback email), ordinato `changed_at ASC`.
-
-### Blocco 1.5 — Scalar function + VIEW
-
-```sql
-CREATE OR REPLACE FUNCTION public.get_tb_request_current_status_since(p_request_id uuid)
-RETURNS timestamptz
-LANGUAGE sql STABLE SECURITY DEFINER
-SET search_path = public
-AS $$
-  -- TODO scaling: se tb_request_status_log supera ~10k righe per request,
-  -- valutare denormalizzazione su tb_requests.status_since aggiornata da trigger.
-  SELECT MAX(changed_at) FROM public.tb_request_status_log WHERE request_id = p_request_id;
-$$;
-
--- VIEW dedicata per case list super-admin.
--- security_invoker=on → eredita le RLS di tb_requests (pattern già usato in associations_public).
--- PostgREST può leggerla come una tabella normale: una sola query dal client,
--- niente JOIN client-side, niente RPC per riga.
-CREATE OR REPLACE VIEW public.tb_requests_with_status_since
-WITH (security_invoker=on) AS
-SELECT
-  r.*,
-  public.get_tb_request_current_status_since(r.id) AS status_since
-FROM public.tb_requests r;
-
-GRANT SELECT ON public.tb_requests_with_status_since TO authenticated;
+```text
+<QuoteEditor>
+  ├─ <ClientModificationsPanel>          (solo se previousClientNotes)
+  │     └─ <PreviousVersionDialog>       (lazy)
+  ├─ <Form react-hook-form>
+  │     ├─ valid_until + terms_text
+  │     ├─ <QuoteItemRow> × N            (useFieldArray)
+  │     ├─ <QuoteTotalsSummary>          (useWatch su items)
+  │     └─ Footer: Svuota / Salva / Invia
+  └─ <QuoteHistoryAccordion>             (passata dal parent come children o prop)
 ```
 
 ---
 
-## PARTE 2 — UI Scaffolding
+## 2. File nuovi e modificati
 
-### File nuovi
+### Nuovi
 
-**`src/lib/tb-status.ts`**
+1. **`src/lib/tb-defaults.ts`**
+   - Costante `TERMS_DEFAULT_TB` con testo italiano placeholder ("Validità 30 gg, pagamento 30 gg DF, comunicazione variazioni 7 gg prima, ecc."). Filippo lo affinerà.
+   - Costante `QUOTE_DEFAULT_VALIDITY_DAYS = 30`.
 
-```ts
-export type TBRequestStatus =
-  | 'draft' | 'submitted' | 'in_matching'
-  | 'proposals_ready' | 'proposals_sent' | 'proposals_reviewed'
-  | 'quote_requested' | 'quote_in_composition' | 'quote_sent'
-  | 'quote_accepted' | 'quote_rejected'
-  | 'signed' | 'event_scheduled' | 'completed' | 'cancelled';
+2. **`src/lib/tb-quote-schema.ts`**
+   - `quoteItemDraftSchema` / `quoteItemSendSchema` (zod).
+   - `quoteDraftSchema` / `quoteSendSchema` con `items: z.array(...)`.
+   - Type `QuoteFormValues = z.infer<typeof quoteDraftSchema>` (la draft è il superset di forma, così il form ne usa il tipo).
+   - Helper puri: `computeRowTotals(qty, ets, final)`, `computeQuoteTotals(items)`.
 
-export type TBStatusGroup =
-  | 'admin_action_needed' | 'hr_action_needed'
-  | 'in_progress' | 'completed' | 'closed';
+3. **`src/components/super-admin/tb-quote-editor/QuoteEditor.tsx`**
+   - Container. Props: `requestId`, `quoteId | null`, `previousClientNotes?`, `previousDecidedAt?`, `onAfterSend?` (callback per parent invalidate).
+   - Setup RHF + `zodResolver(quoteDraftSchema)` + `useFieldArray({ name: 'items' })`.
+   - Carica dati iniziali via `get_tb_quote_full_for_admin` + `get_tb_quote_items_full_for_admin` se `quoteId` è valorizzato; altrimenti pre-popola da `tb_proposals` (vedi sotto).
+   - Mutations react-query: `saveDraftMutation` (chiama `admin_save_tb_quote_draft`), `sendMutation` (chiama `admin_save_tb_quote_draft` poi `admin_send_tb_quote`).
+   - Beforeunload guard se `formState.isDirty` → vedi rischi.
 
-export interface TBStatusMeta {
-  value: TBRequestStatus;
-  label: string;
-  group: TBStatusGroup;
-  badgeClass: string;
-}
+4. **`src/components/super-admin/tb-quote-editor/QuoteItemRow.tsx`**
+   - Props: `control`, `index`, `onRemove`.
+   - `useWatch` su `items.${index}` per calcolare total_ets/total_final/margin live.
+   - Layout: card con bordo, NO `<Table>` (le righe sono troppo dense). Description full-width in alto, sotto griglia `grid-cols-2 md:grid-cols-5` con qty / unit_ets / unit_final / total / margin. Trash icon a destra.
+   - Inputs: description (`Input`), quantity/unit_price_ets/unit_price_final (`Input type='number'` con prefisso "€" per i prezzi). Display read-only per total_ets, total_final, margin_amount, margin_percent.
+   - `proposal_id` è hidden field (non visualizzato, ma persistito nel payload).
 
-// Record forza esaustività al compile-time
-export const TB_REQUEST_STATUS_META: Record<TBRequestStatus, TBStatusMeta> = { ... };
+5. **`src/components/super-admin/tb-quote-editor/QuoteTotalsSummary.tsx`**
+   - Props: `control`. Fa `useWatch({ control, name: 'items' })` e calcola live i 4 totali (cliente, ETS, margine €, margine %).
+   - Layout sticky in fondo alla sezione items, card con i 4 valori in griglia.
+   - Numeri formattati `it-IT`: `new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' })`.
 
-export function getTBStatusMeta(status: string): TBStatusMeta {
-  return TB_REQUEST_STATUS_META[status as TBRequestStatus] ?? FALLBACK_META;
-}
-```
+6. **`src/components/super-admin/tb-quote-editor/QuoteHistoryAccordion.tsx`**
+   - Props: `requestId`. Fetch interno via `useQuery(['tb-quote-history', requestId])` su `get_tb_quote_history_for_admin`.
+   - Accordion shadcn collassato di default. Lista versioni: `v{n} · {status} · €{total_final} · {decided}`. Click su riga → apre `<PreviousVersionDialog quoteId={row.id}>`.
 
-Mappa colori per gruppo:
-- `admin_action_needed` → ambra
-- `hr_action_needed` → blu
-- `in_progress` → grigio
-- `completed` → verde
-- `closed` → rosso
+7. **`src/components/super-admin/tb-quote-editor/PreviousVersionDialog.tsx`**
+   - Props: `quoteId`, `open`, `onOpenChange`.
+   - Dialog shadcn (z-index 200 da memory rule). Fetch `get_tb_quote_full_for_admin` + `get_tb_quote_items_full_for_admin` su mount aperto.
+   - Internamente renderizza `<QuoteReadOnlyView>` con i dati ricevuti.
 
-**`src/pages/super-admin/TBRequestsPage.tsx`** — case list
+8. **`src/components/super-admin/tb-quote-editor/ClientModificationsPanel.tsx`**
+   - Props: `notes`, `decidedAt`, `previousQuoteId`.
+   - Card amber/warning: titolo + data + body notes + bottone discreto "Vedi versione precedente" → apre `<PreviousVersionDialog>`.
 
-`SuperAdminLayout` + `PageHeader` ("Richieste TB", `${count} richieste in lavorazione`).
+9. **`src/components/super-admin/tb-quote-editor/QuoteReadOnlyView.tsx`**
+   - Props: `quote`, `items` (oggetti già fetchati). Pure presentation, niente fetch.
+   - Layout simile all'editor ma tutti i campi in display mode (no input). Usato sia da `<PreviousVersionDialog>` che dai branch `quote_sent / accepted / rejected` di `StatusSection`.
 
-Filtri: `Select` stato (15 opzioni da `TB_REQUEST_STATUS_META` + "Tutti") · `Select` azienda.
+### Modificati
 
-Fetch via **una sola query** sulla view:
-```ts
-supabase.from('tb_requests_with_status_since')
-  .select('*, companies(name)')
-  .order('created_at', { ascending: false })
-```
+10. **`src/lib/tb-status.ts`** — aggiungere lo status `modification_requested` alla union `TBRequestStatus`, alla mappa `TB_REQUEST_STATUS_META` (label "Modifiche richieste", group `admin_action_needed`, badge ambra). Necessario per il nuovo branch dello switch.
 
-Table colonne: Azienda · Titolo · Stato (Badge `getTBStatusMeta(status).badgeClass`) · Giorni in stato (`differenceInDays(now, status_since ?? created_at)`) · Data creazione (`d MMM yyyy` it).
-
-Riga click → `/super-admin/team-building/richieste/${id}`. Skeleton + empty state.
-
-**`src/pages/super-admin/TBRequestDetailPage.tsx`** — workspace
-
-Header: back link, titolo + nome azienda, Badge stato grosso, "Creata il X · Aggiornata il Y".
-
-Layout `lg:grid-cols-3 gap-6`:
-
-**Sinistra `lg:col-span-1` sticky `lg:sticky lg:top-6`**:
-- Card "Brief richiesta" (read-only): partecipanti, periodo, luoghi da `extra_services.places`, budget, servizi extra come chips, note
-- Card "Cronologia" — timeline verticale da `get_tb_request_status_log_for_admin`: bullet + label leggibile (`getTBStatusMeta(to_status).label`) + relative time (`formatDistanceToNow` it) + autore se presente. Ordine ASC dall'alto.
-
-**Destra `lg:col-span-2`** — switch su `request.status` (inline, niente file extra). Ogni branch è una `Card` shadcn con icon + descrizione + eventuale CTA placeholder che fa solo `toast({ title: 'Funzionalità in arrivo' })`. Niente bottoni `disabled`.
-
-| Status | Contenuto |
-|--------|-----------|
-| `draft` | "L'HR sta ancora compilando il brief." |
-| `submitted` / `in_matching` | "Pronto per il matching" + CTA placeholder |
-| `proposals_ready` / `proposals_sent` | Lista compatta tb_proposals (format title + client_status) |
-| `proposals_reviewed` | Come sopra + evidenza 'interested' + CTA "Richiedi quotazione ETS" placeholder |
-| `quote_requested` | "Quotazione ETS in corso" + CTA "Componi preventivo" placeholder |
-| `quote_in_composition` / `quote_sent` | Placeholder esplicito "Editor preventivo — disponibile nel prossimo aggiornamento" + se esiste tb_quote, riepilogo read-only via `get_tb_quote_history_for_admin` |
-| `quote_accepted` / `signed` / `event_scheduled` / `completed` | "Stato avanzato — gestione in arrivo" |
-| `quote_rejected` | "Richiesta chiusa" + `client_decision_notes` ultima quote rejected |
-| `cancelled` | "Richiesta cancellata" (fallback statico) |
-
-Loading skeleton, NotFound se request inesistente o errore forbidden.
-
-### File modificati
-
-**`src/components/layout/SuperAdminLayout.tsx`** — sotto "Catalogo TB":
-```ts
-{ label: "Richieste TB", icon: Inbox, href: "/super-admin/team-building/richieste" },
-```
-
-**`src/App.tsx`** — due nuove route protette `ProtectedSuperAdminRoute` accanto alle route catalogo TB.
+11. **`src/pages/super-admin/TBRequestDetailPage.tsx`**
+    - Sostituzione completa dei case `quote_requested`, `quote_in_composition`, `quote_sent`, `quote_accepted`, `quote_rejected` + nuovo case `modification_requested` con i componenti veri.
+    - `StatusSection` ora ha bisogno anche di `requestId` e `quoteHistory` per individuare la draft attiva e la quote sent / accepted / rejected. Aggiunte props.
+    - Mutation `superseedeMutation` (chiama `admin_supersede_and_create_new_version`) gestita qui per i flussi D ed F (così il page invalida le query e re-renderizza nello stato corretto). On success: `queryClient.invalidateQueries(['super-admin-tb-request', id])` + history + status-log. La pagina si re-renderizza nel nuovo stato `quote_in_composition` con la nuova draft, e `QuoteEditor` riceve i `previousClientNotes` come props per mostrare il pannello.
 
 ### Pattern del codebase riusati
 
-- `useQuery` + `supabase.from(...).select(...)` come `HRTBRequestDetailPage`
-- `PageHeader` come `AccessRequestsPage`
-- `Card`, `Table`, `Badge`, `Select`, `Skeleton` shadcn
-- `format` / `formatDistanceToNow` da `date-fns` con locale `it`
-- View con `security_invoker=on` come `associations_public`
-- Italian UI / English DB enums
-
-### Vincoli rispettati
-
-- Nessuna mutazione, niente azioni reali — solo scaffolding read-only
-- Niente fetch dentro componenti di presentazione
-- Placeholder visivamente coerenti via Card + icon + descrizione
-- Mappa stati TypeScript-checked
+- `useQuery` + `supabase.rpc(...)` come già fatto in `TBRequestDetailPage` per `get_tb_quote_history_for_admin`.
+- `Card / CardHeader / CardContent`, `Input`, `Button`, `AlertDialog`, `Dialog`, `Accordion` shadcn standard.
+- `toast.success / toast.error` da `sonner` come tutto il codebase.
+- `format` / `formatDistanceToNow` da `date-fns` con `locale: it`.
+- `Form / FormField / FormItem / FormControl / FormMessage` da `src/components/ui/form.tsx` (mai usate prima per veri form, ma sono pronte e wrappano RHF correttamente).
+- Validazione zod come in `ProfileEditForm` ma con `zodResolver` invece di `safeParse` manuale (giustificato dalla complessità del form).
 
 ---
 
-## Rischi residui
+## 3. Pre-popolazione e flussi specifici
 
-1. **`security_invoker=on` sulla view**: super_admin ha policy `ALL`, quindi vede tutto. HR ha policy SELECT filtrata per company → la view restituirà solo le richieste della propria company anche se in futuro la usassimo lato HR. Comportamento corretto.
-2. **Stati DB non mappati**: fallback grigio "Sconosciuto", degradazione graceful.
-3. **Linter Supabase**: la view potrebbe generare warning "view in API exposed without RLS" — falso positivo perché `security_invoker=on` delega a `tb_requests`. Se compare, lo annoteremo.
+**EditorEmpty (status `quote_requested`)**: card con CTA "Avvia composizione". Click → setta lo stato locale `composing=true` e renderizza `<QuoteEditor quoteId={null} requestId={id} initialItemsFromProposals={proposals.filter(p => p.client_status === 'interested')}>`. Il `QuoteEditor` quando `quoteId` è null e ha `initialItemsFromProposals` pre-popola il field array con un item per proposta:
+```ts
+{ description: proposal.tb_formats.title, quantity: request.participants_min ?? 1,
+  unit_price_ets: 0, unit_price_final: 0, proposal_id: proposal.id, notes: '' }
+```
+`valid_until = today + 30gg`, `terms_text = TERMS_DEFAULT_TB`. Nessun salvataggio automatico: il primo `admin_save_tb_quote_draft` lo fa l'admin cliccando "Salva bozza" o "Invia".
+
+**Status `quote_in_composition`**: il `StatusSection` cerca nella `quoteHistory` la quote con `status='draft'` (deve essere unica per la request, garantito dal vincolo di business). Se trovata → `<QuoteEditor quoteId=draft.id ...>`. Se non trovata (caso anomalo, race condition o stato incoerente) → mostra `<InfoCard>` con messaggio "Bozza non trovata, ricarica la pagina" + bottone refresh.
+
+**Status `modification_requested`**: il `StatusSection` cerca la draft attiva (status='draft') E la versione precedente con `status='modification_requested'`. Passa a `<QuoteEditor>` la draft + i `previousClientNotes` / `previousDecidedAt` della quote `modification_requested`. Il pannello `ClientModificationsPanel` resta visibile finché la nuova versione è in draft.
+
+**Status `quote_rejected` con CTA "Crea nuovo preventivo"**: click → chiama `admin_supersede_and_create_new_version(rejected.id)`. La RPC restituisce `{new_quote_id, ...}` e cambia lo status request a `quote_in_composition`. `invalidateQueries` → la pagina si re-renderizza nel ramo `quote_in_composition` con la nuova draft già caricata.
+
+**Storico (per stati B–F)**: `<QuoteHistoryAccordion>` sempre montato sotto l'editor / read-only. Il filtro RLS lato DB già esclude le `superseded` per HR ma per super_admin le mostra tutte → bene, lo storico deve mostrare anche le superseded.
 
 ---
 
-## Deliverables in ordine di esecuzione
+## 4. Validazione zod (sintesi)
 
-1. Migration SQL (Blocchi 1.1 → 1.5 in singolo file con commento di ordine in testa)
-2. `src/lib/tb-status.ts`
-3. `src/pages/super-admin/TBRequestsPage.tsx`
-4. `src/pages/super-admin/TBRequestDetailPage.tsx`
-5. Modifica `SuperAdminLayout.tsx`
-6. Modifica `App.tsx`
+```ts
+// draft = permissivo
+quoteItemDraftSchema = z.object({
+  id: z.string().uuid().optional(),
+  proposal_id: z.string().uuid().nullable().optional(),
+  description: z.string().trim().max(500),
+  quantity: z.coerce.number().min(0).default(1),
+  unit_price_ets: z.coerce.number().min(0).default(0),
+  unit_price_final: z.coerce.number().min(0).default(0),
+  notes: z.string().max(1000).nullable().optional(),
+});
+quoteDraftSchema = z.object({
+  valid_until: z.string().nullable(),
+  terms_text: z.string().max(10000),
+  items: z.array(quoteItemDraftSchema),
+});
 
-Pronto ad applicare al tuo OK.
+// send = stretto, applicato solo all'handler Invia
+quoteItemSendSchema = quoteItemDraftSchema.extend({
+  description: z.string().trim().min(1, "Descrizione obbligatoria").max(500),
+  quantity: z.coerce.number().positive("Quantità deve essere > 0"),
+  unit_price_final: z.coerce.number().min(0),
+  unit_price_ets: z.coerce.number().min(0),
+});
+quoteSendSchema = quoteDraftSchema.extend({
+  valid_until: z.string().refine(d => new Date(d) >= startOfToday(),
+    "Data validità deve essere oggi o futura"),
+  items: z.array(quoteItemSendSchema).min(1, "Aggiungi almeno una voce"),
+}).refine(v => sumFinal(v.items) > 0, { message: "Totale finale deve essere > 0", path: ['items'] });
+```
+
+---
+
+## 5. Rischi specifici
+
+**(R1) Doppio click su "Invia"**
+Mitigazione: `disabled={sendMutation.isPending || saveDraftMutation.isPending}` su entrambi i bottoni footer. `AlertDialog` di conferma prima dell'invio aggiunge un secondo gate naturale. Inoltre la RPC `admin_send_tb_quote` controlla `status='draft'` come precondizione → seconda chiamata fallisce con errore esplicito che mostriamo via toast.
+
+**(R2) Navigazione via con draft non salvata**
+Mitigazione: `useEffect` che attacca `beforeunload` quando `form.formState.isDirty && !sendMutation.isSuccess`. Per la navigazione client-side React Router non triggera `beforeunload` → aggiungiamo un `useBlocker` di React Router v6 (controlla che sia disponibile nella versione installata; in alternativa hook custom con `<Prompt>` deprecato → fallback toast warning + conferma manuale via AlertDialog). **Decisione**: se `useBlocker` non disponibile, gestiamo solo `beforeunload` per il refresh/close tab e accettiamo che la navigazione interna possa perdere modifiche non salvate (il pulsante "Salva bozza" è ben visibile, e il rischio è contenuto data l'utenza super-admin tecnica).
+
+**(R3) Reload durante l'invio**
+Se l'admin ricarica mentre `sendMutation` è in volo: la RPC è atomica server-side (transazione). Quindi il quote o è stato inviato (status=`sent`) o non lo è. Al reload, il fetch ricarica la fonte di verità: se status=`sent` → render branch `quote_sent`, se status=`draft` → editor di nuovo aperto. Nessuna corruzione possibile. Documentiamo questo comportamento nel commento del componente.
+
+**(R4) `unit_price_ets` colonna REVOKE-ata: insert/update diretto fallirebbe in modo opaco**
+Tutte le mutations passano dalle RPC SECURITY DEFINER → bypassano il REVOKE. Il client legge i prezzi via `get_tb_quote_items_full_for_admin` (anche essa SECURITY DEFINER). Il pericolo sarebbe un'evoluzione futura del codice che bypassa l'editor con `.from('tb_quote_items').update(...)`. **Mitigazione**: commento esplicito sopra il file `QuoteEditor.tsx` "Tutte le scritture passano dalle RPC. NON usare `.from('tb_quote_items')` o `.from('tb_quotes')` direttamente: il REVOKE colonne ets bloccherebbe il client e gli stati non transiterebbero correttamente."
+
+**(R5) Race condition due super-admin sulla stessa quote**
+La RPC `admin_save_tb_quote_draft` fa `DELETE + INSERT` sugli items dentro una singola transazione → row lock implicito su `tb_quotes` via UPDATE. Il secondo super-admin attende il commit del primo, poi sovrascrive. Risultato: "last writer wins" senza corruzione di stato ma con perdita silenziosa delle modifiche del primo. Accettabile per ora (super-admin multipli sulla stessa quote è scenario raro). Documentazione nel commento del container; in futuro si può aggiungere `If-Match` con `updated_at` come optimistic lock se diventa un problema.
+
+**(R6) Numeri in input con virgola italiana**
+Input `type="number"` rispetta il locale del browser per il punto decimale, ma molti utenti italiani digitano con virgola e l'input rifiuta. Mitigazione: `type="text" inputMode="decimal"` + parsing manuale che accetta sia virgola che punto, e display formattato `it-IT`. Pattern: `String(value).replace(',', '.')` prima di `parseFloat`. Lo wrapperemo in un piccolo helper `parseDecimal(input)` in `tb-quote-schema.ts` e useremo `z.coerce.number()` che chiama `Number()` → quindi normalizziamo virgola → punto in `onChange` dell'input.
+
+**(R7) `modification_requested` non in tb-status.ts**
+Senza l'aggiornamento di `TB_REQUEST_STATUS_META` lo switch del nuovo `StatusSection` non tipiziarrebbe il branch (il `case 'modification_requested'` sarebbe valido a runtime ma TS lamenterebbe se il tipo della prop `status` fosse stretto). Aggiunto come deliverable esplicito. Verifica al primo step.
+
+---
+
+## 6. Ordine di implementazione
+
+1. Verifica `@hookform/resolvers` in `package.json`. Se manca, `bun add @hookform/resolvers`.
+2. Aggiungi `modification_requested` a `tb-status.ts`.
+3. Crea `tb-defaults.ts` e `tb-quote-schema.ts` (puri, no UI).
+4. Crea i componenti di presentazione: `QuoteItemRow`, `QuoteTotalsSummary`, `QuoteReadOnlyView`, `ClientModificationsPanel`.
+5. Crea `PreviousVersionDialog` e `QuoteHistoryAccordion`.
+6. Crea il container `QuoteEditor` con tutte le mutations.
+7. Modifica `TBRequestDetailPage` sostituendo i branch `quote_*`.
+8. Smoke test manuale con i 6 stati e con la transizione `modification_requested → nuova versione`.
+
+---
+
+Mi fermo qui. Quando approvi, procedo nell'ordine sopra.

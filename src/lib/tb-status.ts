@@ -16,6 +16,7 @@ export type TBRequestStatus =
   | "quote_requested"
   | "quote_in_composition"
   | "quote_sent"
+  | "modification_requested"
   | "quote_accepted"
   | "quote_rejected"
   | "signed"
@@ -59,6 +60,7 @@ export const TB_REQUEST_STATUS_META: Record<TBRequestStatus, TBStatusMeta> = {
   quote_requested: meta("quote_requested", "Quotazione richiesta", "admin_action_needed"),
   quote_in_composition: meta("quote_in_composition", "Preventivo in composizione", "admin_action_needed"),
   quote_sent: meta("quote_sent", "Preventivo inviato", "hr_action_needed"),
+  modification_requested: meta("modification_requested", "Modifiche richieste", "admin_action_needed"),
   quote_accepted: meta("quote_accepted", "Preventivo accettato", "completed"),
   quote_rejected: meta("quote_rejected", "Preventivo rifiutato", "closed"),
   signed: meta("signed", "Contratto firmato", "completed"),
