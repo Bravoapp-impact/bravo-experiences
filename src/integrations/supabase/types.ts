@@ -1688,6 +1688,38 @@ export type Database = {
           proposal_id: string
         }[]
       }
+      get_tb_quote_for_hr: {
+        Args: { p_request_id: string }
+        Returns: {
+          client_decision_notes: string
+          created_at: string
+          currency: string
+          decided_at: string
+          id: string
+          request_id: string
+          sent_at: string
+          status: string
+          terms_text: string
+          total_amount_final: number
+          updated_at: string
+          valid_until: string
+          version: number
+          viewed_at: string
+        }[]
+      }
+      get_tb_quote_items_for_hr: {
+        Args: { p_quote_id: string }
+        Returns: {
+          description: string
+          display_order: number
+          id: string
+          notes: string
+          quantity: number
+          quote_id: string
+          total_final: number
+          unit_price_final: number
+        }[]
+      }
       get_user_association_id: { Args: { user_uuid: string }; Returns: string }
       get_user_company_id: { Args: { user_uuid: string }; Returns: string }
       get_user_role: { Args: { user_uuid: string }; Returns: string }
@@ -1697,6 +1729,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      hr_decide_on_quote: {
+        Args: { p_decision: string; p_notes?: string; p_quote_id: string }
+        Returns: undefined
       }
       hr_has_historical_booking_for_date: {
         Args: { _date_id: string; _user_id: string }
