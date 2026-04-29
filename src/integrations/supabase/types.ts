@@ -1637,12 +1637,35 @@ export type Database = {
       }
     }
     Functions: {
+      admin_save_tb_quote_draft: {
+        Args: {
+          p_bravo_margin_amount: number
+          p_bravo_margin_percent: number
+          p_items: Json
+          p_quote_id: string
+          p_request_id: string
+          p_terms_text: string
+          p_total_amount_ets: number
+          p_total_amount_final: number
+          p_valid_until: string
+        }
+        Returns: string
+      }
+      admin_send_tb_quote: { Args: { p_quote_id: string }; Returns: undefined }
       admin_set_user_role: {
         Args: {
           p_role: Database["public"]["Enums"]["app_role"]
           p_user_id: string
         }
         Returns: undefined
+      }
+      admin_supersede_and_create_new_version: {
+        Args: { p_old_quote_id: string }
+        Returns: {
+          new_quote_id: string
+          previous_client_notes: string
+          previous_decided_at: string
+        }[]
       }
       can_employee_see_experience: {
         Args: { p_experience_id: string; p_user_id: string }
@@ -1707,6 +1730,44 @@ export type Database = {
           viewed_at: string
         }[]
       }
+      get_tb_quote_full_for_admin: {
+        Args: { p_quote_id: string }
+        Returns: {
+          bravo_margin_amount: number
+          bravo_margin_percent: number
+          client_decision_notes: string
+          created_at: string
+          created_by: string
+          decided_at: string
+          id: string
+          pdf_url: string
+          request_id: string
+          sent_at: string
+          status: string
+          terms_text: string
+          total_amount_ets: number
+          total_amount_final: number
+          updated_at: string
+          valid_until: string
+          version: number
+          viewed_at: string
+        }[]
+      }
+      get_tb_quote_history_for_admin: {
+        Args: { p_request_id: string }
+        Returns: {
+          client_decision_notes: string
+          created_at: string
+          decided_at: string
+          id: string
+          sent_at: string
+          status: string
+          total_amount_ets: number
+          total_amount_final: number
+          updated_at: string
+          version: number
+        }[]
+      }
       get_tb_quote_items_for_hr: {
         Args: { p_quote_id: string }
         Returns: {
@@ -1717,6 +1778,24 @@ export type Database = {
           quantity: number
           quote_id: string
           total_final: number
+          unit_price_final: number
+        }[]
+      }
+      get_tb_quote_items_full_for_admin: {
+        Args: { p_quote_id: string }
+        Returns: {
+          association_id: string
+          created_at: string
+          description: string
+          display_order: number
+          id: string
+          notes: string
+          proposal_id: string
+          quantity: number
+          quote_id: string
+          total_ets: number
+          total_final: number
+          unit_price_ets: number
           unit_price_final: number
         }[]
       }
