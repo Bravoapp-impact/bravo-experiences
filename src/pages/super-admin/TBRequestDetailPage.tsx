@@ -741,32 +741,3 @@ function ProposalsCard({
   );
 }
 
-function QuoteHistoryCard({ quoteHistory }: { quoteHistory: QuoteHistoryEntry[] }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Storia preventivi</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {quoteHistory.map((q) => (
-          <div
-            key={q.id}
-            className="flex items-center justify-between p-3 rounded-md border bg-card"
-          >
-            <div className="min-w-0">
-              <p className="text-sm font-medium">Versione {q.version}</p>
-              <p className="text-xs text-muted-foreground">
-                {q.total_amount_final
-                  ? `€ ${Number(q.total_amount_final).toLocaleString("it-IT")}`
-                  : "—"}
-              </p>
-            </div>
-            <Badge variant="outline" className="text-xs">
-              {q.status}
-            </Badge>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
