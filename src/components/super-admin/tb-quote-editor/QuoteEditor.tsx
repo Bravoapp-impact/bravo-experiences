@@ -228,7 +228,7 @@ export function QuoteEditor({
       queryClient.invalidateQueries({ queryKey: ["super-admin-tb-status-log", requestId] });
     },
     onError: (err: any) => {
-      devLog("saveDraft error", err);
+      devLog.error("saveDraft error", err);
       toast.error("Errore salvataggio bozza", { description: err?.message ?? "Riprova" });
     },
   });
@@ -260,7 +260,7 @@ export function QuoteEditor({
       queryClient.invalidateQueries({ queryKey: ["super-admin-tb-status-log", requestId] });
     },
     onError: (err: any) => {
-      devLog("send error", err);
+      devLog.error("send error", err);
       toast.error("Errore invio preventivo", { description: err?.message ?? "Riprova" });
     },
   });
