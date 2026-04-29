@@ -192,6 +192,8 @@ export default function TBRequestDetailPage() {
           <div className="lg:col-span-2">
             <StatusSection
               status={request.status}
+              requestId={id!}
+              request={request}
               proposals={proposals ?? []}
               quoteHistory={quoteHistory ?? []}
             />
