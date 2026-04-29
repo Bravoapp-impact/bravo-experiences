@@ -901,6 +901,13 @@ export type Database = {
             referencedRelation: "tb_requests"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tb_contracts_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "tb_requests_with_status_since"
+            referencedColumns: ["id"]
+          },
         ]
       }
       tb_event_participants: {
@@ -1003,6 +1010,13 @@ export type Database = {
             columns: ["request_id"]
             isOneToOne: false
             referencedRelation: "tb_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "tb_requests_with_status_since"
             referencedColumns: ["id"]
           },
         ]
@@ -1223,6 +1237,13 @@ export type Database = {
             referencedRelation: "tb_requests"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tb_matching_decisions_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "tb_requests_with_status_since"
+            referencedColumns: ["id"]
+          },
         ]
       }
       tb_proposals: {
@@ -1295,6 +1316,13 @@ export type Database = {
             columns: ["request_id"]
             isOneToOne: false
             referencedRelation: "tb_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_proposals_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "tb_requests_with_status_since"
             referencedColumns: ["id"]
           },
         ]
@@ -1443,6 +1471,58 @@ export type Database = {
             columns: ["request_id"]
             isOneToOne: false
             referencedRelation: "tb_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_quotes_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "tb_requests_with_status_since"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tb_request_status_log: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          from_status: string | null
+          id: string
+          note: string | null
+          request_id: string
+          to_status: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          request_id: string
+          to_status: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          request_id?: string
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tb_request_status_log_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "tb_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_request_status_log_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "tb_requests_with_status_since"
             referencedColumns: ["id"]
           },
         ]
@@ -1635,6 +1715,90 @@ export type Database = {
         }
         Relationships: []
       }
+      tb_requests_with_status_since: {
+        Row: {
+          assigned_admin_id: string | null
+          budget_estimate: number | null
+          company_id: string | null
+          created_at: string | null
+          description: string | null
+          extra_services: Json | null
+          id: string | null
+          internal_notes: string | null
+          notes: string | null
+          participants_max: number | null
+          participants_min: number | null
+          preferred_city_id: string | null
+          preferred_location_type: string | null
+          preferred_period_from: string | null
+          preferred_period_to: string | null
+          requested_by: string | null
+          status: string | null
+          status_since: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_admin_id?: string | null
+          budget_estimate?: number | null
+          company_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          extra_services?: Json | null
+          id?: string | null
+          internal_notes?: string | null
+          notes?: string | null
+          participants_max?: number | null
+          participants_min?: number | null
+          preferred_city_id?: string | null
+          preferred_location_type?: string | null
+          preferred_period_from?: string | null
+          preferred_period_to?: string | null
+          requested_by?: string | null
+          status?: string | null
+          status_since?: never
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_admin_id?: string | null
+          budget_estimate?: number | null
+          company_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          extra_services?: Json | null
+          id?: string | null
+          internal_notes?: string | null
+          notes?: string | null
+          participants_max?: number | null
+          participants_min?: number | null
+          preferred_city_id?: string | null
+          preferred_location_type?: string | null
+          preferred_period_from?: string | null
+          preferred_period_to?: string | null
+          requested_by?: string | null
+          status?: string | null
+          status_since?: never
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tb_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_requests_preferred_city_id_fkey"
+            columns: ["preferred_city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       admin_save_tb_quote_draft: {
@@ -1797,6 +1961,22 @@ export type Database = {
           total_final: number
           unit_price_ets: number
           unit_price_final: number
+        }[]
+      }
+      get_tb_request_current_status_since: {
+        Args: { p_request_id: string }
+        Returns: string
+      }
+      get_tb_request_status_log_for_admin: {
+        Args: { p_request_id: string }
+        Returns: {
+          changed_at: string
+          changed_by: string
+          changed_by_name: string
+          from_status: string
+          id: string
+          note: string
+          to_status: string
         }[]
       }
       get_user_association_id: { Args: { user_uuid: string }; Returns: string }

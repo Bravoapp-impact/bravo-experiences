@@ -11,6 +11,7 @@ import {
   Inbox,
   Home,
   LayoutGrid,
+  ClipboardList,
 } from "lucide-react";
 import { AdminLayout, SidebarItem } from "./AdminLayout";
 
@@ -30,6 +31,7 @@ const sidebarItems: SidebarItem[] = [
   { label: "Categorie", icon: Tag, href: "/super-admin/categories" },
   { label: "Email per azienda", icon: Mail, href: "/super-admin/email-settings" },
   { label: "Catalogo TB", icon: LayoutGrid, href: "/super-admin/team-building/formats" },
+  { label: "Richieste TB", icon: ClipboardList, href: "/super-admin/team-building/richieste" },
 ];
 
 export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
