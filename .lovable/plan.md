@@ -1,504 +1,238 @@
-# Editor preventivi super-admin: 5 RPC SECURITY DEFINER
 
-## 1. Verifiche preliminari
+# Scaffolding super-admin TB Requests — piano rivisto
 
-### Schema tabelle
-Tutte le colonne attese sono presenti con i nomi indicati:
+Aggiustamenti applicati: VIEW dedicata per "giorni in stato", backfill in transazione con LOCK, ordine di esecuzione documentato.
 
-- **tb_quotes**: `id, request_id, version, status, total_amount_final, total_amount_ets, bravo_margin_amount, bravo_margin_percent, valid_until, terms_text, pdf_url, client_decision_notes, sent_at, viewed_at, decided_at, created_by, created_at, updated_at`. Tutto OK.
-- **tb_quote_items**: `id, quote_id, proposal_id, association_id, description, quantity, unit_price_ets, unit_price_final, total_ets, total_final, notes, display_order, created_at`. Tutto OK.
+## 0. Risposte alle verifiche
 
-### CHECK constraint sugli status
-- `tb_quotes.status` ∈ {draft, sent, viewed, accepted, rejected, modification_requested, superseded}. Tutti i valori usati dalle RPC sono ammessi.
-- `tb_requests.status` include `quote_in_composition`, `quote_sent`, `quote_accepted`, `quote_rejected`, `quote_requested`. OK.
+**PageHeader condiviso** ✅ `src/components/common/PageHeader.tsx`. Riusato.
 
-### RPC esistenti con questi nomi
-Nessuna delle 5 funzioni (`get_tb_quote_full_for_admin`, `get_tb_quote_items_full_for_admin`, `get_tb_quote_history_for_admin`, `admin_save_tb_quote_draft`, `admin_send_tb_quote`, `admin_supersede_and_create_new_version`) esiste già. Nessuna collisione: usiamo `CREATE OR REPLACE` in sicurezza.
+**Pattern status → label/color**: esiste solo un `statusConfig` locale in `HRTeamBuildingPage` con 7 stati legacy (incompleto). Nessun file `src/lib/tb-status.ts`. Lo creiamo come single source of truth con `Record<TBRequestStatus, ...>` esaustivo verificato dal compiler TypeScript.
 
-### Race condition (B.1)
-Verificato: in `admin_save_tb_quote_draft` faccio `SELECT ... FOR UPDATE` sulla riga di `tb_quotes` come prima operazione del CASO B. Postgres serializza i due chiamanti: il secondo aspetta il commit del primo, poi rilegge lo status. Se nel frattempo la quote è uscita da `draft` (es. l'altro admin ha appena chiamato `admin_send_tb_quote`), il secondo trova status diverso e fallisce con `bad_state`. Senza `FOR UPDATE` ci sarebbe una finestra TOCTOU tra il check status e il successivo `DELETE/INSERT items`. **Conferma esplicita richiesta dall'utente:** la mia ipotesi iniziale ("il lock di riga gestisce da solo") era incompleta — serve `FOR UPDATE` esplicito perché la lettura `STABLE` non lockerebbe nulla. Per il CASO A (creazione v1) uso il vincolo logico "non deve esistere già una quote per la request": qui il problema è diverso (due admin che tentano di creare v1 in parallelo). Senza un unique index su `(request_id) WHERE version=1` due insert potrebbero passare entrambi. Soluzione minima dentro la RPC: `LOCK TABLE tb_quotes IN SHARE ROW EXCLUSIVE MODE` è eccessivo; uso invece un advisory lock sulla request: `PERFORM pg_advisory_xact_lock(hashtext('tb_quote_v1_' || p_request_id::text))`. Lock scoped alla transazione, rilasciato a fine RPC, costo zero. Stesso pattern in `admin_supersede_and_create_new_version` per evitare due "v_new" identiche.
+**Backfill volume**: 6 `tb_requests` totali, tutte in `proposals_sent`. Backfill istantaneo.
+
+**Pattern view nel codebase**: ✅ esiste `public.associations_public` (vedi `supabase/migrations/20260128142727_*.sql`) creata con `WITH (security_invoker=on)`. **Importante correzione al brief utente**: il default Postgres per le view è `security_invoker=off` (la view gira con i privilegi del *creator* — di solito postgres superuser — bypassando di fatto le RLS della tabella sottostante). Per ereditare correttamente le RLS del chiamante serve `security_invoker=on`, che è anche il pattern già adottato nel progetto. **Useremo `security_invoker=on`** per `tb_requests_with_status_since`, così la view rispetta le RLS di `tb_requests` (super_admin vede tutto, HR vede solo la propria company se in futuro userà la view, employee non vede nulla).
+
+**Esaustività mappa stati**: garantita dal compiler via `Record<TBRequestStatus, TBStatusMeta>` su union literal di 15 valori.
 
 ---
 
-## 2. Migration SQL
+## PARTE 1 — Migration SQL
 
-### Blocco 1 — get_tb_quote_full_for_admin
+File unico: `supabase/migrations/<timestamp>_tb_request_status_log.sql`
+
+In testa al file, blocco di commento che fissa l'**ordine di esecuzione obbligatorio**:
 
 ```sql
-CREATE OR REPLACE FUNCTION public.get_tb_quote_full_for_admin(p_quote_id uuid)
-RETURNS TABLE (
-  id uuid, request_id uuid, version integer, status text,
-  total_amount_final numeric, total_amount_ets numeric,
-  bravo_margin_amount numeric, bravo_margin_percent numeric,
-  valid_until date, terms_text text, pdf_url text,
-  client_decision_notes text,
-  sent_at timestamptz, viewed_at timestamptz, decided_at timestamptz,
-  created_by uuid, created_at timestamptz, updated_at timestamptz
-)
-LANGUAGE plpgsql STABLE SECURITY DEFINER
-SET search_path = public SET row_security = off
-AS $$
-BEGIN
-  IF NOT has_role(auth.uid(), 'super_admin'::app_role) THEN
-    RAISE EXCEPTION 'forbidden';
-  END IF;
-
-  RETURN QUERY
-  SELECT q.id, q.request_id, q.version, q.status,
-         q.total_amount_final, q.total_amount_ets,
-         q.bravo_margin_amount, q.bravo_margin_percent,
-         q.valid_until, q.terms_text, q.pdf_url,
-         q.client_decision_notes,
-         q.sent_at, q.viewed_at, q.decided_at,
-         q.created_by, q.created_at, q.updated_at
-  FROM tb_quotes q
-  WHERE q.id = p_quote_id;
-END;
-$$;
-
-REVOKE EXECUTE ON FUNCTION public.get_tb_quote_full_for_admin(uuid) FROM PUBLIC;
-GRANT  EXECUTE ON FUNCTION public.get_tb_quote_full_for_admin(uuid) TO authenticated;
+-- =====================================================================
+-- TB REQUEST STATUS LOG — migration
+-- =====================================================================
+-- ORDINE DI ESECUZIONE OBBLIGATORIO (NON RIORDINARE):
+--   1.1  Tabella tb_request_status_log + indici + RLS
+--   1.2  Trigger function + trigger AFTER INSERT/UPDATE su tb_requests
+--   1.3  Backfill (in transazione con LOCK su tb_requests)
+--   1.4  RPC get_tb_request_status_log_for_admin
+--   1.5  Scalar function get_tb_request_current_status_since
+--          + view tb_requests_with_status_since
+--
+-- MOTIVO: il trigger (1.2) deve esistere PRIMA del backfill (1.3).
+-- Se il backfill girasse prima del trigger, ogni nuova request creata
+-- nella finestra [backfill, trigger] non sarebbe loggata e produrrebbe
+-- cronologia incompleta.
+-- =====================================================================
 ```
 
-### Blocco 2 — get_tb_quote_items_full_for_admin
+### Blocco 1.1 — Tabella, indici, RLS
+
+Tabella `tb_request_status_log` con FK CASCADE su tb_requests, indici su `request_id` e `changed_at DESC`, RLS:
+- Super admin: SELECT + INSERT (no UPDATE/DELETE — append-only)
+- HR: SELECT solo log delle richieste della propria company (via JOIN `tb_requests.company_id = get_user_company_id(auth.uid())`)
+
+### Blocco 1.2 — Trigger function + trigger
+
+`log_tb_request_status_change()` SECURITY DEFINER. Due trigger separati:
+- `AFTER INSERT ON tb_requests`: log con `from_status=NULL, to_status=NEW.status`
+- `AFTER UPDATE OF status ON tb_requests`: log solo se `OLD.status IS DISTINCT FROM NEW.status`
+
+`changed_by = auth.uid()` (può essere NULL per insert sistemici via service role).
+
+### Blocco 1.3 — Backfill in transazione con LOCK
 
 ```sql
-CREATE OR REPLACE FUNCTION public.get_tb_quote_items_full_for_admin(p_quote_id uuid)
-RETURNS TABLE (
-  id uuid, quote_id uuid, proposal_id uuid, association_id uuid,
-  description text, quantity numeric,
-  unit_price_ets numeric, unit_price_final numeric,
-  total_ets numeric, total_final numeric,
-  notes text, display_order integer, created_at timestamptz
-)
-LANGUAGE plpgsql STABLE SECURITY DEFINER
-SET search_path = public SET row_security = off
-AS $$
-BEGIN
-  IF NOT has_role(auth.uid(), 'super_admin'::app_role) THEN
-    RAISE EXCEPTION 'forbidden';
-  END IF;
+BEGIN;
+  -- LOCK SHARE MODE: blocca UPDATE concorrenti su tb_requests durante il backfill
+  -- ma permette altre SELECT. Per 6 righe è zero costo.
+  LOCK TABLE public.tb_requests IN SHARE MODE;
 
-  RETURN QUERY
-  SELECT i.id, i.quote_id, i.proposal_id, i.association_id,
-         i.description, i.quantity,
-         i.unit_price_ets, i.unit_price_final,
-         i.total_ets, i.total_final,
-         i.notes, i.display_order, i.created_at
-  FROM tb_quote_items i
-  WHERE i.quote_id = p_quote_id
-  ORDER BY i.display_order ASC;
-END;
-$$;
-
-REVOKE EXECUTE ON FUNCTION public.get_tb_quote_items_full_for_admin(uuid) FROM PUBLIC;
-GRANT  EXECUTE ON FUNCTION public.get_tb_quote_items_full_for_admin(uuid) TO authenticated;
+  INSERT INTO public.tb_request_status_log (request_id, from_status, to_status, changed_at, changed_by)
+  SELECT r.id, NULL, r.status, r.created_at, NULL
+  FROM public.tb_requests r
+  WHERE NOT EXISTS (
+    SELECT 1 FROM public.tb_request_status_log l WHERE l.request_id = r.id
+  );
+COMMIT;
 ```
 
-### Blocco 3 — get_tb_quote_history_for_admin
+Razionale LOCK: senza il LOCK, una `tb_requests UPDATE` concorrente potrebbe far scattare il trigger (1.2) tra la SELECT del backfill e l'INSERT, producendo o un duplicato di entry "inizio" o un buco. Con SHARE MODE le UPDATE concorrenti aspettano il commit del backfill. Per 6 righe la transazione dura millisecondi.
+
+### Blocco 1.4 — RPC get_tb_request_status_log_for_admin
+
+`SECURITY DEFINER`, super_admin only, restituisce log + `changed_by_name` via LEFT JOIN profiles (concat first_name+last_name, fallback email), ordinato `changed_at ASC`.
+
+### Blocco 1.5 — Scalar function + VIEW
 
 ```sql
-CREATE OR REPLACE FUNCTION public.get_tb_quote_history_for_admin(p_request_id uuid)
-RETURNS TABLE (
-  id uuid, version integer, status text,
-  total_amount_final numeric, total_amount_ets numeric,
-  sent_at timestamptz, decided_at timestamptz,
-  client_decision_notes text,
-  created_at timestamptz, updated_at timestamptz
-)
-LANGUAGE plpgsql STABLE SECURITY DEFINER
-SET search_path = public SET row_security = off
+CREATE OR REPLACE FUNCTION public.get_tb_request_current_status_since(p_request_id uuid)
+RETURNS timestamptz
+LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = public
 AS $$
-BEGIN
-  IF NOT has_role(auth.uid(), 'super_admin'::app_role) THEN
-    RAISE EXCEPTION 'forbidden';
-  END IF;
-
-  RETURN QUERY
-  SELECT q.id, q.version, q.status,
-         q.total_amount_final, q.total_amount_ets,
-         q.sent_at, q.decided_at, q.client_decision_notes,
-         q.created_at, q.updated_at
-  FROM tb_quotes q
-  WHERE q.request_id = p_request_id
-  ORDER BY q.version DESC;
-END;
+  -- TODO scaling: se tb_request_status_log supera ~10k righe per request,
+  -- valutare denormalizzazione su tb_requests.status_since aggiornata da trigger.
+  SELECT MAX(changed_at) FROM public.tb_request_status_log WHERE request_id = p_request_id;
 $$;
 
-REVOKE EXECUTE ON FUNCTION public.get_tb_quote_history_for_admin(uuid) FROM PUBLIC;
-GRANT  EXECUTE ON FUNCTION public.get_tb_quote_history_for_admin(uuid) TO authenticated;
-```
+-- VIEW dedicata per case list super-admin.
+-- security_invoker=on → eredita le RLS di tb_requests (pattern già usato in associations_public).
+-- PostgREST può leggerla come una tabella normale: una sola query dal client,
+-- niente JOIN client-side, niente RPC per riga.
+CREATE OR REPLACE VIEW public.tb_requests_with_status_since
+WITH (security_invoker=on) AS
+SELECT
+  r.*,
+  public.get_tb_request_current_status_since(r.id) AS status_since
+FROM public.tb_requests r;
 
-### Blocco 4 — admin_save_tb_quote_draft
-
-```sql
-CREATE OR REPLACE FUNCTION public.admin_save_tb_quote_draft(
-  p_quote_id uuid,
-  p_request_id uuid,
-  p_total_amount_final numeric,
-  p_total_amount_ets numeric,
-  p_bravo_margin_amount numeric,
-  p_bravo_margin_percent numeric,
-  p_valid_until date,
-  p_terms_text text,
-  p_items jsonb
-)
-RETURNS uuid
-LANGUAGE plpgsql VOLATILE SECURITY DEFINER
-SET search_path = public SET row_security = off
-AS $$
-DECLARE
-  v_quote_id uuid;
-  v_request_id uuid;
-  v_status text;
-  v_item jsonb;
-  v_idx int := 0;
-BEGIN
-  IF NOT has_role(auth.uid(), 'super_admin'::app_role) THEN
-    RAISE EXCEPTION 'forbidden';
-  END IF;
-
-  -- Validazione payload items
-  IF p_items IS NULL OR jsonb_typeof(p_items) <> 'array' THEN
-    RAISE EXCEPTION 'validation_error: p_items must be a JSON array';
-  END IF;
-
-  FOR v_item IN SELECT * FROM jsonb_array_elements(p_items) LOOP
-    v_idx := v_idx + 1;
-    IF COALESCE(NULLIF(v_item->>'description',''),'') = '' THEN
-      RAISE EXCEPTION 'validation_error: item % missing description', v_idx;
-    END IF;
-    IF COALESCE((v_item->>'quantity')::numeric, 0) <= 0 THEN
-      RAISE EXCEPTION 'validation_error: item % quantity must be > 0', v_idx;
-    END IF;
-    IF COALESCE((v_item->>'unit_price_final')::numeric, -1) < 0 THEN
-      RAISE EXCEPTION 'validation_error: item % unit_price_final must be >= 0', v_idx;
-    END IF;
-    IF COALESCE((v_item->>'unit_price_ets')::numeric, -1) < 0 THEN
-      RAISE EXCEPTION 'validation_error: item % unit_price_ets must be >= 0', v_idx;
-    END IF;
-  END LOOP;
-
-  IF COALESCE(p_total_amount_final, -1) < 0 THEN
-    RAISE EXCEPTION 'validation_error: total_amount_final must be >= 0';
-  END IF;
-
-  IF p_quote_id IS NULL THEN
-    -- CASO A: creazione v1
-    IF p_request_id IS NULL THEN
-      RAISE EXCEPTION 'validation_error: p_request_id required when p_quote_id is NULL';
-    END IF;
-
-    -- Lock advisory per evitare due v1 concorrenti
-    PERFORM pg_advisory_xact_lock(hashtext('tb_quote_v1_' || p_request_id::text));
-
-    IF NOT EXISTS (SELECT 1 FROM tb_requests WHERE id = p_request_id) THEN
-      RAISE EXCEPTION 'request_not_found';
-    END IF;
-
-    IF EXISTS (SELECT 1 FROM tb_quotes WHERE request_id = p_request_id) THEN
-      RAISE EXCEPTION 'quote_already_exists';
-    END IF;
-
-    INSERT INTO tb_quotes (
-      request_id, version, status,
-      total_amount_final, total_amount_ets,
-      bravo_margin_amount, bravo_margin_percent,
-      valid_until, terms_text, created_by
-    ) VALUES (
-      p_request_id, 1, 'draft',
-      p_total_amount_final, p_total_amount_ets,
-      p_bravo_margin_amount, p_bravo_margin_percent,
-      p_valid_until, p_terms_text, auth.uid()
-    )
-    RETURNING id INTO v_quote_id;
-
-  ELSE
-    -- CASO B: update di una draft esistente. Lock di riga.
-    SELECT id, status INTO v_quote_id, v_status
-    FROM tb_quotes WHERE id = p_quote_id
-    FOR UPDATE;
-
-    IF v_quote_id IS NULL THEN
-      RAISE EXCEPTION 'not_found';
-    END IF;
-
-    IF v_status <> 'draft' THEN
-      RAISE EXCEPTION 'bad_state: quote is %, cannot modify', v_status;
-    END IF;
-
-    UPDATE tb_quotes SET
-      total_amount_final   = p_total_amount_final,
-      total_amount_ets     = p_total_amount_ets,
-      bravo_margin_amount  = p_bravo_margin_amount,
-      bravo_margin_percent = p_bravo_margin_percent,
-      valid_until          = p_valid_until,
-      terms_text           = p_terms_text,
-      updated_at           = now()
-    WHERE id = p_quote_id;
-  END IF;
-
-  -- Sostituisci items
-  DELETE FROM tb_quote_items WHERE quote_id = v_quote_id;
-
-  INSERT INTO tb_quote_items (
-    quote_id, proposal_id, association_id,
-    description, quantity,
-    unit_price_ets, unit_price_final,
-    total_ets, total_final,
-    notes, display_order
-  )
-  SELECT
-    v_quote_id,
-    NULLIF(elem->>'proposal_id','')::uuid,
-    NULLIF(elem->>'association_id','')::uuid,
-    elem->>'description',
-    (elem->>'quantity')::numeric,
-    NULLIF(elem->>'unit_price_ets','')::numeric,
-    NULLIF(elem->>'unit_price_final','')::numeric,
-    NULLIF(elem->>'total_ets','')::numeric,
-    NULLIF(elem->>'total_final','')::numeric,
-    NULLIF(elem->>'notes',''),
-    COALESCE((elem->>'display_order')::int, 0)
-  FROM jsonb_array_elements(p_items) AS elem;
-
-  RETURN v_quote_id;
-END;
-$$;
-
-REVOKE EXECUTE ON FUNCTION public.admin_save_tb_quote_draft(uuid,uuid,numeric,numeric,numeric,numeric,date,text,jsonb) FROM PUBLIC;
-GRANT  EXECUTE ON FUNCTION public.admin_save_tb_quote_draft(uuid,uuid,numeric,numeric,numeric,numeric,date,text,jsonb) TO authenticated;
-```
-
-### Blocco 5 — admin_send_tb_quote
-
-```sql
-CREATE OR REPLACE FUNCTION public.admin_send_tb_quote(p_quote_id uuid)
-RETURNS void
-LANGUAGE plpgsql VOLATILE SECURITY DEFINER
-SET search_path = public SET row_security = off
-AS $$
-DECLARE
-  v_request_id uuid;
-  v_status text;
-  v_total numeric;
-  v_items_count int;
-BEGIN
-  IF NOT has_role(auth.uid(), 'super_admin'::app_role) THEN
-    RAISE EXCEPTION 'forbidden';
-  END IF;
-
-  SELECT request_id, status, total_amount_final
-    INTO v_request_id, v_status, v_total
-  FROM tb_quotes WHERE id = p_quote_id
-  FOR UPDATE;
-
-  IF v_request_id IS NULL THEN
-    RAISE EXCEPTION 'not_found';
-  END IF;
-
-  IF v_status <> 'draft' THEN
-    RAISE EXCEPTION 'bad_state: quote is %', v_status;
-  END IF;
-
-  SELECT COUNT(*) INTO v_items_count FROM tb_quote_items WHERE quote_id = p_quote_id;
-  IF v_items_count = 0 THEN
-    RAISE EXCEPTION 'no_items';
-  END IF;
-
-  IF COALESCE(v_total, 0) <= 0 THEN
-    RAISE EXCEPTION 'invalid_total';
-  END IF;
-
-  UPDATE tb_quotes SET
-    status = 'sent',
-    sent_at = now(),
-    updated_at = now()
-  WHERE id = p_quote_id;
-
-  UPDATE tb_requests SET
-    status = 'quote_sent',
-    updated_at = now()
-  WHERE id = v_request_id;
-END;
-$$;
-
-REVOKE EXECUTE ON FUNCTION public.admin_send_tb_quote(uuid) FROM PUBLIC;
-GRANT  EXECUTE ON FUNCTION public.admin_send_tb_quote(uuid) TO authenticated;
-```
-
-### Blocco 6 — admin_supersede_and_create_new_version
-
-```sql
-CREATE OR REPLACE FUNCTION public.admin_supersede_and_create_new_version(p_old_quote_id uuid)
-RETURNS TABLE (
-  new_quote_id uuid,
-  previous_client_notes text,
-  previous_decided_at timestamptz
-)
-LANGUAGE plpgsql VOLATILE SECURITY DEFINER
-SET search_path = public SET row_security = off
-AS $$
-DECLARE
-  v_old RECORD;
-  v_new_id uuid;
-  v_new_version int;
-  v_request_status text;
-BEGIN
-  IF NOT has_role(auth.uid(), 'super_admin'::app_role) THEN
-    RAISE EXCEPTION 'forbidden';
-  END IF;
-
-  SELECT * INTO v_old FROM tb_quotes WHERE id = p_old_quote_id FOR UPDATE;
-  IF v_old.id IS NULL THEN
-    RAISE EXCEPTION 'not_found';
-  END IF;
-
-  IF v_old.status NOT IN ('modification_requested','rejected','accepted') THEN
-    RAISE EXCEPTION 'bad_state: quote is %', v_old.status;
-  END IF;
-
-  -- Lock per impedire due "nuove versioni" concorrenti sulla stessa request
-  PERFORM pg_advisory_xact_lock(hashtext('tb_quote_newver_' || v_old.request_id::text));
-
-  -- a) supersede della vecchia
-  UPDATE tb_quotes SET status = 'superseded', updated_at = now()
-  WHERE id = p_old_quote_id;
-
-  -- b) calcolo nuova versione
-  SELECT COALESCE(MAX(version), 0) + 1 INTO v_new_version
-  FROM tb_quotes WHERE request_id = v_old.request_id;
-
-  -- c) insert nuova quote draft, copiando totali e termini
-  INSERT INTO tb_quotes (
-    request_id, version, status,
-    total_amount_final, total_amount_ets,
-    bravo_margin_amount, bravo_margin_percent,
-    valid_until, terms_text,
-    created_by
-  ) VALUES (
-    v_old.request_id, v_new_version, 'draft',
-    v_old.total_amount_final, v_old.total_amount_ets,
-    v_old.bravo_margin_amount, v_old.bravo_margin_percent,
-    v_old.valid_until, v_old.terms_text,
-    auth.uid()
-  )
-  RETURNING id INTO v_new_id;
-
-  -- d) copia items
-  INSERT INTO tb_quote_items (
-    quote_id, proposal_id, association_id,
-    description, quantity,
-    unit_price_ets, unit_price_final,
-    total_ets, total_final,
-    notes, display_order
-  )
-  SELECT
-    v_new_id, proposal_id, association_id,
-    description, quantity,
-    unit_price_ets, unit_price_final,
-    total_ets, total_final,
-    notes, display_order
-  FROM tb_quote_items WHERE quote_id = p_old_quote_id;
-
-  -- e) aggiorna request status se necessario
-  SELECT status INTO v_request_status FROM tb_requests WHERE id = v_old.request_id;
-  IF v_request_status IS DISTINCT FROM 'quote_in_composition' THEN
-    UPDATE tb_requests SET
-      status = 'quote_in_composition',
-      updated_at = now()
-    WHERE id = v_old.request_id;
-  END IF;
-
-  RETURN QUERY
-  SELECT v_new_id, v_old.client_decision_notes, v_old.decided_at;
-END;
-$$;
-
-REVOKE EXECUTE ON FUNCTION public.admin_supersede_and_create_new_version(uuid) FROM PUBLIC;
-GRANT  EXECUTE ON FUNCTION public.admin_supersede_and_create_new_version(uuid) TO authenticated;
+GRANT SELECT ON public.tb_requests_with_status_since TO authenticated;
 ```
 
 ---
 
-## 3. Come testare
+## PARTE 2 — UI Scaffolding
 
-Setup: utente super-admin S, una `tb_request` R esistente di una qualsiasi company, nessuna quote ancora collegata.
+### File nuovi
 
-### A.1 / A.2 / A.3 lettura
-```sql
--- senza essere super-admin: deve fallire 'forbidden'
-SELECT * FROM get_tb_quote_full_for_admin('<random_uuid>');
+**`src/lib/tb-status.ts`**
 
--- come super-admin, quote inesistente → 0 righe (nessun errore)
-SELECT * FROM get_tb_quote_full_for_admin('00000000-0000-0000-0000-000000000000');
+```ts
+export type TBRequestStatus =
+  | 'draft' | 'submitted' | 'in_matching'
+  | 'proposals_ready' | 'proposals_sent' | 'proposals_reviewed'
+  | 'quote_requested' | 'quote_in_composition' | 'quote_sent'
+  | 'quote_accepted' | 'quote_rejected'
+  | 'signed' | 'event_scheduled' | 'completed' | 'cancelled';
 
--- dopo aver creato una quote (vedi B.1), deve restituire tutte le colonne incluse ets/margin
-SELECT * FROM get_tb_quote_full_for_admin('<quote_id>');
-SELECT * FROM get_tb_quote_items_full_for_admin('<quote_id>');
-SELECT * FROM get_tb_quote_history_for_admin('<request_id>');
--- atteso: history ordinata per version DESC
+export type TBStatusGroup =
+  | 'admin_action_needed' | 'hr_action_needed'
+  | 'in_progress' | 'completed' | 'closed';
+
+export interface TBStatusMeta {
+  value: TBRequestStatus;
+  label: string;
+  group: TBStatusGroup;
+  badgeClass: string;
+}
+
+// Record forza esaustività al compile-time
+export const TB_REQUEST_STATUS_META: Record<TBRequestStatus, TBStatusMeta> = { ... };
+
+export function getTBStatusMeta(status: string): TBStatusMeta {
+  return TB_REQUEST_STATUS_META[status as TBRequestStatus] ?? FALLBACK_META;
+}
 ```
 
-### B.1 admin_save_tb_quote_draft
-```sql
--- CASO A: creazione v1
-SELECT admin_save_tb_quote_draft(
-  NULL, '<request_id>',
-  1220, 1000, 220, 22, '2026-12-31', 'Termini standard',
-  '[{"description":"Format X","quantity":1,"unit_price_ets":1000,"unit_price_final":1220,"total_ets":1000,"total_final":1220,"display_order":0}]'::jsonb
-);
--- atteso: uuid restituito, riga in tb_quotes con version=1 status=draft, 1 riga in tb_quote_items
+Mappa colori per gruppo:
+- `admin_action_needed` → ambra
+- `hr_action_needed` → blu
+- `in_progress` → grigio
+- `completed` → verde
+- `closed` → rosso
 
--- replay stessa call → 'quote_already_exists'
--- chiamata con quantity=0 → 'validation_error: item 1 quantity must be > 0'
--- chiamata con p_quote_id NULL e p_request_id NULL → 'validation_error'
+**`src/pages/super-admin/TBRequestsPage.tsx`** — case list
 
--- CASO B: update draft (sostituzione totale items)
-SELECT admin_save_tb_quote_draft(
-  '<quote_id>', NULL,
-  1500, 1200, 300, 25, '2026-12-31', 'Termini v2',
-  '[{"description":"Format X rivisto","quantity":2,"unit_price_ets":600,"unit_price_final":750,"total_ets":1200,"total_final":1500,"display_order":0}]'::jsonb
-);
--- atteso: stesso uuid restituito, items vecchi cancellati, 1 nuovo item
+`SuperAdminLayout` + `PageHeader` ("Richieste TB", `${count} richieste in lavorazione`).
 
--- dopo aver fatto admin_send_tb_quote, ritentare update → 'bad_state: quote is sent'
+Filtri: `Select` stato (15 opzioni da `TB_REQUEST_STATUS_META` + "Tutti") · `Select` azienda.
+
+Fetch via **una sola query** sulla view:
+```ts
+supabase.from('tb_requests_with_status_since')
+  .select('*, companies(name)')
+  .order('created_at', { ascending: false })
 ```
 
-### B.2 admin_send_tb_quote
-```sql
-SELECT admin_send_tb_quote('<quote_id>');
--- atteso: void, tb_quotes.status='sent' sent_at=now, tb_requests.status='quote_sent'
+Table colonne: Azienda · Titolo · Stato (Badge `getTBStatusMeta(status).badgeClass`) · Giorni in stato (`differenceInDays(now, status_since ?? created_at)`) · Data creazione (`d MMM yyyy` it).
 
-SELECT admin_send_tb_quote('<quote_id>');
--- atteso: 'bad_state: quote is sent'
+Riga click → `/super-admin/team-building/richieste/${id}`. Skeleton + empty state.
 
--- quote senza items → 'no_items'
--- quote con total_amount_final=0 → 'invalid_total'
+**`src/pages/super-admin/TBRequestDetailPage.tsx`** — workspace
+
+Header: back link, titolo + nome azienda, Badge stato grosso, "Creata il X · Aggiornata il Y".
+
+Layout `lg:grid-cols-3 gap-6`:
+
+**Sinistra `lg:col-span-1` sticky `lg:sticky lg:top-6`**:
+- Card "Brief richiesta" (read-only): partecipanti, periodo, luoghi da `extra_services.places`, budget, servizi extra come chips, note
+- Card "Cronologia" — timeline verticale da `get_tb_request_status_log_for_admin`: bullet + label leggibile (`getTBStatusMeta(to_status).label`) + relative time (`formatDistanceToNow` it) + autore se presente. Ordine ASC dall'alto.
+
+**Destra `lg:col-span-2`** — switch su `request.status` (inline, niente file extra). Ogni branch è una `Card` shadcn con icon + descrizione + eventuale CTA placeholder che fa solo `toast({ title: 'Funzionalità in arrivo' })`. Niente bottoni `disabled`.
+
+| Status | Contenuto |
+|--------|-----------|
+| `draft` | "L'HR sta ancora compilando il brief." |
+| `submitted` / `in_matching` | "Pronto per il matching" + CTA placeholder |
+| `proposals_ready` / `proposals_sent` | Lista compatta tb_proposals (format title + client_status) |
+| `proposals_reviewed` | Come sopra + evidenza 'interested' + CTA "Richiedi quotazione ETS" placeholder |
+| `quote_requested` | "Quotazione ETS in corso" + CTA "Componi preventivo" placeholder |
+| `quote_in_composition` / `quote_sent` | Placeholder esplicito "Editor preventivo — disponibile nel prossimo aggiornamento" + se esiste tb_quote, riepilogo read-only via `get_tb_quote_history_for_admin` |
+| `quote_accepted` / `signed` / `event_scheduled` / `completed` | "Stato avanzato — gestione in arrivo" |
+| `quote_rejected` | "Richiesta chiusa" + `client_decision_notes` ultima quote rejected |
+| `cancelled` | "Richiesta cancellata" (fallback statico) |
+
+Loading skeleton, NotFound se request inesistente o errore forbidden.
+
+### File modificati
+
+**`src/components/layout/SuperAdminLayout.tsx`** — sotto "Catalogo TB":
+```ts
+{ label: "Richieste TB", icon: Inbox, href: "/super-admin/team-building/richieste" },
 ```
 
-### B.3 admin_supersede_and_create_new_version
-```sql
--- precondizione: simulare HR che chiede modifiche
-SELECT hr_decide_on_quote('<quote_id>', 'modification_requested', 'Vorremmo ridurre la quantità');
--- ora la quote è in 'modification_requested'
+**`src/App.tsx`** — due nuove route protette `ProtectedSuperAdminRoute` accanto alle route catalogo TB.
 
-SELECT * FROM admin_supersede_and_create_new_version('<quote_id>');
--- atteso: 1 riga con (new_quote_id, previous_client_notes='Vorremmo...', previous_decided_at=timestamp)
--- vecchia quote → status='superseded'
--- nuova quote → version=2 status='draft' con stessi totali e items copiati
--- tb_requests.status='quote_in_composition'
+### Pattern del codebase riusati
 
--- riprovare sulla vecchia quote (ora superseded) → 'bad_state: quote is superseded'
--- chiamare su una quote in stato 'draft' → 'bad_state: quote is draft'
-```
+- `useQuery` + `supabase.from(...).select(...)` come `HRTBRequestDetailPage`
+- `PageHeader` come `AccessRequestsPage`
+- `Card`, `Table`, `Badge`, `Select`, `Skeleton` shadcn
+- `format` / `formatDistanceToNow` da `date-fns` con locale `it`
+- View con `security_invoker=on` come `associations_public`
+- Italian UI / English DB enums
+
+### Vincoli rispettati
+
+- Nessuna mutazione, niente azioni reali — solo scaffolding read-only
+- Niente fetch dentro componenti di presentazione
+- Placeholder visivamente coerenti via Card + icon + descrizione
+- Mappa stati TypeScript-checked
 
 ---
 
-## 4. Race condition: comportamento confermato
+## Rischi residui
 
-- **CASO B di `admin_save_tb_quote_draft` e `admin_send_tb_quote`**: il `SELECT ... FOR UPDATE` sulla riga di `tb_quotes` serializza i chiamanti. Il primo lockka, fa il lavoro, committa. Il secondo si sblocca, rilegge lo status post-commit (FOR UPDATE rilegge la riga visibile dopo il rilascio del lock) e — se nel frattempo è cambiato — fallisce pulitamente con `bad_state`.
-- **CASO A (creazione v1)** e `admin_supersede_and_create_new_version`: qui il rischio è creare due righe distinte in parallelo (non c'è una riga preesistente da lockare). Risolto con `pg_advisory_xact_lock` su una chiave derivata da `request_id`. Lock scoped alla transazione, rilasciato automaticamente, nessun deadlock perché la chiave dipende solo da una colonna stabile.
-- **DELETE/INSERT items dentro CASO B**: protetti dallo stesso `FOR UPDATE` della riga parent. Nessun secondo chiamante può entrare nel CASO B finché il primo non committa.
+1. **`security_invoker=on` sulla view**: super_admin ha policy `ALL`, quindi vede tutto. HR ha policy SELECT filtrata per company → la view restituirà solo le richieste della propria company anche se in futuro la usassimo lato HR. Comportamento corretto.
+2. **Stati DB non mappati**: fallback grigio "Sconosciuto", degradazione graceful.
+3. **Linter Supabase**: la view potrebbe generare warning "view in API exposed without RLS" — falso positivo perché `security_invoker=on` delega a `tb_requests`. Se compare, lo annoteremo.
 
-Conclusione: la sola atomicità di plpgsql non basta in CASO A e nel supersede. Con i due lock aggiunti il comportamento è corretto in ogni scenario di concorrenza realistico.
+---
+
+## Deliverables in ordine di esecuzione
+
+1. Migration SQL (Blocchi 1.1 → 1.5 in singolo file con commento di ordine in testa)
+2. `src/lib/tb-status.ts`
+3. `src/pages/super-admin/TBRequestsPage.tsx`
+4. `src/pages/super-admin/TBRequestDetailPage.tsx`
+5. Modifica `SuperAdminLayout.tsx`
+6. Modifica `App.tsx`
+
+Pronto ad applicare al tuo OK.
