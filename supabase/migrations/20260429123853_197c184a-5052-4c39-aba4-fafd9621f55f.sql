@@ -1,30 +1,4 @@
-# Editor preventivi super-admin: 5 RPC SECURITY DEFINER
-
-## 1. Verifiche preliminari
-
-### Schema tabelle
-Tutte le colonne attese sono presenti con i nomi indicati:
-
-- **tb_quotes**: `id, request_id, version, status, total_amount_final, total_amount_ets, bravo_margin_amount, bravo_margin_percent, valid_until, terms_text, pdf_url, client_decision_notes, sent_at, viewed_at, decided_at, created_by, created_at, updated_at`. Tutto OK.
-- **tb_quote_items**: `id, quote_id, proposal_id, association_id, description, quantity, unit_price_ets, unit_price_final, total_ets, total_final, notes, display_order, created_at`. Tutto OK.
-
-### CHECK constraint sugli status
-- `tb_quotes.status` ∈ {draft, sent, viewed, accepted, rejected, modification_requested, superseded}. Tutti i valori usati dalle RPC sono ammessi.
-- `tb_requests.status` include `quote_in_composition`, `quote_sent`, `quote_accepted`, `quote_rejected`, `quote_requested`. OK.
-
-### RPC esistenti con questi nomi
-Nessuna delle 5 funzioni (`get_tb_quote_full_for_admin`, `get_tb_quote_items_full_for_admin`, `get_tb_quote_history_for_admin`, `admin_save_tb_quote_draft`, `admin_send_tb_quote`, `admin_supersede_and_create_new_version`) esiste già. Nessuna collisione: usiamo `CREATE OR REPLACE` in sicurezza.
-
-### Race condition (B.1)
-Verificato: in `admin_save_tb_quote_draft` faccio `SELECT ... FOR UPDATE` sulla riga di `tb_quotes` come prima operazione del CASO B. Postgres serializza i due chiamanti: il secondo aspetta il commit del primo, poi rilegge lo status. Se nel frattempo la quote è uscita da `draft` (es. l'altro admin ha appena chiamato `admin_send_tb_quote`), il secondo trova status diverso e fallisce con `bad_state`. Senza `FOR UPDATE` ci sarebbe una finestra TOCTOU tra il check status e il successivo `DELETE/INSERT items`. **Conferma esplicita richiesta dall'utente:** la mia ipotesi iniziale ("il lock di riga gestisce da solo") era incompleta — serve `FOR UPDATE` esplicito perché la lettura `STABLE` non lockerebbe nulla. Per il CASO A (creazione v1) uso il vincolo logico "non deve esistere già una quote per la request": qui il problema è diverso (due admin che tentano di creare v1 in parallelo). Senza un unique index su `(request_id) WHERE version=1` due insert potrebbero passare entrambi. Soluzione minima dentro la RPC: `LOCK TABLE tb_quotes IN SHARE ROW EXCLUSIVE MODE` è eccessivo; uso invece un advisory lock sulla request: `PERFORM pg_advisory_xact_lock(hashtext('tb_quote_v1_' || p_request_id::text))`. Lock scoped alla transazione, rilasciato a fine RPC, costo zero. Stesso pattern in `admin_supersede_and_create_new_version` per evitare due "v_new" identiche.
-
----
-
-## 2. Migration SQL
-
-### Blocco 1 — get_tb_quote_full_for_admin
-
-```sql
+-- Blocco 1
 CREATE OR REPLACE FUNCTION public.get_tb_quote_full_for_admin(p_quote_id uuid)
 RETURNS TABLE (
   id uuid, request_id uuid, version integer, status text,
@@ -58,11 +32,8 @@ $$;
 
 REVOKE EXECUTE ON FUNCTION public.get_tb_quote_full_for_admin(uuid) FROM PUBLIC;
 GRANT  EXECUTE ON FUNCTION public.get_tb_quote_full_for_admin(uuid) TO authenticated;
-```
 
-### Blocco 2 — get_tb_quote_items_full_for_admin
-
-```sql
+-- Blocco 2
 CREATE OR REPLACE FUNCTION public.get_tb_quote_items_full_for_admin(p_quote_id uuid)
 RETURNS TABLE (
   id uuid, quote_id uuid, proposal_id uuid, association_id uuid,
@@ -93,11 +64,8 @@ $$;
 
 REVOKE EXECUTE ON FUNCTION public.get_tb_quote_items_full_for_admin(uuid) FROM PUBLIC;
 GRANT  EXECUTE ON FUNCTION public.get_tb_quote_items_full_for_admin(uuid) TO authenticated;
-```
 
-### Blocco 3 — get_tb_quote_history_for_admin
-
-```sql
+-- Blocco 3
 CREATE OR REPLACE FUNCTION public.get_tb_quote_history_for_admin(p_request_id uuid)
 RETURNS TABLE (
   id uuid, version integer, status text,
@@ -127,11 +95,8 @@ $$;
 
 REVOKE EXECUTE ON FUNCTION public.get_tb_quote_history_for_admin(uuid) FROM PUBLIC;
 GRANT  EXECUTE ON FUNCTION public.get_tb_quote_history_for_admin(uuid) TO authenticated;
-```
 
-### Blocco 4 — admin_save_tb_quote_draft
-
-```sql
+-- Blocco 4
 CREATE OR REPLACE FUNCTION public.admin_save_tb_quote_draft(
   p_quote_id uuid,
   p_request_id uuid,
@@ -149,7 +114,6 @@ SET search_path = public SET row_security = off
 AS $$
 DECLARE
   v_quote_id uuid;
-  v_request_id uuid;
   v_status text;
   v_item jsonb;
   v_idx int := 0;
@@ -158,7 +122,6 @@ BEGIN
     RAISE EXCEPTION 'forbidden';
   END IF;
 
-  -- Validazione payload items
   IF p_items IS NULL OR jsonb_typeof(p_items) <> 'array' THEN
     RAISE EXCEPTION 'validation_error: p_items must be a JSON array';
   END IF;
@@ -184,12 +147,10 @@ BEGIN
   END IF;
 
   IF p_quote_id IS NULL THEN
-    -- CASO A: creazione v1
     IF p_request_id IS NULL THEN
       RAISE EXCEPTION 'validation_error: p_request_id required when p_quote_id is NULL';
     END IF;
 
-    -- Lock advisory per evitare due v1 concorrenti
     PERFORM pg_advisory_xact_lock(hashtext('tb_quote_v1_' || p_request_id::text));
 
     IF NOT EXISTS (SELECT 1 FROM tb_requests WHERE id = p_request_id) THEN
@@ -214,7 +175,6 @@ BEGIN
     RETURNING id INTO v_quote_id;
 
   ELSE
-    -- CASO B: update di una draft esistente. Lock di riga.
     SELECT id, status INTO v_quote_id, v_status
     FROM tb_quotes WHERE id = p_quote_id
     FOR UPDATE;
@@ -238,7 +198,6 @@ BEGIN
     WHERE id = p_quote_id;
   END IF;
 
-  -- Sostituisci items
   DELETE FROM tb_quote_items WHERE quote_id = v_quote_id;
 
   INSERT INTO tb_quote_items (
@@ -268,11 +227,8 @@ $$;
 
 REVOKE EXECUTE ON FUNCTION public.admin_save_tb_quote_draft(uuid,uuid,numeric,numeric,numeric,numeric,date,text,jsonb) FROM PUBLIC;
 GRANT  EXECUTE ON FUNCTION public.admin_save_tb_quote_draft(uuid,uuid,numeric,numeric,numeric,numeric,date,text,jsonb) TO authenticated;
-```
 
-### Blocco 5 — admin_send_tb_quote
-
-```sql
+-- Blocco 5
 CREATE OR REPLACE FUNCTION public.admin_send_tb_quote(p_quote_id uuid)
 RETURNS void
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER
@@ -325,11 +281,8 @@ $$;
 
 REVOKE EXECUTE ON FUNCTION public.admin_send_tb_quote(uuid) FROM PUBLIC;
 GRANT  EXECUTE ON FUNCTION public.admin_send_tb_quote(uuid) TO authenticated;
-```
 
-### Blocco 6 — admin_supersede_and_create_new_version
-
-```sql
+-- Blocco 6
 CREATE OR REPLACE FUNCTION public.admin_supersede_and_create_new_version(p_old_quote_id uuid)
 RETURNS TABLE (
   new_quote_id uuid,
@@ -358,18 +311,14 @@ BEGIN
     RAISE EXCEPTION 'bad_state: quote is %', v_old.status;
   END IF;
 
-  -- Lock per impedire due "nuove versioni" concorrenti sulla stessa request
   PERFORM pg_advisory_xact_lock(hashtext('tb_quote_newver_' || v_old.request_id::text));
 
-  -- a) supersede della vecchia
   UPDATE tb_quotes SET status = 'superseded', updated_at = now()
   WHERE id = p_old_quote_id;
 
-  -- b) calcolo nuova versione
   SELECT COALESCE(MAX(version), 0) + 1 INTO v_new_version
   FROM tb_quotes WHERE request_id = v_old.request_id;
 
-  -- c) insert nuova quote draft, copiando totali e termini
   INSERT INTO tb_quotes (
     request_id, version, status,
     total_amount_final, total_amount_ets,
@@ -385,7 +334,6 @@ BEGIN
   )
   RETURNING id INTO v_new_id;
 
-  -- d) copia items
   INSERT INTO tb_quote_items (
     quote_id, proposal_id, association_id,
     description, quantity,
@@ -401,7 +349,6 @@ BEGIN
     notes, display_order
   FROM tb_quote_items WHERE quote_id = p_old_quote_id;
 
-  -- e) aggiorna request status se necessario
   SELECT status INTO v_request_status FROM tb_requests WHERE id = v_old.request_id;
   IF v_request_status IS DISTINCT FROM 'quote_in_composition' THEN
     UPDATE tb_requests SET
@@ -417,88 +364,3 @@ $$;
 
 REVOKE EXECUTE ON FUNCTION public.admin_supersede_and_create_new_version(uuid) FROM PUBLIC;
 GRANT  EXECUTE ON FUNCTION public.admin_supersede_and_create_new_version(uuid) TO authenticated;
-```
-
----
-
-## 3. Come testare
-
-Setup: utente super-admin S, una `tb_request` R esistente di una qualsiasi company, nessuna quote ancora collegata.
-
-### A.1 / A.2 / A.3 lettura
-```sql
--- senza essere super-admin: deve fallire 'forbidden'
-SELECT * FROM get_tb_quote_full_for_admin('<random_uuid>');
-
--- come super-admin, quote inesistente → 0 righe (nessun errore)
-SELECT * FROM get_tb_quote_full_for_admin('00000000-0000-0000-0000-000000000000');
-
--- dopo aver creato una quote (vedi B.1), deve restituire tutte le colonne incluse ets/margin
-SELECT * FROM get_tb_quote_full_for_admin('<quote_id>');
-SELECT * FROM get_tb_quote_items_full_for_admin('<quote_id>');
-SELECT * FROM get_tb_quote_history_for_admin('<request_id>');
--- atteso: history ordinata per version DESC
-```
-
-### B.1 admin_save_tb_quote_draft
-```sql
--- CASO A: creazione v1
-SELECT admin_save_tb_quote_draft(
-  NULL, '<request_id>',
-  1220, 1000, 220, 22, '2026-12-31', 'Termini standard',
-  '[{"description":"Format X","quantity":1,"unit_price_ets":1000,"unit_price_final":1220,"total_ets":1000,"total_final":1220,"display_order":0}]'::jsonb
-);
--- atteso: uuid restituito, riga in tb_quotes con version=1 status=draft, 1 riga in tb_quote_items
-
--- replay stessa call → 'quote_already_exists'
--- chiamata con quantity=0 → 'validation_error: item 1 quantity must be > 0'
--- chiamata con p_quote_id NULL e p_request_id NULL → 'validation_error'
-
--- CASO B: update draft (sostituzione totale items)
-SELECT admin_save_tb_quote_draft(
-  '<quote_id>', NULL,
-  1500, 1200, 300, 25, '2026-12-31', 'Termini v2',
-  '[{"description":"Format X rivisto","quantity":2,"unit_price_ets":600,"unit_price_final":750,"total_ets":1200,"total_final":1500,"display_order":0}]'::jsonb
-);
--- atteso: stesso uuid restituito, items vecchi cancellati, 1 nuovo item
-
--- dopo aver fatto admin_send_tb_quote, ritentare update → 'bad_state: quote is sent'
-```
-
-### B.2 admin_send_tb_quote
-```sql
-SELECT admin_send_tb_quote('<quote_id>');
--- atteso: void, tb_quotes.status='sent' sent_at=now, tb_requests.status='quote_sent'
-
-SELECT admin_send_tb_quote('<quote_id>');
--- atteso: 'bad_state: quote is sent'
-
--- quote senza items → 'no_items'
--- quote con total_amount_final=0 → 'invalid_total'
-```
-
-### B.3 admin_supersede_and_create_new_version
-```sql
--- precondizione: simulare HR che chiede modifiche
-SELECT hr_decide_on_quote('<quote_id>', 'modification_requested', 'Vorremmo ridurre la quantità');
--- ora la quote è in 'modification_requested'
-
-SELECT * FROM admin_supersede_and_create_new_version('<quote_id>');
--- atteso: 1 riga con (new_quote_id, previous_client_notes='Vorremmo...', previous_decided_at=timestamp)
--- vecchia quote → status='superseded'
--- nuova quote → version=2 status='draft' con stessi totali e items copiati
--- tb_requests.status='quote_in_composition'
-
--- riprovare sulla vecchia quote (ora superseded) → 'bad_state: quote is superseded'
--- chiamare su una quote in stato 'draft' → 'bad_state: quote is draft'
-```
-
----
-
-## 4. Race condition: comportamento confermato
-
-- **CASO B di `admin_save_tb_quote_draft` e `admin_send_tb_quote`**: il `SELECT ... FOR UPDATE` sulla riga di `tb_quotes` serializza i chiamanti. Il primo lockka, fa il lavoro, committa. Il secondo si sblocca, rilegge lo status post-commit (FOR UPDATE rilegge la riga visibile dopo il rilascio del lock) e — se nel frattempo è cambiato — fallisce pulitamente con `bad_state`.
-- **CASO A (creazione v1)** e `admin_supersede_and_create_new_version`: qui il rischio è creare due righe distinte in parallelo (non c'è una riga preesistente da lockare). Risolto con `pg_advisory_xact_lock` su una chiave derivata da `request_id`. Lock scoped alla transazione, rilasciato automaticamente, nessun deadlock perché la chiave dipende solo da una colonna stabile.
-- **DELETE/INSERT items dentro CASO B**: protetti dallo stesso `FOR UPDATE` della riga parent. Nessun secondo chiamante può entrare nel CASO B finché il primo non committa.
-
-Conclusione: la sola atomicità di plpgsql non basta in CASO A e nel supersede. Con i due lock aggiunti il comportamento è corretto in ogni scenario di concorrenza realistico.
