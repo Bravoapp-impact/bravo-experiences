@@ -101,7 +101,7 @@ export function PasswordStrengthInput({
       )}
 
       {showRequirements && (
-        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 pt-1">
+        <ul className="flex flex-col gap-1 pt-1">
           {evaluation.requirements.map((r) => (
             <li
               key={r.id}
@@ -111,7 +111,7 @@ export function PasswordStrengthInput({
               )}
             >
               {r.met ? (
-                <Check className="h-3.5 w-3.5 flex-shrink-0" />
+                <Check className="h-3 w-3 flex-shrink-0" />
               ) : (
                 <Circle className="h-3 w-3 flex-shrink-0" />
               )}
