@@ -253,9 +253,8 @@ export function EnrollMFA() {
                 Verifica e attiva
               </Button>
             </div>
-          </motion.div>
-        )}
-      </div>
-    </section>
+        </motion.div>
+      )}
+    </div>
   );
 }
