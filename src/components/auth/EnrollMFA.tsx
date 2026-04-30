@@ -181,10 +181,12 @@ export function EnrollMFA() {
             <p className="text-xs text-muted-foreground">
               Usa un'app come Google Authenticator o Authy per generare codici di accesso temporanei.
             </p>
-            <Button onClick={handleEnroll} disabled={enrolling} className="w-full">
-              {enrolling ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Shield className="h-4 w-4 mr-2" />}
-              Attiva 2FA
-            </Button>
+            <div className="flex justify-start">
+              <Button onClick={handleEnroll} disabled={enrolling} size="sm">
+                {enrolling ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : <Shield className="h-3.5 w-3.5 mr-2" />}
+                Attiva 2FA
+              </Button>
+            </div>
           </div>
         )}
 
