@@ -1,14 +1,14 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { Sun, Moon, Monitor } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTheme, type Theme } from "@/hooks/useTheme";
 
 export default function SettingsTheme() {
-  const [selected, setSelected] = useState<"light" | "dark" | "system">("system");
-  const options = [
-    { id: "light" as const, label: "Chiaro", icon: Sun },
-    { id: "dark" as const, label: "Scuro", icon: Moon },
-    { id: "system" as const, label: "Sistema", icon: Monitor },
+  const { theme, setTheme } = useTheme();
+  const options: { id: Theme; label: string; icon: typeof Sun }[] = [
+    { id: "light", label: "Chiaro", icon: Sun },
+    { id: "dark", label: "Scuro", icon: Moon },
+    { id: "system", label: "Sistema", icon: Monitor },
   ];
 
   return (
@@ -19,11 +19,11 @@ export default function SettingsTheme() {
       <div className="flex flex-wrap gap-3">
         {options.map((opt) => {
           const Icon = opt.icon;
-          const active = selected === opt.id;
+          const active = theme === opt.id;
           return (
             <button
               key={opt.id}
-              onClick={() => setSelected(opt.id)}
+              onClick={() => setTheme(opt.id)}
               className={cn(
                 "flex flex-col items-center gap-2 rounded-lg border px-6 py-4 transition-colors",
                 active ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"
