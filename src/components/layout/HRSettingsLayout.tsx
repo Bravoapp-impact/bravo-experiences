@@ -43,6 +43,7 @@ export default function HRSettingsLayout() {
     <AdminLayout
       sidebarItems={sidebarItems}
       profilePath="/hr/impostazioni/profilo"
+      settingsPath="/hr/impostazioni/profilo"
       basePath="/hr/impostazioni"
       entityLogoUrl={profile?.companies?.logo_url || undefined}
       entityName={profile?.companies?.name || "Azienda"}

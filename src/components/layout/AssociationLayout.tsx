@@ -41,7 +41,8 @@ export function AssociationLayout({ children }: AssociationLayoutProps) {
   return (
     <AdminLayout
       sidebarItems={sidebarItems}
-      profilePath="/association/my-profile"
+      profilePath="/association/impostazioni/profilo"
+      settingsPath="/association/impostazioni/profilo"
       basePath="/association"
       entityLogoUrl={(profile?.associations as any)?.logo_url || undefined}
       entityName={(profile?.associations as any)?.name || "Associazione"}

@@ -37,9 +37,10 @@ export interface AdminLayoutProps {
   sidebarItems: SidebarItem[];
   profilePath: string;
   basePath: string;
+  /** Path to the role's settings panel entry (e.g. /hr/impostazioni/profilo). */
+  settingsPath: string;
   entityLogoUrl?: string;
   entityName?: string;
-  dropdownItems?: { label: string; icon: LucideIcon; href?: string; onClick?: () => void }[];
   sectionLabels?: { beforeIndex: number; label: string }[];
   separatorAfterIndex?: number[];
 }
@@ -65,9 +66,9 @@ export function AdminLayout({
   sidebarItems,
   profilePath,
   basePath,
+  settingsPath,
   entityLogoUrl,
   entityName,
-  dropdownItems,
   sectionLabels,
   separatorAfterIndex,
 }: AdminLayoutProps) {
@@ -144,25 +145,12 @@ export function AdminLayout({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56 bg-popover">
                 <DropdownMenuItem
-                  onClick={() => navigate(`${basePath}/impostazioni`)}
+                  onClick={() => navigate(settingsPath)}
                   className="cursor-pointer"
                 >
                   <Settings className="mr-2 h-4 w-4" />
                   Impostazioni
                 </DropdownMenuItem>
-                {dropdownItems?.map((item) => (
-                  <DropdownMenuItem
-                    key={item.label}
-                    onClick={() => {
-                      if (item.onClick) item.onClick();
-                      else if (item.href) navigate(item.href);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {item.label}
-                  </DropdownMenuItem>
-                ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleSignOut}

@@ -28,7 +28,7 @@ import HRTBRequestDetailPage from "./pages/hr/HRTBRequestDetailPage";
 import HRTBProposalDetailPage from "./pages/hr/HRTBProposalDetailPage";
 import HREmployeesPage from "./pages/hr/HREmployeesPage";
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
-import SuperAdminProfile from "./pages/super-admin/SuperAdminProfile";
+// SuperAdminProfile legacy page replaced by /super-admin/impostazioni/profilo
 import CompaniesPage from "./pages/super-admin/CompaniesPage";
 import ExperiencesPage from "./pages/super-admin/ExperiencesPage";
 
@@ -43,16 +43,23 @@ import AssociationExperiencesPage from "./pages/association/AssociationExperienc
 import AssociationExperienceDetail from "./pages/association/AssociationExperienceDetail";
 import AssociationHistoryPage from "./pages/association/AssociationHistoryPage";
 import AssociationProfilePage from "./pages/association/AssociationProfilePage";
-import AssociationAdminProfile from "./pages/association/AssociationAdminProfile";
+// AssociationAdminProfile legacy page replaced by /association/impostazioni/profilo
 import AssociationCalendarPage from "./pages/association/AssociationCalendarPage";
 import HRProfile from "./pages/hr/HRProfile";
 import HRSettingsLayout from "./components/layout/HRSettingsLayout";
+import SuperAdminSettingsLayout from "./components/layout/SuperAdminSettingsLayout";
+import AssociationSettingsLayout from "./components/layout/AssociationSettingsLayout";
 import SettingsProfile from "./pages/hr/settings/SettingsProfile";
 import SettingsTheme from "./pages/hr/settings/SettingsTheme";
 import SettingsGeneral from "./pages/hr/settings/SettingsGeneral";
 import SettingsMembers from "./pages/hr/settings/SettingsMembers";
 import SettingsVolunteering from "./pages/hr/settings/SettingsVolunteering";
 import SettingsDisabled from "./pages/hr/settings/SettingsDisabled";
+import SuperAdminSettingsProfile from "./pages/super-admin/settings/SettingsProfile";
+import SuperAdminSettingsSecurity from "./pages/super-admin/settings/SettingsSecurity";
+import AssociationSettingsProfile from "./pages/association/settings/SettingsProfile";
+import AssociationSettingsSecurity from "./pages/association/settings/SettingsSecurity";
+import AssociationSettingsOrganization from "./pages/association/settings/SettingsOrganization";
 import AccessRequestsPage from "./pages/super-admin/AccessRequestsPage";
 import TBFormatsPage from "./pages/super-admin/TBFormatsPage";
 import TBFormatDetailPage from "./pages/super-admin/TBFormatDetailPage";
@@ -330,12 +337,20 @@ const App = () => (
             />
             <Route
               path="/super-admin/profile"
+              element={<Navigate to="/super-admin/impostazioni/profilo" replace />}
+            />
+            <Route
+              path="/super-admin/impostazioni"
               element={
                 <ProtectedSuperAdminRoute>
-                  <SuperAdminProfile />
+                  <SuperAdminSettingsLayout />
                 </ProtectedSuperAdminRoute>
               }
-            />
+            >
+              <Route index element={<Navigate to="profilo" replace />} />
+              <Route path="profilo" element={<SuperAdminSettingsProfile />} />
+              <Route path="sicurezza" element={<SuperAdminSettingsSecurity />} />
+            </Route>
             {/* Association Admin Routes */}
             <Route
               path="/association"
@@ -387,12 +402,21 @@ const App = () => (
             />
             <Route
               path="/association/my-profile"
+              element={<Navigate to="/association/impostazioni/profilo" replace />}
+            />
+            <Route
+              path="/association/impostazioni"
               element={
                 <ProtectedAssociationRoute>
-                  <AssociationAdminProfile />
+                  <AssociationSettingsLayout />
                 </ProtectedAssociationRoute>
               }
-            />
+            >
+              <Route index element={<Navigate to="profilo" replace />} />
+              <Route path="profilo" element={<AssociationSettingsProfile />} />
+              <Route path="sicurezza" element={<AssociationSettingsSecurity />} />
+              <Route path="organizzazione" element={<AssociationSettingsOrganization />} />
+            </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
