@@ -20,7 +20,7 @@ interface SuperAdminLayoutProps {
 }
 
 const sidebarItems: SidebarItem[] = [
-  { label: "Home", icon: Home, href: "/super-admin/home" },
+  { label: "Home", icon: Home, href: "/super-admin" },
   { label: "Aziende", icon: Building2, href: "/super-admin/companies" },
   { label: "Associazioni", icon: Heart, href: "/super-admin/associations" },
   { label: "Esperienze", icon: Calendar, href: "/super-admin/experiences" },
@@ -38,7 +38,8 @@ export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
   return (
     <AdminLayout
       sidebarItems={sidebarItems}
-      profilePath="/super-admin/profile"
+      profilePath="/super-admin/impostazioni/profilo"
+      settingsPath="/super-admin/impostazioni/profilo"
       basePath="/super-admin"
       entityName="Bravo! Team"
       sectionLabels={[
