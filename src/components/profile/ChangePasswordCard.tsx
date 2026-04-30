@@ -116,6 +116,7 @@ export function ChangePasswordForm({ email }: ChangePasswordFormProps) {
           value={newPassword}
           onChange={setNewPassword}
           autoComplete="new-password"
+          placeholder=""
           required
         />
 
