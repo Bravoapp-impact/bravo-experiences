@@ -28,7 +28,7 @@ import HRTBRequestDetailPage from "./pages/hr/HRTBRequestDetailPage";
 import HRTBProposalDetailPage from "./pages/hr/HRTBProposalDetailPage";
 import HREmployeesPage from "./pages/hr/HREmployeesPage";
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
-import SuperAdminProfile from "./pages/super-admin/SuperAdminProfile";
+// SuperAdminProfile legacy page replaced by /super-admin/impostazioni/profilo
 import CompaniesPage from "./pages/super-admin/CompaniesPage";
 import ExperiencesPage from "./pages/super-admin/ExperiencesPage";
 
@@ -43,7 +43,7 @@ import AssociationExperiencesPage from "./pages/association/AssociationExperienc
 import AssociationExperienceDetail from "./pages/association/AssociationExperienceDetail";
 import AssociationHistoryPage from "./pages/association/AssociationHistoryPage";
 import AssociationProfilePage from "./pages/association/AssociationProfilePage";
-import AssociationAdminProfile from "./pages/association/AssociationAdminProfile";
+// AssociationAdminProfile legacy page replaced by /association/impostazioni/profilo
 import AssociationCalendarPage from "./pages/association/AssociationCalendarPage";
 import HRProfile from "./pages/hr/HRProfile";
 import HRSettingsLayout from "./components/layout/HRSettingsLayout";
