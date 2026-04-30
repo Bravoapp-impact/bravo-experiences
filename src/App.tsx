@@ -28,7 +28,6 @@ import HRTBRequestDetailPage from "./pages/hr/HRTBRequestDetailPage";
 import HRTBProposalDetailPage from "./pages/hr/HRTBProposalDetailPage";
 import HREmployeesPage from "./pages/hr/HREmployeesPage";
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
-// SuperAdminProfile legacy page replaced by /super-admin/impostazioni/profilo
 import CompaniesPage from "./pages/super-admin/CompaniesPage";
 import ExperiencesPage from "./pages/super-admin/ExperiencesPage";
 
@@ -43,9 +42,7 @@ import AssociationExperiencesPage from "./pages/association/AssociationExperienc
 import AssociationExperienceDetail from "./pages/association/AssociationExperienceDetail";
 import AssociationHistoryPage from "./pages/association/AssociationHistoryPage";
 import AssociationProfilePage from "./pages/association/AssociationProfilePage";
-// AssociationAdminProfile legacy page replaced by /association/impostazioni/profilo
 import AssociationCalendarPage from "./pages/association/AssociationCalendarPage";
-import HRProfile from "./pages/hr/HRProfile";
 import HRSettingsLayout from "./components/layout/HRSettingsLayout";
 import SuperAdminSettingsLayout from "./components/layout/SuperAdminSettingsLayout";
 import AssociationSettingsLayout from "./components/layout/AssociationSettingsLayout";
@@ -169,11 +166,7 @@ const App = () => (
             />
             <Route
               path="/hr/profile"
-              element={
-                <ProtectedHRRoute>
-                  <HRProfile />
-                </ProtectedHRRoute>
-              }
+              element={<Navigate to="/hr/impostazioni/profilo" replace />}
             />
             <Route
               path="/hr/impostazioni"
