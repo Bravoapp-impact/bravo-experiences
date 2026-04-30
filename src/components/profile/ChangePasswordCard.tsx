@@ -87,15 +87,7 @@ export function ChangePasswordForm({ email }: ChangePasswordFormProps) {
   };
 
   return (
-    <section className="space-y-4">
-      <div>
-        <h3 className="text-base font-semibold text-foreground">Cambia password</h3>
-        <p className="text-sm text-muted-foreground">
-          Per la tua sicurezza, ti chiediamo prima la password attuale.
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-1.5">
           <Label htmlFor="current-password" className="text-xs text-muted-foreground">
             Password attuale
@@ -152,8 +144,7 @@ export function ChangePasswordForm({ email }: ChangePasswordFormProps) {
             )}
           </Button>
         </div>
-      </form>
-    </section>
+    </form>
   );
 }
 

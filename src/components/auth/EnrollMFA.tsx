@@ -134,61 +134,54 @@ export function EnrollMFA() {
   }
 
   return (
-    <section className="space-y-4">
-      <div className="space-y-1">
-        <h3 className="text-base font-semibold">Autenticazione a due fattori</h3>
-        <p className="text-sm text-muted-foreground">
-          Proteggi il tuo account con l'autenticazione a due fattori (2FA)
-        </p>
-      </div>
-      <div className="space-y-4">
-        {hasMFA && !qrCode && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm">
-              <ShieldCheck className="h-4 w-4 text-success" />
-              <span className="font-medium text-success">
-                Autenticazione a due fattori attiva
-              </span>
-            </div>
-            {verifiedFactors.map((f) => (
-              <div key={f.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30">
-                <span className="text-sm text-muted-foreground">
-                  {f.friendly_name || "Authenticator App"}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleUnenroll(f.id)}
-                  disabled={unenrolling}
-                  className="text-destructive border-destructive/30 hover:bg-destructive/10"
-                >
-                  {unenrolling ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldOff className="h-3 w-3 mr-1" />}
-                  Disattiva
-                </Button>
-              </div>
-            ))}
+    <div className="space-y-4">
+      {hasMFA && !qrCode && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm">
+            <ShieldCheck className="h-4 w-4 text-success" />
+            <span className="font-medium text-success">
+              Autenticazione a due fattori attiva
+            </span>
           </div>
-        )}
-
-        {!hasMFA && !qrCode && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm">
-              <ShieldOff className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">
-                Autenticazione a due fattori non attiva
+          {verifiedFactors.map((f) => (
+            <div key={f.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30">
+              <span className="text-sm text-muted-foreground">
+                {f.friendly_name || "Authenticator App"}
               </span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Usa un'app come Google Authenticator o Authy per generare codici di accesso temporanei.
-            </p>
-            <div className="flex justify-start">
-              <Button onClick={handleEnroll} disabled={enrolling} size="sm">
-                {enrolling ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : <Shield className="h-3.5 w-3.5 mr-2" />}
-                Attiva 2FA
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleUnenroll(f.id)}
+                disabled={unenrolling}
+                className="text-destructive border-destructive/30 hover:bg-destructive/10"
+              >
+                {unenrolling ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldOff className="h-3 w-3 mr-1" />}
+                Disattiva
               </Button>
             </div>
+          ))}
+        </div>
+      )}
+
+      {!hasMFA && !qrCode && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm">
+            <ShieldOff className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">
+              Autenticazione a due fattori non attiva
+            </span>
           </div>
-        )}
+          <p className="text-xs text-muted-foreground">
+            Usa un'app come Google Authenticator o Authy per generare codici di accesso temporanei.
+          </p>
+          <div className="flex justify-end pt-1">
+            <Button onClick={handleEnroll} disabled={enrolling} size="sm">
+              {enrolling ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : <Shield className="h-3.5 w-3.5 mr-2" />}
+              Attiva 2FA
+            </Button>
+          </div>
+        </div>
+      )}
 
         {qrCode && (
           <motion.div
@@ -260,9 +253,8 @@ export function EnrollMFA() {
                 Verifica e attiva
               </Button>
             </div>
-          </motion.div>
-        )}
-      </div>
-    </section>
+        </motion.div>
+      )}
+    </div>
   );
 }
