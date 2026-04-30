@@ -24,9 +24,9 @@ export default function Profile() {
   useEffect(() => {
     if (!loading && profile) {
       const roleRoutes: Record<string, string> = {
-        super_admin: "/super-admin/profile",
-        hr_admin: "/hr/profile",
-        association_admin: "/association/my-profile",
+        super_admin: "/super-admin/impostazioni/profilo",
+        hr_admin: "/hr/impostazioni/profilo",
+        association_admin: "/association/impostazioni/profilo",
       };
 
       if (profile.role && roleRoutes[profile.role]) {
