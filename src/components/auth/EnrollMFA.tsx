@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Shield, ShieldCheck, ShieldOff, Loader2, Copy, Check } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
@@ -128,26 +127,21 @@ export function EnrollMFA() {
 
   if (loading) {
     return (
-      <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-        <CardContent className="p-6 flex items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
+      <section className="flex items-center py-2">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </section>
     );
   }
 
   return (
-    <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Shield className="h-5 w-5" />
-          Sicurezza
-        </CardTitle>
-        <CardDescription>
+    <section className="space-y-4">
+      <div className="space-y-1">
+        <h3 className="text-base font-semibold">Autenticazione a due fattori</h3>
+        <p className="text-sm text-muted-foreground">
           Proteggi il tuo account con l'autenticazione a due fattori (2FA)
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+        </p>
+      </div>
+      <div className="space-y-4">
         {hasMFA && !qrCode && (
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm">
@@ -266,7 +260,7 @@ export function EnrollMFA() {
             </div>
           </motion.div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
