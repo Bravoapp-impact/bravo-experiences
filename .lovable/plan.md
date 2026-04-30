@@ -1,111 +1,61 @@
-# Dark theme refinement — Attio-inspired
+# Allineare Sicurezza tra HR / Super Admin / Association + form password senza card
 
-## What Attio does well (from the screenshot)
-- **Cool, blue-tinted neutrals**, not pure gray. Background sits around `hsl(222 18% 8%)`, surfaces step up by ~2% lightness only.
-- **Three-tier surface system** with very small contrast jumps: app background → sidebar/card → hover/elevated. The eye reads it as one calm canvas.
-- **Hairline borders** at very low contrast (~14% lightness on cool hue) — they delimit table cells and panels without ever shouting.
-- **Muted foreground** is high enough to stay readable (~62% lightness) but the *primary* foreground is not pure white — closer to `hsl(220 14% 92%)` to reduce glare.
-- **Saturated color is reserved**: only the brand purple (active sidebar item, primary CTA) and tag chips (green/blue/orange/red pill backgrounds at low saturation + bright text). Body chrome stays achromatic.
-- **Tag chips** = ~12–15% lightness colored background + ~70% lightness same-hue text. Never fully saturated.
+## Obiettivo
+1. **Form Cambia Password senza chrome a card.** Oggi `ChangePasswordCard` usa `Card/CardHeader/CardContent`. In `SettingsProfile` HR è già forzato neutro con un hack (`cardClassName="border-0 shadow-none bg-transparent p-0"`). Lo trasformiamo in un form pulito riutilizzato ovunque.
+2. **Stessa IA "Password & MFA" per tutti gli admin.** Super Admin e Association ce l'hanno già come voce dedicata nella sidebar impostazioni. HR no: il cambio password vive *dentro* la pagina Profilo. Allineiamo HR aggiungendo la voce e spostando lì il blocco.
 
-## What our current dark theme gets wrong
-- Neutrals are pure gray (`0 0% 8%`) → looks flat and "cheap dark", missing Attio's depth.
-- `--secondary` and `--accent` are bright magenta/pink (`290 67% 55%`, `330 56% 60%`) — these are brand colors, not neutral surfaces. Anywhere shadcn uses `bg-secondary` or `bg-accent` for hover/buttons becomes garish.
-- `--muted` (`0 0% 15%`) is barely distinguishable from `--background` (`0 0% 8%`) and from `--card` (`0 0% 10%`) — the layering tier is wasted.
-- `--border` at `0 0% 18%` is too visible; Attio's hairlines are ~10–14%.
-- `--foreground` at `0 0% 95%` is too white → glare.
+## Cosa cambia
 
-## Proposed token overhaul (`src/index.css`, `.dark` block only)
+### 1) `ChangePasswordCard` → `ChangePasswordForm` (no card)
+File: `src/components/profile/ChangePasswordCard.tsx` (rinominato logicamente — manteniamo il nome file per non rompere git history se preferisci, ma esportiamo `ChangePasswordForm`).
 
-Cool hue base: `220` (subtle blue) at very low saturation `14%`.
+- Rimuoviamo `Card/CardHeader/CardTitle/CardDescription/CardContent`.
+- Sostituiamo con un `<section className="space-y-4">`:
+  - Heading inline coerente con `SettingsSection`: titolo `text-base font-semibold` + descrizione `text-sm text-muted-foreground`.
+  - Niente icona viola nel titolo (era decorativa, distoglieva).
+- Rimuoviamo la prop `cardClassName` (e tutti i suoi usi).
+- Bottone "Aggiorna password" non più `w-full`: diventa allineato a destra come gli altri form delle impostazioni (`size="sm"`, `Save` icon, pattern identico al "Salva modifiche" di `ProfileSettingsContent`).
 
-```css
-.dark {
-  /* Layered surfaces — small steps, cool tint */
-  --background: 220 14% 8%;        /* app canvas */
-  --foreground: 220 14% 92%;       /* primary text, off-white */
+Backward-compat: aggiungiamo `export const ChangePasswordCard = ChangePasswordForm` per non rompere import in volo, poi aggiorniamo i 4 callsite.
 
-  --card: 220 14% 10%;             /* panels, cards */
-  --card-foreground: 220 14% 92%;
+### 2) HR: nuova voce "Password & MFA" nelle impostazioni
+File: `src/components/layout/HRSettingsLayout.tsx`
+- Aggiungo `{ label: "Password & MFA", icon: Shield, href: "/hr/impostazioni/sicurezza", iconColor: "text-emerald-500" }` subito dopo "Profilo" (stesso ordine di SuperAdmin/Association).
+- Aggiorno `sectionLabels`: la sezione "Personale" ora copre Profilo + Password & MFA + Tema + Notifiche + Referral, gli indici delle sezioni successive si shiftano di +1.
 
-  --popover: 220 14% 12%;          /* menus, dropdowns float higher */
-  --popover-foreground: 220 14% 94%;
+File: `src/App.tsx`
+- Aggiungo route `<Route path="sicurezza" element={<HRSettingsSecurity />} />` dentro il blocco `/hr/impostazioni`.
 
-  /* Brand — slightly desaturated for dark bg comfort */
-  --primary: 274 70% 62%;
-  --primary-foreground: 0 0% 100%;
+File: `src/pages/hr/settings/SettingsSecurity.tsx` (nuovo)
+- One-liner: `export default () => <SecuritySettingsContent />;` (stesso pattern di SuperAdmin e Association).
 
-  /* Neutral hover/secondary surfaces (NOT brand colors) */
-  --secondary: 220 14% 14%;
-  --secondary-foreground: 220 14% 90%;
+File: `src/pages/hr/settings/SettingsProfile.tsx`
+- Rimuovo l'import e l'uso di `ChangePasswordCard` in fondo alla pagina. Il Profilo HR torna a contenere solo avatar + dati personali, esattamente come Super Admin e Association.
 
-  --accent: 220 14% 16%;           /* hover, selected row */
-  --accent-foreground: 220 14% 96%;
+### 3) Aggiorna gli altri callsite del nuovo form
+- `src/components/settings/SecuritySettingsContent.tsx`: importa `ChangePasswordForm` invece di `ChangePasswordCard` (o tiene l'alias — funzionerà comunque).
+- `src/pages/Profile.tsx` (employee, fuori scope di questo prompt ma il componente rimarrà usato): tiene l'alias `ChangePasswordCard` finché non lo tocchiamo.
 
-  --muted: 220 14% 13%;
-  --muted-foreground: 220 9% 62%;  /* meta text like "about 17 hours ago" */
+## File toccati
 
-  --destructive: 0 70% 55%;
-  --destructive-foreground: 0 0% 100%;
+**Modificati**
+- `src/components/profile/ChangePasswordCard.tsx` — rifattorizzazione: stripping Card chrome, nuovo header inline, bottone allineato a destra, export `ChangePasswordForm` + alias.
+- `src/components/layout/HRSettingsLayout.tsx` — nuova voce "Password & MFA" + shift indici sezione.
+- `src/App.tsx` — nuova route `hr/impostazioni/sicurezza`.
+- `src/pages/hr/settings/SettingsProfile.tsx` — rimosso il blocco `ChangePasswordCard` finale.
+- `src/components/settings/SecuritySettingsContent.tsx` — usa il nuovo nome (cosmetico, l'alias copre).
 
-  --success: 142 55% 50%;
-  --success-foreground: 0 0% 100%;
-  --warning: 38 85% 58%;
-  --warning-foreground: 0 0% 10%;
+**Creati**
+- `src/pages/hr/settings/SettingsSecurity.tsx` — wrapper di `SecuritySettingsContent`.
 
-  /* Hairlines — barely there */
-  --border: 220 13% 16%;
-  --input: 220 13% 18%;
-  --ring: 274 70% 62%;
+**Non toccati**
+- Super Admin e Association: già OK strutturalmente. Riceveranno automaticamente il nuovo look del form (no card).
+- `EnrollMFA` resta com'è (è un Card a sé, decisione invariata).
+- Profilo employee `/app/profile`: non in scope, hai già detto che l'employee non ci interessa adesso.
+- Nessuna modifica al DB, nessuna nuova RLS, nessuna nuova chiamata.
 
-  /* Sidebar — same family, slightly darker than canvas (Attio pattern) */
-  --sidebar-background: 220 16% 7%;
-  --sidebar-foreground: 220 12% 78%;
-  --sidebar-primary: 274 70% 62%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 220 14% 13%;          /* hover */
-  --sidebar-accent-foreground: 220 14% 96%;
-  --sidebar-border: 220 13% 14%;
-  --sidebar-ring: 274 70% 62%;
-
-  /* Brand accents — keep punch where they belong (CTAs, gradients, tags) */
-  --bravo-purple: 274 80% 65%;
-  --bravo-magenta: 290 60% 60%;
-  --bravo-pink: 330 55% 65%;
-  --bravo-orange: 26 90% 68%;
-  --bravo-yellow: 45 90% 65%;
-
-  --gradient-hero: linear-gradient(135deg, hsl(274 80% 60%) 0%, hsl(330 55% 60%) 50%, hsl(26 90% 65%) 100%);
-  --gradient-card: linear-gradient(180deg, hsl(220 14% 10%) 0%, hsl(220 14% 11%) 100%);
-}
-```
-
-Plus: bump the admin-panel scoped override to match the new primary lightness.
-
-```css
-.dark .admin-panel {
-  --primary: 274 65% 65%;
-  --foreground: 220 14% 92%;
-}
-```
-
-## Why these specific values
-- **Hue 220 / sat 14%** mimics Attio's cool slate. Pure neutral (`0 0% x%`) reads as cheap; a touch of blue reads as software-grade.
-- **8 → 10 → 12 → 14 → 16% lightness ladder** = five surface tiers within 8 percentage points. Enough separation to layer cards/popovers/hovers, never enough to feel patchy.
-- **Foreground at 92%** instead of 95% reduces eye strain in long admin sessions (Attio uses a similar off-white).
-- **Primary down from 100% → 70% saturation** because saturated violet on near-black vibrates; Attio desaturates accents in dark mode for the same reason.
-- **Reclaiming `--secondary` and `--accent` as neutral surfaces** is the single biggest fix — every shadcn hover state currently turns magenta. After this change, default Button/Tabs/Toggle hovers become subtle gray, while explicit `bg-primary` CTAs keep their brand violet.
-
-## Out of scope (deliberate)
-- Light theme tokens — unchanged.
-- Component-level changes — none. We only retune CSS variables; every component already consumes them.
-- `--bravo-*` brand vars stay punchy because they're used in the marketing gradient hero, not in chrome.
-- Tag/chip color recipes (green/blue/orange pills like in the screenshot) — those live in component code, not in tokens; if you want me to harmonize them too, that's a separate follow-up.
-
-## Files touched
-- edit `src/index.css` — only the `.dark` block (lines ~83–135) and the `.dark .admin-panel` block (lines ~78–81).
-
-## How to verify after applying
-1. Toggle theme to "Scuro" from `/hr/impostazioni/tema`.
-2. Walk through: HR home, HR users table, Super Admin companies list, association catalog. Look for: subtle hairlines, no magenta hover surfaces, readable but not glaring text, sidebar slightly darker than canvas.
-3. Check primary CTA buttons still pop (they should — primary is now 70% sat instead of 100%, which on near-black feels *more* premium, not less).
+## Verifica post-deploy
+1. Login come HR → sidebar impostazioni mostra "Password & MFA" subito sotto Profilo. Click → form password senza card + sezione MFA.
+2. Login come Super Admin → `/super-admin/impostazioni/sicurezza` → form password ora visivamente "flat" (no card), allineato al resto della pagina.
+3. Login come Association Admin → idem.
+4. Dark mode attivo → controlla che heading/inputs/bottone restino leggibili (usano già token semantici, dovrebbero).

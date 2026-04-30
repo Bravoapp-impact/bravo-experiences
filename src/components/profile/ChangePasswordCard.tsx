@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Loader2, KeyRound } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,12 +8,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { evaluatePassword } from "@/lib/password-policy";
 import { PasswordStrengthInput } from "@/components/auth/PasswordStrengthInput";
 
-interface ChangePasswordCardProps {
+interface ChangePasswordFormProps {
   email: string;
-  cardClassName?: string;
 }
 
-export function ChangePasswordCard({ email, cardClassName = "border bg-card" }: ChangePasswordCardProps) {
+export function ChangePasswordForm({ email }: ChangePasswordFormProps) {
   const { toast } = useToast();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -41,7 +39,6 @@ export function ChangePasswordCard({ email, cardClassName = "border bg-card" }: 
 
     setLoading(true);
     try {
-      // Re-authenticate to verify current password
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password: currentPassword,
@@ -78,7 +75,7 @@ export function ChangePasswordCard({ email, cardClassName = "border bg-card" }: 
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-    } catch (err) {
+    } catch {
       toast({
         variant: "destructive",
         title: "Errore",
@@ -90,66 +87,74 @@ export function ChangePasswordCard({ email, cardClassName = "border bg-card" }: 
   };
 
   return (
-    <Card className={cardClassName}>
-      <CardHeader>
-        <CardTitle className="text-base font-semibold flex items-center gap-2">
-          <KeyRound className="h-4 w-4 text-primary" />
-          Cambia password
-        </CardTitle>
-        <CardDescription>
-          Aggiorna la password del tuo account. Per la tua sicurezza, ti chiediamo prima la password attuale.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="current-password">Password attuale</Label>
-            <Input
-              id="current-password"
-              type="password"
-              autoComplete="current-password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              required
-            />
-          </div>
+    <section className="space-y-4">
+      <div>
+        <h3 className="text-base font-semibold text-foreground">Cambia password</h3>
+        <p className="text-sm text-muted-foreground">
+          Per la tua sicurezza, ti chiediamo prima la password attuale.
+        </p>
+      </div>
 
-          <PasswordStrengthInput
-            id="new-password"
-            label="Nuova password"
-            value={newPassword}
-            onChange={setNewPassword}
-            autoComplete="new-password"
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="current-password" className="text-xs text-muted-foreground">
+            Password attuale
+          </Label>
+          <Input
+            id="current-password"
+            type="password"
+            autoComplete="current-password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
             required
           />
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="confirm-password">Conferma nuova password</Label>
-            <Input
-              id="confirm-password"
-              type="password"
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-            {confirmPassword.length > 0 && !passwordsMatch && (
-              <p className="text-xs text-destructive">Le password non coincidono.</p>
-            )}
-          </div>
+        <PasswordStrengthInput
+          id="new-password"
+          label="Nuova password"
+          value={newPassword}
+          onChange={setNewPassword}
+          autoComplete="new-password"
+          required
+        />
 
-          <Button type="submit" disabled={!canSubmit} className="w-full">
+        <div className="space-y-1.5">
+          <Label htmlFor="confirm-password" className="text-xs text-muted-foreground">
+            Conferma nuova password
+          </Label>
+          <Input
+            id="confirm-password"
+            type="password"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+          />
+          {confirmPassword.length > 0 && !passwordsMatch && (
+            <p className="text-xs text-destructive">Le password non coincidono.</p>
+          )}
+        </div>
+
+        <div className="flex justify-end">
+          <Button type="submit" disabled={!canSubmit} size="sm">
             {loading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                 Aggiornamento…
               </>
             ) : (
-              "Aggiorna password"
+              <>
+                <Save className="mr-2 h-3.5 w-3.5" />
+                Aggiorna password
+              </>
             )}
           </Button>
-        </form>
-      </CardContent>
-    </Card>
+        </div>
+      </form>
+    </section>
   );
 }
+
+// Backward-compat alias — old import sites keep working.
+export const ChangePasswordCard = ChangePasswordForm;
