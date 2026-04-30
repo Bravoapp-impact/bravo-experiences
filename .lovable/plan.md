@@ -1,99 +1,58 @@
 ## Obiettivo
 
-La sezione **Sicurezza** è oggi visivamente sbilanciata: campi password che attraversano tutta la pagina, bottoni con allineamenti diversi (Aggiorna password a destra, Attiva 2FA a sinistra), check requirements spezzati su due colonne, nessuna gerarchia chiara. Vogliamo un layout pulito e coerente, in linea con lo stile Attio/Airbnb già adottato altrove.
+Sostituire l'attuale tema scuro (cool/blu-grigio "Attio-inspired") con la nuova palette **Warm Elevated** fornita: grigi caldi (hue 15-25°), brand viola alleggerito, card più chiare del background, sidebar più scura.
 
-## Pattern di layout adottato
+## Cosa cambia
 
-Adottiamo il classico pattern **two-column settings** (label+descrizione a sinistra, controlli a destra), con larghezza massima contenuta. Stesso pattern già visto in Stripe, Linear, Attio.
+Modifica unica a **`src/index.css`**, blocco `.dark { ... }`. Nessun altro file viene toccato — tutti i componenti usano già i token `hsl(var(--...))` e si aggiorneranno automaticamente. Nessuna modifica al tema chiaro, ai componenti, o all'admin scoped override.
 
-```text
-┌─────────────────────────────────────────────────────────┐
-│ Sicurezza                                                │
-│ Gestisci la password e l'autenticazione a due fattori    │
-├───────────────────────────────────────────────────────── ┤
-│                                                          │
-│  Cambia password           ┌──────────────────────────┐  │
-│  Per la tua sicurezza,     │ Password attuale         │  │
-│  ti chiediamo prima la     │ [_________________] 👁   │  │
-│  password attuale.         │                          │  │
-│                            │ Nuova password           │  │
-│                            │ [_________________] 👁   │  │
-│                            │ ▓▓▓▓░░░░ Sicurezza: media│  │
-│                            │ ✓ 8 caratteri            │  │
-│                            │ ✓ Maiuscola              │  │
-│                            │ ○ Minuscola              │  │
-│                            │ ○ Numero                 │  │
-│                            │ ○ Speciale               │  │
-│                            │                          │  │
-│                            │ Conferma nuova password  │  │
-│                            │ [_________________]      │  │
-│                            │                          │  │
-│                            │      [Aggiorna password] │  │
-│                            └──────────────────────────┘  │
-│                                                          │
-│  ─────────────────────── divider ───────────────────────│
-│                                                          │
-│  Autenticazione a        ┌──────────────────────────┐    │
-│  due fattori             │ 🛡️ 2FA non attiva        │    │
-│                          │                          │    │
-│                          │ Usa Google Authenticator │    │
-│                          │ o Authy.                 │    │
-│                          │                          │    │
-│                          │       [Attiva 2FA]       │    │
-│                          └──────────────────────────┘    │
-└─────────────────────────────────────────────────────────┘
-```
+### Mapping dei token nel blocco `.dark`
 
-## Modifiche concrete
+Sostituisco i valori attuali con quelli della palette caldi mantenendo **tutte le variabili che il nostro design system usa** (alcune non sono nel file fornito e vanno preservate/derivate coerentemente):
 
-### 1. Nuovo componente `SettingsFormRow`
+**Surfaces (warm gray)**
+- `--background: 20 8% 10%`
+- `--card: 15 8% 13%` + `--card-foreground: 25 12% 93%`
+- `--popover: 15 8% 13%` + `--popover-foreground: 25 12% 93%`
+- `--muted: 15 7% 16%` + `--muted-foreground: 20 6% 63%`
+- `--secondary: 15 7% 16%` + `--secondary-foreground: 25 12% 93%` (derivati da muted, stessa famiglia calda)
+- `--accent: 15 7% 19%` + `--accent-foreground: 25 12% 96%` (un gradino sopra muted per hover)
+- `--border: 20 8% 20%`
+- `--input: 18 7% 11%`
+- `--ring: 274 100% 60%` (uso il primary per il focus ring, coerente col light theme che usa `--ring` brand-aware nel resto del sistema; il valore "neutral warm" `20 6% 50%` del file è troppo poco visibile per accessibilità focus)
 
-File nuovo: `src/components/common/SettingsFormRow.tsx`
+**Text**
+- `--foreground: 25 12% 93%`
 
-Wrapper riutilizzabile a due colonne:
+**Brand & status** (presi 1:1 dal file)
+- `--primary: 274 100% 60%` / `--primary-foreground: 0 0% 100%`
+- `--success: 142 60% 50%` / `--warning: 38 85% 55%` / `--destructive: 0 75% 60%` (+ `-foreground` invariati: bianco / nero / bianco)
+- Bravo accents: `--bravo-purple/magenta/pink/orange/yellow` aggiornati ai valori del file
 
-- A sinistra (`md:col-span-1`): titolo `text-sm font-semibold` + descrizione `text-xs text-muted-foreground`
-- A destra (`md:col-span-2`): contenuto del form
-- Su mobile: stack verticale (label sopra, form sotto)
-- Larghezza massima del contenuto a destra: `max-w-md` (≈448px) per evitare campi giganteschi
+**Sidebar** (allineato al pattern del light theme + nota "darker than bg" del file: `20 8% 7%`)
+- `--sidebar-background: 20 8% 7%`
+- `--sidebar-foreground: 20 6% 75%`
+- `--sidebar-primary: 274 100% 60%` / `--sidebar-primary-foreground: 0 0% 100%`
+- `--sidebar-accent: 15 7% 16%` / `--sidebar-accent-foreground: 25 12% 96%`
+- `--sidebar-border: 20 8% 14%`
+- `--sidebar-ring: 274 100% 60%`
 
-### 2. `SecuritySettingsContent.tsx`
+**Gradients**
+- `--gradient-hero: linear-gradient(135deg, hsl(274 100% 55%) 0%, hsl(330 56% 55%) 50%, hsl(26 100% 60%) 100%)` (dal file)
+- `--gradient-card: linear-gradient(180deg, hsl(15 8% 13%) 0%, hsl(15 8% 14%) 100%)` (rigenerato sulla nuova card)
 
-- Rimuovo `space-y-8` semplice, uso `divide-y divide-border` con padding verticale per separare le sezioni in modo netto.
-- Larghezza massima container: `max-w-3xl`.
-- Ogni sezione (Password, MFA) avvolta in `SettingsFormRow`.
+**Admin panel scoped override** (`.dark .admin-panel`): mantengo l'attuale `--primary: 274 65% 65%` perché è una variante intenzionalmente più desaturata per le aree admin. Aggiorno solo `--foreground` a `25 12% 93%` per coerenza con la nuova palette calda.
 
-### 3. `ChangePasswordCard.tsx` (ChangePasswordForm)
+### Cosa NON faccio
 
-- Rimuovo l'header interno (titolo+descrizione) — ora vive nella colonna sinistra di `SettingsFormRow`.
-- Restituisco solo il `<form>`.
-- Bottone "Aggiorna password" rimane allineato a destra **dentro** la colonna form (coerente con la larghezza dei campi).
-- Spaziatura uniforme `space-y-5`.
+- Non importo le regole extra del file (`.dark .sidebar { background: hsl(20 8% 7%) }`, `.dark .nav-item-active { ... }`): non usiamo selettori `.sidebar`/`.nav-item-active` nel codebase, e l'effetto "sidebar più scura" è già ottenuto via `--sidebar-background`.
+- Non aggiungo le variabili `--shadow-*` del file: il progetto usa le shadow di Tailwind, non token custom. Aggiungerle ora sarebbe codice morto.
+- Non aggiungo le `--cat-*` (category colors): non sono usate come CSS variables nel progetto (i colori categoria sono gestiti diversamente, vedi memory `category-color-palette`). Skippo per evitare divergenze.
+- Non tocco light theme, `tailwind.config.ts`, componenti.
 
-### 4. `PasswordStrengthInput.tsx` — fix requirements
+## Verifica post-applicazione
 
-- Cambio la lista da `grid-cols-1 sm:grid-cols-2` a **singola colonna** `flex flex-col gap-1`. Dentro la colonna stretta del form (max-w-md) i 5 requisiti su una colonna sono molto più leggibili e non si "spezzano".
-- Ridimensiono icone a `h-3 w-3` per coerenza.
-
-### 5. `EnrollMFA.tsx`
-
-- Rimuovo l'header interno (titolo+descrizione) — va nella colonna sinistra di `SettingsFormRow`.
-- Restituisco direttamente il contenuto degli stati (attivo / non attivo / enrolling).
-- Bottone "Attiva 2FA" allineato a **destra** come "Aggiorna password" → finalmente i due CTA hanno lo stesso allineamento.
-- Quando si entra in modalità QR (enrolling), il blocco resta dentro la colonna destra — il QR rimane centrato ma il container è contenuto.
-
-## File modificati
-
-- `src/components/common/SettingsFormRow.tsx` (nuovo)
-- `src/components/settings/SecuritySettingsContent.tsx`
-- `src/components/profile/ChangePasswordCard.tsx`
-- `src/components/auth/EnrollMFA.tsx`
-- `src/components/auth/PasswordStrengthInput.tsx`
-
-## Risultato atteso
-
-- Campi password di larghezza ragionevole (max ~448px), non più stiracchiati.
-- Entrambi i bottoni ("Aggiorna password" e "Attiva 2FA") allineati a destra, alla stessa colonna verticale.
-- Requirements password in una colonna chiara, niente più "spezzettatura".
-- Gerarchia visiva: a colpo d'occhio capisci cos'è "Cambia password" vs "Autenticazione a due fattori" grazie alla colonna sinistra dedicata.
-- Pattern riutilizzabile (`SettingsFormRow`) che potremo applicare anche al profilo e alle altre settings per uniformità.
+Dopo la modifica, controllerò visivamente in dark mode:
+- Pagina employee (`/app/experiences`) — card più chiare del bg, leggibilità testi
+- HR settings (`/hr/impostazioni/*`) — sidebar più scura, focus ring viola visibile
+- Super admin panel — admin scoped primary resta desaturato come prima
