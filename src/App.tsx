@@ -48,6 +48,7 @@ import HRSettingsLayout from "./components/layout/HRSettingsLayout";
 import SuperAdminSettingsLayout from "./components/layout/SuperAdminSettingsLayout";
 import AssociationSettingsLayout from "./components/layout/AssociationSettingsLayout";
 import SettingsProfile from "./pages/hr/settings/SettingsProfile";
+import HRSettingsSecurity from "./pages/hr/settings/SettingsSecurity";
 import SettingsTheme from "./pages/hr/settings/SettingsTheme";
 import SettingsGeneral from "./pages/hr/settings/SettingsGeneral";
 import SettingsMembers from "./pages/hr/settings/SettingsMembers";
@@ -180,6 +181,7 @@ const App = () => (
             >
               <Route index element={<Navigate to="profilo" replace />} />
               <Route path="profilo" element={<SettingsProfile />} />
+              <Route path="sicurezza" element={<HRSettingsSecurity />} />
               <Route path="tema" element={<SettingsTheme />} />
               <Route path="generali" element={<SettingsGeneral />} />
               <Route path="membri" element={<SettingsMembers />} />
