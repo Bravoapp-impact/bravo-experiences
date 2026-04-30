@@ -37,9 +37,10 @@ export interface AdminLayoutProps {
   sidebarItems: SidebarItem[];
   profilePath: string;
   basePath: string;
+  /** Path to the role's settings panel entry (e.g. /hr/impostazioni/profilo). */
+  settingsPath: string;
   entityLogoUrl?: string;
   entityName?: string;
-  dropdownItems?: { label: string; icon: LucideIcon; href?: string; onClick?: () => void }[];
   sectionLabels?: { beforeIndex: number; label: string }[];
   separatorAfterIndex?: number[];
 }
