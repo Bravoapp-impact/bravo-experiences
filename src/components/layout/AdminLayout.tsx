@@ -66,9 +66,9 @@ export function AdminLayout({
   sidebarItems,
   profilePath,
   basePath,
+  settingsPath,
   entityLogoUrl,
   entityName,
-  dropdownItems,
   sectionLabels,
   separatorAfterIndex,
 }: AdminLayoutProps) {
@@ -145,25 +145,12 @@ export function AdminLayout({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56 bg-popover">
                 <DropdownMenuItem
-                  onClick={() => navigate(`${basePath}/impostazioni`)}
+                  onClick={() => navigate(settingsPath)}
                   className="cursor-pointer"
                 >
                   <Settings className="mr-2 h-4 w-4" />
                   Impostazioni
                 </DropdownMenuItem>
-                {dropdownItems?.map((item) => (
-                  <DropdownMenuItem
-                    key={item.label}
-                    onClick={() => {
-                      if (item.onClick) item.onClick();
-                      else if (item.href) navigate(item.href);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {item.label}
-                  </DropdownMenuItem>
-                ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleSignOut}
