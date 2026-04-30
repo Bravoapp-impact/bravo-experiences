@@ -337,12 +337,20 @@ const App = () => (
             />
             <Route
               path="/super-admin/profile"
+              element={<Navigate to="/super-admin/impostazioni/profilo" replace />}
+            />
+            <Route
+              path="/super-admin/impostazioni"
               element={
                 <ProtectedSuperAdminRoute>
-                  <SuperAdminProfile />
+                  <SuperAdminSettingsLayout />
                 </ProtectedSuperAdminRoute>
               }
-            />
+            >
+              <Route index element={<Navigate to="profilo" replace />} />
+              <Route path="profilo" element={<SuperAdminSettingsProfile />} />
+              <Route path="sicurezza" element={<SuperAdminSettingsSecurity />} />
+            </Route>
             {/* Association Admin Routes */}
             <Route
               path="/association"
