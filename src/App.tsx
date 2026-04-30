@@ -402,12 +402,21 @@ const App = () => (
             />
             <Route
               path="/association/my-profile"
+              element={<Navigate to="/association/impostazioni/profilo" replace />}
+            />
+            <Route
+              path="/association/impostazioni"
               element={
                 <ProtectedAssociationRoute>
-                  <AssociationAdminProfile />
+                  <AssociationSettingsLayout />
                 </ProtectedAssociationRoute>
               }
-            />
+            >
+              <Route index element={<Navigate to="profilo" replace />} />
+              <Route path="profilo" element={<AssociationSettingsProfile />} />
+              <Route path="sicurezza" element={<AssociationSettingsSecurity />} />
+              <Route path="organizzazione" element={<AssociationSettingsOrganization />} />
+            </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
