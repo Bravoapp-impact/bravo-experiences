@@ -396,6 +396,11 @@ const App = () => (
                 </ProtectedAssociationRoute>
               }
             />
+            <Route path="/association/team-building" element={<ProtectedAssociationRoute><HRPlaceholderPage title="Team Building" /></ProtectedAssociationRoute>} />
+            <Route path="/association/formazione" element={<ProtectedAssociationRoute><HRPlaceholderPage title="Formazione" /></ProtectedAssociationRoute>} />
+            <Route path="/association/consulenza" element={<ProtectedAssociationRoute><HRPlaceholderPage title="Consulenza" /></ProtectedAssociationRoute>} />
+            <Route path="/association/gadget" element={<ProtectedAssociationRoute><HRPlaceholderPage title="Gadget solidali" /></ProtectedAssociationRoute>} />
+            <Route path="/association/progetti" element={<ProtectedAssociationRoute><HRPlaceholderPage title="Progetti" /></ProtectedAssociationRoute>} />
             <Route
               path="/association/calendar"
               element={
