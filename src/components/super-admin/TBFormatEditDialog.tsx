@@ -282,6 +282,7 @@ export function TBFormatEditDialog({
     try {
       const payload = {
         title: formData.title.trim(),
+        short_description: formData.short_description.trim() || null,
         description: formData.description.trim() || null,
         image_url: formData.image_url || null,
         category_id: formData.category_id || null,
