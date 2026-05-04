@@ -1,0 +1,1 @@
+ALTER TABLE public.tb_formats ADD COLUMN short_description TEXT;
