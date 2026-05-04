@@ -120,6 +120,7 @@ export function TBFormatEditDialog({
   const [suggestedSdgs, setSuggestedSdgs] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     title: "",
+    short_description: "",
     description: "",
     image_url: "",
     category_id: "",
