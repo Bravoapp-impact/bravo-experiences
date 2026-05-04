@@ -66,6 +66,7 @@ import TBRequestsPage from "./pages/super-admin/TBRequestsPage";
 import TBRequestDetailPage from "./pages/super-admin/TBRequestDetailPage";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
+import HRPlaceholderPage from "./pages/hr/HRPlaceholderPage";
 import Unsubscribe from "./pages/Unsubscribe";
 
 const queryClient = new QueryClient();
