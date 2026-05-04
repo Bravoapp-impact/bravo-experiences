@@ -151,6 +151,7 @@ export function TBFormatEditDialog({
     if (format) {
       setFormData({
         title: format.title,
+        short_description: format.short_description || "",
         description: format.description || "",
         image_url: format.image_url || "",
         category_id: format.category_id || "",
