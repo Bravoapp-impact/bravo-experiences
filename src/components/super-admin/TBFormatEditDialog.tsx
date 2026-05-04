@@ -49,6 +49,7 @@ export interface TBFormat {
   id: string;
   title: string;
   description: string | null;
+  short_description: string | null;
   image_url: string | null;
   category_id: string | null;
   secondary_tags: string[] | null;
