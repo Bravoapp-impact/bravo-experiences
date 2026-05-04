@@ -14,6 +14,7 @@ export interface TBFormatDetailFormat {
   id: string;
   title: string;
   description: string | null;
+  short_description?: string | null;
   image_url: string | null;
   category_name: string | null;
   location_type: string | null;
@@ -82,6 +83,7 @@ export function TBFormatDetailContent({
           <TBFormatHeader
             title={format.title}
             categoryName={format.category_name}
+            shortDescription={format.short_description}
             description={format.description}
             locationType={format.location_type}
             durationHours={format.duration_hours}

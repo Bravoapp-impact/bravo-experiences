@@ -10,6 +10,7 @@ const LOCATION_LABELS: Record<string, string> = {
 interface TBFormatHeaderProps {
   title: string;
   categoryName: string | null;
+  shortDescription?: string | null;
   description?: string | null;
   locationType?: string | null;
   durationHours: number | null;
@@ -21,6 +22,7 @@ interface TBFormatHeaderProps {
 export function TBFormatHeader({
   title,
   categoryName,
+  shortDescription: shortDescProp,
   description,
   locationType,
   durationHours,
@@ -28,11 +30,11 @@ export function TBFormatHeader({
   participantsMax,
   headerExtras,
 }: TBFormatHeaderProps) {
-  const shortDescription = description
+  const displayDesc = shortDescProp || (description
     ? description.length > 180
       ? description.slice(0, 180).trimEnd() + "…"
       : description
-    : null;
+    : null);
 
   const showParticipants = participantsMin || participantsMax;
 
@@ -44,9 +46,9 @@ export function TBFormatHeader({
         {title}
       </h1>
 
-      {shortDescription && (
+      {displayDesc && (
         <p className="text-sm lg:text-base text-muted-foreground leading-relaxed">
-          {shortDescription}
+          {displayDesc}
         </p>
       )}
 

@@ -49,6 +49,7 @@ export interface TBFormat {
   id: string;
   title: string;
   description: string | null;
+  short_description: string | null;
   image_url: string | null;
   category_id: string | null;
   secondary_tags: string[] | null;
@@ -119,6 +120,7 @@ export function TBFormatEditDialog({
   const [suggestedSdgs, setSuggestedSdgs] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     title: "",
+    short_description: "",
     description: "",
     image_url: "",
     category_id: "",
@@ -149,6 +151,7 @@ export function TBFormatEditDialog({
     if (format) {
       setFormData({
         title: format.title,
+        short_description: format.short_description || "",
         description: format.description || "",
         image_url: format.image_url || "",
         category_id: format.category_id || "",
@@ -171,6 +174,7 @@ export function TBFormatEditDialog({
     } else {
       setFormData({
         title: "",
+        short_description: "",
         description: "",
         image_url: "",
         category_id: "",
@@ -278,6 +282,7 @@ export function TBFormatEditDialog({
     try {
       const payload = {
         title: formData.title.trim(),
+        short_description: formData.short_description.trim() || null,
         description: formData.description.trim() || null,
         image_url: formData.image_url || null,
         category_id: formData.category_id || null,
@@ -370,7 +375,19 @@ export function TBFormatEditDialog({
             />
           </div>
 
-          {/* Description */}
+          {/* Short Description */}
+          <div className="space-y-2">
+            <Label htmlFor="tb-short-desc">Descrizione breve</Label>
+            <Input
+              id="tb-short-desc"
+              value={formData.short_description}
+              onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
+              placeholder="Riassunto accattivante dell'esperienza (max 150 caratteri)"
+              maxLength={150}
+            />
+            <p className="text-xs text-muted-foreground">{formData.short_description.length}/150</p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="tb-desc">Descrizione</Label>
             <Textarea
