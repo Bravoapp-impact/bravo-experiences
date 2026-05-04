@@ -375,7 +375,19 @@ export function TBFormatEditDialog({
             />
           </div>
 
-          {/* Description */}
+          {/* Short Description */}
+          <div className="space-y-2">
+            <Label htmlFor="tb-short-desc">Descrizione breve</Label>
+            <Input
+              id="tb-short-desc"
+              value={formData.short_description}
+              onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
+              placeholder="Riassunto accattivante dell'esperienza (max 150 caratteri)"
+              maxLength={150}
+            />
+            <p className="text-xs text-muted-foreground">{formData.short_description.length}/150</p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="tb-desc">Descrizione</Label>
             <Textarea
