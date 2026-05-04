@@ -25,13 +25,13 @@ const sidebarItems: SidebarItem[] = [
   { label: "Home", icon: Home, href: "/association", iconColor: "text-violet-500" },
   // section label "Servizi alle aziende" before index 2
   { label: "Volontariato aziendale", icon: Briefcase, href: "/association/experiences", iconColor: "text-green-500" },
-  { label: "Team Building", icon: Users, href: "#", disabled: true, badge: "Presto" },
-  { label: "Formazione", icon: GraduationCap, href: "#", disabled: true, badge: "Presto" },
-  { label: "Consulenza", icon: HeartHandshake, href: "#", disabled: true, badge: "Presto" },
-  { label: "Gadget solidali", icon: Gift, href: "#", disabled: true, badge: "Presto" },
-  { label: "Progetti", icon: FolderKanban, href: "#", disabled: true, badge: "Presto" },
+  { label: "Team Building", icon: Users, href: "/association/team-building", iconColor: "text-orange-500" },
+  { label: "Formazione", icon: GraduationCap, href: "/association/formazione", iconColor: "text-indigo-500" },
+  { label: "Consulenza", icon: HeartHandshake, href: "/association/consulenza", iconColor: "text-teal-500" },
+  { label: "Gadget solidali", icon: Gift, href: "/association/gadget", iconColor: "text-pink-500" },
+  { label: "Progetti", icon: FolderKanban, href: "/association/progetti", iconColor: "text-amber-500" },
   // separator after index 7
-  { label: "Calendario", icon: CalendarDays, href: "/association/calendar", iconColor: "text-orange-500" },
+  { label: "Calendario", icon: CalendarDays, href: "/association/calendar", iconColor: "text-cyan-500" },
   { label: "Report", icon: History, href: "/association/history", iconColor: "text-rose-500" },
 ];
 
