@@ -8,6 +8,7 @@ import {
   Star,
   GraduationCap,
   ShoppingBag,
+  Ticket,
   CalendarDays,
   Image,
   MessageSquare,
