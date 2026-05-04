@@ -25,18 +25,19 @@ const sidebarItems: SidebarItem[] = [
   { label: "Profilo", icon: User, href: "/hr/impostazioni/profilo", iconColor: "text-violet-500" },
   { label: "Password & MFA", icon: Shield, href: "/hr/impostazioni/sicurezza", iconColor: "text-emerald-500" },
   { label: "Tema", icon: Palette, href: "/hr/impostazioni/tema", iconColor: "text-amber-500" },
-  { label: "Notifiche", icon: Bell, href: "#", disabled: true, badge: "Presto" },
-  { label: "Referral", icon: Gift, href: "#", disabled: true, badge: "Presto" },
+  { label: "Notifiche", icon: Bell, href: "/hr/impostazioni/notifiche", iconColor: "text-sky-500" },
+  { label: "Referral", icon: Gift, href: "/hr/impostazioni/referral", iconColor: "text-pink-500" },
   // section "Workspace" before 6
   { label: "Generali", icon: Building2, href: "/hr/impostazioni/generali", iconColor: "text-blue-500" },
   { label: "Membri", icon: Users, href: "/hr/impostazioni/membri", iconColor: "text-green-500" },
-  { label: "Upgrade", icon: Zap, href: "#", disabled: true, badge: "Presto" },
-  { label: "Fatturazione", icon: Receipt, href: "#", disabled: true, badge: "Presto" },
+  { label: "Upgrade", icon: Zap, href: "/hr/impostazioni/upgrade", iconColor: "text-yellow-500" },
+  { label: "Fatturazione", icon: Receipt, href: "/hr/impostazioni/fatturazione", iconColor: "text-orange-500" },
   // section "Iniziative" before 10
   { label: "Volontariato", icon: Heart, href: "/hr/impostazioni/volontariato", iconColor: "text-rose-500" },
-  { label: "Team Building", icon: UsersRound, href: "#", disabled: true, badge: "Presto" },
-  { label: "Formazione", icon: GraduationCap, href: "#", disabled: true, badge: "Presto" },
-  { label: "Negozio Solidale", icon: ShoppingBag, href: "#", disabled: true, badge: "Presto" },
+  { label: "Team Building", icon: UsersRound, href: "/hr/impostazioni/team-building", iconColor: "text-orange-500" },
+  { label: "Formazione", icon: GraduationCap, href: "/hr/impostazioni/formazione", iconColor: "text-indigo-500" },
+  { label: "Negozio Solidale", icon: ShoppingBag, href: "/hr/impostazioni/negozio", iconColor: "text-pink-500" },
+  { label: "Convenzioni", icon: Ticket, href: "/hr/impostazioni/convenzioni", iconColor: "text-teal-500" },
 ];
 
 export default function HRSettingsLayout() {
