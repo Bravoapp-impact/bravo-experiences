@@ -14,6 +14,7 @@ export interface TBFormatDetailFormat {
   id: string;
   title: string;
   description: string | null;
+  short_description?: string | null;
   image_url: string | null;
   category_name: string | null;
   location_type: string | null;
