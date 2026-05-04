@@ -174,6 +174,7 @@ export function TBFormatEditDialog({
     } else {
       setFormData({
         title: "",
+        short_description: "",
         description: "",
         image_url: "",
         category_id: "",
