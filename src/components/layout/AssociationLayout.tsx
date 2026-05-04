@@ -1,16 +1,14 @@
 import { ReactNode } from "react";
 import {
-  Calendar,
   CalendarDays,
   History,
   Globe,
   Home,
-  Briefcase,
-  Users,
+  Heart,
+  Star,
   GraduationCap,
-  HeartHandshake,
-  Gift,
-  FolderKanban,
+  ShoppingBag,
+  Ticket,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminLayout, SidebarItem } from "./AdminLayout";
@@ -24,13 +22,12 @@ const sidebarItems: SidebarItem[] = [
   // separator after index 0
   { label: "Home", icon: Home, href: "/association", iconColor: "text-violet-500" },
   // section label "Servizi alle aziende" before index 2
-  { label: "Volontariato aziendale", icon: Briefcase, href: "/association/experiences", iconColor: "text-green-500" },
-  { label: "Team Building", icon: Users, href: "/association/team-building", iconColor: "text-orange-500" },
+  { label: "Volontariato aziendale", icon: Heart, href: "/association/experiences", iconColor: "text-green-500" },
+  { label: "Team building sociali", icon: Star, href: "/association/team-building", iconColor: "text-orange-500" },
   { label: "Formazione", icon: GraduationCap, href: "/association/formazione", iconColor: "text-indigo-500" },
-  { label: "Consulenza", icon: HeartHandshake, href: "/association/consulenza", iconColor: "text-teal-500" },
-  { label: "Gadget solidali", icon: Gift, href: "/association/gadget", iconColor: "text-pink-500" },
-  { label: "Progetti", icon: FolderKanban, href: "/association/progetti", iconColor: "text-amber-500" },
-  // separator after index 7
+  { label: "Negozio solidale", icon: ShoppingBag, href: "/association/negozio", iconColor: "text-pink-500" },
+  { label: "Convenzioni", icon: Ticket, href: "/association/convenzioni", iconColor: "text-teal-500" },
+  // separator after index 6
   { label: "Calendario", icon: CalendarDays, href: "/association/calendar", iconColor: "text-cyan-500" },
   { label: "Report", icon: History, href: "/association/history", iconColor: "text-rose-500" },
 ];
