@@ -46,9 +46,9 @@ export function TBFormatHeader({
         {title}
       </h1>
 
-      {shortDescription && (
+      {displayDesc && (
         <p className="text-sm lg:text-base text-muted-foreground leading-relaxed">
-          {shortDescription}
+          {displayDesc}
         </p>
       )}
 
