@@ -66,6 +66,7 @@ import TBRequestsPage from "./pages/super-admin/TBRequestsPage";
 import TBRequestDetailPage from "./pages/super-admin/TBRequestDetailPage";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
+import HRPlaceholderPage from "./pages/hr/HRPlaceholderPage";
 import Unsubscribe from "./pages/Unsubscribe";
 
 const queryClient = new QueryClient();
@@ -167,6 +168,12 @@ const App = () => (
                 </ProtectedHRRoute>
               }
             />
+            <Route path="/hr/formazione" element={<ProtectedHRRoute><HRPlaceholderPage title="Formazione" /></ProtectedHRRoute>} />
+            <Route path="/hr/negozio" element={<ProtectedHRRoute><HRPlaceholderPage title="Negozio solidale" /></ProtectedHRRoute>} />
+            <Route path="/hr/convenzioni" element={<ProtectedHRRoute><HRPlaceholderPage title="Convenzioni" /></ProtectedHRRoute>} />
+            <Route path="/hr/calendario" element={<ProtectedHRRoute><HRPlaceholderPage title="Calendario" /></ProtectedHRRoute>} />
+            <Route path="/hr/galleria" element={<ProtectedHRRoute><HRPlaceholderPage title="Galleria" /></ProtectedHRRoute>} />
+            <Route path="/hr/comunicazione" element={<ProtectedHRRoute><HRPlaceholderPage title="Comunicazione" /></ProtectedHRRoute>} />
             <Route
               path="/hr/profile"
               element={<Navigate to="/hr/impostazioni/profilo" replace />}
@@ -183,9 +190,17 @@ const App = () => (
               <Route path="profilo" element={<SettingsProfile />} />
               <Route path="sicurezza" element={<HRSettingsSecurity />} />
               <Route path="tema" element={<SettingsTheme />} />
+              <Route path="notifiche" element={<SettingsDisabled />} />
+              <Route path="referral" element={<SettingsDisabled />} />
               <Route path="generali" element={<SettingsGeneral />} />
               <Route path="membri" element={<SettingsMembers />} />
+              <Route path="upgrade" element={<SettingsDisabled />} />
+              <Route path="fatturazione" element={<SettingsDisabled />} />
               <Route path="volontariato" element={<SettingsVolunteering />} />
+              <Route path="team-building" element={<SettingsDisabled />} />
+              <Route path="formazione" element={<SettingsDisabled />} />
+              <Route path="negozio" element={<SettingsDisabled />} />
+              <Route path="convenzioni" element={<SettingsDisabled />} />
             </Route>
             <Route
               path="/hr/team-building"
