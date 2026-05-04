@@ -83,6 +83,7 @@ export function TBFormatDetailContent({
           <TBFormatHeader
             title={format.title}
             categoryName={format.category_name}
+            shortDescription={format.short_description}
             description={format.description}
             locationType={format.location_type}
             durationHours={format.duration_hours}
