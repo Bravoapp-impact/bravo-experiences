@@ -57,13 +57,7 @@ export function useEmployeeCatalog(userId: string | undefined) {
       // 3. Fetch published experiences filtered to allowed IDs.
       let query = supabase
         .from("experiences")
-        .select(`
-          *,
-          associations:association_id (
-            name,
-            logo_url
-          )
-        `)
+        .select("*")
         .eq("status", "published")
         .order("created_at", { ascending: false });
 
@@ -74,19 +68,44 @@ export function useEmployeeCatalog(userId: string | undefined) {
       const { data: expData, error: expError } = await query;
       if (expError) throw expError;
 
-      const baseExperiences = (expData ?? []).map((exp: any) => ({
-        id: exp.id,
-        title: exp.title,
-        description: exp.description,
-        image_url: exp.image_url,
-        association_name: exp.associations?.name ?? exp.association_name,
-        association_logo_url: exp.associations?.logo_url ?? null,
-        city: exp.city,
-        address: exp.address,
-        category: exp.category,
-        sdgs: exp.sdgs ?? [],
-        participant_info: exp.participant_info ?? null,
-      })) as Experience[];
+      // 3b. Fetch association names/logos via the public view (RLS on
+      //     `associations` blocks employees from joining the table directly).
+      const associationIds = Array.from(
+        new Set(
+          (expData ?? [])
+            .map((e: any) => e.association_id)
+            .filter((id: string | null): id is string => !!id),
+        ),
+      );
+
+      const associationsById = new Map<string, { name: string | null; logo_url: string | null }>();
+      if (associationIds.length > 0) {
+        const { data: assocData, error: assocError } = await supabase
+          .from("associations_public" as any)
+          .select("id, name, logo_url")
+          .in("id", associationIds);
+        if (assocError) throw assocError;
+        (assocData as any[] | null)?.forEach((a) => {
+          associationsById.set(a.id, { name: a.name, logo_url: a.logo_url });
+        });
+      }
+
+      const baseExperiences = (expData ?? []).map((exp: any) => {
+        const assoc = exp.association_id ? associationsById.get(exp.association_id) : null;
+        return {
+          id: exp.id,
+          title: exp.title,
+          description: exp.description,
+          image_url: exp.image_url,
+          association_name: assoc?.name ?? exp.association_name ?? null,
+          association_logo_url: assoc?.logo_url ?? null,
+          city: exp.city,
+          address: exp.address,
+          category: exp.category,
+          sdgs: exp.sdgs ?? [],
+          participant_info: exp.participant_info ?? null,
+        };
+      }) as Experience[];
 
       if (baseExperiences.length === 0) return [];
 
