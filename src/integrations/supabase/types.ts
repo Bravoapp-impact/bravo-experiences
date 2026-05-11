@@ -1876,6 +1876,7 @@ export type Database = {
           format_sdgs: string[]
           format_secondary_tags: string[]
           format_services: Json
+          format_short_description: string
           format_title: string
           priority: number
           proposal_id: string
