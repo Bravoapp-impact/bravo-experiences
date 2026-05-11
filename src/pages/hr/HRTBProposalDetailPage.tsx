@@ -20,6 +20,7 @@ interface ProposalDetail {
   client_notes: string | null;
   format_title: string;
   format_description: string | null;
+  format_short_description: string | null;
   format_image_url: string | null;
   format_category_id: string | null;
   format_category_name: string | null;
@@ -134,6 +135,7 @@ export default function HRTBProposalDetailPage() {
             id: proposal.format_id,
             title: proposal.format_title,
             description: proposal.format_description,
+            short_description: proposal.format_short_description,
             image_url: proposal.format_image_url,
             category_name: proposal.format_category_name,
             location_type: proposal.format_location_type,

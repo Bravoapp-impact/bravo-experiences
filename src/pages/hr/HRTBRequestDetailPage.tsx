@@ -32,6 +32,7 @@ interface ProposalDetail {
   client_notes: string | null;
   format_title: string;
   format_description: string | null;
+  format_short_description: string | null;
   format_image_url: string | null;
   format_category_id: string | null;
   format_category_name: string | null;
@@ -315,9 +316,9 @@ function ProposalCard({
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 cursor-pointer" onClick={onOpenDetail}>
               <h3 className="font-medium text-sm truncate">{proposal.format_title}</h3>
-              {proposal.format_description && (
+              {(proposal.format_short_description ?? proposal.format_description) && (
                 <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                  {proposal.format_description}
+                  {proposal.format_short_description ?? proposal.format_description}
                 </p>
               )}
             </div>
