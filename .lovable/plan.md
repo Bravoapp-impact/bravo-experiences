@@ -1,41 +1,33 @@
 ## Problema
 
-La view `associations_public` è stata creata con `security_invoker=on`. Significa che la query gira con i permessi del ruolo chiamante, e la RLS della tabella `associations` permette `SELECT` solo a super_admin e association_admin (sulla propria). Risultato: employee e HR Admin leggono **zero righe** dalla view, il join in app cade sul fallback legacy `experiences.association_name`, che è vuoto per le esperienze nuove (es. "Il Balzo ETS") → card senza nome né logo.
+La pagina `/app/bookings` resta in caricamento perché la query genera un runtime error:
+`Cannot read properties of null (reading 'associations')` a `MyBookings.tsx:82`.
 
-Lo screenshot lo conferma: "Piccoli lavori manuali" mostra "La Taska Onlus" solo perché il campo legacy era valorizzato; "Giochi e attività manuali coi bimbi" (Il Balzo ETS) non lo era.
+La query attuale fa un join annidato `bookings → experience_dates → experiences → associations:association_id`. Il join su `associations` ora torna `null` per i dipendenti (RLS della tabella `associations` non li include), e in alcuni record anche `experience_dates` o `experiences` può essere null (es. esperienza/data eliminata). Il `.map` esplode → `setBookings` non viene mai chiamato → loader infinito.
 
-## Cosa cambia
+## Soluzione
 
-Una sola migration: ricreare la view `associations_public` con `security_invoker=off` (definer-mode), così bypassa la RLS di `associations` ma resta sicura perché espone solo campi non sensibili (id, name, description, website, logo_url, status, address, created_at, updated_at — niente email, telefono, note interne, contact_name, partnership_start_date).
+Applichiamo lo stesso pattern già usato per HR e per il catalogo employee: niente join diretto su `associations`, ma fetch secondaria da `associations_public` (già in modalità definer, leggibile da `authenticated`).
 
-Concedere `SELECT` su `associations_public` ad `authenticated`.
+### Modifiche a `src/pages/MyBookings.tsx`
 
-## Cosa NON cambia
+1. Rimuovere dal `select` il sotto-join `associations:association_id (...)`. Mantenere solo `association_id` tra i campi di `experiences` per poter fare la lookup.
+2. Dopo la fetch dei bookings:
+   - Estrarre gli `association_id` unici (filtrando null e gestendo `experience_dates`/`experiences` eventualmente null).
+   - Fare una singola query `supabase.from("associations_public").select("id, name, logo_url").in("id", ids)` se ci sono id.
+   - Costruire una `Map<id, {name, logo_url}>`.
+3. Nel transform:
+   - Saltare in modo difensivo i booking con `experience_dates` o `experiences` null (così niente più crash).
+   - Popolare `association_name` e `association_logo_url` dalla mappa, con fallback al campo legacy `experiences.association_name`.
+4. Avvolgere la logica in `try/catch/finally` per garantire che `setLoading(false)` venga sempre chiamato anche in caso di errore (così la pagina non resta più "appesa" in futuro).
 
-- RLS della tabella `associations`: invariata. Resta blindata, accessibile solo a super_admin e association_admin proprietario.
-- Codice frontend: già fatto nel passaggio precedente (employee catalog, HR catalog, HR stats, HR detail leggono tutti dalla view).
-- Schema: nessuna colonna aggiunta o rimossa.
-- Nessun DROP della view: si usa `CREATE OR REPLACE VIEW`.
+### Nessuna altra modifica
 
-## Tecnico
+- Nessun cambio a DB, RLS, view o ad altri file.
+- Comportamento UI invariato: stesse card, stesso ordine, stessi fallback testuali.
 
-```sql
-CREATE OR REPLACE VIEW public.associations_public
-WITH (security_invoker = off) AS
-SELECT id, name, description, website, logo_url, status, address, created_at, updated_at
-FROM public.associations;
+## Verifica post-implementazione
 
-GRANT SELECT ON public.associations_public TO authenticated;
-```
-
-Nessun `REVOKE`/`DROP` distruttivo. `CREATE OR REPLACE` mantiene oggetti dipendenti.
-
-## Self-review sicurezza
-
-- Un utente di company A può ora leggere il nome/logo di tutte le associazioni: **accettabile**. Sono dati che già appaiono pubblicamente sulle card delle esperienze e su `bravo.it`. Non sono PII.
-- Email, telefono, note interne, data partnership, contact_name, nationwide: **restano bloccati** (non presenti nella view, e tabella base sempre RLS-protetta).
-- Nessuna scrittura possibile dalla view (è SELECT-only).
-
-## Verifica post-deploy
-
-Aprire `/app/experiences` come employee (Filippo già loggato): tutte le card devono mostrare logo + nome associazione. Aprire `/hr/experiences` come HR: idem.
+- Aprire `/app/bookings` come dipendente: la pagina carica, mostra prossime e passate.
+- Le card delle prenotazioni mostrano nome/logo dell'associazione corretto (anche per esperienze recenti come "Il Balzo ETS").
+- Nessun runtime error in console.

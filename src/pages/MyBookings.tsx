@@ -49,54 +49,85 @@ export default function MyBookings() {
     if (!user) return;
 
     setLoading(true);
-    const { data, error } = await supabase
-      .from("bookings")
-      .select(`
-        id,
-        status,
-        created_at,
-        experience_dates (
+    try {
+      const { data, error } = await supabase
+        .from("bookings")
+        .select(`
           id,
-          start_datetime,
-          end_datetime,
-          experiences (
+          status,
+          created_at,
+          experience_dates (
             id,
-            title,
-            description,
-            image_url,
-            association_name,
-            city,
-            address,
-            category,
-            participant_info,
-            associations:association_id (
-              name,
-              logo_url
+            start_datetime,
+            end_datetime,
+            experiences (
+              id,
+              title,
+              description,
+              image_url,
+              association_name,
+              association_id,
+              city,
+              address,
+              category,
+              participant_info
             )
           )
-        )
-      `)
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+        `)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
 
-    if (!error && data) {
-      const transformedBookings = data.map((booking: any) => ({
-        ...booking,
-        experience_dates: {
-          ...booking.experience_dates,
-          experiences: {
-            ...booking.experience_dates.experiences,
-            association_name:
-              booking.experience_dates.experiences.associations?.name ||
-              booking.experience_dates.experiences.association_name,
-            association_logo_url:
-              booking.experience_dates.experiences.associations?.logo_url || null,
+      if (error || !data) {
+        setBookings([]);
+        return;
+      }
+
+      // Filter out bookings with missing nested data (deleted experience/date)
+      const validBookings = data.filter(
+        (b: any) => b.experience_dates && b.experience_dates.experiences
+      );
+
+      // Collect unique association ids
+      const assocIds = Array.from(
+        new Set(
+          validBookings
+            .map((b: any) => b.experience_dates.experiences.association_id)
+            .filter((id: string | null): id is string => !!id)
+        )
+      );
+
+      const assocMap = new Map<string, { name: string; logo_url: string | null }>();
+      if (assocIds.length > 0) {
+        const { data: assocs } = await supabase
+          .from("associations_public" as any)
+          .select("id, name, logo_url")
+          .in("id", assocIds)
+          .returns<{ id: string; name: string; logo_url: string | null }[]>();
+        (assocs || []).forEach((a) => assocMap.set(a.id, { name: a.name, logo_url: a.logo_url }));
+      }
+
+      const transformedBookings = validBookings.map((booking: any) => {
+        const exp = booking.experience_dates.experiences;
+        const fromView = exp.association_id ? assocMap.get(exp.association_id) : undefined;
+        return {
+          ...booking,
+          experience_dates: {
+            ...booking.experience_dates,
+            experiences: {
+              ...exp,
+              association_name: fromView?.name || exp.association_name,
+              association_logo_url: fromView?.logo_url || null,
+            },
           },
-        },
-      }));
+        };
+      });
+
       setBookings(transformedBookings as Booking[]);
+    } catch (e) {
+      // swallow — keep UI usable
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const fetchReviews = async () => {
