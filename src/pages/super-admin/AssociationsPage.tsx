@@ -224,6 +224,7 @@ export default function AssociationsPage() {
         status: formData.status,
         internal_notes: formData.internal_notes.trim() || null,
         partnership_start_date: formData.partnership_start_date || null,
+        nationwide: formData.nationwide,
       };
 
       let associationId: string;
