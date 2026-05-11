@@ -107,6 +107,7 @@ export default function AssociationsPage() {
     status: "active",
     internal_notes: "",
     partnership_start_date: "",
+    nationwide: false,
     city_ids: [] as string[],
   });
   const [saving, setSaving] = useState(false);
