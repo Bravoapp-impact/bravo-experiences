@@ -236,53 +236,87 @@ export function AdminLayout({
 
         <ScrollArea className="h-[calc(100vh-5rem)] px-3">
           <nav className="space-y-0.5">
-            {sidebarItems.map((item, index) => {
-              const Icon = item.icon;
-              const active = isActive(item.href);
-              const sectionLabel = sectionLabelMap.get(index);
-
-              return (
-                <div key={item.href}>
-                  {sectionLabel && (
-                    <div className="px-3 pt-3 pb-1">
-                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground/40 font-medium">
-                        {sectionLabel}
-                      </span>
-                    </div>
-                  )}
-                  {item.disabled ? (
-                    <span
-                      className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm opacity-50 cursor-not-allowed select-none"
+            {sections ? (
+              <>
+                {topItems?.map((item) => renderItem(item))}
+                {topItems && topItems.length > 0 && <div className="h-2" />}
+                {sections.map((section) => {
+                  const open = sectionOpen[section.label] ?? false;
+                  return (
+                    <Collapsible
+                      key={section.label}
+                      open={open}
+                      onOpenChange={(v) =>
+                        setSectionOpen((prev) => ({ ...prev, [section.label]: v }))
+                      }
                     >
-                      <Icon className={cn("h-4 w-4", active && item.iconColor ? item.iconColor : "")} />
-                      <span className="flex-1">{item.label}</span>
-                      {item.badge && (
-                        <span className="text-[10px] bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-medium">
-                          {item.badge}
+                      <CollapsibleTrigger className="flex w-full items-center justify-between px-3 pt-3 pb-1 group">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-medium">
+                          {section.label}
                         </span>
-                      )}
-                    </span>
-                  ) : (
-                    <Link
-                      to={item.href}
-                      onClick={() => setSidebarOpen(false)}
-                      className={cn(
-                        "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all",
-                        active
-                          ? "bg-muted font-medium text-foreground"
-                          : "text-muted-foreground hover:bg-muted/50"
-                      )}
-                    >
-                      <Icon className={cn("h-4 w-4", active && item.iconColor ? item.iconColor : "")} />
-                      <span className="flex-1">{item.label}</span>
-                    </Link>
-                  )}
-                  {separatorSet.has(index) && (
-                    <div className="mx-3 my-1.5 h-px bg-border/20" />
-                  )}
-                </div>
-              );
-            })}
+                        <ChevronDown
+                          className={cn(
+                            "h-3 w-3 text-muted-foreground/50 transition-transform",
+                            open && "rotate-180"
+                          )}
+                        />
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                        <div className="space-y-0.5">
+                          {section.items.map((item) => renderItem(item))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  );
+                })}
+              </>
+            ) : (
+              sidebarItems?.map((item, index) => {
+                const Icon = item.icon;
+                const active = isActive(item.href);
+                const sectionLabel = sectionLabelMap.get(index);
+
+                return (
+                  <div key={item.href}>
+                    {sectionLabel && (
+                      <div className="px-3 pt-3 pb-1">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/40 font-medium">
+                          {sectionLabel}
+                        </span>
+                      </div>
+                    )}
+                    {item.disabled ? (
+                      <span className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm opacity-50 cursor-not-allowed select-none">
+                        <Icon className={cn("h-4 w-4", active && item.iconColor ? item.iconColor : "")} />
+                        <span className="flex-1">{item.label}</span>
+                        {item.badge && (
+                          <span className="text-[10px] bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-medium">
+                            {item.badge}
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <Link
+                        to={item.href}
+                        onClick={() => setSidebarOpen(false)}
+                        className={cn(
+                          "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all",
+                          active
+                            ? "bg-muted font-medium text-foreground"
+                            : "text-muted-foreground hover:bg-muted/50"
+                        )}
+                      >
+                        <Icon className={cn("h-4 w-4", active && item.iconColor ? item.iconColor : "")} />
+                        <span className="flex-1">{item.label}</span>
+                      </Link>
+                    )}
+                    {separatorSet.has(index) && (
+                      <div className="mx-3 my-1.5 h-px bg-border/20" />
+                    )}
+                  </div>
+                );
+              })
+            )}
           </nav>
         </ScrollArea>
       </aside>
