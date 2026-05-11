@@ -1,19 +1,55 @@
-## Problema
+## Riorganizzazione Sidebar Super Admin
 
-Nel dettaglio del format TB (super-admin) il sottotitolo mostra un estratto della descrizione lunga troncato a 180 caratteri, ignorando il campo `short_description` già presente nel DB e nel form di modifica.
+### Obiettivo
 
-Causa: `TBFormatDetailPage.tsx` costruisce l'oggetto `format` da passare a `TBFormatDetailContent` senza includere `short_description`. `TBFormatHeader` ha già la logica corretta (preferisce `shortDescription` se presente, altrimenti tronca `description`), ma riceve sempre `undefined`.
+1. Spostare "Esperienze" da "Marketplace" a una nuova sezione "Volontariato Aziendale" (parallela a "Team Building")
+2. Rendere le sezioni della sidebar espandibili/collassabili per ridurre lo spazio occupato
 
-## Modifica
+### Nuova struttura sidebar
 
-File: `src/pages/super-admin/TBFormatDetailPage.tsx`
-- Aggiungere `short_description: formData.short_description` nell'oggetto `format` passato a `<TBFormatDetailContent format={...} />`.
+```
+Home
 
-Verificare anche `src/pages/hr/HRTBProposalDetailPage.tsx`: se passa il format senza `short_description`, includerlo per coerenza (solo se il dato è disponibile).
+Entità (espandibile)
+  - Aziende
+  - Associazioni
+  - Utenti
 
-Nessuna modifica DB, nessuna modifica al form di edit, nessuna modifica visiva oltre alla sostituzione del testo nel sottotitolo.
+Volontariato Aziendale (espandibile, chiusa di default)
+  - Esperienze
 
-## Comportamento risultante
+Team Building (espandibile, chiusa di default)
+  - Catalogo TB
+  - Richieste TB
 
-- Se `short_description` è valorizzata → mostrata sotto il titolo.
-- Se vuota → fallback al troncamento della `description` (comportamento attuale).
+Configurazione (espandibile, chiusa di default)
+  - Codici Accesso
+  - Richieste Accesso
+  - Città
+  - Categorie
+  - Email per azienda
+```
+
+"Home" resta fuori dalle sezioni. Le sezioni sono chiuse di default. La sezione che contiene la rotta attiva resta sempre aperta.
+
+### Modifiche tecniche
+
+`**src/components/layout/AdminLayout.tsx**`
+
+- Estendere il tipo `SidebarItem` (o introdurre un tipo `SidebarSection`) per supportare gruppi espandibili con `label`, `defaultOpen`, e lista di item figli.
+- Sostituire il rendering attuale basato su `sectionLabels` + `separatorAfterIndex` con gruppi `Collapsible` (già disponibile via `@radix-ui/react-collapsible` in `src/components/ui/collapsible.tsx`).
+- Header gruppo: label minuscola/uppercase come ora + chevron che ruota su open/closed. Click ovunque sull'header espande/collassa.
+- Auto-apertura: se una rotta figlia è attiva, forzare il gruppo aperto (controllato via `open`/`onOpenChange` con stato locale, inizializzato da `defaultOpen` + check rotta).
+- Mantenere retrocompatibilità: gli altri layout (`HRSidebar`, `AssociationLayout`, `HRLayout`) usano ancora `AdminLayout`. Se nessuno passa `sections`, fallback al rendering flat attuale per non rompere nulla.
+
+`**src/components/layout/SuperAdminLayout.tsx**`
+
+- Riorganizzare gli item nella nuova struttura a sezioni (vedi sopra).
+- Passare `sections` invece di `sidebarItems` flat + `sectionLabels`.
+
+**Nessuna modifica** a route, permessi, pagine o logica di business. Solo presentazione sidebar.
+
+### Note
+
+- Se preferisci che anche le sidebar HR/Association diventino espandibili in un secondo momento, lo facciamo in una task separata.
+- Se vuoi un comportamento "accordion" (solo una sezione aperta alla volta) invece che multi-open, dimmelo prima dell'implementazione.

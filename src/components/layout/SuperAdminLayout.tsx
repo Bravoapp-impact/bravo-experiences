@@ -13,40 +13,63 @@ import {
   LayoutGrid,
   ClipboardList,
 } from "lucide-react";
-import { AdminLayout, SidebarItem } from "./AdminLayout";
+import { AdminLayout, SidebarItem, SidebarSection } from "./AdminLayout";
 
 interface SuperAdminLayoutProps {
   children: ReactNode;
 }
 
-const sidebarItems: SidebarItem[] = [
+const topItems: SidebarItem[] = [
   { label: "Home", icon: Home, href: "/super-admin" },
-  { label: "Aziende", icon: Building2, href: "/super-admin/companies" },
-  { label: "Associazioni", icon: Heart, href: "/super-admin/associations" },
-  { label: "Esperienze", icon: Calendar, href: "/super-admin/experiences" },
-  { label: "Utenti", icon: Users, href: "/super-admin/users" },
-  { label: "Codici Accesso", icon: KeyRound, href: "/super-admin/access-codes" },
-  { label: "Richieste Accesso", icon: Inbox, href: "/super-admin/access-requests" },
-  { label: "Città", icon: MapPin, href: "/super-admin/cities" },
-  { label: "Categorie", icon: Tag, href: "/super-admin/categories" },
-  { label: "Email per azienda", icon: Mail, href: "/super-admin/email-settings" },
-  { label: "Catalogo TB", icon: LayoutGrid, href: "/super-admin/team-building/formats" },
-  { label: "Richieste TB", icon: ClipboardList, href: "/super-admin/team-building/richieste" },
+];
+
+const sections: SidebarSection[] = [
+  {
+    label: "Entità",
+    defaultOpen: true,
+    items: [
+      { label: "Aziende", icon: Building2, href: "/super-admin/companies" },
+      { label: "Associazioni", icon: Heart, href: "/super-admin/associations" },
+      { label: "Utenti", icon: Users, href: "/super-admin/users" },
+    ],
+  },
+  {
+    label: "Volontariato Aziendale",
+    defaultOpen: true,
+    items: [
+      { label: "Esperienze", icon: Calendar, href: "/super-admin/experiences" },
+    ],
+  },
+  {
+    label: "Team Building",
+    defaultOpen: true,
+    items: [
+      { label: "Catalogo TB", icon: LayoutGrid, href: "/super-admin/team-building/formats" },
+      { label: "Richieste TB", icon: ClipboardList, href: "/super-admin/team-building/richieste" },
+    ],
+  },
+  {
+    label: "Configurazione",
+    defaultOpen: false,
+    items: [
+      { label: "Codici Accesso", icon: KeyRound, href: "/super-admin/access-codes" },
+      { label: "Richieste Accesso", icon: Inbox, href: "/super-admin/access-requests" },
+      { label: "Città", icon: MapPin, href: "/super-admin/cities" },
+      { label: "Categorie", icon: Tag, href: "/super-admin/categories" },
+      { label: "Email per azienda", icon: Mail, href: "/super-admin/email-settings" },
+    ],
+  },
 ];
 
 export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
   return (
     <AdminLayout
-      sidebarItems={sidebarItems}
+      topItems={topItems}
+      sections={sections}
       profilePath="/super-admin/impostazioni/profilo"
       settingsPath="/super-admin/impostazioni/profilo"
       basePath="/super-admin"
       entityName="Bravo! Team"
-      sectionLabels={[
-        { beforeIndex: 1, label: "Marketplace" },
-        { beforeIndex: 5, label: "Configurazione" },
-        { beforeIndex: 10, label: "Team Building" },
-      ]}
     >
       {children}
     </AdminLayout>
