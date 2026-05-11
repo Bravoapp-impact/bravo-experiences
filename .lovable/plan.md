@@ -1,33 +1,41 @@
 ## Problema
 
-La pagina `/app/bookings` resta in caricamento perché la query genera un runtime error:
-`Cannot read properties of null (reading 'associations')` a `MyBookings.tsx:82`.
+Nelle proposte TB mostrate all'HR, sotto il titolo dell'esperienza viene visualizzata la descrizione **lunga** (`description`) invece della **descrizione breve** (`short_description`) che il super admin compila apposta come sottotitolo. Lo stesso testo lungo viene poi giustamente riusato nella sezione "Cosa farete", risultando duplicato e troppo prolisso nell'header.
 
-La query attuale fa un join annidato `bookings → experience_dates → experiences → associations:association_id`. Il join su `associations` ora torna `null` per i dipendenti (RLS della tabella `associations` non li include), e in alcuni record anche `experience_dates` o `experiences` può essere null (es. esperienza/data eliminata). Il `.map` esplode → `setBookings` non viene mai chiamato → loader infinito.
+Riguarda due punti:
+- `src/pages/hr/HRTBRequestDetailPage.tsx` — card di anteprima nella lista proposte.
+- `src/pages/hr/HRTBProposalDetailPage.tsx` — pagina di dettaglio della singola proposta (header sotto il titolo).
 
-## Soluzione
+La pagina pubblica `TBFormatDetailContent` invece distingue già correttamente `short_description` (sottotitolo) e `description` ("Cosa farete").
 
-Applichiamo lo stesso pattern già usato per HR e per il catalogo employee: niente join diretto su `associations`, ma fetch secondaria da `associations_public` (già in modalità definer, leggibile da `authenticated`).
+## Causa
 
-### Modifiche a `src/pages/MyBookings.tsx`
+La RPC `get_tb_proposal_details` (migration `20260423172656_…`) restituisce solo `f.description AS format_description` e non `f.short_description`. I componenti HR usano quindi la descrizione lunga sia come sottotitolo che come corpo.
 
-1. Rimuovere dal `select` il sotto-join `associations:association_id (...)`. Mantenere solo `association_id` tra i campi di `experiences` per poter fare la lookup.
-2. Dopo la fetch dei bookings:
-   - Estrarre gli `association_id` unici (filtrando null e gestendo `experience_dates`/`experiences` eventualmente null).
-   - Fare una singola query `supabase.from("associations_public").select("id, name, logo_url").in("id", ids)` se ci sono id.
-   - Costruire una `Map<id, {name, logo_url}>`.
-3. Nel transform:
-   - Saltare in modo difensivo i booking con `experience_dates` o `experiences` null (così niente più crash).
-   - Popolare `association_name` e `association_logo_url` dalla mappa, con fallback al campo legacy `experiences.association_name`.
-4. Avvolgere la logica in `try/catch/finally` per garantire che `setLoading(false)` venga sempre chiamato anche in caso di errore (così la pagina non resta più "appesa" in futuro).
+## Modifiche
 
-### Nessuna altra modifica
+### 1. Migrazione DB
+Aggiornare la funzione `public.get_tb_proposal_details(p_request_id uuid)` aggiungendo nella `RETURNS TABLE` il campo `format_short_description text` e nella `SELECT` la colonna `f.short_description AS format_short_description`. Nessun'altra logica cambia.
 
-- Nessun cambio a DB, RLS, view o ad altri file.
-- Comportamento UI invariato: stesse card, stesso ordine, stessi fallback testuali.
+### 2. `HRTBRequestDetailPage.tsx`
+- Estendere l'interfaccia locale `ProposalDetail` con `format_short_description: string | null`.
+- Nel componente `ProposalCard`, sostituire il testo sotto il titolo (`{proposal.format_description && …}`) con `proposal.format_short_description ?? proposal.format_description` come fallback, così le proposte già esistenti senza short_description non rimangono vuote.
+
+### 3. `HRTBProposalDetailPage.tsx`
+- Aggiungere `format_short_description` al tipo restituito dalla RPC.
+- Nel passaggio a `TBFormatDetailContent` (riga ~136), mappare:
+  - `short_description: proposal.format_short_description`
+  - `description: proposal.format_description` (rimane invariato per "Cosa farete").
+
+## Cosa NON cambia
+
+- Logica di matching, scoring e creazione delle proposte.
+- RLS, schema delle tabelle `tb_formats` / `tb_proposals`.
+- Pagina pubblica `TBFormatDetailContent` e tutti gli altri consumer.
+- UI/styling delle card e del dettaglio.
 
 ## Verifica post-implementazione
 
-- Aprire `/app/bookings` come dipendente: la pagina carica, mostra prossime e passate.
-- Le card delle prenotazioni mostrano nome/logo dell'associazione corretto (anche per esperienze recenti come "Il Balzo ETS").
-- Nessun runtime error in console.
+1. Aprire una richiesta TB come HR (`/hr/team-building/:id`): sotto ogni titolo nella lista proposte deve comparire la `short_description` del format, non il testo lungo.
+2. Aprire il dettaglio proposta (`/hr/team-building/:id/proposte/:pid`): l'header deve mostrare la `short_description` come sottotitolo, mentre la sezione "Cosa farete" continua a mostrare la `description` completa.
+3. Per format senza `short_description`, viene mostrato il fallback alla `description` (comportamento attuale).
