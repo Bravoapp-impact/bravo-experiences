@@ -462,7 +462,11 @@ export default function ExperiencesPage() {
 
     const matchesStatus = statusFilter === "all" || exp.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    const matchesCity =
+      cityFilter === "all" ||
+      (cityFilter === "none" ? !exp.city_id : exp.city_id === cityFilter);
+
+    return matchesSearch && matchesStatus && matchesCity;
   });
 
   return (
