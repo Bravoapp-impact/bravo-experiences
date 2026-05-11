@@ -75,6 +75,7 @@ interface Association {
   internal_notes: string | null;
   partnership_start_date: string | null;
   created_at: string;
+  nationwide?: boolean;
   cities?: City[];
 }
 
