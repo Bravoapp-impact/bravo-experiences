@@ -1,55 +1,34 @@
-## Riorganizzazione Sidebar Super Admin
+## Problema
 
-### Obiettivo
+Nel catalogo dipendenti, le esperienze legate ad associazioni recenti non mostrano più nome né logo. Le card che ancora funzionano (es. "La Taska Onlus") mostrano solo il valore del campo legacy `experiences.association_name` (testo), mentre le esperienze più recenti hanno solo `association_id` e quindi nessun nome visualizzato.
 
-1. Spostare "Esperienze" da "Marketplace" a una nuova sezione "Volontariato Aziendale" (parallela a "Team Building")
-2. Rendere le sezioni della sidebar espandibili/collassabili per ridurre lo spazio occupato
+### Causa
 
-### Nuova struttura sidebar
+`useEmployeeCatalog` esegue la join:
 
-```
-Home
-
-Entità (espandibile)
-  - Aziende
-  - Associazioni
-  - Utenti
-
-Volontariato Aziendale (espandibile, chiusa di default)
-  - Esperienze
-
-Team Building (espandibile, chiusa di default)
-  - Catalogo TB
-  - Richieste TB
-
-Configurazione (espandibile, chiusa di default)
-  - Codici Accesso
-  - Richieste Accesso
-  - Città
-  - Categorie
-  - Email per azienda
+```ts
+.select(`*, associations:association_id ( name, logo_url )`)
 ```
 
-"Home" resta fuori dalle sezioni. Le sezioni sono chiuse di default. La sezione che contiene la rotta attiva resta sempre aperta.
+Le RLS sulla tabella `associations` però permettono `SELECT` **solo a super_admin** e ad association_admin sulla propria riga. I dipendenti (e gli HR) non hanno alcuna policy → la join restituisce `null` per tutte le associazioni e il codice ricade sul campo legacy `association_name` che, per le esperienze nuove, è vuoto.
 
-### Modifiche tecniche
+In DB esiste già la view `associations_public` (creata appositamente come fix di sicurezza) che espone i dati pubblici delle associazioni in modo sicuro.
 
-`**src/components/layout/AdminLayout.tsx**`
+## Fix
 
-- Estendere il tipo `SidebarItem` (o introdurre un tipo `SidebarSection`) per supportare gruppi espandibili con `label`, `defaultOpen`, e lista di item figli.
-- Sostituire il rendering attuale basato su `sectionLabels` + `separatorAfterIndex` con gruppi `Collapsible` (già disponibile via `@radix-ui/react-collapsible` in `src/components/ui/collapsible.tsx`).
-- Header gruppo: label minuscola/uppercase come ora + chevron che ruota su open/closed. Click ovunque sull'header espande/collassa.
-- Auto-apertura: se una rotta figlia è attiva, forzare il gruppo aperto (controllato via `open`/`onOpenChange` con stato locale, inizializzato da `defaultOpen` + check rotta).
-- Mantenere retrocompatibilità: gli altri layout (`HRSidebar`, `AssociationLayout`, `HRLayout`) usano ancora `AdminLayout`. Se nessuno passa `sections`, fallback al rendering flat attuale per non rompere nulla.
+**File:** `src/hooks/queries/experiences/useEmployeeCatalog.ts`
 
-`**src/components/layout/SuperAdminLayout.tsx**`
+- Sostituire la join inline `associations:association_id (...)` con una **fetch separata** verso `associations_public`, batchata via `.in("id", associationIds)` sui soli `association_id` presenti tra le esperienze caricate.
+- Costruire una `Map<associationId, {name, logo_url}>` e popolare `association_name` / `association_logo_url` da lì, mantenendo come fallback il legacy `exp.association_name` (per coerenza con altre esperienze ancora non migrate).
 
-- Riorganizzare gli item nella nuova struttura a sezioni (vedi sopra).
-- Passare `sections` invece di `sidebarItems` flat + `sectionLabels`.
+**Nessuna modifica** a RLS, schema, UI, hook HR, pagina dettaglio. Cambia solo il modo in cui il catalogo dipendente recupera nome+logo dell'associazione.
 
-**Nessuna modifica** a route, permessi, pagine o logica di business. Solo presentazione sidebar.
+### Verifica post-fix
+
+- Aprire `/app/experiences` come dipendente: tutte le card devono mostrare nome (e logo se presente) dell'associazione, incluse quelle legate a "Il Balzo ETS".
+- Le card che già funzionavano continuano a funzionare (fallback legacy intatto).
 
 ### Note
 
-- Se preferisci che anche le sidebar HR/Association diventino espandibili in un secondo momento, lo facciamo in una task separata.
-- Se vuoi un comportamento "accordion" (solo una sezione aperta alla volta) invece che multi-open, dimmelo prima dell'implementazione.
+- Non tocco `useRelatedExperiences` né altri consumer in questa task: se anche lì manca il nome associazione, lo sistemiamo separatamente con lo stesso pattern.
+- Pattern allineato a `docs/data-fetching.md` (fetch separate + merge client-side, batch con `.in()`).
