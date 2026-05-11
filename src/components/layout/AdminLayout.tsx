@@ -77,6 +77,8 @@ function getEntityInitials(name?: string): string {
 export function AdminLayout({
   children,
   sidebarItems,
+  sections,
+  topItems,
   profilePath,
   basePath,
   settingsPath,
@@ -107,6 +109,52 @@ export function AdminLayout({
     (sectionLabels || []).map((s) => [s.beforeIndex, s.label])
   );
   const separatorSet = new Set(separatorAfterIndex || []);
+
+  const renderItem = (item: SidebarItem) => {
+    const Icon = item.icon;
+    const active = isActive(item.href);
+    if (item.disabled) {
+      return (
+        <span
+          key={item.href}
+          className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm opacity-50 cursor-not-allowed select-none"
+        >
+          <Icon className="h-4 w-4" />
+          <span className="flex-1">{item.label}</span>
+          {item.badge && (
+            <span className="text-[10px] bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-medium">
+              {item.badge}
+            </span>
+          )}
+        </span>
+      );
+    }
+    return (
+      <Link
+        key={item.href}
+        to={item.href}
+        onClick={() => setSidebarOpen(false)}
+        className={cn(
+          "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all",
+          active
+            ? "bg-muted font-medium text-foreground"
+            : "text-muted-foreground hover:bg-muted/50"
+        )}
+      >
+        <Icon className={cn("h-4 w-4", active && item.iconColor ? item.iconColor : "")} />
+        <span className="flex-1">{item.label}</span>
+      </Link>
+    );
+  };
+
+  const [sectionOpen, setSectionOpen] = useState<Record<string, boolean>>(() => {
+    const map: Record<string, boolean> = {};
+    (sections || []).forEach((s) => {
+      const hasActive = s.items.some((it) => isActive(it.href));
+      map[s.label] = hasActive || !!s.defaultOpen;
+    });
+    return map;
+  });
 
   return (
     <div className="min-h-screen bg-background admin-panel">
