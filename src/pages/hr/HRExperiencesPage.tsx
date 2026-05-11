@@ -133,7 +133,7 @@ export default function HRExperiencesPage() {
         supabase.from("cities").select("id, name").order("name"),
         supabase
           .from("experiences")
-          .select(`id, title, description, image_url, city, address, status, sdgs, category, category_id, city_id, participant_info, categories:category_id (id, name), cities:city_id (id, name), associations:association_id (name)`)
+          .select(`id, title, description, image_url, city, address, status, sdgs, category, category_id, city_id, association_id, association_name, participant_info, categories:category_id (id, name), cities:city_id (id, name)`)
           .eq("status", "published")
           .eq("visibility", "public")
           .order("created_at", { ascending: false }),
@@ -143,9 +143,29 @@ export default function HRExperiencesPage() {
           .eq("company_id", profile.company_id),
       ]);
 
+      const expRows = (expRes.data || []) as any[];
+      const assocIds = Array.from(new Set(expRows.map((e) => e.association_id).filter(Boolean)));
+      let assocMap = new Map<string, { name: string; logo_url: string | null }>();
+      if (assocIds.length > 0) {
+        const { data: assocData } = await supabase
+          .from("associations_public")
+          .select("id, name, logo_url")
+          .in("id", assocIds);
+        (assocData || []).forEach((a: any) => assocMap.set(a.id, { name: a.name, logo_url: a.logo_url }));
+      }
+
       setCategories(catRes.data || []);
       setCities(cityRes.data || []);
-      setExperiences((expRes.data || []) as CatalogExperience[]);
+      setExperiences(
+        expRows.map((e) => ({
+          ...e,
+          associations: e.association_id
+            ? { name: assocMap.get(e.association_id)?.name ?? e.association_name ?? null }
+            : e.association_name
+              ? { name: e.association_name }
+              : null,
+        })) as CatalogExperience[]
+      );
       setActivatedIds(new Set((ecRes.data || []).map((r) => r.experience_id)));
     } catch (err) {
       devLog.error("Error fetching initial data:", err);
@@ -214,8 +234,21 @@ export default function HRExperiencesPage() {
       // 4. Fetch full experience details (use RPC-free direct query — HR RLS allows seeing published/public)
       const { data: expData } = await supabase
         .from("experiences")
-        .select("id, title, description, image_url, status, address, sdgs, category_id, city_id, categories:category_id (id, name), cities:city_id (id, name), associations:association_id (name)")
+        .select("id, title, description, image_url, status, address, sdgs, category_id, city_id, association_id, association_name, categories:category_id (id, name), cities:city_id (id, name)")
         .in("id", uniqueExpIds);
+
+      // Fetch associations via public view (RLS-safe for HR)
+      const statsAssocIds = Array.from(
+        new Set(((expData || []) as any[]).map((e) => e.association_id).filter(Boolean))
+      );
+      const statsAssocMap = new Map<string, { name: string }>();
+      if (statsAssocIds.length > 0) {
+        const { data: assocData } = await supabase
+          .from("associations_public")
+          .select("id, name")
+          .in("id", statsAssocIds);
+        (assocData || []).forEach((a: any) => statsAssocMap.set(a.id, { name: a.name }));
+      }
 
       // Also fetch ALL dates for these experiences (not just the ones with bookings)
       const { data: allDatesData } = await supabase
@@ -255,7 +288,7 @@ export default function HRExperiencesPage() {
       });
 
       // 7. Format final stats experiences
-      const formatted: StatsExperience[] = (expData || []).map((exp) => ({
+      const formatted: StatsExperience[] = ((expData || []) as any[]).map((exp) => ({
         id: exp.id,
         title: exp.title,
         description: exp.description,
@@ -265,7 +298,11 @@ export default function HRExperiencesPage() {
         sdgs: exp.sdgs,
         category_id: exp.category_id,
         city_id: exp.city_id,
-        association: exp.associations as { name: string } | null,
+        association: exp.association_id
+          ? statsAssocMap.get(exp.association_id) ?? (exp.association_name ? { name: exp.association_name } : null)
+          : exp.association_name
+            ? { name: exp.association_name }
+            : null,
         city: exp.cities as { name: string } | null,
         category: exp.categories as { name: string } | null,
         dates: datesMap.get(exp.id) || [],
