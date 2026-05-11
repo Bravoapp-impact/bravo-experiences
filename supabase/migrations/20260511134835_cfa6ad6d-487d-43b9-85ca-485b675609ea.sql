@@ -1,0 +1,1 @@
+ALTER TABLE public.associations ADD COLUMN nationwide boolean NOT NULL DEFAULT false;

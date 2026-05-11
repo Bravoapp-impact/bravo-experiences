@@ -165,6 +165,7 @@ export type Database = {
           internal_notes: string | null
           logo_url: string | null
           name: string
+          nationwide: boolean
           partnership_start_date: string | null
           status: string
           updated_at: string
@@ -181,6 +182,7 @@ export type Database = {
           internal_notes?: string | null
           logo_url?: string | null
           name: string
+          nationwide?: boolean
           partnership_start_date?: string | null
           status?: string
           updated_at?: string
@@ -197,6 +199,7 @@ export type Database = {
           internal_notes?: string | null
           logo_url?: string | null
           name?: string
+          nationwide?: boolean
           partnership_start_date?: string | null
           status?: string
           updated_at?: string
