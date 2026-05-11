@@ -44,6 +44,17 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
+  // Auth: this function must only be invoked by other trusted edge functions
+  // using the service-role key. Reject any request without it.
+  const authHeader = req.headers.get('Authorization') ?? ''
+  const expected = supabaseServiceKey ? `Bearer ${supabaseServiceKey}` : ''
+  if (!expected || authHeader !== expected) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
   if (!supabaseUrl || !supabaseServiceKey) {
     console.error('Missing required environment variables')
     return new Response(
