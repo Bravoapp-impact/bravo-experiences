@@ -1,16 +1,31 @@
-## Piano: Short Description per TB Formats
+# Creare `docs/log.md`
 
-### Cosa faremo
+Documento append-on-top che raccoglie ogni sessione di lavoro non banale, con schema fisso per garantire consistenza nel tempo.
 
-1. **Migrazione DB**: Aggiungere colonna `short_description TEXT` alla tabella `tb_formats`
-2. **Generazione contenuti con AI**: Usare l'AI gateway per leggere le 70 descrizioni lunghe e generare un riassunto accattivante (1 frase, max ~120 caratteri) per ciascuna
-3. **Inserimento dati**: Aggiornare tutti i 70 record con le nuove short_description generate
-4. **Aggiornamento frontend**: Dove oggi viene mostrata la descrizione troncata (card, liste), usare `short_description` al posto di `description`
-5. **Form di editing**: Aggiungere il campo `short_description` nel form di creazione/modifica dei TB formats (Super Admin)
+## Struttura del file
 
-### Dettagli tecnici
+1. **Header** — scopo del documento, regole d'uso (quando si scrive una entry, cosa entra/cosa no, ordine cronologico inverso, riferimento a `principi.md` e `architettura.md`).
+2. **Template entry** — blocco copia-incolla con i campi vuoti, sempre in cima alle istruzioni.
+3. **Entries** — la più recente in alto. Separatore `---` tra entry.
 
-- Migrazione: `ALTER TABLE tb_formats ADD COLUMN short_description TEXT;`
-- Script AI: batch processing con il modello Gemini Flash per generare i riassunti in italiano
-- Frontend: aggiornare i componenti che mostrano le card dei TB formats e il form di editing nel Super Admin
-- Il tipo TypeScript si aggiornerà automaticamente dopo la migrazione
+## Schema di ogni entry (per sessione di lavoro)
+
+Campi fissi, sempre nell'ordine:
+
+- **Data** — `YYYY-MM-DD`
+- **Titolo** — una riga, descrittivo (es. "TB: short_description su format card")
+- **Contesto / perché** — 1-3 righe sul bisogno o problema che ha generato la modifica
+- **Cosa cambia** — bullet list delle modifiche concrete
+- **Impatto** — tag tra: `DB schema`, `RLS`, `RPC`, `Edge function`, `UI`, `Email`, `Auth`, `Docs`. Più tag se rilevanti
+- **File / aree toccate** — elenco sintetico (path o area logica)
+- **Follow-up** — cose lasciate aperte o da rifinire (vuoto se nessuno)
+
+## Scope
+
+Entrano nel log: modifiche a schema DB, RLS, RPC, edge function, nuove feature UI rilevanti, copy importanti, modifiche al design system, refactor non banali, fix di sicurezza.
+Non entrano: typo, rename file, fix UI minori senza impatto funzionale.
+
+## Scope di questa task
+
+- Creare il solo file `docs/log.md` con header, regole, template e una prima entry seed che documenta la creazione del log stesso (così il template è già dimostrato in pratica).
+- Non modificare altri file. Le entry storiche delle sessioni passate non vengono ricostruite retroattivamente: il log parte da oggi.
