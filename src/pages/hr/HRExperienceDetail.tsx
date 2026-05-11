@@ -52,9 +52,6 @@ export default function HRExperienceDetail() {
           .from("experiences")
           .select(`
             *,
-            associations:association_id (
-              id, name, logo_url, description, website
-            ),
             categories:category_id (name),
             cities:city_id (name)
           `)
@@ -67,7 +64,15 @@ export default function HRExperienceDetail() {
           return;
         }
 
-        const assoc = data.associations as any;
+        let assoc: { id: string; name: string; logo_url: string | null; description: string | null; website: string | null } | null = null;
+        if (data.association_id) {
+          const { data: assocData } = await supabase
+            .from("associations_public")
+            .select("id, name, logo_url, description, website")
+            .eq("id", data.association_id)
+            .maybeSingle();
+          assoc = assocData as any;
+        }
         const cat = data.categories as any;
         const city = data.cities as any;
 
