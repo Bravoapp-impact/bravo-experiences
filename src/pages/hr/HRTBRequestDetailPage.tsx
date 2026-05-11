@@ -32,6 +32,7 @@ interface ProposalDetail {
   client_notes: string | null;
   format_title: string;
   format_description: string | null;
+  format_short_description: string | null;
   format_image_url: string | null;
   format_category_id: string | null;
   format_category_name: string | null;
