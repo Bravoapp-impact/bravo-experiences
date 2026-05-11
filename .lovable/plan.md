@@ -1,35 +1,19 @@
-## Obiettivo
+## Problema
 
-Aggiungere il flag "In tutta Italia" alle associazioni, allineando il pattern già usato per `tb_formats.nationwide`. Effetto limitato alla form super-admin (creazione/modifica associazione).
+Nel dettaglio del format TB (super-admin) il sottotitolo mostra un estratto della descrizione lunga troncato a 180 caratteri, ignorando il campo `short_description` già presente nel DB e nel form di modifica.
 
-## Modifiche DB
+Causa: `TBFormatDetailPage.tsx` costruisce l'oggetto `format` da passare a `TBFormatDetailContent` senza includere `short_description`. `TBFormatHeader` ha già la logica corretta (preferisce `shortDescription` se presente, altrimenti tronca `description`), ma riceve sempre `undefined`.
 
-Migration:
-- `ALTER TABLE associations ADD COLUMN nationwide boolean NOT NULL DEFAULT false`
+## Modifica
 
-Nessuna modifica RLS necessaria (il campo eredita le policy esistenti).
+File: `src/pages/super-admin/TBFormatDetailPage.tsx`
+- Aggiungere `short_description: formData.short_description` nell'oggetto `format` passato a `<TBFormatDetailContent format={...} />`.
 
-## Modifiche UI — `src/pages/super-admin/AssociationsPage.tsx`
+Verificare anche `src/pages/hr/HRTBProposalDetailPage.tsx`: se passa il format senza `short_description`, includerlo per coerenza (solo se il dato è disponibile).
 
-1. **State**: aggiungere `nationwide: boolean` in `formData` (default `false`).
-2. **Fetch / edit**: caricare `nationwide` dall'associazione esistente quando si apre la modale di modifica.
-3. **Form** (sezione "Città dove opera", riga 723):
-   - Sopra la griglia di checkbox città, aggiungere un toggle/checkbox prominente "In tutta Italia" con descrizione breve ("L'associazione opera su tutto il territorio nazionale").
-   - Quando attivo: la griglia delle città viene disabilitata visivamente (opacity ridotta + `pointer-events-none`) e mostra un hint "Selezione disabilitata: l'associazione opera ovunque".
-   - Quando disattivo: comportamento attuale invariato.
-4. **Submit (insert + update)**:
-   - Salvare il flag `nationwide` su `associations`.
-   - Se `nationwide = true`: svuotare `association_cities` per quell'associazione (nessuna riga). Niente snapshot di tutte le città — la verità è il flag.
-   - Se `nationwide = false`: comportamento attuale (insert delle `city_ids` selezionate).
-5. **Display in lista** (riga 471, colonna "Città"): se `nationwide` mostrare un badge "In tutta Italia" al posto dell'elenco città.
+Nessuna modifica DB, nessuna modifica al form di edit, nessuna modifica visiva oltre alla sostituzione del testo nel sottotitolo.
 
-## Fuori scope (esplicito)
+## Comportamento risultante
 
-- Filtri lato employee/HR: non vengono toccati. Un'associazione `nationwide` continuerà ad apparire dove appare oggi (basata su `association_cities`, quindi su nessuna città fino a quando non si decide diversamente). Quando vorrai estendere il comportamento ai filtri pubblici, sarà una sessione successiva con scope dichiarato.
-- Nessuna modifica a `tb_formats` o ad altre entità.
-
-## File toccati
-
-- Nuova migration SQL (1 colonna).
-- `src/pages/super-admin/AssociationsPage.tsx` (form + lista + handler insert/update).
-- `docs/log.md` + `docs/aperto.md` (debito noto: estendere `nationwide` ai filtri pubblici quando deciso) — secondo checklist post-sessione.
+- Se `short_description` è valorizzata → mostrata sotto il titolo.
+- Se vuota → fallback al troncamento della `description` (comportamento attuale).
