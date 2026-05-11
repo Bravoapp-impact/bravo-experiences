@@ -316,9 +316,9 @@ function ProposalCard({
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 cursor-pointer" onClick={onOpenDetail}>
               <h3 className="font-medium text-sm truncate">{proposal.format_title}</h3>
-              {proposal.format_description && (
+              {(proposal.format_short_description ?? proposal.format_description) && (
                 <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                  {proposal.format_description}
+                  {proposal.format_short_description ?? proposal.format_description}
                 </p>
               )}
             </div>
