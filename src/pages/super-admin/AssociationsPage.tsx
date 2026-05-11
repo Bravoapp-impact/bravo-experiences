@@ -253,7 +253,7 @@ export default function AssociationsPage() {
         associationId = data.id;
       }
 
-      if (formData.city_ids.length > 0) {
+      if (!formData.nationwide && formData.city_ids.length > 0) {
         const cityAssociations = formData.city_ids.map((cityId) => ({
           association_id: associationId,
           city_id: cityId,
