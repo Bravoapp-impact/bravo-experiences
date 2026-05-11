@@ -732,7 +732,31 @@ export default function AssociationsPage() {
 
             <div className="space-y-2">
               <Label>Città dove opera</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 border border-border rounded-lg max-h-32 overflow-y-auto">
+
+              <div className="flex items-start space-x-2 p-3 border border-border rounded-lg bg-muted/30">
+                <Checkbox
+                  id="nationwide"
+                  checked={formData.nationwide}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, nationwide: checked === true })
+                  }
+                  className="mt-0.5"
+                />
+                <div className="space-y-0.5">
+                  <label htmlFor="nationwide" className="text-sm font-medium cursor-pointer">
+                    In tutta Italia
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    L'associazione opera su tutto il territorio nazionale.
+                  </p>
+                </div>
+              </div>
+
+              <div
+                className={`grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 border border-border rounded-lg max-h-32 overflow-y-auto ${
+                  formData.nationwide ? "opacity-50 pointer-events-none" : ""
+                }`}
+              >
                 {cities.map((city) => (
                   <div key={city.id} className="flex items-center space-x-2">
                     <Checkbox
