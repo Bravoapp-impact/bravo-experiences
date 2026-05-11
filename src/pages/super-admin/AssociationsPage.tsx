@@ -75,6 +75,7 @@ interface Association {
   internal_notes: string | null;
   partnership_start_date: string | null;
   created_at: string;
+  nationwide?: boolean;
   cities?: City[];
 }
 
@@ -106,6 +107,7 @@ export default function AssociationsPage() {
     status: "active",
     internal_notes: "",
     partnership_start_date: "",
+    nationwide: false,
     city_ids: [] as string[],
   });
   const [saving, setSaving] = useState(false);
@@ -174,6 +176,7 @@ export default function AssociationsPage() {
         status: association.status,
         internal_notes: association.internal_notes || "",
         partnership_start_date: association.partnership_start_date || "",
+        nationwide: association.nationwide || false,
         city_ids: assocCities?.map((c) => c.city_id) || [],
       });
     } else {
@@ -190,6 +193,7 @@ export default function AssociationsPage() {
         status: "active",
         internal_notes: "",
         partnership_start_date: "",
+        nationwide: false,
         city_ids: [],
       });
     }
@@ -220,6 +224,7 @@ export default function AssociationsPage() {
         status: formData.status,
         internal_notes: formData.internal_notes.trim() || null,
         partnership_start_date: formData.partnership_start_date || null,
+        nationwide: formData.nationwide,
       };
 
       let associationId: string;
@@ -248,7 +253,7 @@ export default function AssociationsPage() {
         associationId = data.id;
       }
 
-      if (formData.city_ids.length > 0) {
+      if (!formData.nationwide && formData.city_ids.length > 0) {
         const cityAssociations = formData.city_ids.map((cityId) => ({
           association_id: associationId,
           city_id: cityId,
@@ -468,7 +473,12 @@ export default function AssociationsPage() {
                             )}
                           </TableCell>
                           <TableCell>
-                            {association.cities && association.cities.length > 0 ? (
+                            {association.nationwide ? (
+                              <div className="flex items-center gap-1">
+                                <MapPin className="h-4 w-4 text-primary" />
+                                <span className="text-sm font-medium">In tutta Italia</span>
+                              </div>
+                            ) : association.cities && association.cities.length > 0 ? (
                               <div className="flex items-center gap-1">
                                 <MapPin className="h-4 w-4 text-muted-foreground" />
                                 <span className="text-sm">
@@ -722,7 +732,31 @@ export default function AssociationsPage() {
 
             <div className="space-y-2">
               <Label>Città dove opera</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 border border-border rounded-lg max-h-32 overflow-y-auto">
+
+              <div className="flex items-start space-x-2 p-3 border border-border rounded-lg bg-muted/30">
+                <Checkbox
+                  id="nationwide"
+                  checked={formData.nationwide}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, nationwide: checked === true })
+                  }
+                  className="mt-0.5"
+                />
+                <div className="space-y-0.5">
+                  <label htmlFor="nationwide" className="text-sm font-medium cursor-pointer">
+                    In tutta Italia
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    L'associazione opera su tutto il territorio nazionale.
+                  </p>
+                </div>
+              </div>
+
+              <div
+                className={`grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 border border-border rounded-lg max-h-32 overflow-y-auto ${
+                  formData.nationwide ? "opacity-50 pointer-events-none" : ""
+                }`}
+              >
                 {cities.map((city) => (
                   <div key={city.id} className="flex items-center space-x-2">
                     <Checkbox
