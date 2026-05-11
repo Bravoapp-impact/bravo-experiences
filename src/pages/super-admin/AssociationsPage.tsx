@@ -176,6 +176,7 @@ export default function AssociationsPage() {
         status: association.status,
         internal_notes: association.internal_notes || "",
         partnership_start_date: association.partnership_start_date || "",
+        nationwide: association.nationwide || false,
         city_ids: assocCities?.map((c) => c.city_id) || [],
       });
     } else {
