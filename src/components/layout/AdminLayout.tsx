@@ -34,9 +34,20 @@ export interface SidebarItem {
   iconColor?: string;
 }
 
+export interface SidebarSection {
+  label: string;
+  defaultOpen?: boolean;
+  items: SidebarItem[];
+}
+
 export interface AdminLayoutProps {
   children: ReactNode;
-  sidebarItems: SidebarItem[];
+  /** Flat sidebar items (legacy). Use either this OR `sections`. */
+  sidebarItems?: SidebarItem[];
+  /** Collapsible sections. When provided, takes precedence over `sidebarItems`. */
+  sections?: SidebarSection[];
+  /** Standalone items rendered above sections (e.g. "Home"). */
+  topItems?: SidebarItem[];
   profilePath: string;
   basePath: string;
   /** Path to the role's settings panel entry (e.g. /hr/impostazioni/profilo). */
