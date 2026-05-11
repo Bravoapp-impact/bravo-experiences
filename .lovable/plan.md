@@ -1,31 +1,57 @@
-# Creare `docs/log.md`
+## Obiettivo
 
-Documento append-on-top che raccoglie ogni sessione di lavoro non banale, con schema fisso per garantire consistenza nel tempo.
+Creare `docs/README.md` come **punto di ingresso unico** della documentazione: chi arriva (umano o AI) sa in 30 secondi cosa leggere, in che ordine, e quale rituale seguire prima e dopo ogni sessione di coding.
+
+Il file non duplica contenuto degli altri doc: rimanda. È un indice + checklist, niente di più.
 
 ## Struttura del file
 
-1. **Header** — scopo del documento, regole d'uso (quando si scrive una entry, cosa entra/cosa no, ordine cronologico inverso, riferimento a `principi.md` e `architettura.md`).
-2. **Template entry** — blocco copia-incolla con i campi vuoti, sempre in cima alle istruzioni.
-3. **Entries** — la più recente in alto. Separatore `---` tra entry.
+**1. Header breve.** Una frase: "Punto di ingresso della documentazione di Bravo!. Leggi questo prima di toccare codice."
 
-## Schema di ogni entry (per sessione di lavoro)
+**2. Indice dei documenti.** Tabella con tre colonne — nome doc · cosa contiene · quando consultarlo. Ordine per priorità di lettura per un nuovo arrivato:
 
-Campi fissi, sempre nell'ordine:
+- `principi.md` — il *perché* (business model, 4 attori, principi tecnici)
+- `architettura.md` — il *cosa* (stack, dati, RLS, RPC, edge function, route)
+- `CLAUDE.md` — il *come* (regole di lavoro AI, sicurezza, operativo)
+- `aperto.md` — decisioni pending, debito tecnico, roadmap a ondate
+- `log.md` — diario sessione per sessione
+- `data-fetching.md` — convenzione TanStack Query
+- `design-system.md` — token, colori, componenti
+- `tb-flow.md` — verticale Team Building
+- `transactional-emails.md` — pipeline email
 
-- **Data** — `YYYY-MM-DD`
-- **Titolo** — una riga, descrittivo (es. "TB: short_description su format card")
-- **Contesto / perché** — 1-3 righe sul bisogno o problema che ha generato la modifica
-- **Cosa cambia** — bullet list delle modifiche concrete
-- **Impatto** — tag tra: `DB schema`, `RLS`, `RPC`, `Edge function`, `UI`, `Email`, `Auth`, `Docs`. Più tag se rilevanti
-- **File / aree toccate** — elenco sintetico (path o area logica)
-- **Follow-up** — cose lasciate aperte o da rifinire (vuoto se nessuno)
+**3. Percorsi di lettura consigliati.** Tre micro-percorsi in base al motivo per cui apri la doc:
+- "Sono nuovo" → `principi` → `architettura` → `CLAUDE` → questo README
+- "Devo toccare DB / RLS / RPC" → `architettura` §2-4 + `CLAUDE` §2
+- "Devo toccare un verticale" → doc tematico (`tb-flow`, `transactional-emails`, `data-fetching`, `design-system`)
 
-## Scope
+**4. Checklist PRE-sessione.** Lista azionabile, derivata da `CLAUDE.md` + buon senso:
+1. Brief con cosa cambia / perché / **cosa NON deve cambiare**
+2. `git pull origin main`
+3. Leggere `aperto.md` (verificare conflitti con debito noto / decisioni aperte)
+4. Leggere `architettura.md` §2-4 se tocchi dati / RLS / RPC / edge
+5. Leggere il doc tematico pertinente
+6. Confermare il pattern esistente (estendere, non duplicare — rif. `principi.md` §4.6)
 
-Entrano nel log: modifiche a schema DB, RLS, RPC, edge function, nuove feature UI rilevanti, copy importanti, modifiche al design system, refactor non banali, fix di sicurezza.
-Non entrano: typo, rename file, fix UI minori senza impatto funzionale.
+**5. Checklist POST-sessione.** Lista azionabile:
+1. Self-review sicurezza se hai toccato auth / RLS / RPC / edge (rif. `CLAUDE.md` §2)
+2. Aggiornare `architettura.md` se hai toccato schema / RLS / RPC / edge
+3. Scrivere entry in `log.md` usando il template
+4. Aggiornare `aperto.md` (rimuovere chiuso, aggiungere debito nuovo, registrare decisioni aperte)
+5. Aggiornare il doc tematico se hai introdotto/modificato un pattern trasversale
+6. Commit `[area] descrizione breve`, una modifica = un commit logico
+7. `git push origin main`
 
-## Scope di questa task
+**6. Regola d'oro finale.** Una riga: "Se la doc non è aggiornata, smette di essere bussola. Aggiornarla è parte del task, non lavoro extra."
 
-- Creare il solo file `docs/log.md` con header, regole, template e una prima entry seed che documenta la creazione del log stesso (così il template è già dimostrato in pratica).
-- Non modificare altri file. Le entry storiche delle sessioni passate non vengono ricostruite retroattivamente: il log parte da oggi.
+## Vincoli
+
+- Italiano, tono diretto come gli altri doc.
+- File breve (target ~120-150 righe). Niente prosa lunga: tabelle e bullet.
+- Solo riferimenti, mai ripetere contenuto degli altri doc.
+- Zero modifiche ad altri file in questa sessione.
+
+## File toccati
+
+- **Nuovo:** `docs/README.md`
+- A valle (in una sessione successiva, non ora): aggiungere entry in `docs/log.md` per registrare la creazione del README.
