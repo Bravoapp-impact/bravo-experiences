@@ -141,6 +141,7 @@ export default function ExperiencesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [cityFilter, setCityFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
@@ -461,7 +462,11 @@ export default function ExperiencesPage() {
 
     const matchesStatus = statusFilter === "all" || exp.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    const matchesCity =
+      cityFilter === "all" ||
+      (cityFilter === "none" ? !exp.city_id : exp.city_id === cityFilter);
+
+    return matchesSearch && matchesStatus && matchesCity;
   });
 
   return (
@@ -507,6 +512,20 @@ export default function ExperiencesPage() {
                           className="pl-10"
                         />
                       </div>
+                      <Select value={cityFilter} onValueChange={setCityFilter}>
+                        <SelectTrigger className="w-full sm:w-44 bg-background">
+                          <SelectValue placeholder="Città" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover max-h-72">
+                          <SelectItem value="all">Tutte le città</SelectItem>
+                          <SelectItem value="none">Senza città</SelectItem>
+                          {cities.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <Select value={statusFilter} onValueChange={setStatusFilter}>
                         <SelectTrigger className="w-full sm:w-40 bg-background">
                           <SelectValue placeholder="Stato" />
