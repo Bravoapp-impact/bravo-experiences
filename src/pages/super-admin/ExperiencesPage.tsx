@@ -512,6 +512,20 @@ export default function ExperiencesPage() {
                           className="pl-10"
                         />
                       </div>
+                      <Select value={cityFilter} onValueChange={setCityFilter}>
+                        <SelectTrigger className="w-full sm:w-44 bg-background">
+                          <SelectValue placeholder="Città" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover max-h-72">
+                          <SelectItem value="all">Tutte le città</SelectItem>
+                          <SelectItem value="none">Senza città</SelectItem>
+                          {cities.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <Select value={statusFilter} onValueChange={setStatusFilter}>
                         <SelectTrigger className="w-full sm:w-40 bg-background">
                           <SelectValue placeholder="Stato" />
