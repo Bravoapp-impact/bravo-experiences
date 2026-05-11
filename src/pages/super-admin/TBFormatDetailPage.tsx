@@ -271,6 +271,7 @@ export default function TBFormatDetailPage() {
             id: formatData.id,
             title: formatData.title,
             description: formatData.description,
+            short_description: formatData.short_description,
             image_url: formatData.image_url,
             category_name: categoryName,
             location_type: formatData.location_type,
