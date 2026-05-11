@@ -133,7 +133,7 @@ export default function HRExperiencesPage() {
         supabase.from("cities").select("id, name").order("name"),
         supabase
           .from("experiences")
-          .select(`id, title, description, image_url, city, address, status, sdgs, category, category_id, city_id, participant_info, categories:category_id (id, name), cities:city_id (id, name), associations:association_id (name)`)
+          .select(`id, title, description, image_url, city, address, status, sdgs, category, category_id, city_id, association_id, association_name, participant_info, categories:category_id (id, name), cities:city_id (id, name)`)
           .eq("status", "published")
           .eq("visibility", "public")
           .order("created_at", { ascending: false }),
@@ -143,9 +143,29 @@ export default function HRExperiencesPage() {
           .eq("company_id", profile.company_id),
       ]);
 
+      const expRows = (expRes.data || []) as any[];
+      const assocIds = Array.from(new Set(expRows.map((e) => e.association_id).filter(Boolean)));
+      let assocMap = new Map<string, { name: string; logo_url: string | null }>();
+      if (assocIds.length > 0) {
+        const { data: assocData } = await supabase
+          .from("associations_public")
+          .select("id, name, logo_url")
+          .in("id", assocIds);
+        (assocData || []).forEach((a: any) => assocMap.set(a.id, { name: a.name, logo_url: a.logo_url }));
+      }
+
       setCategories(catRes.data || []);
       setCities(cityRes.data || []);
-      setExperiences((expRes.data || []) as CatalogExperience[]);
+      setExperiences(
+        expRows.map((e) => ({
+          ...e,
+          associations: e.association_id
+            ? { name: assocMap.get(e.association_id)?.name ?? e.association_name ?? null }
+            : e.association_name
+              ? { name: e.association_name }
+              : null,
+        })) as CatalogExperience[]
+      );
       setActivatedIds(new Set((ecRes.data || []).map((r) => r.experience_id)));
     } catch (err) {
       devLog.error("Error fetching initial data:", err);
