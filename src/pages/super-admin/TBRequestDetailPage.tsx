@@ -418,12 +418,17 @@ function StatusSection({
           description: p.tb_formats?.title ?? "Servizio",
           quantity: request.participants_min ?? 1,
         }));
+        // Se esiste già una bozza per questa richiesta, riapri quella in modalità modifica
+        // invece di creare un nuovo preventivo (che fallirebbe con quote_already_exists).
+        const existingDraft = draftQuote ?? null;
         return (
           <div className="space-y-4">
             <QuoteEditor
               requestId={requestId}
-              quoteId={null}
-              initialProposalItems={initialItems.length > 0 ? initialItems : undefined}
+              quoteId={existingDraft?.id ?? null}
+              initialProposalItems={
+                !existingDraft && initialItems.length > 0 ? initialItems : undefined
+              }
             />
             <QuoteHistoryAccordion requestId={requestId} />
           </div>
