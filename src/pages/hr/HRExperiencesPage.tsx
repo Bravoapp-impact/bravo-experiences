@@ -599,49 +599,6 @@ export default function HRExperiencesPage() {
 
 /* ── Sub-components ── */
 
-function CompactCard({ experience, index, actions, onOpen }: {
-  experience: CatalogExperience;
-  index: number;
-  actions: React.ReactNode;
-  onOpen: () => void;
-}) {
-  const categoryName = experience.categories?.name || experience.category;
-  const cityName = experience.cities?.name || experience.city;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
-      className="group"
-    >
-      <button
-        type="button"
-        onClick={onOpen}
-        className="block w-full text-left rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <BaseCardImage imageUrl={experience.image_url} alt={experience.title} aspectRatio="square" />
-        <div className="pt-2 space-y-1">
-          <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
-            {experience.title}
-          </h3>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
-            {categoryName && <span className="truncate">{categoryName}</span>}
-            {categoryName && cityName && <span>·</span>}
-            {cityName && (
-              <span className="flex items-center gap-0.5 truncate">
-                <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
-                {cityName}
-              </span>
-            )}
-          </div>
-        </div>
-      </button>
-      <div className="pt-0.5">{actions}</div>
-    </motion.div>
-  );
-}
-
 function CatalogFilters({ searchTerm, onSearchChange, categoryFilter, onCategoryChange, cityFilter, onCityChange, categories, cities }: {
   searchTerm: string;
   onSearchChange: (v: string) => void;
