@@ -33,6 +33,35 @@ interface ProposalDetail {
   format_services: { items?: string[] } | null;
 }
 
+const LOCKED_STATUSES = new Set([
+  "quote_requested",
+  "quote_in_composition",
+  "modification_requested",
+  "quote_sent",
+  "quote_accepted",
+  "quote_rejected",
+  "signed",
+  "event_scheduled",
+  "completed",
+  "cancelled",
+]);
+
+const interestedBtnClass = (selected: boolean) =>
+  cn(
+    "w-full gap-2 transition-colors",
+    selected
+      ? "bg-success text-success-foreground border-success hover:bg-success/90"
+      : "hover:bg-success hover:text-success-foreground hover:border-success",
+  );
+
+const declinedBtnClass = (selected: boolean) =>
+  cn(
+    "w-full gap-2 transition-colors",
+    selected
+      ? "bg-destructive text-destructive-foreground border-destructive hover:bg-destructive/90"
+      : "hover:bg-destructive hover:text-destructive-foreground hover:border-destructive",
+  );
+
 export default function HRTBProposalDetailPage() {
   const { id, proposalId } = useParams<{ id: string; proposalId: string }>();
   const navigate = useNavigate();
@@ -46,6 +75,20 @@ export default function HRTBProposalDetailPage() {
       });
       if (error) throw error;
       return (data as unknown as ProposalDetail[]) || [];
+    },
+    enabled: !!id,
+  });
+
+  const { data: requestStatus } = useQuery({
+    queryKey: ["tb-request-status", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tb_requests")
+        .select("status")
+        .eq("id", id!)
+        .single();
+      if (error) throw error;
+      return data.status as string;
     },
     enabled: !!id,
   });
@@ -70,7 +113,7 @@ export default function HRTBProposalDetailPage() {
           ? "Salvato tra i preferiti"
           : status === "declined"
           ? "Proposta scartata"
-          : "Scelta annullata"
+          : "Scelta annullata",
       );
     },
   });
@@ -100,6 +143,7 @@ export default function HRTBProposalDetailPage() {
 
   const isInterested = proposal.client_status === "interested";
   const isDeclined = proposal.client_status === "declined";
+  const isLocked = requestStatus ? LOCKED_STATUSES.has(requestStatus) : false;
   const services = proposal.format_services?.items || [];
 
   const onInterested = () =>
@@ -107,17 +151,20 @@ export default function HRTBProposalDetailPage() {
   const onDeclined = () =>
     updateStatus.mutate(isDeclined ? "pending" : "declined");
 
-  const headerExtras = (isInterested || isDeclined) ? (
-    <div className="flex items-center gap-2 flex-wrap">
-      {isInterested && (
-        <Badge className="bg-primary/10 text-primary border-primary/20">
-          <Heart className="h-3 w-3 mr-1 fill-current" />
-          Interessato
-        </Badge>
-      )}
-      {isDeclined && <Badge variant="secondary">Scartata</Badge>}
-    </div>
-  ) : null;
+  const headerExtras =
+    isInterested || isDeclined ? (
+      <div className="flex items-center gap-2 flex-wrap">
+        {isInterested && (
+          <Badge className="bg-primary/10 text-primary border-primary/20">
+            <Heart className="h-3 w-3 mr-1 fill-current" />
+            Interessato
+          </Badge>
+        )}
+        {isDeclined && <Badge variant="secondary">Scartata</Badge>}
+      </div>
+    ) : null;
+
+  const actionsDisabled = updateStatus.isPending || isLocked;
 
   return (
     <HRLayout>
@@ -158,22 +205,24 @@ export default function HRTBProposalDetailPage() {
                 <CardContent className="p-5 space-y-3">
                   <p className="text-sm font-semibold">Cosa ne pensi?</p>
                   <p className="text-xs text-muted-foreground">
-                    Segna le proposte che ti interessano: potrai poi richiedere una quotazione dedicata.
+                    {isLocked
+                      ? "Hai già richiesto il preventivo, le scelte sono bloccate."
+                      : "Segna le proposte che ti interessano: potrai poi richiedere una quotazione dedicata."}
                   </p>
                   <Button
-                    className="w-full gap-2"
-                    variant={isInterested ? "default" : "outline"}
+                    variant="outline"
+                    className={interestedBtnClass(isInterested)}
                     onClick={onInterested}
-                    disabled={updateStatus.isPending}
+                    disabled={actionsDisabled}
                   >
                     <Heart className={cn("h-4 w-4", isInterested && "fill-current")} />
                     {isInterested ? "Interessato ✓" : "Mi interessa"}
                   </Button>
                   <Button
-                    className="w-full gap-2"
-                    variant="ghost"
+                    variant="outline"
+                    className={declinedBtnClass(isDeclined)}
                     onClick={onDeclined}
-                    disabled={updateStatus.isPending}
+                    disabled={actionsDisabled}
                   >
                     {isDeclined ? (
                       "Annulla scelta"
@@ -184,13 +233,6 @@ export default function HRTBProposalDetailPage() {
                       </>
                     )}
                   </Button>
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/hr/team-building/${id}`)}
-                    className="block w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors pt-2"
-                  >
-                    Torna alle proposte
-                  </button>
                 </CardContent>
               </Card>
             </motion.div>
@@ -198,19 +240,19 @@ export default function HRTBProposalDetailPage() {
           mobileDrawerSlot={
             <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] z-40 space-y-2">
               <Button
-                className="w-full gap-2 h-12"
-                variant={isInterested ? "default" : "outline"}
+                variant="outline"
+                className={cn(interestedBtnClass(isInterested), "h-12")}
                 onClick={onInterested}
-                disabled={updateStatus.isPending}
+                disabled={actionsDisabled}
               >
                 <Heart className={cn("h-4 w-4", isInterested && "fill-current")} />
                 {isInterested ? "Interessato ✓" : "Mi interessa"}
               </Button>
               <Button
-                className="w-full gap-2"
-                variant="ghost"
+                variant="outline"
+                className={declinedBtnClass(isDeclined)}
                 onClick={onDeclined}
-                disabled={updateStatus.isPending}
+                disabled={actionsDisabled}
               >
                 {isDeclined ? (
                   "Annulla scelta"
