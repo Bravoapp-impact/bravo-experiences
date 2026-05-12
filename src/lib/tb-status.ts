@@ -12,7 +12,6 @@ export type TBRequestStatus =
   | "in_matching"
   | "proposals_ready"
   | "proposals_sent"
-  | "proposals_reviewed"
   | "quote_requested"
   | "quote_in_composition"
   | "quote_sent"
@@ -56,7 +55,6 @@ export const TB_REQUEST_STATUS_META: Record<TBRequestStatus, TBStatusMeta> = {
   in_matching: meta("in_matching", "In matching", "admin_action_needed"),
   proposals_ready: meta("proposals_ready", "Proposte pronte", "admin_action_needed"),
   proposals_sent: meta("proposals_sent", "Proposte inviate", "hr_action_needed"),
-  proposals_reviewed: meta("proposals_reviewed", "Proposte valutate", "admin_action_needed"),
   quote_requested: meta("quote_requested", "Quotazione richiesta", "admin_action_needed"),
   quote_in_composition: meta("quote_in_composition", "Preventivo in composizione", "admin_action_needed"),
   quote_sent: meta("quote_sent", "Preventivo inviato", "hr_action_needed"),
