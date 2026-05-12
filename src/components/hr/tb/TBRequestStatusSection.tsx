@@ -1,4 +1,14 @@
-import { Clock, FileText, Inbox, Send, Sparkles } from "lucide-react";
+import {
+  Ban,
+  CalendarCheck,
+  CheckCircle2,
+  Clock,
+  FileText,
+  Inbox,
+  Send,
+  Sparkles,
+  XCircle,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getTBStatusMeta, type TBRequestStatus } from "@/lib/tb-status";
@@ -84,6 +94,61 @@ export function TBRequestStatusSection({
           icon={Inbox}
           title="Stiamo preparando il preventivo"
           description="Abbiamo ricevuto la tua richiesta e stiamo coordinando con i partner. Riceverai un'email appena il preventivo sarà pronto."
+        />
+      );
+
+    case "quote_sent":
+      return (
+        <InfoCard
+          icon={FileText}
+          title="Preventivo pronto"
+          description="Il preventivo è pronto per la tua decisione. Vista preventivo in arrivo."
+        />
+      );
+
+    case "quote_accepted":
+      return (
+        <InfoCard
+          icon={CheckCircle2}
+          title="Preventivo accettato"
+          description="Ti contatteremo a breve via email per finalizzare il contratto. Una volta firmato, organizziamo l'evento."
+        />
+      );
+
+    case "quote_rejected":
+      return (
+        <InfoCard
+          icon={XCircle}
+          title="Preventivo rifiutato"
+          description="Hai rifiutato il preventivo. Se vuoi ripartire con una nuova proposta, apri una nuova richiesta dalla sezione Team Building."
+        />
+      );
+
+    case "signed":
+    case "event_scheduled":
+      return (
+        <InfoCard
+          icon={CalendarCheck}
+          title="Evento confermato"
+          description="Il contratto è firmato. Coordineremo con te i dettagli finali dell'evento."
+        />
+      );
+
+    case "completed":
+      return (
+        <InfoCard
+          icon={CheckCircle2}
+          title="Evento completato"
+          description="Grazie per aver organizzato questo team building con noi."
+        />
+      );
+
+    case "cancelled":
+      return (
+        <InfoCard
+          icon={Ban}
+          title="Richiesta annullata"
+          description="Questa richiesta è stata annullata. Le informazioni restano disponibili per consultazione."
         />
       );
 
