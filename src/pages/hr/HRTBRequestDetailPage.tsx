@@ -178,7 +178,6 @@ export default function HRTBRequestDetailPage() {
 
   const interestedCount =
     proposals?.filter((p) => p.client_status === "interested").length || 0;
-  const isReadOnly = READ_ONLY_STATUSES.has(request.status);
   const canCancel = CANCELLABLE_STATUSES.has(request.status);
   const hasProposals = proposals && proposals.length > 0;
 
