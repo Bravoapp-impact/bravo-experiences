@@ -91,11 +91,19 @@ const initialForm: FormState = {
 
 export default function HRNewTBRequestPage() {
   const navigate = useNavigate();
+  const { id: routeDraftId } = useParams<{ id?: string }>();
   const { user, profile } = useAuth();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [provinceSearch, setProvinceSearch] = useState("");
+  const [requestId, setRequestId] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [bootstrapping, setBootstrapping] = useState(true);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipNextAutosaveRef = useRef(true);
+  const requestIdRef = useRef<string | null>(null);
+  useEffect(() => { requestIdRef.current = requestId; }, [requestId]);
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
