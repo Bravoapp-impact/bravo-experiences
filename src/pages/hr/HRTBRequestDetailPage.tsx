@@ -10,13 +10,13 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { getTBStatusMeta, type TBRequestStatus } from "@/lib/tb-status";
 import {
-  TBProposalCard,
-  type TBProposalCardData,
-} from "@/components/hr/tb/TBProposalCard";
+  TBProposalCardRich,
+  type TBProposalCardRichData,
+} from "@/components/hr/tb/TBProposalCardRich";
 import { TBRequestBriefSummary } from "@/components/hr/tb/TBRequestBriefSummary";
 import { TBRequestStatusSection } from "@/components/hr/tb/TBRequestStatusSection";
 
-interface ProposalDetail extends TBProposalCardData {
+interface ProposalDetail extends TBProposalCardRichData {
   format_id: string;
   priority: number;
   client_notes: string | null;
@@ -170,7 +170,7 @@ export default function HRTBRequestDetailPage() {
             <h3 className="text-sm font-semibold text-foreground">Le tue proposte</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {proposals!.map((p, index) => (
-                <TBProposalCard
+                <TBProposalCardRich
                   key={p.proposal_id}
                   proposal={p}
                   index={index}
