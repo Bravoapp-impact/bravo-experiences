@@ -631,30 +631,6 @@ function StatusSection({ icon, title, count, iconClassName, children }: {
   );
 }
 
-function ExperienceCompactCard({ experience, index, onNavigate, actions }: {
-  experience: Experience;
-  index: number;
-  onNavigate: () => void;
-  actions: React.ReactNode;
-}) {
-  const categoryName = experience.categories?.name || experience.category;
-  const cityName = experience.cities?.name || experience.city;
-  const metaItems: BravoCardMetaItem[] = [];
-  if (categoryName) metaItems.push({ text: categoryName });
-  if (cityName) metaItems.push({ icon: MapPin, text: cityName });
-  return (
-    <BravoCard
-      imageUrl={experience.image_url}
-      imageAlt={experience.title}
-      title={experience.title}
-      metaItems={metaItems}
-      index={index}
-      onOpen={onNavigate}
-      actions={actions}
-    />
-  );
-}
-
 /* ── Action Bars ── */
 
 function ActionButton({ tooltip, icon: Icon, onClick, className, disabled }: {
