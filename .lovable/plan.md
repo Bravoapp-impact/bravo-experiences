@@ -1,41 +1,124 @@
-## Problema
+## Estensione BravoCard (L2) + rename delle rich card
 
-Nelle proposte TB mostrate all'HR, sotto il titolo dell'esperienza viene visualizzata la descrizione **lunga** (`description`) invece della **descrizione breve** (`short_description`) che il super admin compila apposta come sottotitolo. Lo stesso testo lungo viene poi giustamente riusato nella sezione "Cosa farete", risultando duplicato e troppo prolisso nell'header.
+Obiettivo: eliminare le duplicazioni residue del pattern "card listing compatta" e rendere esplicita nel naming la separazione fra famiglia *compact* (BravoCard) e famiglia *rich* (card hero/scelta).
 
-Riguarda due punti:
-- `src/pages/hr/HRTBRequestDetailPage.tsx` — card di anteprima nella lista proposte.
-- `src/pages/hr/HRTBProposalDetailPage.tsx` — pagina di dettaglio della singola proposta (header sotto il titolo).
+Zero modifiche di comportamento utente. Refactor puramente strutturale.
 
-La pagina pubblica `TBFormatDetailContent` invece distingue già correttamente `short_description` (sottotitolo) e `description` ("Cosa farete").
+### Step 1 — Estensione minima di BravoCard
 
-## Causa
+File: `src/components/common/BravoCard.tsx`.
 
-La RPC `get_tb_proposal_details` (migration `20260423172656_…`) restituisce solo `f.description AS format_description` e non `f.short_description`. I componenti HR usano quindi la descrizione lunga sia come sottotitolo che come corpo.
+Aggiungere una prop opzionale:
 
-## Modifiche
+```ts
+subtitleSlot?: ReactNode;  // riga sotto al titolo, prima della meta
+```
 
-### 1. Migrazione DB
-Aggiornare la funzione `public.get_tb_proposal_details(p_request_id uuid)` aggiungendo nella `RETURNS TABLE` il campo `format_short_description text` e nella `SELECT` la colonna `f.short_description AS format_short_description`. Nessun'altra logica cambia.
+Renderizzata fra `<h3>{title}</h3>` e il blocco `metaItems`, dentro la stessa colonna `space-y-1`. Nessuna logica: è uno slot di presentazione.
 
-### 2. `HRTBRequestDetailPage.tsx`
-- Estendere l'interfaccia locale `ProposalDetail` con `format_short_description: string | null`.
-- Nel componente `ProposalCard`, sostituire il testo sotto il titolo (`{proposal.format_description && …}`) con `proposal.format_short_description ?? proposal.format_description` come fallback, così le proposte già esistenti senza short_description non rimangono vuote.
+Nessun'altra prop nuova. `imageOverlay` esiste già.
 
-### 3. `HRTBProposalDetailPage.tsx`
-- Aggiungere `format_short_description` al tipo restituito dalla RPC.
-- Nel passaggio a `TBFormatDetailContent` (riga ~136), mappare:
-  - `short_description: proposal.format_short_description`
-  - `description: proposal.format_description` (rimane invariato per "Cosa farete").
+### Step 2 — Estrazione di `CardAssociationLine`
 
-## Cosa NON cambia
+Nuovo file: `src/components/common/CardAssociationLine.tsx`.
 
-- Logica di matching, scoring e creazione delle proposte.
-- RLS, schema delle tabelle `tb_formats` / `tb_proposals`.
-- Pagina pubblica `TBFormatDetailContent` e tutti gli altri consumer.
-- UI/styling delle card e del dettaglio.
+Contiene il pattern "logo cerchiato 3.5×3.5 + nome associazione truncate", oggi duplicato in `ExperienceCardCompact` e nella variante futura di `BookingCard`. API:
 
-## Verifica post-implementazione
+```ts
+interface CardAssociationLineProps {
+  name: string;
+  logoUrl?: string | null;
+  fallbackEmoji?: string;  // default "🏢"
+}
+```
 
-1. Aprire una richiesta TB come HR (`/hr/team-building/:id`): sotto ogni titolo nella lista proposte deve comparire la `short_description` del format, non il testo lungo.
-2. Aprire il dettaglio proposta (`/hr/team-building/:id/proposte/:pid`): l'header deve mostrare la `short_description` come sottotitolo, mentre la sezione "Cosa farete" continua a mostrare la `description` completa.
-3. Per format senza `short_description`, viene mostrato il fallback alla `description` (comportamento attuale).
+Output identico al markup attuale (classi `text-[11px] text-muted-foreground font-light`, etc.). Componente puramente di presentazione, ~25 righe.
+
+### Step 3 — Migrazione di `ExperienceCardCompact` a BravoCard
+
+File: `src/components/experiences/ExperienceCardCompact.tsx`.
+
+Trasforma il body in un wrapper su `<BravoCard>`:
+
+- `imageUrl`, `imageAlt` da `experience`.
+- `aspectRatio="square"`.
+- `imageOverlay` = badge "Completo" quando `isFull` (stesso markup attuale, posizionato `absolute bottom-2 left-1/2 ...`).
+- `badge` di categoria dentro l'immagine: passato come `imageOverlay` aggiuntivo. Per supportare badge categoria + badge "Completo" insieme, l'overlay diventa un `<>...</>` con due figli posizionati assolutamente.
+- `title={experience.title}`.
+- `subtitleSlot` = `<CardAssociationLine name={...} logoUrl={...} />` quando presente.
+- `metaItems` = `[{ text: data formattata }, { icon: Clock, text: durata }, { icon: Users, text: posti }]` filtrati.
+- `onOpen` = `navigate(linkPrefix/{id})`.
+- `dimmed={isFull}`.
+
+L'API esterna del file (`<ExperienceCardCompact experience index linkPrefix />`) resta identica. Cambia solo l'implementazione. Riduzione: ~125 → ~70 righe.
+
+### Step 4 — Migrazione `BookingCard` futura a BravoCard
+
+File: `src/components/bookings/BookingCard.tsx`.
+
+Solo il branch `!isPast` (Airbnb-style). Il branch passato (row orizzontale) resta invariato.
+
+- `imageOverlay` = badge data calendario (mese + giorno, `bg-background/95 ...`) — è un singolo elemento posizionato top-left.
+- `subtitleSlot` = `<CardAssociationLine ... />`.
+- `metaItems` = `[{ icon: Clock, text: ora }, { text: durata }, { icon: MapPin, text: città }]`.
+- Badge "Annullata" sotto la card → passato come `actions`.
+- `onOpen` = `() => onView(booking)`.
+
+Riduzione: ~85 righe del branch futuro → ~40 righe.
+
+### Step 5 — Rename rich card per coerenza
+
+Per rendere esplicita la separazione "BravoCard = compact" vs "card rich":
+
+| Prima | Dopo |
+|---|---|
+| `src/components/experiences/ExperienceCard.tsx` | `src/components/experiences/ExperienceCardRich.tsx` |
+| Export `ExperienceCard` | Export `ExperienceCardRich` |
+| `src/components/hr/tb/TBProposalCard.tsx` | `src/components/hr/tb/TBProposalCardRich.tsx` |
+| Export `TBProposalCard` | Export `TBProposalCardRich` |
+
+Aggiornare tutti gli import dei call site (verificare con `rg`):
+- `ExperienceCard` → usato in `ExperienceSection`, `RelatedExperiencesList`.
+- `TBProposalCard` → usato in `HRTBRequestDetailPage`.
+
+`HRExperienceCard` e `BookingCard` **non** vengono rinominati: il primo è un accordion stats (categoria a sé), il secondo è multi-modale (compact + row).
+
+### Step 6 — Memoria del progetto
+
+Aggiungere/aggiornare `mem://style/component-patterns` con la convenzione:
+- "Listing compatto griglia → `BravoCard` (slot subtitle/imageOverlay/actions)"
+- "Card hero/scelta con descrizione + CTA → suffisso `Rich`"
+
+### Verifiche post-implementazione
+
+1. `bunx tsc --noEmit` pulito.
+2. `rg "ExperienceCard\b|TBProposalCard\b"` non deve trovare riferimenti ai nomi vecchi (eccetto i file rinominati).
+3. Confronto visivo (utente o dev): apri `/app/experiences` (grid + scroll orizzontale), `/app/bookings` (card future), `/hr/team-building/:id` (proposte). Nessuna differenza pixel.
+
+### Cosa NON viene toccato
+
+- `HRExperienceCard` (accordion stats HR).
+- `BookingCard` ramo `isPast` (row orizzontale).
+- Riga `Card` di `HRTeamBuildingPage` (lista richieste TB).
+- Tabella `TBFormatsPage` super-admin.
+- `BravoCard` non guadagna prop `variant` né nessun altro polimorfismo: resta una sola forma.
+
+### File toccati (riepilogo)
+
+Creati:
+- `src/components/common/CardAssociationLine.tsx`
+
+Modificati:
+- `src/components/common/BravoCard.tsx` (+1 prop)
+- `src/components/experiences/ExperienceCardCompact.tsx` (refactor body)
+- `src/components/bookings/BookingCard.tsx` (refactor branch futuro)
+
+Rinominati (con aggiornamento import nei call site):
+- `src/components/experiences/ExperienceCard.tsx` → `ExperienceCardRich.tsx`
+- `src/components/hr/tb/TBProposalCard.tsx` → `TBProposalCardRich.tsx`
+- `src/components/experiences/ExperienceSection.tsx` (import update)
+- `src/components/experience-detail/RelatedExperiencesList.tsx` (import update)
+- `src/pages/hr/HRTBRequestDetailPage.tsx` (import update)
+
+Memoria:
+- `mem://style/component-patterns` (aggiornamento convenzione)

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { BaseCardImage } from "@/components/common/BaseCardImage";
 import { cn } from "@/lib/utils";
 
-export interface TBProposalCardData {
+export interface TBProposalCardRichData {
   proposal_id: string;
   client_status: string;
   format_title: string;
@@ -18,8 +18,8 @@ export interface TBProposalCardData {
   format_participants_max: number | null;
 }
 
-interface TBProposalCardProps {
-  proposal: TBProposalCardData;
+interface TBProposalCardRichProps {
+  proposal: TBProposalCardRichData;
   index: number;
   readOnly?: boolean;
   onOpenDetail: () => void;
@@ -27,14 +27,14 @@ interface TBProposalCardProps {
   onToggleDecline: () => void;
 }
 
-export function TBProposalCard({
+export function TBProposalCardRich({
   proposal,
   index,
   readOnly = false,
   onOpenDetail,
   onToggleInterest,
   onToggleDecline,
-}: TBProposalCardProps) {
+}: TBProposalCardRichProps) {
   const isInterested = proposal.client_status === "interested";
   const isDeclined = proposal.client_status === "declined";
   const subtitle = proposal.format_short_description ?? proposal.format_description;

@@ -8,12 +8,12 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { Experience, ExperienceDate } from "@/types/experiences";
 
-interface ExperienceCardProps {
+interface ExperienceCardRichProps {
   experience: Experience;
   index: number;
 }
 
-export function ExperienceCard({ experience, index }: ExperienceCardProps) {
+export function ExperienceCardRich({ experience, index }: ExperienceCardRichProps) {
   const navigate = useNavigate();
   const nextDate = experience.experience_dates?.[0];
   const availableSpots = nextDate

@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
 import { MapPin, Clock, ChevronRight } from "lucide-react";
-import { format, differenceInHours, differenceInMinutes } from "date-fns";
+import { format, differenceInMinutes } from "date-fns";
 import { it } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
-import { BaseCardImage } from "@/components/common/BaseCardImage";
+import { BravoCard, BravoCardMetaItem } from "@/components/common/BravoCard";
+import { CardAssociationLine } from "@/components/common/CardAssociationLine";
 
 interface BookingCardProps {
   booking: {
@@ -106,90 +107,49 @@ export function BookingCard({
     );
   }
 
-  // Future booking - Airbnb-style card
+  // Future booking - Airbnb-style card via BravoCard
+  const metaItems: BravoCardMetaItem[] = [
+    { icon: Clock, text: format(startDate, "HH:mm") },
+  ];
+  if (durationHours > 0) metaItems.push({ text: `${durationHours}h` });
+  if (experience.city) metaItems.push({ icon: MapPin, text: experience.city });
+
+  const dateBadge = (
+    <div className="absolute top-3 left-3 bg-background/95 backdrop-blur-sm rounded-lg px-3 py-2 text-center shadow-sm">
+      <p className="text-xs font-medium text-muted-foreground uppercase leading-none">
+        {format(startDate, "MMM", { locale: it })}
+      </p>
+      <p className="text-xl font-bold text-foreground leading-none mt-0.5">
+        {format(startDate, "d")}
+      </p>
+    </div>
+  );
+
   return (
-    <motion.button
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-      onClick={() => onView(booking)}
-      className="group w-full text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 rounded-2xl"
-    >
-      {/* Square Image with date badge */}
-      <BaseCardImage
-        imageUrl={experience.image_url}
-        alt={experience.title}
-        aspectRatio="square"
-        badge={
-          <div className="bg-background/95 backdrop-blur-sm rounded-lg px-3 py-2 text-center shadow-sm">
-            <p className="text-xs font-medium text-muted-foreground uppercase leading-none">
-              {format(startDate, "MMM", { locale: it })}
-            </p>
-            <p className="text-xl font-bold text-foreground leading-none mt-0.5">
-              {format(startDate, "d")}
-            </p>
-          </div>
-        }
-        badgePosition="top-left"
-      />
-
-      {/* Content */}
-      <div className="pt-2 space-y-1">
-        {/* Title */}
-        <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug transition-colors">
-          {experience.title}
-        </h3>
-
-        {/* Association with logo */}
-        {experience.association_name && (
-          <div className="flex items-center gap-1">
-            {experience.association_logo_url ? (
-              <img
-                src={experience.association_logo_url}
-                alt=""
-                className="w-3.5 h-3.5 rounded-full object-cover flex-shrink-0"
-              />
-            ) : (
-              <div className="w-3.5 h-3.5 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                <span className="text-[7px]">🏢</span>
-              </div>
-            )}
-            <p className="text-[11px] text-muted-foreground font-light truncate">
-              {experience.association_name}
-            </p>
-          </div>
-        )}
-
-        {/* Time + Duration + Location */}
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
-          <span className="flex items-center gap-0.5">
-            <Clock className="h-2.5 w-2.5" />
-            {format(startDate, "HH:mm")}
-          </span>
-          {durationHours > 0 && (
-            <>
-              <span className="text-border">·</span>
-              <span>{durationHours}h</span>
-            </>
-          )}
-          {experience.city && (
-            <>
-              <span className="text-border">·</span>
-              <span className="flex items-center gap-0.5 truncate">
-                <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
-                <span className="truncate">{experience.city}</span>
-              </span>
-            </>
-          )}
-        </div>
-
-        {/* Status badge if cancelled */}
-        {booking.status === "cancelled" && (
+    <BravoCard
+      imageUrl={experience.image_url}
+      imageAlt={experience.title}
+      aspectRatio="square"
+      imageOverlay={dateBadge}
+      title={experience.title}
+      subtitleSlot={
+        experience.association_name ? (
+          <CardAssociationLine
+            name={experience.association_name}
+            logoUrl={experience.association_logo_url}
+          />
+        ) : undefined
+      }
+      metaItems={metaItems}
+      onOpen={() => onView(booking)}
+      index={index}
+      actions={
+        booking.status === "cancelled" ? (
           <Badge variant="destructive" className="mt-2">
             Annullata
           </Badge>
-        )}
-      </div>
-    </motion.button>
+        ) : undefined
+      }
+    />
   );
 }

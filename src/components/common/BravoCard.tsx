@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 export interface BravoCardMetaItem {
   icon?: LucideIcon;
   text: string;
+  /** Optional extra classes for the segment (es. evidenziare posti scarsi) */
+  className?: string;
 }
 
 export interface BravoCardProps {
@@ -16,6 +18,7 @@ export interface BravoCardProps {
   fallbackEmoji?: string;
   imageOverlay?: ReactNode;
   title: string;
+  subtitleSlot?: ReactNode;
   metaItems?: BravoCardMetaItem[];
   onOpen?: () => void;
   actions?: ReactNode;
@@ -31,6 +34,7 @@ export function BravoCard({
   fallbackEmoji,
   imageOverlay,
   title,
+  subtitleSlot,
   metaItems,
   onOpen,
   actions,
@@ -64,6 +68,7 @@ export function BravoCard({
           <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
             {title}
           </h3>
+          {subtitleSlot}
           {metaItems && metaItems.length > 0 && (
             <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
               {metaItems.map((item, i) => {
@@ -71,7 +76,7 @@ export function BravoCard({
                 return (
                   <Fragment key={i}>
                     {i > 0 && <span>·</span>}
-                    <span className="flex items-center gap-0.5 truncate">
+                    <span className={cn("flex items-center gap-0.5 truncate", item.className)}>
                       {Icon && <Icon className="h-2.5 w-2.5 flex-shrink-0" />}
                       {item.text}
                     </span>
