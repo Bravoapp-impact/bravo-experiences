@@ -76,7 +76,7 @@ export function BravoCard({
                 return (
                   <Fragment key={i}>
                     {i > 0 && <span>·</span>}
-                    <span className="flex items-center gap-0.5 truncate">
+                    <span className={cn("flex items-center gap-0.5 truncate", item.className)}>
                       {Icon && <Icon className="h-2.5 w-2.5 flex-shrink-0" />}
                       {item.text}
                     </span>
