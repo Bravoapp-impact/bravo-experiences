@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Clock, MoreVertical, Users } from "lucide-react";
+import { ArrowLeft, Clock, Heart, MoreVertical, Users, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { HRLayout } from "@/components/layout/HRLayout";
 import { Button } from "@/components/ui/button";
