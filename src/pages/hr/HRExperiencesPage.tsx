@@ -499,7 +499,8 @@ export default function HRExperiencesPage() {
                         </Tooltip>
                       )
                     } />
-                  ))}
+                    );
+                  })}
                 </div>
               </TooltipProvider>
             )}
@@ -516,8 +517,14 @@ export default function HRExperiencesPage() {
             ) : (
               <TooltipProvider delayDuration={300}>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                  {programExperiences.map((exp, i) => (
-                    <CompactCard key={exp.id} experience={exp} index={i} onOpen={() => navigate(`/hr/experiences/${exp.id}`)} actions={
+                  {programExperiences.map((exp, i) => {
+                    const categoryName = exp.categories?.name || exp.category;
+                    const cityName = exp.cities?.name || exp.city;
+                    const metaItems: BravoCardMetaItem[] = [];
+                    if (categoryName) metaItems.push({ text: categoryName });
+                    if (cityName) metaItems.push({ icon: MapPin, text: cityName });
+                    return (
+                    <BravoCard key={exp.id} imageUrl={exp.image_url} imageAlt={exp.title} title={exp.title} metaItems={metaItems} index={i} onOpen={() => navigate(`/hr/experiences/${exp.id}`)} actions={
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={(e) => { e.stopPropagation(); handleDeactivate(exp.id); }}>
@@ -527,7 +534,8 @@ export default function HRExperiencesPage() {
                         <TooltipContent>Rimuovi dal programma</TooltipContent>
                       </Tooltip>
                     } />
-                  ))}
+                    );
+                  })}
                 </div>
               </TooltipProvider>
             )}
