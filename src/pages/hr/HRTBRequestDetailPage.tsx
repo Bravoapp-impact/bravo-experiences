@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Clock, Heart, MoreVertical, Users, X } from "lucide-react";
+import { ArrowLeft, Clock, MoreVertical, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { HRLayout } from "@/components/layout/HRLayout";
 import { Button } from "@/components/ui/button";
@@ -23,16 +23,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { type TBRequestStatus } from "@/lib/tb-status";
 import { BravoCard, type BravoCardMetaItem } from "@/components/common/BravoCard";
-import { cn } from "@/lib/utils";
 import { TBRequestBriefSummary } from "@/components/hr/tb/TBRequestBriefSummary";
 import { TBRequestStatusSection } from "@/components/hr/tb/TBRequestStatusSection";
 
