@@ -45,7 +45,11 @@ export function ExperienceCardCompact({
       metaItems.push({ icon: Clock, text: `${duration}h` });
     }
     if (!isFull) {
-      metaItems.push({ icon: Users, text: String(availableSpots) });
+      metaItems.push({
+        icon: Users,
+        text: String(availableSpots),
+        className: availableSpots <= 3 ? "text-destructive font-normal" : undefined,
+      });
     }
   }
 
