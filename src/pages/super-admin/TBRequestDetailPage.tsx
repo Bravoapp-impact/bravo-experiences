@@ -410,17 +410,6 @@ function StatusSection({
     case "proposals_sent":
       return <ProposalsCard proposals={proposals} title="Proposte inviate all'HR" />;
 
-    case "proposals_reviewed":
-      return (
-        <ProposalsCard
-          proposals={proposals}
-          title="Proposte valutate dall'HR"
-          highlightInterested
-          ctaLabel="Richiedi quotazione ETS"
-          onCta={placeholderToast}
-        />
-      );
-
     case "quote_requested": {
       if (composing) {
         const interested = proposals.filter((p) => p.client_status === "interested");
