@@ -91,22 +91,6 @@ export default function HRTBRequestDetailPage() {
     enabled: !!id,
   });
 
-  const updateProposalStatus = useMutation({
-    mutationFn: async ({ proposalId, status }: { proposalId: string; status: string }) => {
-      const { error } = await supabase
-        .from("tb_proposals")
-        .update({
-          client_status: status,
-          client_decision_at: new Date().toISOString(),
-        })
-        .eq("id", proposalId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tb-proposals", id] });
-    },
-  });
-
   const requestQuote = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
