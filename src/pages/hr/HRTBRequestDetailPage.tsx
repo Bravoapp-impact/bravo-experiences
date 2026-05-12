@@ -198,51 +198,6 @@ export default function HRTBRequestDetailPage() {
     return items;
   }
 
-  function renderProposalActions(p: ProposalDetail) {
-    const isInterested = p.client_status === "interested";
-    const isDeclined = p.client_status === "declined";
-    return (
-      <div className="flex items-center gap-1.5 pt-1.5">
-        <Button
-          size="sm"
-          variant={isInterested ? "default" : "outline"}
-          disabled={isReadOnly}
-          onClick={() =>
-            updateProposalStatus.mutate({
-              proposalId: p.proposal_id,
-              status: isInterested ? "pending" : "interested",
-            })
-          }
-          className="text-xs h-7 flex-1"
-        >
-          <Heart className={cn("h-3.5 w-3.5 mr-1", isInterested && "fill-current")} />
-          {isInterested ? "Interessato" : "Mi interessa"}
-        </Button>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="icon"
-                variant={isDeclined ? "outline" : "ghost"}
-                disabled={isReadOnly}
-                onClick={() =>
-                  updateProposalStatus.mutate({
-                    proposalId: p.proposal_id,
-                    status: isDeclined ? "pending" : "declined",
-                  })
-                }
-                className={cn("h-7 w-7", isDeclined && "bg-muted")}
-                aria-label="Non interessato"
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Non interessato</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-    );
-  }
 
   return (
     <HRLayout>
