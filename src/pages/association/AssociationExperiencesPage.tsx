@@ -413,12 +413,21 @@ export default function AssociationExperiencesPage() {
                   iconClassName="text-green-500"
                 >
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    {grouped.published.map((exp, i) => (
-                      <ExperienceCompactCard
+                    {grouped.published.map((exp, i) => {
+                      const categoryName = exp.categories?.name || exp.category;
+                      const cityName = exp.cities?.name || exp.city;
+                      const metaItems: BravoCardMetaItem[] = [];
+                      if (categoryName) metaItems.push({ text: categoryName });
+                      if (cityName) metaItems.push({ icon: MapPin, text: cityName });
+                      return (
+                      <BravoCard
                         key={exp.id}
-                        experience={exp}
+                        imageUrl={exp.image_url}
+                        imageAlt={exp.title}
+                        title={exp.title}
+                        metaItems={metaItems}
                         index={i}
-                        onNavigate={() => navigate(`/association/experiences/${exp.id}`)}
+                        onOpen={() => navigate(`/association/experiences/${exp.id}`)}
                         actions={
                           isMobile ? (
                             <MobileActions
@@ -441,7 +450,8 @@ export default function AssociationExperiencesPage() {
                           )
                         }
                       />
-                    ))}
+                      );
+                    })}
                   </div>
                 </StatusSection>
               )}
