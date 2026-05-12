@@ -252,6 +252,7 @@ export function QuoteEditor({
       const payload = buildPayload(values);
       const { data: savedId, error: saveError } = await supabase.rpc("admin_save_tb_quote_draft", payload as any);
       if (saveError) throw saveError;
+      if (savedId) setLocalQuoteId(savedId as string);
       // 2. Invia
       const { error: sendError } = await supabase.rpc("admin_send_tb_quote", { p_quote_id: savedId });
       if (sendError) throw sendError;
