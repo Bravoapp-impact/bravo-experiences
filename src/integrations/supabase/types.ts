@@ -2004,6 +2004,10 @@ export type Database = {
         Args: { _date_id: string; _user_id: string }
         Returns: boolean
       }
+      hr_mark_tb_quote_viewed: {
+        Args: { p_quote_id: string }
+        Returns: undefined
+      }
       increment_access_code_usage: {
         Args: { p_code: string }
         Returns: boolean
