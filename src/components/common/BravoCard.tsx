@@ -32,6 +32,7 @@ export function BravoCard({
   fallbackEmoji,
   imageOverlay,
   title,
+  subtitleSlot,
   metaItems,
   onOpen,
   actions,
@@ -65,6 +66,7 @@ export function BravoCard({
           <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
             {title}
           </h3>
+          {subtitleSlot}
           {metaItems && metaItems.length > 0 && (
             <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
               {metaItems.map((item, i) => {
