@@ -762,4 +762,3 @@ export default function HRNewTBRequestPage() {
     </HRLayout>
   );
 }
-}
