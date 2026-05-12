@@ -268,6 +268,7 @@ export default function HRTBRequestDetailPage() {
 
         {/* Dynamic status section */}
         <TBRequestStatusSection
+          requestId={id!}
           status={request.status as TBRequestStatus}
           interestedCount={interestedCount}
           onContinueDraft={() =>
