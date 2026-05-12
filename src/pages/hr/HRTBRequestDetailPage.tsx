@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Clock, Heart, MoreVertical, Users, X } from "lucide-react";
+import { ArrowLeft, Clock, MoreVertical, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { HRLayout } from "@/components/layout/HRLayout";
 import { Button } from "@/components/ui/button";
@@ -23,16 +23,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { type TBRequestStatus } from "@/lib/tb-status";
 import { BravoCard, type BravoCardMetaItem } from "@/components/common/BravoCard";
-import { cn } from "@/lib/utils";
 import { TBRequestBriefSummary } from "@/components/hr/tb/TBRequestBriefSummary";
 import { TBRequestStatusSection } from "@/components/hr/tb/TBRequestStatusSection";
 
@@ -57,18 +50,6 @@ interface ProposalDetail {
   format_services: { items?: string[] } | null;
 }
 
-const READ_ONLY_STATUSES = new Set([
-  "quote_requested",
-  "quote_in_composition",
-  "modification_requested",
-  "quote_sent",
-  "quote_accepted",
-  "quote_rejected",
-  "signed",
-  "event_scheduled",
-  "completed",
-  "cancelled",
-]);
 
 const CANCELLABLE_STATUSES = new Set([
   "draft",
@@ -108,22 +89,6 @@ export default function HRTBRequestDetailPage() {
       return (data as unknown as ProposalDetail[]) || [];
     },
     enabled: !!id,
-  });
-
-  const updateProposalStatus = useMutation({
-    mutationFn: async ({ proposalId, status }: { proposalId: string; status: string }) => {
-      const { error } = await supabase
-        .from("tb_proposals")
-        .update({
-          client_status: status,
-          client_decision_at: new Date().toISOString(),
-        })
-        .eq("id", proposalId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tb-proposals", id] });
-    },
   });
 
   const requestQuote = useMutation({
@@ -197,7 +162,6 @@ export default function HRTBRequestDetailPage() {
 
   const interestedCount =
     proposals?.filter((p) => p.client_status === "interested").length || 0;
-  const isReadOnly = READ_ONLY_STATUSES.has(request.status);
   const canCancel = CANCELLABLE_STATUSES.has(request.status);
   const hasProposals = proposals && proposals.length > 0;
 
@@ -218,51 +182,6 @@ export default function HRTBRequestDetailPage() {
     return items;
   }
 
-  function renderProposalActions(p: ProposalDetail) {
-    const isInterested = p.client_status === "interested";
-    const isDeclined = p.client_status === "declined";
-    return (
-      <div className="flex items-center gap-1.5 pt-1.5">
-        <Button
-          size="sm"
-          variant={isInterested ? "default" : "outline"}
-          disabled={isReadOnly}
-          onClick={() =>
-            updateProposalStatus.mutate({
-              proposalId: p.proposal_id,
-              status: isInterested ? "pending" : "interested",
-            })
-          }
-          className="text-xs h-7 flex-1"
-        >
-          <Heart className={cn("h-3.5 w-3.5 mr-1", isInterested && "fill-current")} />
-          {isInterested ? "Interessato" : "Mi interessa"}
-        </Button>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="icon"
-                variant={isDeclined ? "outline" : "ghost"}
-                disabled={isReadOnly}
-                onClick={() =>
-                  updateProposalStatus.mutate({
-                    proposalId: p.proposal_id,
-                    status: isDeclined ? "pending" : "declined",
-                  })
-                }
-                className={cn("h-7 w-7", isDeclined && "bg-muted")}
-                aria-label="Non interessato"
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Non interessato</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-    );
-  }
 
   return (
     <HRLayout>
@@ -329,7 +248,18 @@ export default function HRTBRequestDetailPage() {
                   }
                   index={i}
                   dimmed={p.client_status === "declined"}
-                  actions={renderProposalActions(p)}
+                  actions={
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full text-xs h-7 mt-1.5"
+                      onClick={() =>
+                        navigate(`/hr/team-building/${id}/proposte/${p.proposal_id}`)
+                      }
+                    >
+                      Scopri di più
+                    </Button>
+                  }
                 />
               ))}
             </div>
