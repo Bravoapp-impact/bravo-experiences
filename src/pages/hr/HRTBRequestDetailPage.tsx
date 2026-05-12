@@ -50,18 +50,6 @@ interface ProposalDetail {
   format_services: { items?: string[] } | null;
 }
 
-const READ_ONLY_STATUSES = new Set([
-  "quote_requested",
-  "quote_in_composition",
-  "modification_requested",
-  "quote_sent",
-  "quote_accepted",
-  "quote_rejected",
-  "signed",
-  "event_scheduled",
-  "completed",
-  "cancelled",
-]);
 
 const CANCELLABLE_STATUSES = new Set([
   "draft",
