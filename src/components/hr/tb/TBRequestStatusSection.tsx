@@ -101,13 +101,7 @@ export function TBRequestStatusSection({
       );
 
     case "quote_sent":
-      return (
-        <InfoCard
-          icon={FileText}
-          title="Preventivo pronto"
-          description="Il preventivo è pronto per la tua decisione. Vista preventivo in arrivo."
-        />
-      );
+      return <HRTBQuoteView requestId={requestId} />;
 
     case "quote_accepted":
       return (
