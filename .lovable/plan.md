@@ -1,32 +1,48 @@
-## Riflettere selezione nel bottone della card proposta
+## Causa
 
-File: `src/pages/hr/HRTBRequestDetailPage.tsx`
+In `QuoteEditor.tsx`, quando il preventivo viene aperto in stato "nessuna bozza esistente" (es. dopo che lo status è passato a `quote_in_composition` ma senza draft), il parent `TBRequestDetailPage.tsx` passa `quoteId={null}`.
 
-### Problema
-Nella griglia "Le tue proposte" (sezione `/hr/team-building/:id`), il bottone della card è sempre "Scopri di più", quindi non si capisce quali proposte sono state marcate come interessate o scartate dal dettaglio.
+Cosa succede oggi:
 
-### Modifica
-Rendere il testo e lo stile del bottone dinamici in base a `p.client_status`:
+1. L'utente clicca **Salva bozza** → `buildPayload` usa la prop `quoteId` (null) → la RPC fa INSERT e crea correttamente la bozza, ritornando il nuovo id.
+2. `onSuccess` invalida la query del parent, ma la prop `quoteId` di `QuoteEditor` resta `null` finché il parent non ricarica i dati e ri-renderizza con il nuovo id (ed eventualmente smonta/rimonta).
+3. L'utente clicca subito **Invia al cliente** → `sendMutation` richiama di nuovo `buildPayload` con `p_quote_id = null` → la RPC tenta un altro INSERT → vincolo unique → `quote_already_exists`.
 
-- `client_status === "interested"` → label `Mi interessa` con icona `Heart` (filled), stile verde pieno (stessi token `bg-success` / `text-success-foreground` / `border-success` già usati in `HRTBProposalDetailPage`).
-- `client_status === "declined"` → label `Non mi interessa` con icona `X`, stile rosso pieno (`bg-destructive` / `text-destructive-foreground` / `border-destructive`).
-- Altrimenti (pending / null) → resta `Scopri di più` outline come ora.
+In sostanza: il componente non "ricorda" l'id appena creato dalla prima save, quindi ogni azione successiva continua a comportarsi come se stesse creando una bozza nuova.
 
-Il click continua a fare `navigate` al dettaglio della proposta — non cambia la business logic, solo presentazione.
+## Fix
 
-### Dettagli implementativi
-- Importare `Heart`, `X` da `lucide-react` (oltre agli esistenti) e `cn` da `@/lib/utils`.
-- Definire due piccoli helper locali (o inline) `interestedBtnClass` / `declinedBtnClass` analoghi a quelli in `HRTBProposalDetailPage.tsx`, applicati con `size="sm"` e `h-7 text-xs mt-1.5` per mantenere la metrica della griglia.
-- Mantenere `variant="outline"` per lo stato neutro; per gli stati interested/declined usare le classi piene.
-- Nessuna modifica a `BravoCard`, alle query, né alle mutation.
+Far sì che `QuoteEditor` tenga traccia internamente dell'id del quote appena creato/salvato, e lo usi come fallback alla prop.
+
+### Modifiche (un solo file)
+
+**`src/components/super-admin/tb-quote-editor/QuoteEditor.tsx`**
+
+1. Aggiungere uno state locale:
+   ```ts
+   const [localQuoteId, setLocalQuoteId] = useState<string | null>(quoteId);
+   ```
+   Mantenerlo sincronizzato quando la prop cambia con un `useEffect` (`if (quoteId) setLocalQuoteId(quoteId)`).
+
+2. In `buildPayload`, usare `localQuoteId` al posto di `quoteId`:
+   ```ts
+   p_quote_id: localQuoteId,
+   ```
+
+3. In `saveDraftMutation.onSuccess(newQuoteId)` chiamare `setLocalQuoteId(newQuoteId)` **prima** delle invalidate. Stessa cosa in `sendMutation` dopo il primo `admin_save_tb_quote_draft` (fra step 1 e step 2): usare l'id ritornato per aggiornare `localQuoteId` così, anche se un `admin_send_tb_quote` dovesse fallire e l'utente riprovasse, il successivo save/send userebbe l'UPDATE branch della RPC.
+
+4. Anche l'header card che mostra "Nuovo preventivo" / "Preventivo v…" può usare `localQuoteId ?? quoteId` per coerenza (cosmetico, non bloccante).
 
 ### Cosa NON cambia
-- `dimmed` per le declined resta come ora (nel mapping di `BravoCard`).
-- Nessun cambio in `HRTBProposalDetailPage.tsx`, `TBRequestStatusSection`, `HRTBQuoteView`.
-- Nessuna modifica DB / RPC.
 
-### Verifica
-- Stato pending → bottone outline "Scopri di più".
-- Marcata "Mi interessa" nel dettaglio → tornando alla lista, bottone verde "Mi interessa" con cuore pieno.
-- Marcata "Non mi interessa" → bottone rosso "Non mi interessa" con X (card resta dimmed).
-- Toggle a pending nel dettaglio → bottone torna "Scopri di più".
+- Nessuna modifica alle RPC (`admin_save_tb_quote_draft`, `admin_send_tb_quote`).
+- Nessuna modifica al parent `TBRequestDetailPage.tsx` o ad altri componenti.
+- La logica HR (`HRTBQuoteView`) resta intatta.
+- La logica decisione `hr_decide_on_quote` resta intatta.
+
+### Validazione
+
+- Caso A: `quoteId=null` → Save bozza → Save bozza di nuovo → deve fare UPDATE (non INSERT).
+- Caso B: `quoteId=null` → Save bozza → Invia al cliente → deve riusare la stessa bozza, status passa a `sent`.
+- Caso C: `quoteId` valido in ingresso → comportamento invariato.
+- Caso D: nuova versione (supersede) — il parent monta un nuovo `QuoteEditor` con il nuovo `quoteId` valido, quindi non interessato.

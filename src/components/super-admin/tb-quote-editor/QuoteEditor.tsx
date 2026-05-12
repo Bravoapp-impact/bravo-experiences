@@ -13,7 +13,7 @@
  * Reload durante invio: la RPC è atomica, al reload la fonte di verità
  * (status request) determina cosa renderizzare.
  */
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -83,6 +83,10 @@ export function QuoteEditor({
   previousQuoteId,
 }: QuoteEditorProps) {
   const queryClient = useQueryClient();
+  const [localQuoteId, setLocalQuoteId] = useState<string | null>(quoteId);
+  useEffect(() => {
+    if (quoteId) setLocalQuoteId(quoteId);
+  }, [quoteId]);
 
   // Carica quote esistente (modalità modifica draft)
   const { data: existingQuote } = useQuery({
@@ -192,7 +196,7 @@ export function QuoteEditor({
       };
     });
     return {
-      p_quote_id: quoteId,
+      p_quote_id: localQuoteId,
       p_request_id: requestId,
       p_total_amount_final: totals.total_final,
       p_total_amount_ets: totals.total_ets,
@@ -219,6 +223,7 @@ export function QuoteEditor({
       return data as string;
     },
     onSuccess: (newQuoteId) => {
+      setLocalQuoteId(newQuoteId);
       toast.success("Bozza salvata");
       form.reset(form.getValues(), { keepDirty: false });
       queryClient.invalidateQueries({ queryKey: ["super-admin-tb-request", requestId] });
@@ -247,6 +252,7 @@ export function QuoteEditor({
       const payload = buildPayload(values);
       const { data: savedId, error: saveError } = await supabase.rpc("admin_save_tb_quote_draft", payload as any);
       if (saveError) throw saveError;
+      if (savedId) setLocalQuoteId(savedId as string);
       // 2. Invia
       const { error: sendError } = await supabase.rpc("admin_send_tb_quote", { p_quote_id: savedId });
       if (sendError) throw sendError;
