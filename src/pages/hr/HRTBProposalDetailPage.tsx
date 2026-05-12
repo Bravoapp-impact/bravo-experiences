@@ -224,14 +224,8 @@ export default function HRTBProposalDetailPage() {
                     onClick={onDeclined}
                     disabled={actionsDisabled}
                   >
-                    {isDeclined ? (
-                      "Annulla scelta"
-                    ) : (
-                      <>
-                        <X className="h-4 w-4" />
-                        Non mi interessa
-                      </>
-                    )}
+                    <X className="h-4 w-4" />
+                    Non mi interessa
                   </Button>
                 </CardContent>
               </Card>
@@ -254,14 +248,8 @@ export default function HRTBProposalDetailPage() {
                 onClick={onDeclined}
                 disabled={actionsDisabled}
               >
-                {isDeclined ? (
-                  "Annulla scelta"
-                ) : (
-                  <>
-                    <X className="h-4 w-4" />
-                    Non mi interessa
-                  </>
-                )}
+                <X className="h-4 w-4" />
+                Non mi interessa
               </Button>
             </div>
           }
