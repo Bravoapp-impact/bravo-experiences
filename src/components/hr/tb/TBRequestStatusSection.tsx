@@ -12,10 +12,12 @@ import {
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getTBStatusMeta, type TBRequestStatus } from "@/lib/tb-status";
+import { HRTBQuoteView } from "@/components/hr/tb/HRTBQuoteView";
 
 interface Props {
   status: TBRequestStatus | string;
   interestedCount: number;
+  requestId: string;
   onContinueDraft: () => void;
   onRequestQuote: () => void;
   isRequestingQuote: boolean;
@@ -24,6 +26,7 @@ interface Props {
 export function TBRequestStatusSection({
   status,
   interestedCount,
+  requestId,
   onContinueDraft,
   onRequestQuote,
   isRequestingQuote,
