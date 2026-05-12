@@ -223,6 +223,7 @@ export function QuoteEditor({
       return data as string;
     },
     onSuccess: (newQuoteId) => {
+      setLocalQuoteId(newQuoteId);
       toast.success("Bozza salvata");
       form.reset(form.getValues(), { keepDirty: false });
       queryClient.invalidateQueries({ queryKey: ["super-admin-tb-request", requestId] });
