@@ -83,6 +83,10 @@ export function QuoteEditor({
   previousQuoteId,
 }: QuoteEditorProps) {
   const queryClient = useQueryClient();
+  const [localQuoteId, setLocalQuoteId] = useState<string | null>(quoteId);
+  useEffect(() => {
+    if (quoteId) setLocalQuoteId(quoteId);
+  }, [quoteId]);
 
   // Carica quote esistente (modalità modifica draft)
   const { data: existingQuote } = useQuery({
