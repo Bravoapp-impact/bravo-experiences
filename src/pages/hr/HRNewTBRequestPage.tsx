@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Search } from "lucide-react";
+import { Search, Check, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,6 +17,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 
 const TOTAL_STEPS = 6;
+
+type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 const GOALS = [
   "Sviluppare competenze e soft skills",
@@ -89,11 +91,19 @@ const initialForm: FormState = {
 
 export default function HRNewTBRequestPage() {
   const navigate = useNavigate();
+  const { id: routeDraftId } = useParams<{ id?: string }>();
   const { user, profile } = useAuth();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [provinceSearch, setProvinceSearch] = useState("");
+  const [requestId, setRequestId] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [bootstrapping, setBootstrapping] = useState(true);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipNextAutosaveRef = useRef(true);
+  const requestIdRef = useRef<string | null>(null);
+  useEffect(() => { requestIdRef.current = requestId; }, [requestId]);
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -167,57 +177,223 @@ export default function HRNewTBRequestPage() {
     }
   };
 
+  const buildPayload = useCallback((f: FormState, status: "draft" | "submitted") => {
+    const pNum = Number(f.participantsCount);
+    const pMin = pNum > 0 ? Math.round(pNum * 0.9) : null;
+    const pMax = pNum > 0 ? Math.round(pNum * 1.1) : null;
+
+    let periodFromStr: string | null = null;
+    let periodToStr: string | null = null;
+    if (f.selectedMonths.length > 0) {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const sortedMonths = [...f.selectedMonths].sort((a, b) => a - b);
+      const firstMonth = sortedMonths[0];
+      const lastMonth = sortedMonths[sortedMonths.length - 1];
+      const year = firstMonth < now.getMonth() ? currentYear + 1 : currentYear;
+      const periodFrom = new Date(year, firstMonth, 1);
+      const periodToYear = lastMonth < firstMonth ? year + 1 : year;
+      const periodTo = new Date(periodToYear, lastMonth + 1, 0);
+      periodFromStr = format(periodFrom, "yyyy-MM-dd");
+      periodToStr = format(periodTo, "yyyy-MM-dd");
+    }
+
+    const extraServices = {
+      ...f.extraServices,
+      goals: f.goals,
+      preferred_activities: f.noActivityInMind ? ["none"] : f.preferredActivities,
+      places: f.places,
+    };
+
+    return {
+      title: f.title.trim() || "Senza titolo",
+      participants_min: pMin,
+      participants_max: pMax,
+      preferred_period_from: periodFromStr,
+      preferred_period_to: periodToStr,
+      preferred_city_id: null,
+      preferred_location_type: null,
+      budget_estimate: f.budgetEstimate ? Number(f.budgetEstimate) : null,
+      extra_services: extraServices,
+      notes: f.notes.trim() || null,
+      status,
+    };
+  }, []);
+
+  // Bootstrap: load existing draft (by route id or by HR existing draft) or fresh form
+  useEffect(() => {
+    if (!user || !profile?.company_id) return;
+    let cancelled = false;
+    (async () => {
+      setBootstrapping(true);
+      try {
+        if (routeDraftId) {
+          const { data, error } = await supabase
+            .from("tb_requests")
+            .select("*")
+            .eq("id", routeDraftId)
+            .maybeSingle();
+          if (cancelled) return;
+          if (error || !data) {
+            toast.error("Bozza non trovata");
+            navigate("/hr/team-building");
+            return;
+          }
+          if (data.status !== "draft") {
+            toast.error("Questa richiesta non è più modificabile");
+            navigate("/hr/team-building");
+            return;
+          }
+          const { data: existing } = await supabase
+            .from("tb_requests")
+            .select("id")
+            .eq("requested_by", user.id)
+            .eq("status", "draft")
+            .maybeSingle();
+          if (cancelled) return;
+          if (existing && existing.id !== data.id) {
+            navigate(`/hr/team-building/brief/${existing.id}`, { replace: true });
+            return;
+          }
+          const es = (data.extra_services ?? {}) as Record<string, unknown>;
+          const goals = Array.isArray(es.goals) ? (es.goals as string[]) : [];
+          const prefAct = Array.isArray(es.preferred_activities) ? (es.preferred_activities as string[]) : [];
+          const places = Array.isArray(es.places) ? (es.places as string[]) : [];
+          const noAct = prefAct.length === 1 && prefAct[0] === "none";
+          const knownKeys = new Set(["goals", "preferred_activities", "places"]);
+          const extraServices: Record<string, boolean> = {};
+          for (const [k, v] of Object.entries(es)) {
+            if (!knownKeys.has(k) && typeof v === "boolean") extraServices[k] = v;
+          }
+          const selectedMonths: number[] = [];
+          if (data.preferred_period_from && data.preferred_period_to) {
+            const from = new Date(data.preferred_period_from);
+            const to = new Date(data.preferred_period_to);
+            const startM = from.getMonth();
+            const endM = to.getMonth();
+            const months = endM >= startM ? endM - startM + 1 : 12 - startM + endM + 1;
+            for (let i = 0; i < months; i++) selectedMonths.push((startM + i) % 12);
+          }
+          skipNextAutosaveRef.current = true;
+          setForm({
+            title: data.title ?? "",
+            goals,
+            preferredActivities: noAct ? [] : prefAct,
+            noActivityInMind: noAct,
+            participantsCount: data.participants_max
+              ? String(Math.round((data.participants_max as number) / 1.1))
+              : "",
+            selectedMonths,
+            places,
+            budgetEstimate: data.budget_estimate != null ? String(data.budget_estimate) : "",
+            extraServices,
+            notes: data.notes ?? "",
+          });
+          setRequestId(data.id);
+          setSaveStatus("saved");
+        } else {
+          const { data: existing } = await supabase
+            .from("tb_requests")
+            .select("id")
+            .eq("requested_by", user.id)
+            .eq("status", "draft")
+            .maybeSingle();
+          if (cancelled) return;
+          if (existing) {
+            toast.info("Hai una bozza in corso, la riprendi qui");
+            navigate(`/hr/team-building/brief/${existing.id}`, { replace: true });
+            return;
+          }
+        }
+      } finally {
+        if (!cancelled) setBootstrapping(false);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, profile?.company_id, routeDraftId]);
+
+  // Debounced autosave when requestId is set
+  useEffect(() => {
+    if (!requestId) return;
+    if (skipNextAutosaveRef.current) {
+      skipNextAutosaveRef.current = false;
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setSaveStatus("saving");
+    debounceRef.current = setTimeout(async () => {
+      const payload = buildPayload(form, "draft");
+      const { error } = await supabase
+        .from("tb_requests")
+        .update(payload)
+        .eq("id", requestId);
+      if (error) {
+        setSaveStatus("error");
+      } else {
+        setSaveStatus("saved");
+      }
+    }, 1500);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [form, requestId, buildPayload]);
+
+  const ensureDraftCreated = async (): Promise<string | null> => {
+    if (requestIdRef.current) return requestIdRef.current;
+    if (!user || !profile?.company_id) return null;
+    if (form.title.trim().length === 0) return null;
+    const payload = buildPayload(form, "draft");
+    setSaveStatus("saving");
+    const { data, error } = await supabase
+      .from("tb_requests")
+      .insert({
+        ...payload,
+        company_id: profile.company_id,
+        requested_by: user.id,
+      })
+      .select("id")
+      .single();
+    if (error || !data) {
+      setSaveStatus("error");
+      toast.error("Errore nel salvataggio della bozza");
+      return null;
+    }
+    skipNextAutosaveRef.current = true;
+    setRequestId(data.id);
+    setSaveStatus("saved");
+    window.history.replaceState(null, "", `/hr/team-building/brief/${data.id}`);
+    return data.id;
+  };
+
   const handleSubmit = async () => {
     if (!user || !profile?.company_id) return;
     setSubmitting(true);
     try {
-      // Build period from/to from selected months
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const sortedMonths = [...form.selectedMonths].sort((a, b) => a - b);
-      const firstMonth = sortedMonths[0];
-      const lastMonth = sortedMonths[sortedMonths.length - 1];
-      // If earliest month is before current month, use next year
-      const year = firstMonth < now.getMonth() ? currentYear + 1 : currentYear;
-      const periodFrom = new Date(year, firstMonth, 1);
-      const periodToYear = lastMonth < firstMonth ? year + 1 : year;
-      const periodTo = new Date(periodToYear, lastMonth + 1, 0); // last day of month
-
-      const extraServices = {
-        ...form.extraServices,
-        goals: form.goals,
-        preferred_activities: form.noActivityInMind ? ["none"] : form.preferredActivities,
-      };
-
-      const { data: inserted, error } = await supabase.from("tb_requests").insert({
-        title: form.title.trim(),
-        company_id: profile.company_id,
-        requested_by: user.id,
-        participants_min: participantsNum > 0 ? participantsMin : null,
-        participants_max: participantsNum > 0 ? participantsMax : null,
-        preferred_period_from: format(periodFrom, "yyyy-MM-dd"),
-        preferred_period_to: format(periodTo, "yyyy-MM-dd"),
-        preferred_city_id: null,
-        preferred_location_type: null,
-        budget_estimate: form.budgetEstimate ? Number(form.budgetEstimate) : null,
-        extra_services: { ...extraServices, places: form.places },
-        notes: form.notes.trim() || null,
-        status: "submitted",
-      }).select("id").single();
-
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+      let id = requestIdRef.current;
+      if (!id) {
+        id = await ensureDraftCreated();
+        if (!id) throw new Error("no-draft");
+      }
+      const payload = buildPayload(form, "submitted");
+      const { error } = await supabase
+        .from("tb_requests")
+        .update(payload)
+        .eq("id", id);
       if (error) throw error;
 
-      // Trigger automatic matching
       try {
-        await supabase.rpc("match_tb_formats_for_request", {
-          p_request_id: inserted.id,
-        });
+        await supabase.rpc("match_tb_formats_for_request", { p_request_id: id });
       } catch {
-        // Matching is best-effort; don't block the flow
+        // best-effort
       }
 
       toast.success("Richiesta inviata con successo!");
-      navigate(`/hr/team-building/${inserted.id}`);
+      navigate(`/hr/team-building/${id}`);
     } catch {
       toast.error("Errore nell'invio della richiesta");
     } finally {
@@ -225,12 +401,16 @@ export default function HRNewTBRequestPage() {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === TOTAL_STEPS) {
       handleSubmit();
-    } else {
-      setStep(step + 1);
+      return;
     }
+    if (step === 1 && !requestIdRef.current) {
+      const id = await ensureDraftCreated();
+      if (!id) return;
+    }
+    setStep(step + 1);
   };
 
   const renderStep = () => {
@@ -523,8 +703,50 @@ export default function HRNewTBRequestPage() {
     }
   };
 
+  const showSaveIndicator = !!requestId;
+  const saveIndicator = (() => {
+    if (!showSaveIndicator) return null;
+    if (saveStatus === "saving") {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          Salvataggio…
+        </span>
+      );
+    }
+    if (saveStatus === "error") {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs text-destructive">
+          <AlertCircle className="h-3.5 w-3.5" />
+          Errore di salvataggio
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Check className="h-3.5 w-3.5 text-primary" />
+        Salvato
+      </span>
+    );
+  })();
+
+  if (bootstrapping) {
+    return (
+      <HRLayout>
+        <div className="flex items-center justify-center py-20 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+        </div>
+      </HRLayout>
+    );
+  }
+
   return (
     <HRLayout>
+      <div className="max-w-xl mx-auto pt-6">
+        <div className="flex justify-end h-5">
+          {saveIndicator}
+        </div>
+      </div>
       <StepWizard
         totalSteps={TOTAL_STEPS}
         currentStep={step}
@@ -533,6 +755,7 @@ export default function HRNewTBRequestPage() {
         canNext={canNext()}
         submitting={submitting}
         backLabel={step === 1 ? "Annulla" : "Indietro"}
+        nextLabel={step === TOTAL_STEPS ? "Invia richiesta" : "Avanti"}
       >
         {renderStep()}
       </StepWizard>

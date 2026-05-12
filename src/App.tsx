@@ -219,6 +219,14 @@ const App = () => (
               }
             />
             <Route
+              path="/hr/team-building/brief/:id"
+              element={
+                <ProtectedHRRoute>
+                  <HRNewTBRequestPage />
+                </ProtectedHRRoute>
+              }
+            />
+            <Route
               path="/hr/team-building/:id"
               element={
                 <ProtectedHRRoute>
