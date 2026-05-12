@@ -315,7 +315,7 @@ export default function HRTBRequestDetailPage() {
         {hasProposals && (
           <section className="space-y-4">
             <h3 className="text-sm font-semibold text-foreground">Le tue proposte</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               {proposals!.map((p, i) => (
                 <BravoCard
                   key={p.proposal_id}
