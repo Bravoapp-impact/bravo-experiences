@@ -264,7 +264,18 @@ export default function HRTBRequestDetailPage() {
                   }
                   index={i}
                   dimmed={p.client_status === "declined"}
-                  actions={renderProposalActions(p)}
+                  actions={
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full text-xs h-7 mt-1.5"
+                      onClick={() =>
+                        navigate(`/hr/team-building/${id}/proposte/${p.proposal_id}`)
+                      }
+                    >
+                      Scopri di più
+                    </Button>
+                  }
                 />
               ))}
             </div>
