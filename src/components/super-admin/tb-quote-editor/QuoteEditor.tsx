@@ -196,7 +196,7 @@ export function QuoteEditor({
       };
     });
     return {
-      p_quote_id: quoteId,
+      p_quote_id: localQuoteId,
       p_request_id: requestId,
       p_total_amount_final: totals.total_final,
       p_total_amount_ets: totals.total_ets,
