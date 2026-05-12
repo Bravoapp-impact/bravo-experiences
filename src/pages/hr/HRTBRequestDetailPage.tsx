@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Clock, MoreVertical, Users } from "lucide-react";
+import { ArrowLeft, Clock, Heart, MoreVertical, Users, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { HRLayout } from "@/components/layout/HRLayout";
 import { Button } from "@/components/ui/button";
@@ -248,18 +249,34 @@ export default function HRTBRequestDetailPage() {
                   }
                   index={i}
                   dimmed={p.client_status === "declined"}
-                  actions={
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full text-xs h-7 mt-1.5"
-                      onClick={() =>
-                        navigate(`/hr/team-building/${id}/proposte/${p.proposal_id}`)
-                      }
-                    >
-                      Scopri di più
-                    </Button>
-                  }
+                  actions={(() => {
+                    const isInterested = p.client_status === "interested";
+                    const isDeclined = p.client_status === "declined";
+                    return (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className={cn(
+                          "w-full text-xs h-7 mt-1.5 gap-1.5 transition-colors",
+                          isInterested &&
+                            "bg-success text-success-foreground border-success hover:bg-success/90",
+                          isDeclined &&
+                            "bg-destructive text-destructive-foreground border-destructive hover:bg-destructive/90",
+                        )}
+                        onClick={() =>
+                          navigate(`/hr/team-building/${id}/proposte/${p.proposal_id}`)
+                        }
+                      >
+                        {isInterested && <Heart className="h-3 w-3 fill-current" />}
+                        {isDeclined && <X className="h-3 w-3" />}
+                        {isInterested
+                          ? "Mi interessa"
+                          : isDeclined
+                          ? "Non mi interessa"
+                          : "Scopri di più"}
+                      </Button>
+                    );
+                  })()}
                 />
               ))}
             </div>

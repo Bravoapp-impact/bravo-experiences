@@ -1,37 +1,32 @@
-## Rimozione testo "Annulla scelta" e semplificazione toggle bottoni
+## Riflettere selezione nel bottone della card proposta
 
-File: `src/pages/hr/HRTBProposalDetailPage.tsx`
+File: `src/pages/hr/HRTBRequestDetailPage.tsx`
 
 ### Problema
-Il bottone "Non mi interessa" attualmente cambia testo in "Annulla scelta" quando `isDeclined`, creando confusione. L'utente vuole un comportamento più semplice: entrambi i bottoni rimangono sempre con il loro testo originale.
+Nella griglia "Le tue proposte" (sezione `/hr/team-building/:id`), il bottone della card è sempre "Scopri di più", quindi non si capisce quali proposte sono state marcate come interessate o scartate dal dettaglio.
 
-### Modifiche
+### Modifica
+Rendere il testo e lo stile del bottone dinamici in base a `p.client_status`:
 
-**1. Rimuovere logica condizionale sul testo del bottone "Non mi interessa"**
-- Sidebar: il testo torna sempre `<X className="h-4 w-4" /> Non mi interessa` (riga 186-191 attuale con il ternario)
-- Mobile drawer: stesso trattamento (riga 213-218)
-- Rimuovere il ternario `isDeclined ? "Annulla scelta" : <><X …/> Non mi interessa</>`
+- `client_status === "interested"` → label `Mi interessa` con icona `Heart` (filled), stile verde pieno (stessi token `bg-success` / `text-success-foreground` / `border-success` già usati in `HRTBProposalDetailPage`).
+- `client_status === "declined"` → label `Non mi interessa` con icona `X`, stile rosso pieno (`bg-destructive` / `text-destructive-foreground` / `border-destructive`).
+- Altrimenti (pending / null) → resta `Scopri di più` outline come ora.
 
-**2. Confermare logica toggle esistente**
-- `onInterested()` e `onDeclined()` già fanno toggle su `pending` se ricliccati:
-  - `isInterested ? "pending" : "interested"`
-  - `isDeclined ? "pending" : "declined"`
-- Se sei `interested` e clicchi "Non mi interessa" → diventa `declined` (la chiamata a `onDeclined()` è indipendente, fa il suo toggle)
-- Se sei `declined` e clicchi "Non mi interessa" → torna `pending`
-- Se sei `interested` e riclicchi "Mi interessa" → torna `pending`
+Il click continua a fare `navigate` al dettaglio della proposta — non cambia la business logic, solo presentazione.
 
-**3. Nessuna modifica al colore/disabilitazione**
-- La colorazione verde/rosso e il lock dopo `quote_requested` restano invariate.
+### Dettagli implementativi
+- Importare `Heart`, `X` da `lucide-react` (oltre agli esistenti) e `cn` da `@/lib/utils`.
+- Definire due piccoli helper locali (o inline) `interestedBtnClass` / `declinedBtnClass` analoghi a quelli in `HRTBProposalDetailPage.tsx`, applicati con `size="sm"` e `h-7 text-xs mt-1.5` per mantenere la metrica della griglia.
+- Mantenere `variant="outline"` per lo stato neutro; per gli stati interested/declined usare le classi piene.
+- Nessuna modifica a `BravoCard`, alle query, né alle mutation.
 
 ### Cosa NON cambia
-- `interestedBtnClass` / `declinedBtnClass` helper
-- `actionsDisabled` e `isLocked`
-- `updateStatus` mutation
-- Routing back e headerExtras badge
+- `dimmed` per le declined resta come ora (nel mapping di `BravoCard`).
+- Nessun cambio in `HRTBProposalDetailPage.tsx`, `TBRequestStatusSection`, `HRTBQuoteView`.
+- Nessuna modifica DB / RPC.
 
 ### Verifica
-- Stato iniziale: entrambi i bottoni outline neutri
-- Click "Mi interessa" → diventa verde pieno
-- Click di nuovo "Mi interessa" → torna outline neutro
-- Click "Non mi interessa" da stato verde → diventa rosso pieno (la scelta passa da interested a declined)
-- Click di nuovo "Non mi interessa" → torna outline neutro
+- Stato pending → bottone outline "Scopri di più".
+- Marcata "Mi interessa" nel dettaglio → tornando alla lista, bottone verde "Mi interessa" con cuore pieno.
+- Marcata "Non mi interessa" → bottone rosso "Non mi interessa" con X (card resta dimmed).
+- Toggle a pending nel dettaglio → bottone torna "Scopri di più".
