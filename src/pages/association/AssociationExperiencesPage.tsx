@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BaseCardImage } from "@/components/common/BaseCardImage";
+import { BravoCard, BravoCardMetaItem } from "@/components/common/BravoCard";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DeleteConfirmDialog } from "@/components/crud/DeleteConfirmDialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -359,12 +359,21 @@ export default function AssociationExperiencesPage() {
                   iconClassName="text-yellow-500"
                 >
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    {grouped.draft.map((exp, i) => (
-                      <ExperienceCompactCard
+                    {grouped.draft.map((exp, i) => {
+                      const categoryName = exp.categories?.name || exp.category;
+                      const cityName = exp.cities?.name || exp.city;
+                      const metaItems: BravoCardMetaItem[] = [];
+                      if (categoryName) metaItems.push({ text: categoryName });
+                      if (cityName) metaItems.push({ icon: MapPin, text: cityName });
+                      return (
+                      <BravoCard
                         key={exp.id}
-                        experience={exp}
+                        imageUrl={exp.image_url}
+                        imageAlt={exp.title}
+                        title={exp.title}
+                        metaItems={metaItems}
                         index={i}
-                        onNavigate={() => navigate(`/association/experiences/${exp.id}`)}
+                        onOpen={() => navigate(`/association/experiences/${exp.id}`)}
                         actions={
                           isMobile ? (
                             <MobileActions
@@ -389,7 +398,8 @@ export default function AssociationExperiencesPage() {
                           )
                         }
                       />
-                    ))}
+                      );
+                    })}
                   </div>
                 </StatusSection>
               )}
@@ -403,12 +413,21 @@ export default function AssociationExperiencesPage() {
                   iconClassName="text-green-500"
                 >
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    {grouped.published.map((exp, i) => (
-                      <ExperienceCompactCard
+                    {grouped.published.map((exp, i) => {
+                      const categoryName = exp.categories?.name || exp.category;
+                      const cityName = exp.cities?.name || exp.city;
+                      const metaItems: BravoCardMetaItem[] = [];
+                      if (categoryName) metaItems.push({ text: categoryName });
+                      if (cityName) metaItems.push({ icon: MapPin, text: cityName });
+                      return (
+                      <BravoCard
                         key={exp.id}
-                        experience={exp}
+                        imageUrl={exp.image_url}
+                        imageAlt={exp.title}
+                        title={exp.title}
+                        metaItems={metaItems}
                         index={i}
-                        onNavigate={() => navigate(`/association/experiences/${exp.id}`)}
+                        onOpen={() => navigate(`/association/experiences/${exp.id}`)}
                         actions={
                           isMobile ? (
                             <MobileActions
@@ -431,7 +450,8 @@ export default function AssociationExperiencesPage() {
                           )
                         }
                       />
-                    ))}
+                      );
+                    })}
                   </div>
                 </StatusSection>
               )}
@@ -448,12 +468,21 @@ export default function AssociationExperiencesPage() {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                      {grouped.archived.map((exp, i) => (
-                        <ExperienceCompactCard
+                      {grouped.archived.map((exp, i) => {
+                        const categoryName = exp.categories?.name || exp.category;
+                        const cityName = exp.cities?.name || exp.city;
+                        const metaItems: BravoCardMetaItem[] = [];
+                        if (categoryName) metaItems.push({ text: categoryName });
+                        if (cityName) metaItems.push({ icon: MapPin, text: cityName });
+                        return (
+                        <BravoCard
                           key={exp.id}
-                          experience={exp}
+                          imageUrl={exp.image_url}
+                          imageAlt={exp.title}
+                          title={exp.title}
+                          metaItems={metaItems}
                           index={i}
-                          onNavigate={() => navigate(`/association/experiences/${exp.id}`)}
+                          onOpen={() => navigate(`/association/experiences/${exp.id}`)}
                           actions={
                             isMobile ? (
                               <MobileActions
@@ -476,7 +505,8 @@ export default function AssociationExperiencesPage() {
                             )
                           }
                         />
-                      ))}
+                        );
+                      })}
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
@@ -597,58 +627,6 @@ function StatusSection({ icon, title, count, iconClassName, children }: {
         <span className="text-sm font-medium text-foreground">{title} ({count})</span>
       </div>
       {children}
-    </motion.div>
-  );
-}
-
-function ExperienceCompactCard({ experience, index, onNavigate, actions }: {
-  experience: Experience;
-  index: number;
-  onNavigate: () => void;
-  actions: React.ReactNode;
-}) {
-  const categoryName = experience.categories?.name || experience.category;
-  const cityName = experience.cities?.name || experience.city;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
-      className="group"
-    >
-      <button
-        type="button"
-        onClick={onNavigate}
-        className="block w-full text-left rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <BaseCardImage
-          imageUrl={experience.image_url}
-          alt={experience.title}
-          aspectRatio="square"
-        />
-        <div className="pt-2 space-y-1">
-          <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
-            {experience.title}
-          </h3>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
-            {categoryName && <span className="truncate">{categoryName}</span>}
-            {categoryName && cityName && <span>·</span>}
-            {cityName && (
-              <span className="flex items-center gap-0.5 truncate">
-                <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
-                {cityName}
-              </span>
-            )}
-          </div>
-        </div>
-      </button>
-      <div
-        className="pt-0.5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {actions}
-      </div>
     </motion.div>
   );
 }

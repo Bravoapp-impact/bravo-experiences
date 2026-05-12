@@ -18,7 +18,7 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { BaseCardImage } from "@/components/common/BaseCardImage";
+import { BravoCard, BravoCardMetaItem } from "@/components/common/BravoCard";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -465,8 +465,14 @@ export default function HRExperiencesPage() {
             ) : (
               <TooltipProvider delayDuration={300}>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                  {filteredCatalog.map((exp, i) => (
-                    <CompactCard key={exp.id} experience={exp} index={i} onOpen={() => navigate(`/hr/experiences/${exp.id}`)} actions={
+                  {filteredCatalog.map((exp, i) => {
+                    const categoryName = exp.categories?.name || exp.category;
+                    const cityName = exp.cities?.name || exp.city;
+                    const metaItems: BravoCardMetaItem[] = [];
+                    if (categoryName) metaItems.push({ text: categoryName });
+                    if (cityName) metaItems.push({ icon: MapPin, text: cityName });
+                    return (
+                    <BravoCard key={exp.id} imageUrl={exp.image_url} imageAlt={exp.title} title={exp.title} metaItems={metaItems} index={i} onOpen={() => navigate(`/hr/experiences/${exp.id}`)} actions={
                       activatedIds.has(exp.id) ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -493,7 +499,8 @@ export default function HRExperiencesPage() {
                         </Tooltip>
                       )
                     } />
-                  ))}
+                    );
+                  })}
                 </div>
               </TooltipProvider>
             )}
@@ -510,8 +517,14 @@ export default function HRExperiencesPage() {
             ) : (
               <TooltipProvider delayDuration={300}>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                  {programExperiences.map((exp, i) => (
-                    <CompactCard key={exp.id} experience={exp} index={i} onOpen={() => navigate(`/hr/experiences/${exp.id}`)} actions={
+                  {programExperiences.map((exp, i) => {
+                    const categoryName = exp.categories?.name || exp.category;
+                    const cityName = exp.cities?.name || exp.city;
+                    const metaItems: BravoCardMetaItem[] = [];
+                    if (categoryName) metaItems.push({ text: categoryName });
+                    if (cityName) metaItems.push({ icon: MapPin, text: cityName });
+                    return (
+                    <BravoCard key={exp.id} imageUrl={exp.image_url} imageAlt={exp.title} title={exp.title} metaItems={metaItems} index={i} onOpen={() => navigate(`/hr/experiences/${exp.id}`)} actions={
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={(e) => { e.stopPropagation(); handleDeactivate(exp.id); }}>
@@ -521,7 +534,8 @@ export default function HRExperiencesPage() {
                         <TooltipContent>Rimuovi dal programma</TooltipContent>
                       </Tooltip>
                     } />
-                  ))}
+                    );
+                  })}
                 </div>
               </TooltipProvider>
             )}
@@ -584,49 +598,6 @@ export default function HRExperiencesPage() {
 }
 
 /* ── Sub-components ── */
-
-function CompactCard({ experience, index, actions, onOpen }: {
-  experience: CatalogExperience;
-  index: number;
-  actions: React.ReactNode;
-  onOpen: () => void;
-}) {
-  const categoryName = experience.categories?.name || experience.category;
-  const cityName = experience.cities?.name || experience.city;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
-      className="group"
-    >
-      <button
-        type="button"
-        onClick={onOpen}
-        className="block w-full text-left rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <BaseCardImage imageUrl={experience.image_url} alt={experience.title} aspectRatio="square" />
-        <div className="pt-2 space-y-1">
-          <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
-            {experience.title}
-          </h3>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
-            {categoryName && <span className="truncate">{categoryName}</span>}
-            {categoryName && cityName && <span>·</span>}
-            {cityName && (
-              <span className="flex items-center gap-0.5 truncate">
-                <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
-                {cityName}
-              </span>
-            )}
-          </div>
-        </div>
-      </button>
-      <div className="pt-0.5">{actions}</div>
-    </motion.div>
-  );
-}
 
 function CatalogFilters({ searchTerm, onSearchChange, categoryFilter, onCategoryChange, cityFilter, onCityChange, categories, cities }: {
   searchTerm: string;
