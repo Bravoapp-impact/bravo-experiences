@@ -16,6 +16,7 @@ export interface BravoCardProps {
   fallbackEmoji?: string;
   imageOverlay?: ReactNode;
   title: string;
+  subtitleSlot?: ReactNode;
   metaItems?: BravoCardMetaItem[];
   onOpen?: () => void;
   actions?: ReactNode;
