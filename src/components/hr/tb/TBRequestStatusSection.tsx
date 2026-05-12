@@ -12,10 +12,12 @@ import {
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getTBStatusMeta, type TBRequestStatus } from "@/lib/tb-status";
+import { HRTBQuoteView } from "@/components/hr/tb/HRTBQuoteView";
 
 interface Props {
   status: TBRequestStatus | string;
   interestedCount: number;
+  requestId: string;
   onContinueDraft: () => void;
   onRequestQuote: () => void;
   isRequestingQuote: boolean;
@@ -24,6 +26,7 @@ interface Props {
 export function TBRequestStatusSection({
   status,
   interestedCount,
+  requestId,
   onContinueDraft,
   onRequestQuote,
   isRequestingQuote,
@@ -98,13 +101,7 @@ export function TBRequestStatusSection({
       );
 
     case "quote_sent":
-      return (
-        <InfoCard
-          icon={FileText}
-          title="Preventivo pronto"
-          description="Il preventivo è pronto per la tua decisione. Vista preventivo in arrivo."
-        />
-      );
+      return <HRTBQuoteView requestId={requestId} />;
 
     case "quote_accepted":
       return (
