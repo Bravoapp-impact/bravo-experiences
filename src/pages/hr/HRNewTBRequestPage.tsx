@@ -703,8 +703,50 @@ export default function HRNewTBRequestPage() {
     }
   };
 
+  const showSaveIndicator = !!requestId;
+  const saveIndicator = (() => {
+    if (!showSaveIndicator) return null;
+    if (saveStatus === "saving") {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          Salvataggio…
+        </span>
+      );
+    }
+    if (saveStatus === "error") {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs text-destructive">
+          <AlertCircle className="h-3.5 w-3.5" />
+          Errore di salvataggio
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Check className="h-3.5 w-3.5 text-primary" />
+        Salvato
+      </span>
+    );
+  })();
+
+  if (bootstrapping) {
+    return (
+      <HRLayout>
+        <div className="flex items-center justify-center py-20 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+        </div>
+      </HRLayout>
+    );
+  }
+
   return (
     <HRLayout>
+      <div className="max-w-xl mx-auto pt-6">
+        <div className="flex justify-end h-5">
+          {saveIndicator}
+        </div>
+      </div>
       <StepWizard
         totalSteps={TOTAL_STEPS}
         currentStep={step}
@@ -713,9 +755,11 @@ export default function HRNewTBRequestPage() {
         canNext={canNext()}
         submitting={submitting}
         backLabel={step === 1 ? "Annulla" : "Indietro"}
+        nextLabel={step === TOTAL_STEPS ? "Invia richiesta" : "Avanti"}
       >
         {renderStep()}
       </StepWizard>
     </HRLayout>
   );
+}
 }
