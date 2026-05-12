@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 export interface BravoCardMetaItem {
   icon?: LucideIcon;
   text: string;
+  /** Optional extra classes for the segment (es. evidenziare posti scarsi) */
+  className?: string;
 }
 
 export interface BravoCardProps {
