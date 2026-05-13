@@ -3,15 +3,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   UsersRound,
   Plus,
-  Clock,
-  CheckCircle2,
-  FileText,
   ArrowRight,
-  Sparkles,
-  X,
-  ChevronRight,
+  Calendar,
+  Clock,
+  Archive,
+  ChevronDown,
+  CalendarClock,
   type LucideIcon,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -19,13 +19,12 @@ import { HRLayout } from "@/components/layout/HRLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import { LoadingState } from "@/components/common/LoadingState";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,133 +40,380 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { devLog } from "@/lib/logger";
+import { BravoCard, BravoCardMetaItem } from "@/components/common/BravoCard";
+import {
+  getTbCategoryIcon,
+  getTbPrimaryCategoryId,
+} from "@/lib/tb-category-icons";
 
-type ColorTone = "neutral" | "amber" | "blue" | "green" | "red";
-type Bucket = "draft" | "active" | "history";
+/* ───────────────────────── Types ───────────────────────── */
 
-interface StatusPresentation {
-  label: string;
-  nextAction: string;
-  icon: LucideIcon;
-  colorTone: ColorTone;
-  bucket: Bucket;
-}
-
-const FALLBACK: StatusPresentation = {
-  label: "Stato sconosciuto",
-  nextAction: "Vedi dettagli",
-  icon: FileText,
-  colorTone: "neutral",
-  bucket: "active",
-};
-
-const statusPresentationConfig: Record<string, StatusPresentation> = {
-  draft: { label: "Brief incompleto", nextAction: "Continua brief", icon: FileText, colorTone: "neutral", bucket: "draft" },
-  submitted: { label: "Richiesta in lavorazione", nextAction: "Vedi dettagli", icon: Clock, colorTone: "neutral", bucket: "active" },
-  in_matching: { label: "Richiesta in lavorazione", nextAction: "Vedi dettagli", icon: Clock, colorTone: "neutral", bucket: "active" },
-  proposals_ready: { label: "Proposte in arrivo", nextAction: "Vedi dettagli", icon: Clock, colorTone: "neutral", bucket: "active" },
-  proposals_sent: { label: "Proposte da rivedere", nextAction: "Vedi proposte", icon: Sparkles, colorTone: "amber", bucket: "active" },
-  quote_requested: { label: "Preventivo richiesto", nextAction: "Vedi dettagli", icon: Clock, colorTone: "neutral", bucket: "active" },
-  quote_in_composition: { label: "Preventivo in preparazione", nextAction: "Vedi dettagli", icon: Clock, colorTone: "neutral", bucket: "active" },
-  quote_sent: { label: "Preventivo pronto", nextAction: "Visualizza preventivo", icon: FileText, colorTone: "blue", bucket: "active" },
-  modification_requested: { label: "Modifiche richieste", nextAction: "Vedi dettagli", icon: Clock, colorTone: "amber", bucket: "active" },
-  quote_accepted: { label: "Preventivo accettato", nextAction: "Apri evento", icon: CheckCircle2, colorTone: "green", bucket: "active" },
-  signed: { label: "Evento confermato", nextAction: "Apri evento", icon: CheckCircle2, colorTone: "green", bucket: "active" },
-  event_scheduled: { label: "Evento confermato", nextAction: "Apri evento", icon: CheckCircle2, colorTone: "green", bucket: "active" },
-  completed: { label: "Completato", nextAction: "Vedi dettagli", icon: CheckCircle2, colorTone: "green", bucket: "history" },
-  cancelled: { label: "Annullato", nextAction: "Vedi dettagli", icon: X, colorTone: "red", bucket: "history" },
-  quote_rejected: { label: "Annullato", nextAction: "Vedi dettagli", icon: X, colorTone: "red", bucket: "history" },
-};
-
-function getPresentation(status: string): StatusPresentation {
-  return statusPresentationConfig[status] ?? FALLBACK;
-}
-
-const TONE_CLASSES: Record<ColorTone, { bg: string; fg: string; pill: string }> = {
-  neutral: { bg: "bg-muted", fg: "text-muted-foreground", pill: "bg-muted text-muted-foreground" },
-  amber: { bg: "bg-amber-50", fg: "text-amber-600", pill: "bg-amber-50 text-amber-700" },
-  blue: { bg: "bg-blue-50", fg: "text-blue-600", pill: "bg-blue-50 text-blue-700" },
-  green: { bg: "bg-emerald-50", fg: "text-emerald-600", pill: "bg-emerald-50 text-emerald-700" },
-  red: { bg: "bg-red-50", fg: "text-red-600", pill: "bg-red-50 text-red-700" },
-};
+type RequestState = "open" | "confirmed" | "completed" | "cancelled";
 
 interface TBRequestRow {
   id: string;
   title: string;
   status: string;
+  state: RequestState | string | null;
   created_at: string;
   updated_at: string;
   participants_min: number | null;
   participants_max: number | null;
+  preferred_period_from: string | null;
+  preferred_period_to: string | null;
+  extra_services: Record<string, unknown> | null;
 }
+
+interface TBProposalRow {
+  request_id: string;
+  is_active: boolean;
+  client_status: string;
+}
+
+interface TBQuoteRow {
+  request_id: string;
+  status: string;
+}
+
+interface TBEventRow {
+  request_id: string;
+  title: string | null;
+  scheduled_datetime: string | null;
+  format: { image_url: string | null } | null;
+}
+
+type PillTone = "amber" | "neutral";
+
+interface PillState {
+  label: string;
+  tone: PillTone;
+}
+
+/* ──────────────── Pill calculation ──────────────── */
+
+function computePill(
+  req: TBRequestRow,
+  proposals: TBProposalRow[],
+  quotes: TBQuoteRow[],
+): PillState {
+  // 1. Brief incompleto (precede tutto)
+  if (req.status === "draft") {
+    return { label: "Brief incompleto", tone: "amber" };
+  }
+  // 2. Preventivo da decidere
+  if (quotes.some((q) => q.status === "sent" || q.status === "viewed")) {
+    return { label: "Preventivo da decidere", tone: "amber" };
+  }
+  // 3. N proposte da valutare
+  const pendingProposals = proposals.filter(
+    (p) => p.is_active && p.client_status === "pending",
+  );
+  if (pendingProposals.length > 0) {
+    const n = pendingProposals.length;
+    return {
+      label: n === 1 ? "1 proposta da valutare" : `${n} proposte da valutare`,
+      tone: "amber",
+    };
+  }
+  // 4. Preventivo in lavorazione
+  if (
+    quotes.some(
+      (q) => q.status === "draft" || q.status === "modification_requested",
+    )
+  ) {
+    return { label: "Preventivo in lavorazione", tone: "neutral" };
+  }
+  // 5. Fallback
+  return { label: "Proposte in arrivo", tone: "neutral" };
+}
+
+const PILL_TONE_CLASSES: Record<PillTone, string> = {
+  amber: "bg-amber-50 text-amber-700 border-amber-200",
+  neutral: "bg-muted text-muted-foreground border-transparent",
+};
+
+/* ──────────────── Routing ──────────────── */
 
 function detailRoute(req: TBRequestRow): string {
   if (req.status === "draft") return `/hr/team-building/brief/${req.id}`;
   return `/hr/team-building/${req.id}`;
 }
 
-function ActiveCard({ req, onOpen }: { req: TBRequestRow; onOpen: () => void }) {
-  const p = getPresentation(req.status);
-  const Icon = p.icon;
-  const tone = TONE_CLASSES[p.colorTone];
+/* ──────────────── Cards ──────────────── */
+
+function ScheduledEventCard({
+  req,
+  event,
+  index,
+  onOpen,
+}: {
+  req: TBRequestRow;
+  event: TBEventRow | undefined;
+  index: number;
+  onOpen: () => void;
+}) {
+  const eventDate = event?.scheduled_datetime
+    ? new Date(event.scheduled_datetime)
+    : null;
+
+  const dateBadge = eventDate ? (
+    <div className="absolute top-3 left-3 bg-background/95 backdrop-blur-sm rounded-lg px-3 py-2 text-center shadow-sm">
+      <p className="text-xs font-medium text-muted-foreground uppercase leading-none">
+        {format(eventDate, "MMM", { locale: it })}
+      </p>
+      <p className="text-xl font-bold text-foreground leading-none mt-0.5">
+        {format(eventDate, "d")}
+      </p>
+    </div>
+  ) : undefined;
+
+  const metaItems: BravoCardMetaItem[] = [];
+  if (event?.title) metaItems.push({ text: event.title });
+  if (req.participants_min && req.participants_max) {
+    metaItems.push({
+      icon: UsersRound,
+      text: `${req.participants_min}–${req.participants_max} part.`,
+    });
+  }
 
   return (
-    <Card
-      onClick={onOpen}
-      className="p-5 cursor-pointer hover:border-primary/30 transition-colors group"
-    >
-      <div className="flex items-start gap-4">
-        <div className={cn("h-11 w-11 rounded-xl flex items-center justify-center shrink-0", tone.bg)}>
-          <Icon className={cn("h-5 w-5", tone.fg)} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-foreground truncate">{req.title}</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Aggiornato il {format(new Date(req.updated_at), "d MMM yyyy", { locale: it })}
-                {req.participants_min && req.participants_max && (
-                  <> · {req.participants_min}–{req.participants_max} partecipanti</>
-                )}
-              </p>
-            </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground shrink-0 mt-0.5" />
-          </div>
-          <div className="mt-3 flex items-center gap-2">
-            <span className={cn("inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full", tone.pill)}>
-              {p.label}
-            </span>
-            <span className="text-xs text-muted-foreground">— {p.nextAction}</span>
-          </div>
-        </div>
-      </div>
-    </Card>
+    <BravoCard
+      imageUrl={event?.format?.image_url ?? null}
+      imageAlt={req.title}
+      aspectRatio="square"
+      imageOverlay={dateBadge}
+      title={req.title}
+      metaItems={metaItems}
+      onOpen={onOpen}
+      index={index}
+    />
   );
 }
 
-function HistoryCard({ req, onOpen }: { req: TBRequestRow; onOpen: () => void }) {
-  const p = getPresentation(req.status);
-  const Icon = p.icon;
-  const tone = TONE_CLASSES[p.colorTone];
+function OpenRequestCard({
+  req,
+  pill,
+  index,
+  onOpen,
+}: {
+  req: TBRequestRow;
+  pill: PillState;
+  index: number;
+  onOpen: () => void;
+}) {
+  const preferred = getTbPrimaryCategoryId(
+    (req.extra_services as { preferred_activities?: unknown } | null)
+      ?.preferred_activities,
+  );
+  const Icon: LucideIcon = getTbCategoryIcon(preferred);
+
+  const metaItems: BravoCardMetaItem[] = [];
+  if (req.preferred_period_from) {
+    const from = new Date(req.preferred_period_from);
+    const to = req.preferred_period_to
+      ? new Date(req.preferred_period_to)
+      : null;
+    const text = to
+      ? `${format(from, "MMM yyyy", { locale: it })} – ${format(to, "MMM yyyy", { locale: it })}`
+      : format(from, "MMM yyyy", { locale: it });
+    metaItems.push({ icon: CalendarClock, text });
+  }
+  if (req.participants_min && req.participants_max) {
+    metaItems.push({
+      icon: UsersRound,
+      text: `${req.participants_min}–${req.participants_max} part.`,
+    });
+  }
 
   return (
-    <Card
-      onClick={onOpen}
-      className="p-3 cursor-pointer hover:bg-muted/30 transition-colors flex items-center gap-3"
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
+      className="group"
     >
-      <div className={cn("h-7 w-7 rounded-md flex items-center justify-center shrink-0", tone.bg)}>
-        <Icon className={cn("h-3.5 w-3.5", tone.fg)} />
-      </div>
-      <div className="flex-1 min-w-0 flex items-center gap-2">
-        <p className="text-sm font-medium truncate">{req.title}</p>
-        <span className="text-xs text-muted-foreground truncate">
-          — {p.label} il {format(new Date(req.updated_at), "d MMMM", { locale: it })}
+      <button
+        type="button"
+        onClick={onOpen}
+        className="block w-full text-left rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <div className="relative aspect-square rounded-xl bg-muted flex items-center justify-center overflow-hidden">
+          <Icon className="h-12 w-12 text-muted-foreground/60" strokeWidth={1.5} />
+          <div className="absolute top-3 left-3">
+            <span
+              className={cn(
+                "inline-flex items-center text-[11px] font-medium px-2 py-1 rounded-full border",
+                PILL_TONE_CLASSES[pill.tone],
+              )}
+            >
+              {pill.label}
+            </span>
+          </div>
+        </div>
+        <div className="pt-2 space-y-1">
+          <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+            {req.title || "Richiesta senza titolo"}
+          </h3>
+          {metaItems.length > 0 && (
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
+              {metaItems.map((item, i) => {
+                const I = item.icon;
+                return (
+                  <span key={i} className="flex items-center gap-1 truncate">
+                    {i > 0 && <span className="text-muted-foreground">·</span>}
+                    {I && <I className="h-2.5 w-2.5 flex-shrink-0" />}
+                    {item.text}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </button>
+    </motion.div>
+  );
+}
+
+function ArchivedCard({
+  req,
+  event,
+  index,
+  onOpen,
+}: {
+  req: TBRequestRow;
+  event: TBEventRow | undefined;
+  index: number;
+  onOpen: () => void;
+}) {
+  const isCompleted = req.state === "completed";
+  const eventDate = event?.scheduled_datetime
+    ? new Date(event.scheduled_datetime)
+    : null;
+  const preferred = getTbPrimaryCategoryId(
+    (req.extra_services as { preferred_activities?: unknown } | null)
+      ?.preferred_activities,
+  );
+  const Icon = getTbCategoryIcon(preferred);
+
+  const metaItems: BravoCardMetaItem[] = [];
+  if (eventDate) {
+    metaItems.push({
+      icon: Calendar,
+      text: format(eventDate, "d MMM yyyy", { locale: it }),
+    });
+  } else {
+    metaItems.push({
+      icon: Clock,
+      text: format(new Date(req.updated_at), "d MMM yyyy", { locale: it }),
+    });
+  }
+
+  const overlay = (
+    <div className="absolute top-3 left-3">
+      <Badge
+        variant="secondary"
+        className={cn(
+          "text-[11px] font-medium",
+          isCompleted
+            ? "bg-emerald-50 text-emerald-700"
+            : "bg-muted text-muted-foreground",
+        )}
+      >
+        {isCompleted ? "Completato" : "Annullata"}
+      </Badge>
+    </div>
+  );
+
+  // Per i completati: usa immagine evento se c'è, altrimenti placeholder con icona.
+  if (event?.format?.image_url || eventDate) {
+    return (
+      <BravoCard
+        imageUrl={event?.format?.image_url ?? null}
+        imageAlt={req.title}
+        aspectRatio="square"
+        imageOverlay={overlay}
+        title={req.title}
+        metaItems={metaItems}
+        onOpen={onOpen}
+        dimmed
+        index={index}
+      />
+    );
+  }
+
+  // Cancellate senza format scelto: placeholder
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
+      className="group opacity-60"
+    >
+      <button
+        type="button"
+        onClick={onOpen}
+        className="block w-full text-left rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <div className="relative aspect-square rounded-xl bg-muted flex items-center justify-center overflow-hidden">
+          <Icon className="h-12 w-12 text-muted-foreground/60" strokeWidth={1.5} />
+          {overlay}
+        </div>
+        <div className="pt-2 space-y-1">
+          <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug">
+            {req.title || "Richiesta senza titolo"}
+          </h3>
+          {metaItems.length > 0 && (
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-light">
+              {metaItems.map((item, i) => {
+                const I = item.icon;
+                return (
+                  <span key={i} className="flex items-center gap-1 truncate">
+                    {I && <I className="h-2.5 w-2.5 flex-shrink-0" />}
+                    {item.text}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </button>
+    </motion.div>
+  );
+}
+
+/* ──────────────── StatusSection wrapper ──────────────── */
+
+function StatusSection({
+  icon,
+  title,
+  count,
+  iconClassName,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  count: number;
+  iconClassName?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="flex items-center gap-2.5 px-1 py-2 mb-4">
+        <span className={cn("flex-shrink-0", iconClassName)}>{icon}</span>
+        <span className="text-sm font-medium text-foreground">
+          {title} ({count})
         </span>
       </div>
-      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-    </Card>
+      {children}
+    </motion.div>
   );
 }
+
+/* ──────────────── Page ──────────────── */
 
 export default function HRTeamBuildingPage() {
   const { profile } = useAuth();
@@ -176,38 +422,157 @@ export default function HRTeamBuildingPage() {
   const { toast } = useToast();
   const [draftDialogOpen, setDraftDialogOpen] = useState(false);
   const [deletingDraft, setDeletingDraft] = useState(false);
+  const [archivedOpen, setArchivedOpen] = useState(false);
 
-  const { data: requests, isLoading } = useQuery({
-    queryKey: ["tb-requests", profile?.company_id],
+  const { data, isLoading } = useQuery({
+    queryKey: ["tb-requests-list", profile?.company_id],
+    enabled: !!profile?.company_id,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: requests, error } = await supabase
         .from("tb_requests")
-        .select("id,title,status,created_at,updated_at,participants_min,participants_max")
+        .select(
+          "id,title,status,state,created_at,updated_at,participants_min,participants_max,preferred_period_from,preferred_period_to,extra_services",
+        )
         .order("updated_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as TBRequestRow[];
+      const reqs = (requests ?? []) as TBRequestRow[];
+
+      const openIds = reqs.filter((r) => r.state === "open").map((r) => r.id);
+      const confirmedIds = reqs
+        .filter((r) => r.state === "confirmed")
+        .map((r) => r.id);
+
+      const [proposalsRes, quotesRes, eventsRes] = await Promise.all([
+        openIds.length
+          ? supabase
+              .from("tb_proposals")
+              .select("request_id,is_active,client_status")
+              .in("request_id", openIds)
+          : Promise.resolve({ data: [], error: null }),
+        openIds.length
+          ? supabase
+              .from("tb_quotes")
+              .select("request_id,status")
+              .in("request_id", openIds)
+          : Promise.resolve({ data: [], error: null }),
+        confirmedIds.length || reqs.some((r) => r.state === "completed")
+          ? supabase
+              .from("tb_events")
+              .select(
+                "request_id,title,scheduled_datetime,format:tb_formats(image_url)",
+              )
+              .in(
+                "request_id",
+                reqs
+                  .filter(
+                    (r) => r.state === "confirmed" || r.state === "completed",
+                  )
+                  .map((r) => r.id),
+              )
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+
+      if (proposalsRes.error) throw proposalsRes.error;
+      if (quotesRes.error) throw quotesRes.error;
+      if (eventsRes.error) throw eventsRes.error;
+
+      return {
+        requests: reqs,
+        proposals: (proposalsRes.data ?? []) as TBProposalRow[],
+        quotes: (quotesRes.data ?? []) as TBQuoteRow[],
+        events: (eventsRes.data ?? []) as TBEventRow[],
+      };
     },
-    enabled: !!profile?.company_id,
   });
 
-  const { drafts, actives, history } = useMemo(() => {
-    const drafts: TBRequestRow[] = [];
-    const actives: TBRequestRow[] = [];
-    const history: TBRequestRow[] = [];
-    for (const r of requests ?? []) {
-      const bucket = getPresentation(r.status).bucket;
-      if (bucket === "draft") drafts.push(r);
-      else if (bucket === "history") history.push(r);
-      else actives.push(r);
-    }
-    return { drafts, actives, history };
-  }, [requests]);
+  const { scheduled, open, archived, eventByReq, draftRequest } = useMemo(() => {
+    const requests = data?.requests ?? [];
+    const proposals = data?.proposals ?? [];
+    const quotes = data?.quotes ?? [];
+    const events = data?.events ?? [];
 
-  const hasAny = (requests?.length ?? 0) > 0;
-  const existingDraft = drafts[0] ?? null;
+    const proposalsByReq = new Map<string, TBProposalRow[]>();
+    for (const p of proposals) {
+      const arr = proposalsByReq.get(p.request_id) ?? [];
+      arr.push(p);
+      proposalsByReq.set(p.request_id, arr);
+    }
+    const quotesByReq = new Map<string, TBQuoteRow[]>();
+    for (const q of quotes) {
+      const arr = quotesByReq.get(q.request_id) ?? [];
+      arr.push(q);
+      quotesByReq.set(q.request_id, arr);
+    }
+    const eventByReq = new Map<string, TBEventRow>();
+    for (const e of events) {
+      // più imminente per request
+      const existing = eventByReq.get(e.request_id);
+      if (!existing) {
+        eventByReq.set(e.request_id, e);
+        continue;
+      }
+      const a = e.scheduled_datetime
+        ? new Date(e.scheduled_datetime).getTime()
+        : Infinity;
+      const b = existing.scheduled_datetime
+        ? new Date(existing.scheduled_datetime).getTime()
+        : Infinity;
+      if (a < b) eventByReq.set(e.request_id, e);
+    }
+
+    const scheduled: TBRequestRow[] = [];
+    const open: Array<TBRequestRow & { _pill: PillState }> = [];
+    const archived: TBRequestRow[] = [];
+
+    for (const r of requests) {
+      const state = r.state ?? "open";
+      if (state === "confirmed") {
+        scheduled.push(r);
+      } else if (state === "completed" || state === "cancelled") {
+        archived.push(r);
+      } else {
+        const pill = computePill(
+          r,
+          proposalsByReq.get(r.id) ?? [],
+          quotesByReq.get(r.id) ?? [],
+        );
+        open.push({ ...r, _pill: pill });
+      }
+    }
+
+    // Sort
+    scheduled.sort((a, b) => {
+      const ea = eventByReq.get(a.id)?.scheduled_datetime;
+      const eb = eventByReq.get(b.id)?.scheduled_datetime;
+      const ta = ea ? new Date(ea).getTime() : Infinity;
+      const tb = eb ? new Date(eb).getTime() : Infinity;
+      return ta - tb;
+    });
+    open.sort((a, b) => {
+      const ta = a.preferred_period_from
+        ? new Date(a.preferred_period_from).getTime()
+        : Infinity;
+      const tb = b.preferred_period_from
+        ? new Date(b.preferred_period_from).getTime()
+        : Infinity;
+      if (ta !== tb) return ta - tb;
+      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+    });
+    archived.sort(
+      (a, b) =>
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+    );
+
+    const draftRequest = open.find((r) => r.status === "draft") ?? null;
+
+    return { scheduled, open, archived, eventByReq, draftRequest };
+  }, [data]);
+
+  const hasAny =
+    scheduled.length + open.length + archived.length > 0;
 
   const handleNewRequest = () => {
-    if (existingDraft) {
+    if (draftRequest) {
       setDraftDialogOpen(true);
     } else {
       navigate("/hr/team-building/nuova-richiesta");
@@ -215,17 +580,26 @@ export default function HRTeamBuildingPage() {
   };
 
   const handleDeleteDraftAndStart = async () => {
-    if (!existingDraft) return;
+    if (!draftRequest) return;
     setDeletingDraft(true);
     try {
-      const { error } = await supabase.from("tb_requests").delete().eq("id", existingDraft.id);
+      const { error } = await supabase
+        .from("tb_requests")
+        .delete()
+        .eq("id", draftRequest.id);
       if (error) throw error;
-      await queryClient.invalidateQueries({ queryKey: ["tb-requests", profile?.company_id] });
+      await queryClient.invalidateQueries({
+        queryKey: ["tb-requests-list", profile?.company_id],
+      });
       setDraftDialogOpen(false);
       navigate("/hr/team-building/nuova-richiesta");
     } catch (e) {
       devLog.error("Failed to delete draft", e);
-      toast({ title: "Errore", description: "Non è stato possibile eliminare la bozza.", variant: "destructive" });
+      toast({
+        title: "Errore",
+        description: "Non è stato possibile eliminare la bozza.",
+        variant: "destructive",
+      });
     } finally {
       setDeletingDraft(false);
     }
@@ -252,7 +626,10 @@ export default function HRTeamBuildingPage() {
           <p className="text-sm text-muted-foreground mb-8">
             Raccontaci cosa cerchi e ti proporremo le idee migliori per il tuo team
           </p>
-          <Button onClick={() => navigate("/hr/team-building/nuova-richiesta")} size="lg">
+          <Button
+            onClick={() => navigate("/hr/team-building/nuova-richiesta")}
+            size="lg"
+          >
             Inizia ora
             <ArrowRight className="h-4 w-4 ml-1.5" />
           </Button>
@@ -274,47 +651,78 @@ export default function HRTeamBuildingPage() {
           }
         />
 
-        {drafts.length > 0 && (
-          <section className="space-y-3">
-            <h2 className="text-sm font-semibold text-foreground">Bozze</h2>
-            <div className="grid gap-3">
-              {drafts.map((req) => (
-                <ActiveCard key={req.id} req={req} onOpen={() => navigate(detailRoute(req))} />
+        {scheduled.length > 0 && (
+          <StatusSection
+            icon={<Calendar className="h-4 w-4" />}
+            title="Eventi in programma"
+            count={scheduled.length}
+            iconClassName="text-emerald-500"
+          >
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {scheduled.map((req, i) => (
+                <ScheduledEventCard
+                  key={req.id}
+                  req={req}
+                  event={eventByReq.get(req.id)}
+                  index={i}
+                  onOpen={() => navigate(detailRoute(req))}
+                />
               ))}
             </div>
-          </section>
+          </StatusSection>
         )}
 
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-foreground">Attive</h2>
-          {actives.length > 0 ? (
-            <div className="grid gap-3">
-              {actives.map((req) => (
-                <ActiveCard key={req.id} req={req} onOpen={() => navigate(detailRoute(req))} />
+        {open.length > 0 && (
+          <StatusSection
+            icon={<Clock className="h-4 w-4" />}
+            title="Richieste in corso"
+            count={open.length}
+            iconClassName="text-amber-500"
+          >
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {open.map((req, i) => (
+                <OpenRequestCard
+                  key={req.id}
+                  req={req}
+                  pill={req._pill}
+                  index={i}
+                  onOpen={() => navigate(detailRoute(req))}
+                />
               ))}
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground py-6 text-center">
-              Nessuna richiesta attiva al momento.
-            </p>
-          )}
-        </section>
+          </StatusSection>
+        )}
 
-        {history.length > 0 && (
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="history" className="border-none">
-              <AccordionTrigger className="text-sm font-semibold hover:no-underline py-2">
-                Storico ({history.length})
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="grid gap-2 pt-2">
-                  {history.map((req) => (
-                    <HistoryCard key={req.id} req={req} onOpen={() => navigate(detailRoute(req))} />
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+        {archived.length > 0 && (
+          <Collapsible open={archivedOpen} onOpenChange={setArchivedOpen}>
+            <CollapsibleTrigger className="w-full">
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-muted text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors">
+                <Archive className="h-4 w-4" />
+                <span className="text-sm font-medium">
+                  Archivio ({archived.length})
+                </span>
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 ml-auto transition-transform",
+                    archivedOpen && "rotate-180",
+                  )}
+                />
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mt-4">
+                {archived.map((req, i) => (
+                  <ArchivedCard
+                    key={req.id}
+                    req={req}
+                    event={eventByReq.get(req.id)}
+                    index={i}
+                    onOpen={() => navigate(detailRoute(req))}
+                  />
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         )}
       </div>
 
@@ -324,7 +732,8 @@ export default function HRTeamBuildingPage() {
             <AlertDialogTitle>Hai una bozza in sospeso</AlertDialogTitle>
             <AlertDialogDescription>
               Hai una richiesta che non hai ancora completato. Vuoi continuarla o
-              ricominciarne una nuova? Iniziandone una nuova, la bozza attuale verrà eliminata.
+              ricominciarne una nuova? Iniziandone una nuova, la bozza attuale
+              verrà eliminata.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -339,9 +748,9 @@ export default function HRTeamBuildingPage() {
             <AlertDialogAction
               disabled={deletingDraft}
               onClick={() => {
-                if (existingDraft) {
+                if (draftRequest) {
                   setDraftDialogOpen(false);
-                  navigate(`/hr/team-building/brief/${existingDraft.id}`);
+                  navigate(`/hr/team-building/brief/${draftRequest.id}`);
                 }
               }}
             >
