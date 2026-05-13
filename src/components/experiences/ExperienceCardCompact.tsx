@@ -54,14 +54,10 @@ export function ExperienceCardCompact({
   }
 
   const imageOverlay = isFull ? (
-    <>
-      {(
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-destructive/90 text-destructive-foreground text-[10px] font-semibold px-2.5 py-0.5 rounded-full backdrop-blur-sm whitespace-nowrap">
-          Completo
-        </div>
-      )}
-    </>
-  );
+    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-destructive/90 text-destructive-foreground text-[10px] font-semibold px-2.5 py-0.5 rounded-full backdrop-blur-sm whitespace-nowrap">
+      Completo
+    </div>
+  ) : null;
 
   return (
     <BravoCard
