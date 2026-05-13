@@ -53,19 +53,9 @@ export function ExperienceCardCompact({
     }
   }
 
-  const imageOverlay = (
+  const imageOverlay = isFull ? (
     <>
-      {experience.category && (
-        <div className="absolute top-3 left-3">
-          <Badge
-            variant="secondary"
-            className="text-[10px] font-medium bg-white/95 text-foreground backdrop-blur-sm rounded-full px-2 py-0.5 shadow-sm"
-          >
-            {experience.category}
-          </Badge>
-        </div>
-      )}
-      {isFull && (
+      {(
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-destructive/90 text-destructive-foreground text-[10px] font-semibold px-2.5 py-0.5 rounded-full backdrop-blur-sm whitespace-nowrap">
           Completo
         </div>
