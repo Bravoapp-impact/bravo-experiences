@@ -104,12 +104,6 @@ export function HRExperienceCard({ experience }: HRExperienceCardProps) {
                           {experience.city.name}
                         </Badge>
                       )}
-                      {experience.category && (
-                        <Badge variant="outline" className="gap-1 text-xs">
-                          <Tag className="h-3 w-3" />
-                          {experience.category.name}
-                        </Badge>
-                      )}
                     </div>
                   </div>
 
