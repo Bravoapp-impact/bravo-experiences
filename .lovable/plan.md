@@ -1,26 +1,48 @@
-## Problema individuato
+# Rimozione del riferimento "Categoria" da tutte le card
 
-Il fix precedente salva un `localQuoteId` solo dopo un salvataggio riuscito, ma nel caso attuale la pagina ha già una bozza esistente nello storico (`b5a5197f...`) mentre l’editor viene montato dal branch `quote_requested` con `quoteId={null}`.
+## Problema
 
-Di conseguenza `QuoteEditor` continua a inviare `p_quote_id: null` e la RPC prova a creare un nuovo preventivo, fallendo con `quote_already_exists`. Per questo ora non permette né sovrascrivere la bozza né inviarla.
+La categoria è un attributo interno usato per raggruppare/filtrare il catalogo, ma su tutte le card (employee, HR, association, public profile, related) viene mostrata come badge sull'immagine o come pillola/meta sotto il titolo. È rumore visivo: l'utente non ha bisogno di leggere la categoria su una card.
 
-## Piano di fix
+## Cosa cambia
 
-1. **Aggiornare solo `src/pages/super-admin/TBRequestDetailPage.tsx`**
-   - Nel branch `quote_requested`, quando l’utente clicca “Avvia composizione”, controllare se `quoteHistory` contiene già una quote `draft`.
-   - Se esiste, passare `quoteId={draftQuote.id}` a `QuoteEditor` invece di `null`.
-   - Se non esiste, mantenere il comportamento attuale: `quoteId={null}` e precompilazione da proposte interessate.
+Rimuoviamo qualsiasi rendering visibile della categoria all'interno delle card di lista, su qualunque ruolo. La categoria continua a esistere come dato (filtri, raggruppamenti, dettaglio): cambia solo la presentazione delle card.
 
-2. **Evitare il blocco “Bozza non trovata” se la query è ancora in caricamento/refetch**
-   - Se necessario, rendere il branch `quote_in_composition` più tollerante usando lo storico disponibile e non forzando reload quando la bozza può arrivare da refetch.
+### File da modificare
 
-3. **Mantenere invariato tutto il resto**
-   - Nessuna modifica alle RPC.
-   - Nessuna scrittura diretta su `tb_quotes` dal client.
-   - Nessuna modifica a `QuoteReadOnlyView` o alla vista HR.
+1. **`src/components/experiences/ExperienceCardCompact.tsx`** (employee + correlate)
+   - Eliminare il blocco `{experience.category && (<Badge ...>{experience.category}</Badge>)}` dentro `imageOverlay`.
+   - Mantenere intatto il badge "Completo" su date piene.
 
-## Validazione prevista
+2. **`src/components/experiences/ExperienceCardRich.tsx`**
+   - Rimuovere la prop `badge` (badge categoria) passata a `BaseCardImage` e l'import non più usato di `Badge` se diventa orfano.
 
-- Per una richiesta in `quote_requested` con bozza già presente, “Avvia composizione” deve aprire l’editor in modalità modifica bozza.
-- I successivi “Salva bozza” e “Invia al cliente” devono chiamare `admin_save_tb_quote_draft` con `p_quote_id` valorizzato, quindi usare il ramo UPDATE della RPC invece dell’INSERT.
-- L’errore `quote_already_exists` non deve più comparire in questo scenario.
+3. **`src/components/hr/HRExperienceCard.tsx`**
+   - Rimuovere il `<Badge>` con icona `Tag` che mostra `experience.category.name` (righe ~107–112). Mantenere i badge "Associazione" e "Città".
+   - Rimuovere import di `Tag` da `lucide-react` se diventa orfano.
+
+4. **`src/components/association/AssociationPublicProfile.tsx`**
+   - Nel render della card esperienza, rimuovere la prop `badge={exp.category ? ... : null}` (righe ~676–682).
+
+5. **`src/pages/hr/HRExperiencesPage.tsx`**
+   - Nelle due sezioni che costruiscono `metaItems` per le card del catalogo (righe ~469–472 e ~521–524), rimuovere il push di `categoryName` come `metaItem`. La variabile `categoryName` può essere eliminata se non più usata.
+
+6. **`src/pages/association/AssociationExperiencesPage.tsx`**
+   - Stessa modifica nei tre punti che fanno `metaItems.push({ text: categoryName })` (righe ~363–366, ~417–420, ~472–…). Eliminare anche le variabili `categoryName` se non più usate altrove nel blocco.
+
+## Cosa NON cambia
+
+- Il campo `category` / `category_id` resta nel data model e nelle query: serve a filtri (HR, Super Admin, Association) e raggruppamenti.
+- I filtri "Categoria" nei pannelli HR e Super Admin restano invariati.
+- La pagina di dettaglio esperienza (header con `categoryName`) non viene toccata: la categoria continua a comparire nel dettaglio, dove ha senso.
+- Nessuna modifica a Super Admin tables/CRUD (in tabella ha senso vedere la categoria come colonna gestionale).
+- Nessuna modifica al backend, alle RLS o agli edge functions.
+
+## Verifica post-modifica
+
+- `/app/experiences` (mobile + desktop): nessun badge categoria sulle card.
+- Sezione "Esperienze correlate" nel dettaglio: nessun badge categoria.
+- HR `/hr/esperienze` (entrambe le viste catalogo + statistiche): nessuna pillola categoria sotto il titolo.
+- Association `/association/experiences`: nessuna pillola categoria nelle card di listing.
+- Profilo pubblico associazione: card esperienza senza badge categoria.
+- I filtri per categoria nei pannelli HR/Super Admin/Association continuano a funzionare correttamente.

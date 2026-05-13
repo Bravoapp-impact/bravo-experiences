@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { MapPin, Users, Calendar, Clock, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
 import { BaseCardImage } from "@/components/common/BaseCardImage";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -33,17 +33,6 @@ export function ExperienceCardRich({ experience, index }: ExperienceCardRichProp
         alt={experience.title}
         aspectRatio="video"
         fallbackEmoji="🤝"
-        badge={
-          experience.category ? (
-            <Badge
-              variant="secondary"
-              className="bg-background/90 backdrop-blur-sm"
-            >
-              {experience.category}
-            </Badge>
-          ) : null
-        }
-        badgePosition="top-left"
         className="rounded-none"
       />
 

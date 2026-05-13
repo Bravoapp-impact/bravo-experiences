@@ -6,7 +6,7 @@ import {
   ChevronDown,
   MapPin,
   Building2,
-  Tag,
+  
   Calendar,
   Clock,
   Users,
@@ -102,12 +102,6 @@ export function HRExperienceCard({ experience }: HRExperienceCardProps) {
                         <Badge variant="outline" className="gap-1 text-xs">
                           <MapPin className="h-3 w-3" />
                           {experience.city.name}
-                        </Badge>
-                      )}
-                      {experience.category && (
-                        <Badge variant="outline" className="gap-1 text-xs">
-                          <Tag className="h-3 w-3" />
-                          {experience.category.name}
                         </Badge>
                       )}
                     </div>

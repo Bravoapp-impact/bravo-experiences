@@ -466,10 +466,8 @@ export default function HRExperiencesPage() {
               <TooltipProvider delayDuration={300}>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {filteredCatalog.map((exp, i) => {
-                    const categoryName = exp.categories?.name || exp.category;
                     const cityName = exp.cities?.name || exp.city;
                     const metaItems: BravoCardMetaItem[] = [];
-                    if (categoryName) metaItems.push({ text: categoryName });
                     if (cityName) metaItems.push({ icon: MapPin, text: cityName });
                     return (
                     <BravoCard key={exp.id} imageUrl={exp.image_url} imageAlt={exp.title} title={exp.title} metaItems={metaItems} index={i} onOpen={() => navigate(`/hr/experiences/${exp.id}`)} actions={
@@ -518,10 +516,8 @@ export default function HRExperiencesPage() {
               <TooltipProvider delayDuration={300}>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {programExperiences.map((exp, i) => {
-                    const categoryName = exp.categories?.name || exp.category;
                     const cityName = exp.cities?.name || exp.city;
                     const metaItems: BravoCardMetaItem[] = [];
-                    if (categoryName) metaItems.push({ text: categoryName });
                     if (cityName) metaItems.push({ icon: MapPin, text: cityName });
                     return (
                     <BravoCard key={exp.id} imageUrl={exp.image_url} imageAlt={exp.title} title={exp.title} metaItems={metaItems} index={i} onOpen={() => navigate(`/hr/experiences/${exp.id}`)} actions={

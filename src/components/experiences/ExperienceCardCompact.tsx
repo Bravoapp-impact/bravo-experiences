@@ -1,6 +1,6 @@
 import { Users, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
+
 import { BravoCard, BravoCardMetaItem } from "@/components/common/BravoCard";
 import { CardAssociationLine } from "@/components/common/CardAssociationLine";
 import { format, differenceInMinutes } from "date-fns";
@@ -53,25 +53,11 @@ export function ExperienceCardCompact({
     }
   }
 
-  const imageOverlay = (
-    <>
-      {experience.category && (
-        <div className="absolute top-3 left-3">
-          <Badge
-            variant="secondary"
-            className="text-[10px] font-medium bg-white/95 text-foreground backdrop-blur-sm rounded-full px-2 py-0.5 shadow-sm"
-          >
-            {experience.category}
-          </Badge>
-        </div>
-      )}
-      {isFull && (
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-destructive/90 text-destructive-foreground text-[10px] font-semibold px-2.5 py-0.5 rounded-full backdrop-blur-sm whitespace-nowrap">
-          Completo
-        </div>
-      )}
-    </>
-  );
+  const imageOverlay = isFull ? (
+    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-destructive/90 text-destructive-foreground text-[10px] font-semibold px-2.5 py-0.5 rounded-full backdrop-blur-sm whitespace-nowrap">
+      Completo
+    </div>
+  ) : null;
 
   return (
     <BravoCard
