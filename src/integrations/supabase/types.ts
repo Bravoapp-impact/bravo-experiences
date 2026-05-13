@@ -1262,6 +1262,7 @@ export type Database = {
           created_at: string
           format_id: string
           id: string
+          is_active: boolean
           override_association_id: string | null
           priority: number
           request_id: string
@@ -1276,6 +1277,7 @@ export type Database = {
           created_at?: string
           format_id: string
           id?: string
+          is_active?: boolean
           override_association_id?: string | null
           priority?: number
           request_id: string
@@ -1290,6 +1292,7 @@ export type Database = {
           created_at?: string
           format_id?: string
           id?: string
+          is_active?: boolean
           override_association_id?: string | null
           priority?: number
           request_id?: string
@@ -1551,6 +1554,7 @@ export type Database = {
           preferred_period_from: string | null
           preferred_period_to: string | null
           requested_by: string
+          state: string | null
           status: string
           title: string
           updated_at: string
@@ -1572,6 +1576,7 @@ export type Database = {
           preferred_period_from?: string | null
           preferred_period_to?: string | null
           requested_by: string
+          state?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -1593,6 +1598,7 @@ export type Database = {
           preferred_period_from?: string | null
           preferred_period_to?: string | null
           requested_by?: string
+          state?: string | null
           status?: string
           title?: string
           updated_at?: string

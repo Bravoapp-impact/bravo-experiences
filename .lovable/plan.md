@@ -1,48 +1,97 @@
-# Rimozione del riferimento "Categoria" da tutte le card
+## Contesto
 
-## Problema
+`docs/tb-flow.md` ridefinisce il verticale TB attorno a tre principi: brief modificabile, pratica accumulativa, un solo punto di chiusura (accettazione preventivo). Lo stato granulare a 15 valori su `tb_requests.status` viene sostituito da `tb_requests.state` a 4 valori (`open`/`confirmed`/`completed`/`cancelled`); le quote diventano per-`proposal_id` (oggi sono per-`request_id`); le proposte acquisiscono `is_active`.
 
-La categoria è un attributo interno usato per raggruppare/filtrare il catalogo, ma su tutte le card (employee, HR, association, public profile, related) viene mostrata come badge sull'immagine o come pillola/meta sotto il titolo. È rumore visivo: l'utente non ha bisogno di leggere la categoria su una card.
+Confronto con lo stato attuale (verificato a DB e codice):
 
-## Cosa cambia
+- `tb_requests`: ha solo `status` (15 valori). Manca `state`.
+- `tb_proposals`: manca `is_active`.
+- `tb_quotes`: ha `request_id`, **manca `proposal_id`** e ha ancora `valid_until`.
+- `tb_request_status_log` ancora presente.
+- Frontend HR (`HRTeamBuildingPage.tsx`, `HRTBRequestDetailPage.tsx`, `TBRequestStatusSection.tsx`, `tb-status.ts`) è interamente orchestrato sui 15 status.
+- Super admin (`TBRequestDetailPage.tsx`) idem.
 
-Rimuoviamo qualsiasi rendering visibile della categoria all'interno delle card di lista, su qualunque ruolo. La categoria continua a esistere come dato (filtri, raggruppamenti, dettaglio): cambia solo la presentazione delle card.
+La doc al §11.1 propone già un ordine di implementazione: lo adottiamo come scaletta. Ogni step è una sessione a sé, da approvare prima di iniziare.
 
-### File da modificare
+## Step 1 — DB additivo minimo per la lista HR
 
-1. **`src/components/experiences/ExperienceCardCompact.tsx`** (employee + correlate)
-   - Eliminare il blocco `{experience.category && (<Badge ...>{experience.category}</Badge>)}` dentro `imageOverlay`.
-   - Mantenere intatto il badge "Completo" su date piene.
+Solo migrazioni additive, nessun drop. Stato vecchio e nuovo coesistono.
 
-2. **`src/components/experiences/ExperienceCardRich.tsx`**
-   - Rimuovere la prop `badge` (badge categoria) passata a `BaseCardImage` e l'import non più usato di `Badge` se diventa orfano.
+- Migration A: `ALTER TABLE tb_requests ADD COLUMN state text GENERATED ALWAYS AS (...) STORED` mappata da `status` (`draft`/`submitted`/`in_matching`/`proposals_ready`/`proposals_sent`/`quote_*`/`modification_requested`/`signed`/`event_scheduled` → `open`; `quote_accepted` → `confirmed`; `completed` → `completed`; `cancelled`/`quote_rejected` → `cancelled`).
+- Migration B: `ALTER TABLE tb_proposals ADD COLUMN is_active boolean NOT NULL DEFAULT true`. Backfill implicito (default).
+- Indici: `idx_tb_requests_state`, `idx_tb_proposals_is_active`.
+- RLS: nessuna modifica (state è derivato, le policy esistenti continuano a funzionare).
 
-3. **`src/components/hr/HRExperienceCard.tsx`**
-   - Rimuovere il `<Badge>` con icona `Tag` che mostra `experience.category.name` (righe ~107–112). Mantenere i badge "Associazione" e "Città".
-   - Rimuovere import di `Tag` da `lucide-react` se diventa orfano.
+Esito: nessun cambio funzionale, ma la lista HR può già leggere `state` e `is_active`.
 
-4. **`src/components/association/AssociationPublicProfile.tsx`**
-   - Nel render della card esperienza, rimuovere la prop `badge={exp.category ? ... : null}` (righe ~676–682).
+## Step 2 — Lista HR `/hr/team-building` riprogettata (sez. 5.1)
 
-5. **`src/pages/hr/HRExperiencesPage.tsx`**
-   - Nelle due sezioni che costruiscono `metaItems` per le card del catalogo (righe ~469–472 e ~521–524), rimuovere il push di `categoryName` come `metaItem`. La variabile `categoryName` può essere eliminata se non più usata.
+Solo frontend. Riscrittura di `src/pages/hr/HRTeamBuildingPage.tsx`:
 
-6. **`src/pages/association/AssociationExperiencesPage.tsx`**
-   - Stessa modifica nei tre punti che fanno `metaItems.push({ text: categoryName })` (righe ~363–366, ~417–420, ~472–…). Eliminare anche le variabili `categoryName` se non più usate altrove nel blocco.
+- Tre sezioni: "Eventi in programma" (`state=confirmed`), "Richieste in corso" (`state=open`), "Archivio" (`state in (completed,cancelled)`, collassata).
+- Grid responsive di `BravoCard` quadrate (2/3/4/5 colonne) — stesso pattern di `AssociationExperiencesPage.tsx`.
+- Pill di stato solo per `state=open`, calcolata client-side dalla gerarchia: preventivo da decidere → N proposte da valutare → preventivo in lavorazione → proposte in arrivo. Per calcolarla servono `tb_proposals(is_active, client_status)` e `tb_quotes(status)` aggregati per request — query batch lato HR, una sola roundtrip.
+- Card "Evento in programma" con badge data overlay (pattern `BookingCard`), card "Richiesta in corso" con placeholder colorato + icona Tabler da `preferred_category_id`.
+- Rimossi `ActiveCard` e `HistoryCard` interni al file. La logica draft (dialog "Hai una bozza in sospeso") resta: una `tb_request` in `state=open` senza proposte e con titolo vuoto è la "bozza" di oggi.
+- Empty state attuale invariato.
+- Documento `team-building-nuova-interfaccia.md`: archiviato (rinominato `_archived_*`) se esiste.
 
-## Cosa NON cambia
+## Step 3 — DB additivo Fase 1 completa + RPC per-proposal
 
-- Il campo `category` / `category_id` resta nel data model e nelle query: serve a filtri (HR, Super Admin, Association) e raggruppamenti.
-- I filtri "Categoria" nei pannelli HR e Super Admin restano invariati.
-- La pagina di dettaglio esperienza (header con `categoryName`) non viene toccata: la categoria continua a comparire nel dettaglio, dove ha senso.
-- Nessuna modifica a Super Admin tables/CRUD (in tabella ha senso vedere la categoria come colonna gestionale).
-- Nessuna modifica al backend, alle RLS o agli edge functions.
+- Migration C: `ALTER TABLE tb_quotes ADD COLUMN proposal_id uuid REFERENCES tb_proposals(id)`. Backfill: per ogni quote esistente, popolare `proposal_id` cercando l'unica proposta `interested` della stessa request (caso oggi reale, le quote sono di fatto già 1:1 con una proposta). Validare che il backfill copra tutto, poi `SET NOT NULL`.
+- Migration D: nuovi vincoli additivi:
+  - Unique partial: una sola quote in (`draft`,`sent`,`viewed`,`modification_requested`) per `(request_id, proposal_id)`.
+  - Trigger di validazione (no CHECK) che vieta inserimento di quote senza `proposal_id`.
+- RPC nuove (tutte `SECURITY DEFINER` con `SET search_path = public, pg_temp`, `REVOKE ... FROM PUBLIC`, `GRANT TO authenticated`, autorizzazione in cima):
+  - `hr_request_alternative_for_proposal(proposal_id)` → notifica super admin.
+  - `hr_update_brief(request_id, jsonb_diff)` → patch del brief, log diff.
+  - `admin_deactivate_proposal(proposal_id)` → set `is_active = false`.
+- Refactor RPC esistenti (additivo, **non** rimuoviamo le firme vecchie): `admin_save_tb_quote_draft`, `admin_send_tb_quote`, `hr_decide_on_quote`, `admin_supersede_and_create_new_version` accettano `proposal_id` e lo persistono. Le firme vecchie restano funzionanti finché lo Step 7 non le elimina.
 
-## Verifica post-modifica
+## Step 4 — Workspace super admin `/super-admin/team-building/richieste/{id}`
 
-- `/app/experiences` (mobile + desktop): nessun badge categoria sulle card.
-- Sezione "Esperienze correlate" nel dettaglio: nessun badge categoria.
-- HR `/hr/esperienze` (entrambe le viste catalogo + statistiche): nessuna pillola categoria sotto il titolo.
-- Association `/association/experiences`: nessuna pillola categoria nelle card di listing.
-- Profilo pubblico associazione: card esperienza senza badge categoria.
-- I filtri per categoria nei pannelli HR/Super Admin/Association continuano a funzionare correttamente.
+Solo frontend (più eventuali query helper). Refactor di `TBRequestDetailPage.tsx` al modello accumulativo:
+
+- Drop dello status granulare come driver di vista, sostituito da `state` + sezioni per entità.
+- Lista proposte con toggle `is_active` operativo, possibilità di aggiungere proposte in qualsiasi momento finché `state=open`.
+- Quote per-proposal: una colonna/sezione per ogni proposta `interested`, con history versioni.
+- UI volutamente minimale (sez. 6: rifiniremo dopo i learning).
+
+## Step 5 — Dettaglio HR `/hr/team-building/:id` (state = open)
+
+Riscrittura di `HRTBRequestDetailPage.tsx` + componenti correlati (`TBRequestStatusSection.tsx` deprecato).
+
+- Layout a due colonne (Attio-like).
+- Pannello sinistro: brief + "Modifica brief" (dialog/sheet) + "Annulla richiesta".
+- Pannello destro a tab: **Proposte** (filtri, quick actions Mi interessa/Scarta, nudge alternative, sezione scartate collassata) e **Quotazioni** (una card per proposta `interested`, CTA per stato della quote). Default tab logic come §5.2.
+- Tab `state=confirmed` (Evento/Partecipanti/Documenti): solo gli scheletri vuoti, contenuti rinviati alla sessione dedicata di sez. 3.5.
+- Mobile fuori scope V1 (§5.3).
+
+## Step 6 — Email refactor
+
+- Nuovi hook su eventi atomici (lista §9): creazione request, modifica brief con diff, aggiunta proposta, scarto con richiesta alternativa, richiesta preventivo, invio preventivo, decisione cliente, conferma data, reminder, evento completato.
+- Edge function `send-transactional-email` ricomposta sui nuovi trigger (DB triggers o chiamate dirette dalle nuove RPC).
+- Vecchi trigger basati su `tb_requests.status` disattivati (non droppati) in coda allo step.
+
+## Step 7 — Cleanup DB (solo dopo V1 in produzione e stabile)
+
+- Conversione `tb_requests.state` da GENERATED a colonna regolare (DROP della GENERATED + ADD COLUMN + backfill + NOT NULL, in due migration: prima la nuova colonna `state_v2`, swap, poi drop della vecchia).
+- `DROP COLUMN tb_requests.status`.
+- `DROP TABLE tb_request_status_log`.
+- `ALTER TABLE tb_quotes DROP COLUMN valid_until`.
+- Drop RPC vecchie con chiave `(request_id)` e dei vincoli obsoleti.
+- Pulizia `src/lib/tb-status.ts` (rimozione delle 15 union, sostituzione con i 4 state + helper per la pill).
+
+## Cantiere parallelo (non blocca)
+
+Sessione dedicata su entità di esecuzione (`tb_events`, `tb_event_participants`, `tb_contracts`, `tb_matching_decisions`) e sulle tab `state=confirmed`/`completed`. Da pianificare separatamente, può iniziare in parallelo allo Step 4.
+
+## Regole trasversali (CLAUDE.md)
+
+- Mai DROP+CREATE nello stesso step. Tutti gli step 1–6 sono additivi; lo step 7 è l'unico distruttivo, e arriva solo dopo conferma di stabilità.
+- Tutte le RPC `SECURITY DEFINER` hanno `SET search_path = public, pg_temp`, `REVOKE ... FROM PUBLIC`, `GRANT TO authenticated`, e check di autorizzazione + ownership in cima al corpo.
+- `REVOKE` column-level su margini ETS resta in vigore.
+
+## Ordine consigliato di approvazione
+
+Procediamo uno step alla volta. Approvando questo piano confermi solo la rotta complessiva: ogni step verrà aperto con un brief proprio (cosa cambia / perché / cosa NON cambia) prima di scrivere codice. Il primo da implementare è lo **Step 1**, perché abilita lo Step 2 senza toccare nulla del comportamento esistente.
