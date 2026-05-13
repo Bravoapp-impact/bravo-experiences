@@ -79,6 +79,10 @@ interface TBEventRow {
   request_id: string;
   title: string | null;
   scheduled_datetime: string | null;
+}
+
+interface TBAcceptedProposalRow {
+  request_id: string;
   format: { image_url: string | null } | null;
 }
 
