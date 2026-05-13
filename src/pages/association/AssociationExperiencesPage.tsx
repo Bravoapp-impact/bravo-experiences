@@ -465,10 +465,8 @@ export default function AssociationExperiencesPage() {
                   <CollapsibleContent>
                     <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                       {grouped.archived.map((exp, i) => {
-                        const categoryName = exp.categories?.name || exp.category;
                         const cityName = exp.cities?.name || exp.city;
                         const metaItems: BravoCardMetaItem[] = [];
-                        if (categoryName) metaItems.push({ text: categoryName });
                         if (cityName) metaItems.push({ icon: MapPin, text: cityName });
                         return (
                         <BravoCard
