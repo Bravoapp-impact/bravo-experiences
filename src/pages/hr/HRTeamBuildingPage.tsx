@@ -148,11 +148,13 @@ function detailRoute(req: TBRequestRow): string {
 function ScheduledEventCard({
   req,
   event,
+  imageUrl,
   index,
   onOpen,
 }: {
   req: TBRequestRow;
   event: TBEventRow | undefined;
+  imageUrl: string | null;
   index: number;
   onOpen: () => void;
 }) {
@@ -182,7 +184,7 @@ function ScheduledEventCard({
 
   return (
     <BravoCard
-      imageUrl={event?.format?.image_url ?? null}
+      imageUrl={imageUrl}
       imageAlt={req.title}
       aspectRatio="square"
       imageOverlay={dateBadge}
