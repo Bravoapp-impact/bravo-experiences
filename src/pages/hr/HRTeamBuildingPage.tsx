@@ -332,11 +332,11 @@ function ArchivedCard({
     </div>
   );
 
-  // Per i completati: usa immagine evento se c'è, altrimenti placeholder con icona.
-  if (event?.format?.image_url || eventDate) {
+  // Per i completati: usa immagine proposta accettata se c'è, altrimenti placeholder con icona.
+  if (imageUrl || eventDate) {
     return (
       <BravoCard
-        imageUrl={event?.format?.image_url ?? null}
+        imageUrl={imageUrl ?? null}
         imageAlt={req.title}
         aspectRatio="square"
         imageOverlay={overlay}
