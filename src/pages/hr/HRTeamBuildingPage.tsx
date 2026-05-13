@@ -498,11 +498,18 @@ export default function HRTeamBuildingPage() {
     },
   });
 
-  const { scheduled, open, archived, eventByReq, draftRequest } = useMemo(() => {
+  const { scheduled, open, archived, eventByReq, imageByReq, draftRequest } = useMemo(() => {
     const requests = data?.requests ?? [];
     const proposals = data?.proposals ?? [];
     const quotes = data?.quotes ?? [];
     const events = data?.events ?? [];
+    const accepted = data?.acceptedProposals ?? [];
+
+    const imageByReq = new Map<string, string | null>();
+    for (const ap of accepted) {
+      imageByReq.set(ap.request_id, ap.format?.image_url ?? null);
+    }
+
 
     const proposalsByReq = new Map<string, TBProposalRow[]>();
     for (const p of proposals) {
