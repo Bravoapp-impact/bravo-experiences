@@ -6,7 +6,7 @@ import {
   ChevronDown,
   MapPin,
   Building2,
-  Tag,
+  
   Calendar,
   Clock,
   Users,
