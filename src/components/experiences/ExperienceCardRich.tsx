@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { MapPin, Users, Calendar, Clock, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
 import { BaseCardImage } from "@/components/common/BaseCardImage";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
