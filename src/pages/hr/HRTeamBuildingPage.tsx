@@ -585,7 +585,7 @@ export default function HRTeamBuildingPage() {
 
     const draftRequest = open.find((r) => r.status === "draft") ?? null;
 
-    return { scheduled, open, archived, eventByReq, draftRequest };
+    return { scheduled, open, archived, eventByReq, imageByReq, draftRequest };
   }, [data]);
 
   const hasAny =
@@ -684,6 +684,7 @@ export default function HRTeamBuildingPage() {
                   key={req.id}
                   req={req}
                   event={eventByReq.get(req.id)}
+                  imageUrl={imageByReq.get(req.id) ?? null}
                   index={i}
                   onOpen={() => navigate(detailRoute(req))}
                 />
@@ -736,6 +737,7 @@ export default function HRTeamBuildingPage() {
                     key={req.id}
                     req={req}
                     event={eventByReq.get(req.id)}
+                    imageUrl={imageByReq.get(req.id) ?? null}
                     index={i}
                     onOpen={() => navigate(detailRoute(req))}
                   />
