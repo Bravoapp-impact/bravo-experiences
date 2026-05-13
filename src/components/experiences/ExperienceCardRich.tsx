@@ -33,17 +33,6 @@ export function ExperienceCardRich({ experience, index }: ExperienceCardRichProp
         alt={experience.title}
         aspectRatio="video"
         fallbackEmoji="🤝"
-        badge={
-          experience.category ? (
-            <Badge
-              variant="secondary"
-              className="bg-background/90 backdrop-blur-sm"
-            >
-              {experience.category}
-            </Badge>
-          ) : null
-        }
-        badgePosition="top-left"
         className="rounded-none"
       />
 
