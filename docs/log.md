@@ -68,8 +68,7 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 - Step 3 (DB additivo Fase 1 + RPC per-proposal) resta in attesa.
 
 ---
-
-
+### 2026-05-11 — Introdotto `docs/log.md`
 
 **Contesto.** Mancava un punto unico dove tracciare le modifiche al sistema sessione per sessione. `architettura.md` descrive lo stato attuale, `principi.md` descrive il perché — ma il "cosa è cambiato e quando" era disperso tra commit e memoria.
 
