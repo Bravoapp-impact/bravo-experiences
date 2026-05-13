@@ -673,15 +673,6 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
                       alt={exp.title}
                       aspectRatio="square"
                       fallbackEmoji="🌿"
-                      badge={exp.category ? (
-                        <Badge
-                          variant="secondary"
-                          className="text-[10px] font-medium bg-white/95 text-foreground backdrop-blur-sm rounded-full px-2 py-0.5 shadow-sm"
-                        >
-                          {exp.category}
-                        </Badge>
-                      ) : undefined}
-                      badgePosition="top-left"
                     />
                     <div className="pt-2 space-y-1">
                       <h3 className="text-[13px] font-medium text-foreground line-clamp-2 leading-snug">
