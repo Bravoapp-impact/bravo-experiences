@@ -450,7 +450,11 @@ export default function HRTeamBuildingPage() {
         .filter((r) => r.state === "confirmed")
         .map((r) => r.id);
 
-      const [proposalsRes, quotesRes, eventsRes] = await Promise.all([
+      const eventIds = reqs
+        .filter((r) => r.state === "confirmed" || r.state === "completed")
+        .map((r) => r.id);
+
+      const [proposalsRes, quotesRes, eventsRes, acceptedRes] = await Promise.all([
         openIds.length
           ? supabase
               .from("tb_proposals")
@@ -463,32 +467,33 @@ export default function HRTeamBuildingPage() {
               .select("request_id,status")
               .in("request_id", openIds)
           : Promise.resolve({ data: [], error: null }),
-        confirmedIds.length || reqs.some((r) => r.state === "completed")
+        eventIds.length
           ? supabase
               .from("tb_events")
-              .select(
-                "request_id,title,scheduled_datetime,format:tb_formats(image_url)",
-              )
-              .in(
-                "request_id",
-                reqs
-                  .filter(
-                    (r) => r.state === "confirmed" || r.state === "completed",
-                  )
-                  .map((r) => r.id),
-              )
+              .select("request_id,title,scheduled_datetime")
+              .in("request_id", eventIds)
+          : Promise.resolve({ data: [], error: null }),
+        eventIds.length
+          ? supabase
+              .from("tb_proposals")
+              .select("request_id, format:tb_formats(image_url)")
+              .in("request_id", eventIds)
+              .eq("client_status", "accepted")
+              .eq("is_active", true)
           : Promise.resolve({ data: [], error: null }),
       ]);
 
       if (proposalsRes.error) throw proposalsRes.error;
       if (quotesRes.error) throw quotesRes.error;
       if (eventsRes.error) throw eventsRes.error;
+      if (acceptedRes.error) throw acceptedRes.error;
 
       return {
         requests: reqs,
         proposals: (proposalsRes.data ?? []) as TBProposalRow[],
         quotes: (quotesRes.data ?? []) as TBQuoteRow[],
         events: (eventsRes.data ?? []) as TBEventRow[],
+        acceptedProposals: (acceptedRes.data ?? []) as TBAcceptedProposalRow[],
       };
     },
   });
