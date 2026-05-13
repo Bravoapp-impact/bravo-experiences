@@ -4,6 +4,11 @@
 > Versione: maggio 2026.
 > Riscritto da capo dopo il consolidamento del modello "bacheca accumulativa" (vedi sezione 2).
 
+> **Stato implementazione (vedi `tb-flow-implementation-plan.md` per il piano completo):**
+> - **Step 1 — DB additivo minimo (`state` su `tb_requests`, `is_active` su `tb_proposals`):** ✅ implementato.
+> - **Step 2 — Lista HR `/hr/team-building` riprogettata:** ⚠️ implementato, ma **da rivedere**: emersi errori (es. embed inesistente `tb_events → tb_formats`, gestione bozza, copertura stati) che richiedono una sessione di correzione prima di considerarlo chiuso.
+> - **Step 3–7 e cantiere parallelo:** non ancora avviati.
+
 ---
 
 ## 1. Cosa è cambiato rispetto alla versione precedente
