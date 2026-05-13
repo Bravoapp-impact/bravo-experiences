@@ -283,11 +283,13 @@ function OpenRequestCard({
 function ArchivedCard({
   req,
   event,
+  imageUrl,
   index,
   onOpen,
 }: {
   req: TBRequestRow;
   event: TBEventRow | undefined;
+  imageUrl: string | null;
   index: number;
   onOpen: () => void;
 }) {
