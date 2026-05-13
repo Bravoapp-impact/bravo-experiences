@@ -1,6 +1,6 @@
 import { Users, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
+
 import { BravoCard, BravoCardMetaItem } from "@/components/common/BravoCard";
 import { CardAssociationLine } from "@/components/common/CardAssociationLine";
 import { format, differenceInMinutes } from "date-fns";
