@@ -1,498 +1,502 @@
-# Team Building — Flusso di prodotto
+# Team Building — Flusso e modello dati
 
-_Documento di progettazione — Aprile 2026_
-
----
-
-## Premessa
-
-Questo documento guida la costruzione del verticale **Team Building** nell'app Bravo!. Si aggancia a `sistema-operativo.md`, di cui eredita attori, oggetti dominio condivisi, infrastrutture trasversali e principi di permessi. Qui descrive cosa è specifico del TB: schema dati, stati del flusso, UI, email, eventi analytics.
-
-Il doc è la fonte di verità per il flusso dei team building sociali in app. Se in fase di costruzione emergono decisioni diverse, il doc va aggiornato prima di proseguire — non vale la pena avere documentazione che dice una cosa e codice che ne fa un'altra.
+> Documento di riferimento per il verticale Team Building su Bravo!.
+> Versione: maggio 2026.
+> Riscritto da capo dopo il consolidamento del modello "bacheca accumulativa" (vedi sezione 2).
 
 ---
 
-## 1. Scopo del verticale
+## 1. Cosa è cambiato rispetto alla versione precedente
 
-Il TB digitalizza un processo che Bravo! oggi gestisce tra Canva, mail e call. Il dolore operativo è reale: un'unica persona (o due) tiene insieme brief del cliente, scouting ETS, proposte su Canva, negoziazione preventivi, firma, gestione evento. Ogni TB occupa ore di lavoro coordinativo. A volumi crescenti non scala.
+La prima versione di questo documento modellava il flusso TB come una **sequenza di 8 fasi lineari**, con uno stato granulare su `tb_requests.status` (15 valori) che orchestrava email, RLS, transizioni operative.
 
-Il verticale TB in Bravo! deve:
+Funzionava finché ogni richiesta aveva al massimo una quote attiva. Quando abbiamo deciso che ogni `tb_proposal` interessata deve avere il **suo preventivo separato** — perché le proposte sono alternative tra loro, non un carrello — il modello a fase singola si è rotto: se la proposta A è in fase "preventivo inviato" e la proposta B è in "preventivo in composizione", quale stato dai alla richiesta?
 
-1. **Ridurre il tempo di produzione delle proposte**, spostando brief e matching da Canva all'app, con un catalogo strutturato di format e un filtro intelligente.
-2. **Portare il preventivo dentro il prodotto**, come pagina brandizzata che il cliente vede e accetta, non PDF spedito via mail.
-3. **Centralizzare la relazione con l'ETS**, in V1 ancora via email ma da template strutturati, in V2 dentro l'app con un pannello dedicato.
-4. **Registrare ogni passaggio** per l'analytics di prodotto, così Bravo! vede in tempo reale dove il cliente si è fermato.
-5. **Preparare il terreno all'automazione**, loggando le decisioni di matching oggi fatte a mano per poter addestrare uno scoring o un modello in futuro.
-
-Non è un tool interno. È un pezzo del prodotto che HR, super admin e (in V2) ETS usano ciascuno nella propria interfaccia.
+La risposta che adottiamo è: nessuno. Lo stato della richiesta torna a essere semplice (4 valori: `open`, `confirmed`, `completed`, `cancelled`), e gli stati operativi vivono sulle entità giuste — proposte e preventivi. La pratica diventa una bacheca accumulativa in cui proposte e preventivi si aggiungono nel tempo, non un workflow che avanza per fasi chiuse.
 
 ---
 
-## 2. Gli attori nel TB
+## 2. I tre principi che reggono il modello
 
-**HR.** Apre la richiesta di TB compilando un brief in app. Vede le proposte che Bravo! gli ha preparato, marca quelle che gli interessano. Riceve il preventivo in app, lo apre, lo accetta (o richiede modifiche, o rifiuta). Gestisce il post-vendita: condivide il link di iscrizione ai colleghi, vede gli iscritti in tempo reale, accede a template di comunicazione.
+**Il brief è un'ipotesi, non un contratto.** L'HR può modificare il brief in qualsiasi momento finché la pratica è aperta — anche la tipologia di attività. Il brief esprime un intento generale di partenza, non specifiche fisse. È legittimo che HR scopra strada facendo cosa vuole davvero, ed è legittimo che Bravo! (o un'AI futura) proponga format diversi da quelli indicati se servono meglio all'obiettivo.
 
-**Super Admin.** Riceve la richiesta, seleziona dal catalogo i format candidati, assegna a ciascuno l'ETS di riferimento, crea le proposte per il cliente. Quando il cliente si esprime, contatta le ETS delle proposte d'interesse (in V1 via mail template, in V2 via notifica in-app). Raccoglie i prezzi ETS, costruisce il preventivo in app aggiungendo il margine Bravo! e le voci accessorie. Invia il preventivo al cliente. Segue la firma. Orchestra l'esecuzione dell'evento. È l'unico che vede tutto: prezzo ETS, margine, prezzo finale.
+**La pratica accumula, non resetta.** Proposte e preventivi si aggiungono nel tempo. HR può cambiare idea su una proposta più volte. Il super admin può aggiungere nuove proposte in qualsiasi momento. Niente di quello che è stato fatto si distrugge automaticamente: o lo si conserva, o lo si chiude esplicitamente.
 
-**ETS.** In V1 è fuori dall'app. Riceve una mail strutturata da Bravo! con i dettagli della richiesta (data, numero partecipanti, format concordato, servizi extra), risponde via mail con prezzo e disponibilità. In V2 ha un pannello dentro l'app: vede le richieste di quotazione, risponde direttamente, e dopo la firma vede le informazioni dell'evento e degli iscritti. In V1 l'ETS esiste come riga nel DB (già è così), ma non interagisce con il prodotto TB.
-
-**Dipendente.** Nel TB il dipendente compare solo nel post-vendita: vede la sua partecipazione all'evento via app, compila il form (privacy obbligatoria, intolleranze se è previsto pranzo), poi il giorno dell'evento partecipa. Non ha visibilità sul catalogo TB né sul preventivo. Il TB è un evento ponte-offerto dall'azienda, non un servizio che il dipendente sceglie.
+**C'è un solo punto di chiusura: l'accettazione di un preventivo.** Tutto il resto è esplorazione. Quando HR accetta una quote, le altre quote attive vengono cancellate, la pratica passa a `confirmed`, e la pagina cambia faccia perché ora c'è un evento da organizzare. L'annullamento esplicito della richiesta è l'altra via di uscita.
 
 ---
 
-## 3. Schema dati
+## 3. Schema dati — entità centrali
 
-Sei tabelle nuove, tutte con prefisso `tb_`. Nessuna tocca tabelle esistenti, nessuna rimpiazza oggetti del volontariato.
+Le entità descritte sotto sono quelle su cui abbiamo chiarezza piena dopo le sessioni di consolidamento. Le altre entità del verticale TB (eventi, partecipanti, contratti, log decisioni di matching) esistono nel sistema attuale e vanno mantenute, ma richiedono una sessione dedicata di revisione prima di essere formalizzate qui. Vedi sezione 3.5.
 
 ### 3.1 `tb_formats` — il catalogo
 
-Rappresenta i **format di team building** che Bravo! può proporre. È l'equivalente concettuale di `experiences` ma separato, perché la logica è diversa (un format TB non è prenotabile in autonomia, non ha `experience_dates`, non ha prezzo fisso).
+Una riga per ogni format proponibile (Cooking Class, Dragon Boat, Cartapesta, ecc.).
 
-Campi principali:
+Campi rilevanti:
 
-- `id`, `title`, `description`, `image_url`
-- `category_id` → riferimento a `categories` (trasversale al sistema)
-- `secondary_tags` (`text[]`) → tag secondari condivisi con le `experiences`. La sorgente di verità del set di tag è la costante TypeScript `AVAILABLE_TAGS` in `src/lib/tags.ts`. **Nota:** i valori "Indoor" e "Outdoor" sono stati rimossi dai tag e sostituiti dal campo dedicato `location_type` (vedi A.8).
-- `location_type` enum: `indoor`, `outdoor`, `both`
-- `participants_min`, `participants_max` — range indicativo di pax sostenibile
-- `duration_hours` — durata indicativa
-- `price_range_min`, `price_range_max` — **a titolo indicativo**, non è il prezzo effettivo che si applica al cliente. Serve per il filtro budget.
-- `sdgs` (array)
-- `services` JSONB → cosa include il format di default (es. istruttore esperto, materiali, assicurazione). Struttura in V1: `{"items": ["stringa1", "stringa2", ...]}`. Se in futuro servirà struttura più ricca (nome + descrizione, prezzo opzionale), si migra senza toccare la colonna.
-- `extra_services` JSONB → servizi aggiuntivi opzionali offerti col format (es. pranzo con prodotti locali, trasporto, materiale fotografico). Stessa struttura di `services`. Distinti da `tb_requests.extra_services`, che invece rappresentano le richieste dell'HR nel brief.
-- `status` enum: `draft`, `published`, `archived`
+- `id`, `title`, `description`, `short_description`, `image_url`
+- `category_id` (FK a `categories`, le stesse del volontariato)
+- `association_id` nullable — se valorizzato, ETS predefinita per questo format. Se null, il super admin sceglie l'ETS caso per caso al momento di creare la proposta.
+- `participants_min`, `participants_max`, `duration_hours`
+- `location_type` (`indoor` / `outdoor` / `both`)
+- `sdgs`, `secondary_tags`
+- `status` (`draft` / `published` / `archived`)
+- `format_services` JSONB (cosa è incluso nel format)
+
+Tabella ponte `tb_format_associations` per il caso di ETS multiple associabili a un format.
+
+Catalogo visibile a super admin e agli ETS che vi figurano come erogatori. **HR non vede il catalogo direttamente**: vede solo le `tb_proposals` che il super admin costruisce per la sua richiesta.
+
+### 3.2 `tb_requests` — la pratica
+
+Una riga per ogni richiesta di team building aperta da HR.
+
+Campi:
+
+- `id`, `company_id`, `created_by`, `title`
+- Campi del brief, **tutti modificabili finché `state = open`**:
+  - `participants_min`, `participants_max` (calcolati da un singolo numero ±10%)
+  - `preferred_period_from`, `preferred_period_to`
+  - `budget_estimate`
+  - `extra_services` JSONB (`{lunch, transport, location_rental, catering_social, places: [...], goals: [...], notes}`)
+  - `preferred_category_id` (la tipologia di attività preferita — non vincolante, può cambiare)
+  - `notes`
+- `state` enum: `open` / `confirmed` / `completed` / `cancelled`
+- `assigned_admin_id` nullable
 - `created_at`, `updated_at`
 
-**Relazione format ↔ ETS erogabili.** Passa esclusivamente dalla tabella ponte `tb_format_associations`. Non esiste un campo `association_id` diretto su `tb_formats`: sia i format "Bravo!" erogabili con più ETS sia quelli legati a una singola ETS (es. "Dragon Boat con Navigli Clean Up") si rappresentano con una o più righe in bridge. Per risolvere quale ETS mostrare in una `tb_proposal`: se `override_association_id` è valorizzato si usa quello, altrimenti si legge dalla bridge del format. Se la bridge è vuota e non c'è override, la proposta non è in uno stato valido per essere inviata al cliente.
+**Drop rispetto al modello precedente:** il campo `status` con 15 valori e la tabella `tb_request_status_log`. La granularità operativa vive sulle entità giuste (`tb_proposals.client_status`, `tb_quotes.status`).
 
-**Relazione format ↔ città erogabili.** Passa dalla tabella ponte `tb_format_cities`. Un format può essere erogato in più città.
+Transizioni di `state`:
 
-**Requisiti per lo stato `published`.** Un format può restare in `draft` con qualunque livello di completezza. Al passaggio a `published` deve soddisfare i seguenti requisiti minimi, che garantiscono che sia filtrabile in Fase 2 di matching:
+- `open → confirmed`: HR accetta un preventivo
+- `open → cancelled`: HR annulla la richiesta, oppure il super admin la chiude
+- `confirmed → completed`: l'evento è avvenuto (chiusura post-evento)
+- `confirmed → cancelled`: caso eccezionale, evento annullato dopo accettazione
 
-- `title` non vuoto
-- `category_id` valorizzato
-- `participants_min` e `participants_max` entrambi valorizzati
-- `price_range_min` e `price_range_max` entrambi valorizzati
-- almeno una città in `tb_format_cities`
-- almeno un'ETS in `tb_format_associations`
+Non sono previste transizioni inverse.
 
-La validazione è applicata lato client (UI super admin), sia nel dialog di edit sia nelle azioni rapide dalla lista catalogo. Nessun trigger DB in V1: il super admin può, se serve, forzare stati via SQL.
+### 3.3 `tb_proposals` — le idee al cliente
 
-**Principio di separazione.** Un `tb_format` non è un'`experience`. Sono due oggetti diversi con cicli di vita diversi. Se un giorno un format TB diventasse erogabile anche in modalità volontariato (improbabile ma possibile), si crea un'`experience` corrispondente con i propri dati.
+Una riga per ogni format che il super admin propone a una specifica richiesta.
 
-### 3.2 `tb_requests` — il caso aperto
-
-Una riga per ogni richiesta di TB che un HR apre. È il "caso" che segue tutto il flusso.
-
-Campi principali:
-
-- `id`, `company_id`, `created_by` (profile_id dell'HR o, se compilato a nome cliente, del super admin)
-- `title` — identificativo umano della richiesta (es. "TB primavera 2026 - team Marketing")
-- `status` enum: `draft`, `submitted`, `in_matching`, `proposals_sent`, `proposals_reviewed`, `quote_requested`, `quote_in_composition`, `quote_sent`, `quote_accepted`, `quote_rejected`, `signed`, `event_scheduled`, `completed`, `cancelled`
-- `participants_min`, `participants_max` — calcolati automaticamente dal numero indicativo inserito dall'HR (±10%). L'HR inserisce un singolo numero (es. 50) e il sistema salva `participants_min = 45`, `participants_max = 55`.
-- `preferred_period_from`, `preferred_period_to` — flessibile: l'HR può dire "settembre o ottobre" senza doversi impegnare su una settimana specifica
-- `budget_estimate` — cifra indicativa che l'HR dichiara
-- `preferred_city_id` — città preferita (non più usato nel brief; mantenuto per compatibilità)
-- `preferred_location_type` — non più raccolto nel brief HR (resta nei `tb_formats` per il catalogo). Campo mantenuto nel DB per compatibilità.
-- `extra_services` JSONB — oggetto con chiavi come `{lunch: true, transport: false, location_rental: true, catering_social: true, places: ["Milano", "Roma"], goals: [...], notes: "..."}`. JSONB per non dover creare colonne per ogni possibile servizio. Il campo `places` contiene le località selezionate dall'HR (multi-selezione da lista province italiane).
-- `notes` — note libere dell'HR
-- `assigned_admin_id` — super admin assegnato al caso, nullable finché non assegnato
-- `created_at`, `updated_at`
-
-Una `tb_request` può chiudersi in vari stati terminali: `completed` (evento avvenuto), `cancelled` (abbandonata), `quote_rejected` (cliente ha rifiutato). Il ciclo di vita è lineare ma con possibili ritorni (es. `quote_rejected` → nuovo ciclo di quotation su proposte diverse).
-
-### 3.3 `tb_proposals` — le schede al cliente
-
-Le "Best Ideas" del whiteboard. Ogni riga è un format proposto al cliente per una specifica richiesta. Una `tb_request` genera 3-5 `tb_proposals`.
-
-Campi principali:
+Campi:
 
 - `id`, `tb_request_id`, `tb_format_id`
-- `override_association_id` — nullable, usato quando il `tb_format` ha `association_id` null e il super admin sta scegliendo _in questo caso_ quale ETS proporre. Se valorizzato, prevale sul valore del format.
-- `priority` — ordine di visualizzazione al cliente (1 è la prima scheda)
-- `admin_notes` — note che il super admin vuole comunicare al cliente su questa proposta (es. "Versione custom per 80 pax con parte di briefing finale")
-- `client_status` enum: `pending`, `interested`, `needs_clarification`, `declined` — selezione del cliente sulla scheda
-- `client_decision_at` — timestamp della scelta cliente
-- `association_visibility` enum: `visible`, `hidden` — controllo granulare sulla visibilità del nome ETS in questa proposta specifica. Default `visible`. Il DB è flessibile per test A/B o scelte caso per caso.
+- `override_association_id` nullable: se il format ha `association_id` null, qui si specifica l'ETS scelta per questa proposta. Se valorizzato, prevale.
+- `priority` per ordine di visualizzazione
+- `admin_notes`: note che il super admin vuole comunicare a HR su questa proposta
+- `client_status` enum: `pending` / `interested` / `declined`. Reversibile finché `state = open`.
+- `client_decision_at`
+- `is_active` boolean (default `true`): se `false`, la proposta è ritirata dal super admin e non viene mostrata ad HR. Usato per pulire proposte non più adatte dopo una modifica significativa del brief, senza eliminarle.
+- `association_visibility` enum (`visible` / `hidden`): controllo granulare sulla visibilità del nome ETS in questa proposta
 - `created_at`, `updated_at`
 
-Per risolvere quale ETS mostrare in una proposta: se `override_association_id` è valorizzato si usa quello, altrimenti si legge dalla tabella ponte `tb_format_associations` del format collegato. Se entrambi sono vuoti, la proposta non è in uno stato valido per essere inviata al cliente — il super admin deve prima assegnare un'ETS.
+### 3.4 `tb_quotes` + `tb_quote_items` — i preventivi
 
-### 3.4 `tb_quotes` + `tb_quote_items` — il preventivo
+Una quote per ogni `tb_proposal` interessata per cui HR ha richiesto un preventivo. **Le quote sono per-proposal, non per-request.**
 
-Un preventivo per ogni richiesta in cui il cliente ha selezionato almeno una proposta. **Un solo preventivo attivo alla volta per ciascuna `tb_request`**; in caso di modifiche richieste dal cliente, il precedente va in `superseded` e se ne crea uno nuovo (mantenere storico è utile per audit e analytics).
+Campi `tb_quotes`:
 
-`tb_quotes` campi principali:
-
-- `id`, `tb_request_id`
-- `version` — progressivo (1, 2, 3...) se ci sono state revisioni
-- `status` enum: `draft`, `sent`, `viewed`, `accepted`, `rejected`, `modification_requested`, `superseded`
+- `id`, `request_id`, `proposal_id` (**non nullable**)
+- `version` (per gestire successive versioni in caso di modifiche richieste)
+- `status` enum: `draft` / `sent` / `viewed` / `accepted` / `rejected` / `modification_requested` / `superseded` / `cancelled`
+- `total_amount_ets`, `total_amount_final`, `bravo_margin_amount`, `bravo_margin_percent`
+- `terms_text`, `pdf_url` (in V1 generato manualmente, in V2 da template)
+- `client_decision_notes`
 - `sent_at`, `viewed_at`, `decided_at`
-- `client_decision_notes` — campo libero se il cliente chiede modifiche
-- `total_amount_final` — totale a cliente (ridondante con somma items, ma utile per query veloci)
-- `total_amount_ets` — totale quanto incassano le ETS complessivamente (solo visibile super admin)
-- `bravo_margin_amount` — differenza (solo visibile super admin)
-- `terms_text` — termini contrattuali standard, editabili dal super admin
-- `pdf_url` — opzionale, popolato quando si genera il PDF del preventivo
 - `created_by`, `created_at`, `updated_at`
 
-`tb_quote_items` campi principali:
+**Drop rispetto al modello precedente:** il campo `valid_until`. La scadenza temporale di un preventivo è un concetto fragile per HR (la vera scadenza è la data dell'evento). Se il super admin ha bisogno di tracciare un orizzonte di validità interna, lo fa nelle note operative del caso.
 
-- `id`, `tb_quote_id`
-- `tb_proposal_id` — nullable, popolato se l'item deriva da una proposta scelta dal cliente; null se è una voce libera (logistica, trasporti, extra)
-- `description` — nome della voce
-- `association_id` — nullable, popolato se la voce è erogata da un'ETS specifica (le voci libere come "trasporti" non hanno ETS)
-- `quantity` — numero di partecipanti, ore, pezzi
-- `unit_price_final` — prezzo unitario per il cliente
-- `unit_price_ets` — prezzo unitario che l'ETS incassa (solo super admin)
-- `total_final` — `quantity * unit_price_final`
-- `total_ets` — `quantity * unit_price_ets`, solo super admin
-- `notes` — note libere per voce
-- `display_order` — ordinamento nell'UI del preventivo
+Vincolo: una sola quote in stato `draft`/`sent`/`viewed` per ogni `(request_id, proposal_id)`. Storico delle versioni precedenti gestito tramite `superseded`.
 
-**Principio.** Il preventivo è composto da items. Ogni item ha un prezzo finale (ciò che vede il cliente) e, opzionalmente, un prezzo ETS (ciò che sa solo Bravo!). La differenza è il margine. Questo modello permette margini diversi per voce, e permette voci senza margine (voci "pass-through" o servizi direttamente Bravo!).
+`tb_quote_items` resta come oggi (descrizione, quantità, prezzo unitario ETS, prezzo finale cliente, totali per riga, note).
 
-### 3.5 `tb_contracts` — la firma
+### 3.5 Entità da revisionare in sessione dedicata
 
-Una riga per ogni preventivo che diventa contratto firmato.
+Le seguenti entità esistono nel sistema attuale e vanno mantenute, ma la loro forma definitiva per V1 richiede una sessione di lavoro a parte. Quando ci arriveremo, aggiorneremo qui.
 
-Campi principali:
-
-- `id`, `tb_quote_id` (FK, uno-a-uno con preventivo accettato)
-- `signed_at`
-- `signature_method` enum: `manual_external` (V1: firmato su PDF fuori app, super admin conferma), `click_in_app` (V2: clic con log o Docusign)
-- `signer_profile_id` — chi ha firmato
-- `signer_ip` — opzionale, per `click_in_app`
-- `signer_user_agent` — opzionale, per `click_in_app`
-- `contract_pdf_url` — URL del PDF firmato (se esiste)
-- `terms_version_signed` — snapshot dei termini al momento della firma (i termini possono cambiare nel tempo, serve sapere cosa è stato effettivamente firmato)
-- `created_at`
-
-In V1 si usa `manual_external`. `click_in_app` rimane per V2.
-
-### 3.6 `tb_matching_decisions` — il log per la futura AI
-
-Ogni scelta di matching viene loggata. Questa tabella è **il dataset di training futuro**.
-
-Campi principali:
-
-- `id`, `tb_request_id`, `tb_format_id`
-- `decision` enum: `shown_in_filter` (il format è emerso dal filtro SQL per questa richiesta), `selected_as_proposal` (il super admin l'ha scelto come proposta), `discarded` (filtrato ma scartato dal super admin), `client_interested`, `client_declined`, `client_needs_clarification`
-- `decided_by` — super admin per le decisioni 2 e 3, HR per le 4-6
-- `decision_reason` — campo libero o tag: "prezzo_troppo_alto", "città_diversa_poco_attraente", "già_fatto_con_questa_azienda", "attività_non_adatta_al_team", "preferenza_cliente_altro_format"
-- `context` JSONB — snapshot dei parametri della request al momento della decisione, per poter riprodurre lo scenario
-- `created_at`
-
-Una `tb_request` genera molte righe qui: per ogni format che emerge dal filtro, una riga `shown_in_filter`; per ognuno che viene scelto, una riga `selected_as_proposal`; per ogni scelta del cliente, una riga `client_interested`/`client_declined`/eccetera.
-
-**Questa tabella non serve in V1 per far funzionare il flusso** — il flusso funziona anche senza. Ma è il prezzo del biglietto per il futuro: senza log oggi, nessuna AI domani.
+- `tb_events` — l'evento confermato, con data, location, link pubblico di iscrizione, stato operativo dell'evento.
+- `tb_event_participants` — gli iscritti raccolti via link pubblico.
+- `tb_contracts` — il contratto associato al preventivo accettato (in V1 firma manuale esterna).
+- `tb_matching_decisions` — log append-only delle decisioni di matching (super admin e cliente), utile per analytics e training futuro AI.
 
 ---
 
-## 4. Gli stati e il flusso
+## 4. Le azioni del sistema
 
-Il flusso ha otto fasi, in sequenza lineare con possibili ritorni.
+### 4.1 Azioni HR (disponibili finché `tb_requests.state = open`)
 
-### Fase 1 — Brief (HR → `tb_request` in stato `submitted`)
+1. **Modificare il brief** (qualsiasi campo). Notifica al super admin con diff dei campi cambiati.
+2. **Cambiare il `client_status` di una proposta** (pending ↔ interested ↔ declined). Reversibile.
+3. **Richiedere un preventivo** per una proposta `interested` (crea `tb_quote` in `draft`, notifica super admin).
+4. **Decidere su un preventivo** ricevuto: accetta / rifiuta / chiedi modifica.
+5. **Annullare la richiesta** (passa a `cancelled`).
 
-L'HR apre la pagina "Richiedi un Team Building" nell'app. Compila un form guidato a step: nome evento, obiettivi, tipo di attività preferito (opzionale), **numero indicativo di partecipanti** (il sistema calcola automaticamente un range ±10%), periodo preferito (mesi), **luoghi** (selezione multipla da lista province italiane), budget indicativo, servizi extra (pranzo, trasporti, location…), note libere. Salva. Il form genera una riga in `tb_requests` con `status = submitted`.
+L'accettazione di un preventivo è l'unica azione con effetti distruttivi:
 
-**Nota:** la tipologia location (indoor/outdoor) non viene più raccolta nel brief HR. Resta come attributo dei `tb_formats` nel catalogo per il filtro di matching del super admin.
+- La quote accettata passa a `accepted`.
+- Tutte le altre quote attive (`draft`, `sent`, `viewed`, `modification_requested`) della stessa request passano a `cancelled` con motivo "preventivo alternativo accettato".
+- `tb_requests.state` passa a `confirmed`.
+- Viene creata una riga `tb_events` (struttura da definire in sessione dedicata).
 
-Il super admin riceve notifica (email + badge in app). La `tb_request` è in coda di lavorazione.
+### 4.2 Azioni super admin
 
-### Fase 2 — Matching (Super Admin → proposte create)
+1. **Aggiungere proposte** a una richiesta (in qualsiasi momento finché `state = open`).
+2. **Disattivare una proposta** non più adatta (`is_active = false`). Tipico dopo una modifica significativa del brief.
+3. **Comporre/inviare un preventivo** per una proposta `interested` che ha ricevuto richiesta da HR.
+4. **Gestire le modifiche richieste**: crea una nuova versione della quote (`version + 1`, vecchia in `superseded`).
+5. **Cancellare un preventivo** se necessario.
+6. **Caricare il contratto firmato**, confermare data e dettagli dell'evento, marcare l'evento come completed — dettagli operativi in sessione dedicata (sez. 3.5).
 
-Il super admin apre la richiesta nel pannello "Richieste TB". Vede i parametri del brief. L'app mostra automaticamente il catalogo `tb_formats` filtrato sui parametri: città compatibile, budget range compatibile, partecipanti range compatibile. Ogni format visto in questo filtro genera una riga `tb_matching_decisions` con `decision = shown_in_filter`.
+### 4.3 Trigger di sistema in V1: contatto con il team Bravo!
 
-Il super admin sceglie 3-5 format. Per ciascuno, se il format ha `association_id` null, sceglie **quale ETS** assegnare tra quelle in `tb_format_associations` (o inserisce un'ETS custom). Ogni scelta genera un `tb_proposal` e una riga `tb_matching_decisions` con `decision = selected_as_proposal`. Può aggiungere note per il cliente su ciascuna proposta.
+Quando HR scarta una proposta, l'app mostra un messaggio contestuale: "Vuoi che il team Bravo! ti proponga un'alternativa?". Click sì → notifica al super admin "Cliente ha scartato X e chiede un'alternativa". Super admin entra, aggiunge nuove proposte.
 
-Clicca "Invia al cliente". La `tb_request` passa a `proposals_sent`. Viene triggerata l'email all'HR.
+In V1 questo è il flusso. Niente proposte automatiche, perché la qualità del matching richiede criteri qualitativi che oggi non sono nel DB (relazioni con ETS specifici, conoscenza pregressa del cliente, stagionalità, ecc.). Affidarsi a un matching solo quantitativo in fase di traction rischia di danneggiare la qualità percepita del servizio.
 
-### Fase 3 — Proposte al cliente (HR → `tb_proposal.client_status` aggiornati)
+Tutte le decisioni e le interazioni vengono comunque loggate in `tb_matching_decisions` e in `user_events`, perché stiamo costruendo il dataset che alimenterà l'automazione futura.
 
-L'HR riceve notifica (email + in-app). Apre la pagina "Le mie proposte TB" per la richiesta in questione. Vede 3-5 schede "Best Ideas": titolo, foto, descrizione sintetica, programma della giornata, città, note di Bravo!. **Non vede ancora il prezzo** — il prezzo si costruisce solo dopo aver contattato l'ETS. **Non vede ancora l'ETS** - l'ETS verrà mostrato nella Fase 6.
+### 4.4 Orizzonte di automazione e AI
 
-Per ogni scheda, HR marca: `interested` / `needs_clarification` / `declined`. Può aggiungere note.
+Direzione strategica chiara: le azioni di super admin descritte in 4.2 devono diventare progressivamente automatiche. Le tappe ragionevoli, da affinare quando ci arriveremo:
 
-Quando HR chiude la fase (pulsante "Conferma scelte"), la `tb_request` passa a `proposals_reviewed`. Super admin riceve notifica.
+- **V1.5** — assistenza al super admin: quando entra su una richiesta, vede in pre-filtro i format del catalogo che matchano i parametri quantitativi (budget, città, partecipanti, periodo). Conferma con un click. Stesso meccanismo per "Brief modificato → ecco le proposte vecchie che potrebbero non essere più coerenti".
+- **V2** — automazione vera per casi a basso rischio: il nudge per le alternative dopo uno scarto può proporre direttamente la migliore corrispondenza dal catalogo. Per casi complessi resta sempre disponibile il fallback umano "Contatta il team".
+- **V3** — AI con fine-tuning sulle decisioni storiche raccolte in `tb_matching_decisions`.
 
-### Fase 4 — Quotazione ETS (Super Admin → email o pannello ETS)
+Il bottone "Contatta il team Bravo!" resta come opzione di backup in tutte le evoluzioni: ci sono sempre casi che richiedono giudizio umano.
 
-Super admin apre la richiesta. Vede quali proposte sono in `interested` o `needs_clarification`. Per ciascuna:
+### 4.5 Modifica del brief: effetti in V1
 
-**V1.** Clicca "Richiedi quotazione all'ETS" → viene triggerata l'email strutturata all'ETS (`send-tb-quote-request`). L'email contiene: dettagli richiesta (data, pax, servizi extra), descrizione del format, richiesta di prezzo e disponibilità conferma. L'ETS risponde via mail a team@bravoapp.it. Super admin, quando riceve la risposta, inserisce manualmente il prezzo ETS in app (nella composizione del preventivo, vedi Fase 5).
+Modificare il brief è un'azione leggera che non distrugge nulla. Le proposte esistenti restano, ma:
 
-**V2.** L'ETS riceve notifica in-app, apre il proprio pannello "Richieste di quotazione", risponde con prezzo e disponibilità. Super admin riceve notifica automatica. Il prezzo ETS è già in sistema.
+- Il super admin riceve notifica con il diff dei campi cambiati.
+- Sta al super admin valutare se alcune proposte vecchie sono ora irrilevanti rispetto al nuovo brief, e marcarle `is_active = false`. Niente automatismi in V1.
+- Sta al super admin aggiungere nuove proposte coerenti con il brief aggiornato.
 
-La `tb_request` passa a `quote_requested`.
+HR vede solo le proposte `is_active = true`. Le altre restano nel sistema ma sparite alla sua vista.
 
-### Fase 5 — Composizione preventivo (Super Admin → `tb_quote` in `draft`)
-
-Super admin apre l'editor preventivo per la richiesta. Il sistema precompila un `tb_quote` in `draft` con un item per ogni proposta `interested` per cui c'è un prezzo ETS. Per ogni item, super admin inserisce/modifica: `unit_price_ets` (quanto incassa l'ETS), `unit_price_final` (quanto paga il cliente), margine calcolato automaticamente. Aggiunge eventuali voci libere (logistica, trasporti, "varie ed eventuali").
-
-Il preventivo mostra in tempo reale: totale cliente, totale ETS, margine Bravo!, margine percentuale. Super admin può editare termini contrattuali se diversi dal default.
-
-Clicca "Invia al cliente". `tb_quote.status` passa a `sent`. `tb_request` passa a `quote_sent`. HR riceve notifica.
-
-### Fase 6 — Decisione cliente (HR → `tb_quote.status` aggiornato)
-
-HR riceve email e notifica. Apre la pagina preventivo in app: pagina brandizzata, pulita, con header (da Bravo! a [azienda]), lista voci con prezzo finale per voce (mai `unit_price_ets`, mai `bravo_margin`), totale, data definitiva, termini contrattuali, pulsanti "Accetta" / "Richiedi modifica" / "Rifiuta".
-
-All'apertura della pagina si triggera update: `viewed_at`, `status = viewed`. Un evento `tb_quote_viewed` finisce in `user_events`.
-
-Se HR accetta: `status = accepted`, `tb_request = quote_accepted`. Super admin riceve notifica. Si passa a Fase 7.
-
-Se HR chiede modifiche: `status = modification_requested`, l'HR inserisce note nel campo `client_decision_notes`. Super admin modifica il preventivo: in realtà crea una versione 2 del preventivo (version=2), mette la v1 in `superseded`, invia la v2. Torna a Fase 6 sul nuovo preventivo.
-
-Se HR rifiuta: `status = rejected`, `tb_request = quote_rejected`. Super admin può riaprire tornando a Fase 2 con nuove proposte, oppure chiudere la richiesta in `cancelled`.
-
-### Fase 7 — Firma e contratto
-
-**V1.** Super admin genera (o compone a mano) un PDF del preventivo accettato, lo manda al cliente per firma via mail o altro canale, riceve il PDF firmato, lo carica in `tb_contracts.contract_pdf_url` con `signature_method = manual_external`. `tb_request` passa a `signed`.
-
-**V2.** Al momento dell'accettazione (Fase 6), HR clicca "Accetta e firma" → popup con termini finali, checkbox "Dichiaro di accettare", pulsante "Firma". Viene creato `tb_contracts` con `signature_method = click_in_app`, IP e user agent loggati. `tb_request` passa direttamente a `signed`. Nessun PDF da gestire a mano.
-
-Fattura: come oggi, gestita fuori app dalla contabilità Bravo! a valle dell'accettazione. In V3 si può integrare un sistema di fatturazione elettronica.
-
-### Fase 8 — Esecuzione evento
-
-Al `signed`, si crea automaticamente una riga `tb_events`:
-
-- `id`, `tb_request_id`
-- `scheduled_datetime` — popolato quando si conferma la data finale
-- `location_name`, `location_address`
-- `max_participants` — dal preventivo
-- `participant_form_url` — slug univoco per il link pubblico di iscrizione
-- `status` enum: `pending_date`, `date_confirmed`, `in_progress`, `completed`
-
-Dashboard evento HR: data/ora dell'evento (o "in attesa di conferma" se pending), countdown, lista iscritti in tempo reale, link pubblico copy-paste da condividere ai colleghi, template comunicazioni pronti (annuncio, reminder, post-evento).
-
-I dipendenti si iscrivono tramite il link pubblico. La pagina pubblica mostra dettagli evento (minimi: titolo, data, luogo) e un form: nome, email aziendale, privacy (sempre obbligatoria), intolleranze (condizionale se `extra_services.lunch = true`). Risposta salvata in `tb_event_participants`. Da studiare se e come mostrare evento nella sezione dedicata agli employees.
-
-Dopo l'evento, super admin (o in V2, l'ETS) conferma "evento concluso". `tb_request` e `tb_events` passano a `completed`. Opzionale: sondaggio post-evento ai partecipanti.
-
-### Quadro riassuntivo fasi → attori
-
-| Fase                       | HR                                          | Super Admin                                | ETS                         |
-| -------------------------- | ------------------------------------------- | ------------------------------------------ | --------------------------- |
-| 1. Brief                   | Compila form                                | Riceve notifica                            | —                           |
-| 2. Matching                | —                                           | Filtra catalogo, crea proposte             | —                           |
-| 3. Proposte al cliente     | Marca interesse per scheda                  | Riceve notifica                            | —                           |
-| 4. Quotazione ETS          | —                                           | Invia email a ETS (V1) / notifica ETS (V2) | Riceve, risponde con prezzo |
-| 5. Composizione preventivo | —                                           | Compone items, margini                     | —                           |
-| 6. Decisione cliente       | Accetta / modifica / rifiuta                | —                                          | —                           |
-| 7. Firma                   | (V2: firma in-app)                          | Gestisce PDF (V1)                          | —                           |
-| 8. Esecuzione              | Dashboard evento, condivide link iscrizione | Conferma data, supporta                    | (V2: vede iscritti)         |
+L'automazione di questo flusso (es. "modifica brief → sistema suggerisce proposte da disattivare → super admin valida con un click") è prevista in V1.5 secondo le tappe di sez. 4.4.
 
 ---
 
-## 5. Chi vede cosa
+## 5. UI lato HR
 
-Le policy RLS implementano le quattro regole del capitolo 5 di `sistema-operativo.md`. Qui le specializzazioni per il TB.
+### 5.1 Lista richieste `/hr/team-building`
 
-**HR vede solo le `tb_requests` della propria `company_id`**, e a cascata le `tb_proposals`, `tb_quotes`, `tb_contracts`, `tb_events` collegate. Su `tb_quote_items` l'HR vede `unit_price_final` e `total_final`, **non** `unit_price_ets` e `total_ets`. Questo si implementa con una view dedicata `tb_quote_items_client_view` che espone solo le colonne finali, e l'RLS che lega la view all'HR.
+La pagina raggruppa le richieste in **tre sezioni**, nell'ordine di importanza per HR:
 
-**Super Admin vede tutto.** Tutte le tabelle, tutte le colonne, in qualsiasi stato. Può editare qualsiasi cosa.
+1. **Eventi in programma** — `state = confirmed`. Le richieste con un preventivo accettato e un evento in organizzazione. È la zona dove HR ha attenzione attiva: data definita, partecipanti da gestire, evento da seguire.
+2. **Richieste in corso** — `state = open`. Le pratiche ancora in fase di brief/proposte/preventivi. È la zona delle decisioni da prendere.
+3. **Archivio** — `state = completed` + `state = cancelled`. Eventi passati e richieste annullate. Sezione collassata di default, riapribile con click.
 
-**ETS Admin vede** (V2) le `tb_quote_items` dove `association_id` è la propria, ma solo `unit_price_ets` e `total_ets` (no `unit_price_final`, no `bravo_margin`). Vede le `tb_events` dove partecipa come erogatore, con lista iscritti (per preparare logistica). Non vede le `tb_requests` o le altre proposte concorrenti.
+Ogni sezione è una `StatusSection` (icona colorata + titolo + count) seguita da una grid responsive di `BravoCard` quadrate — lo stesso pattern già consolidato in `/association/experiences`. Layout responsive: 2 colonne su mobile, 3 su tablet, 4 su desktop standard, 5 su desktop largo.
 
-**Dipendente non vede nulla del TB**. Il suo unico punto di contatto è la pagina pubblica di iscrizione all'evento, che non richiede login né appartenenza a una company specifica (quindi niente RLS standard, solo controlli applicativi sul form).
+#### Anatomia delle card
 
-**Catalogo `tb_formats`** in stato `published` è visibile al super admin e agli ETS che vi figurano come erogatori. Gli HR **non vedono il catalogo direttamente**: il loro unico contatto con il catalogo è attraverso le `tb_proposals` che Bravo! costruisce per loro. Questo è un punto che merita attenzione strategica: per il volontariato il catalogo è pubblico dentro la piattaforma, per il TB no. La ragione è che il TB richiede mediazione (prezzo, ETS, logistica) e un catalogo aperto darebbe aspettative sbagliate al cliente.
+**Card "Evento in programma"** (`confirmed`):
 
----
+- Immagine del format scelto (da `tb_formats.image_url`).
+- **Badge data in overlay** sull'immagine in alto a sinistra (mese abbreviato + giorno), riusando il pattern di `BookingCard.tsx`.
+- Titolo: `tb_requests.title` (dato da HR all'avvio della pratica).
+- Meta riga: nome del format · numero partecipanti target.
+- Nessuna pill di stato. Nessuna CTA esplicita: click sulla card apre il dettaglio.
 
-## 6. UI dedicata
+**Card "Richiesta in corso"** (`open`):
 
-### 6.1 Lato HR
+- Niente immagine del format (non c'è ancora un format scelto). Placeholder con sfondo tonale chiaro e icona Tabler legata alla `preferred_category_id` del brief (es. ambiente → foglia, gastronomia → utensile cucina). Se la categoria non è valorizzata, sfondo neutro con icona generica.
+- Titolo: `tb_requests.title`.
+- **Pill di stato** (vedi tabella sotto), colorata in base al fatto che ci sia o no azione HR richiesta.
+- Meta riga: periodo preferito · numero partecipanti target.
+- Nessuna CTA esplicita: click sulla card apre il dettaglio.
 
-Ancora in fase di lavorazione e da affinare. Sono sicuramente necessarie 3 pagine principali.
+**Card "Archivio"** (`completed` / `cancelled`):
 
-**`/hr/team-building`** — indice delle richieste TB dell'azienda, con stato di ciascuna, ultimo aggiornamento, call-to-action contestuale ("Rispondi alle proposte", "Apri preventivo", "Vedi evento"). In alto, grande pulsante "Nuova richiesta di team building".
+- Immagine del format (per i completati). Per gli annullati senza format scelto: placeholder come sopra.
+- Card resa con `dimmed = true` (prop già supportato da `BravoCard`).
+- Titolo: `tb_requests.title`.
+- Badge esito: "Completato" / "Annullata".
+- Meta riga: data evento (se completato) o data annullamento, format nome.
+- Nessuna CTA esplicita.
 
-**`/hr/team-building/nuova`** — form brief guidato. UX a step o a pagina singola scorrevole: tipo attività (scelta da enum con icone), partecipanti (range con slider), periodo, budget, città, servizi extra (checkbox), note. Salva e invia.
+#### Logica della pill di stato (solo `state = open`)
 
-**`/hr/team-building/{id}`** — pagina della singola richiesta, con sezioni dinamiche in base allo stato:
+Quattro stati valutati top-down — la prima condizione vera determina la pill mostrata. Una sola pill per card, mai sovrapposizioni.
 
-- Se `proposals_sent`: vista delle 3-5 schede "Best Ideas" con selezione client_status
-- Se `quote_sent`: vista del preventivo (con pulsante "Accetta" e alternative)
-- Se `signed`: dashboard evento (countdown, iscritti, link condivisibile, template comunicazione)
+| Pill                      | Condizione                                                             | Tono                     |
+| ------------------------- | ---------------------------------------------------------------------- | ------------------------ |
+| Preventivo da decidere    | esiste `tb_quote` in `sent` o `viewed`                                 | ambra (azione richiesta) |
+| N proposte da valutare    | esistono `tb_proposals` con `is_active=true` e `client_status=pending` | ambra (azione richiesta) |
+| Preventivo in lavorazione | esiste `tb_quote` in `draft` o `modification_requested`                | grigio (in attesa)       |
+| Proposte in arrivo        | fallback                                                               | grigio (in attesa)       |
 
-### 6.2 Lato Super Admin
+La gerarchia riflette il principio del sistema: il preventivo da decidere è l'azione più "pesante" (potenzialmente distruttiva nelle altre quote attive) e merita priorità visiva sopra le altre.
 
-**`/super-admin/team-building/richieste`** — tabella di tutte le `tb_requests` con filtri per stato, azienda, assigned_admin. Colonne: azienda, titolo, stato, giorni fermi in stato corrente, alert se oltre soglia. Click → dettaglio richiesta.
+#### Ordinamento
 
-**`/super-admin/team-building/richieste/{id}`** — workspace del caso. A sinistra pannello informativo (brief, storia, eventi). Al centro, sezione operativa dinamica in base a stato:
+Dentro ogni sezione:
 
-- Stato `submitted` o `in_matching`: filtro catalogo + selezione proposte
-- Stato `proposals_reviewed`: lista proposte con pulsante "Richiedi quotazione ETS" per ciascuna interessata
-- Stato `quote_in_composition`: editor preventivo
-- Stato `signed`: pannello esecuzione evento
+- **Eventi in programma**: per `tb_events.event_date` ascendente — il più imminente in cima.
+- **Richieste in corso**: per `tb_requests.preferred_period_from` ascendente — quelle con evento previsto più vicino in cima. La pill colorata si occupa di richiamare visivamente l'attenzione sulle richieste che richiedono azione, senza bisogno di spostare le card.
+- **Archivio**: per data ultima attività discendente — la più recente in cima.
 
-**`/super-admin/team-building/formats`** — gestione catalogo TB (CRUD dei `tb_formats`). Qui il super admin crea, modifica, archivia i format, gestisce le ETS associate, le città, i range.
+#### Comportamento azioni
 
-**`/super-admin/team-building/matching-lab`** — (opzionale, V1.5) pannello analytics del matching: quante decisioni scartano quali format, quali format emergono ma non vengono mai scelti dal cliente. Utile per capire il catalogo.
+Le card non hanno alcuna azione rapida diretta. Tutto si fa dal dettaglio: click sulla card → apertura di `/hr/team-building/:id`. Questa scelta riduce drasticamente il rischio di azioni accidentali (l'accettazione di un preventivo, in particolare, è l'unica azione distruttiva del sistema e deve sempre avvenire dal contesto pieno).
 
-### 6.3 Lato ETS (V2)
+#### Empty state
 
-**`/association/team-building/richieste`** — lista richieste di quotazione ricevute. Per ciascuna: data dell'evento, pax, format richiesto, servizi extra, deadline risposta. Pulsante "Rispondi con preventivo".
+Se HR non ha mai aperto una richiesta TB, la pagina mostra lo stato vuoto attuale (titolo motivazionale + CTA "Inizia ora"). Il design dell'empty state non cambia in questa revisione.
 
-**`/association/team-building/eventi`** — lista eventi confermati in cui l'ETS è erogatore. Per ciascuno: data, luogo, pax iscritti finora, dettagli logistici. L'ETS usa questa pagina per prepararsi all'evento.
+#### Componenti riutilizzati
 
-### 6.4 Pagine pubbliche (nessun login)
+- `BravoCard` (`src/components/common/BravoCard.tsx`)
+- `StatusSection` (lo stesso wrapper usato in `AssociationExperiencesPage.tsx`)
+- `BaseCardImage` per le immagini con fallback
+- Pattern `imageOverlay` per il badge data, identico a `BookingCard.tsx`
 
-**`/iscrizione-evento/{slug}`** — pagina pubblica di iscrizione per i dipendenti. Mostra dettagli minimi dell'evento e form con i campi previsti (privacy, eventuali intolleranze). Slug univoco protegge da scraping massivo; nessun dato sensibile esposto.
+#### Componenti da deprecare
 
----
+Con questa riprogettazione, i componenti `ActiveCard` e `HistoryCard` presenti oggi in `HRTeamBuildingPage.tsx` non sono più necessari e vanno rimossi. Il file `team-building-nuova-interfaccia.md` (documento di design dello stato precedente) va archiviato per coerenza.
 
-## 7. Email e notifiche
+### 5.2 Dettaglio richiesta `/hr/team-building/:id`
 
-Tutte le email TB seguono il pattern di `send-transactional-email`. Template in `supabase/functions/_shared/transactional-email-templates/`.
+Layout a due colonne, ispirato al pattern usato da Attio per i record.
 
-**Email essenziali V1:**
+**Pannello sinistro (≈ 28% larghezza), sempre visibile, identico per ogni stato:**
 
-1. `tb-request-submitted` → a super admin, quando HR invia brief
-2. `tb-proposals-ready` → ad HR, quando super admin invia le schede
-3. `tb-quote-request-ets` → ad ETS, richiesta di prezzo (con tutti i dettagli della richiesta)
-4. `tb-quote-sent` → ad HR, quando il preventivo è pronto
-5. `tb-quote-accepted` → a super admin, quando HR accetta
-6. `tb-quote-modification-requested` → a super admin, quando HR chiede modifiche
-7. `tb-quote-rejected` → a super admin, quando HR rifiuta
-8. `tb-event-confirmed` → ad HR, quando data evento è confermata
-9. `tb-event-reminder-participant` → ai partecipanti, giorno prima dell'evento
+- Titolo richiesta + badge state
+- Brief riepilogativo compatto (partecipanti, periodo, budget, places, tipologia, note)
+- Azione "Modifica brief" → apre dialog/sheet di editing completo (disabilitato se `state ≠ open`)
+- Eventuali azioni di pratica: "Annulla richiesta" (solo se `state = open`)
 
-**Notifiche in-app** (V1 o V1.5): gli stessi eventi generano notifiche in una tabella `notifications` già presente o da creare, consultabili dal badge in header. Le notifiche sono idempotenti e non duplicano le email. Da capire se e come gestire notifiche tramite web app.
+**Pannello destro (≈ 72% larghezza), tab navigation in alto.**
 
----
+Tab attive in `state = open` — struttura consolidata:
 
-## 8. Eventi analytics
+- **Proposte** — grid card delle proposte `is_active = true`. Filtri: tutte / pending / interessate / scartate. Quick action Mi interessa / Scarta. Dopo lo scarto si attiva il messaggio "Vuoi che il team Bravo! ti proponga un'alternativa?" (sez. 4.3). Una sezione "Scartate" collassata in fondo per chi vuole rivedere.
+- **Quotazioni** — una card per ogni proposta `interested`, con lo stato del preventivo associato:
+  - Nessuno → CTA "Richiedi preventivo"
+  - "Preventivo in preparazione"
+  - "Preventivo pronto" → CTA "Visualizza"
+  - "Preventivo rifiutato" → testo neutro
+  - (Accetta da qui fa scattare la transizione a `confirmed`)
 
-Ogni momento chiave del flusso genera un evento in `user_events`. Elenco base per V1:
+Tab attive in `state = confirmed` — **struttura in lavorazione**, contenuti macro definiti ma forma interna da affinare in sessione dedicata quando ci arriveremo:
 
-- `tb_request_started` — HR apre il form (anche se non lo completa)
-- `tb_request_submitted` — HR completa e invia il brief
-- `tb_proposals_viewed` — HR apre la pagina delle proposte
-- `tb_proposal_interest_expressed` — HR marca `interested` su una proposta
-- `tb_quote_viewed` — HR apre la pagina preventivo
-- `tb_quote_accepted`, `tb_quote_rejected`, `tb_quote_modification_requested`
-- `tb_contract_signed`
-- `tb_event_participant_registered`
-- `tb_event_completed`
+- **Proposte** (sola lettura, mostra quelle valutate)
+- **Quotazioni** (sola lettura, evidenzia quella accettata)
+- **Evento** — riepilogo del format confermato. Da disegnare quando arriviamo all'implementazione.
+- **Partecipanti** — gestione inviti, iscrizioni, consensi, comunicazioni. Da disegnare quando arriviamo all'implementazione.
+- **Documenti** — preventivo accettato, contratto firmato, materiali. Da disegnare quando arriviamo all'implementazione.
 
-**Cruscotto super admin.** Una pagina `/super-admin/analytics/aziende-tb` che legge `user_events` e restituisce, per ogni azienda con almeno una `tb_request`:
+Tab aggiunta in `state = completed` — anch'essa da affinare:
 
-- stato corrente della richiesta più recente
-- giorni da ultimo evento significativo
-- alert rossi/gialli in base a soglie ("preventivo non aperto da 3 giorni", "schede proposte non viste da 7 giorni", "non si è mai loggato dopo creazione account")
+- **Feedback** — sondaggio post-evento, eventuale NPS, raccolta testimonianze. Da disegnare.
 
-Questo è il pannello che risolve il caso d'uso "Mario si è fermato qui, aspetta che lo chiamo".
+**Default tab logic** all'apertura della pagina:
 
----
+1. Se ci sono preventivi nuovi non visti → **Quotazioni**
+2. Altrimenti se ci sono proposte `pending` → **Proposte**
+3. Altrimenti se `state = confirmed` → **Evento**
+4. Altrimenti prima tab disponibile
 
-## 9. Cosa entra in V1 e cosa no
+### 5.3 Mobile
 
-**V1 (da costruire adesso):**
-
-- `tb_formats` con CRUD super admin e import da CSV storici
-- `tb_requests` con form HR e pannello super admin
-- `tb_proposals` con vista schede HR e selezione
-- Email di Fase 2, 3, 4 (richiesta quotazione ETS via mail template)
-- `tb_quotes` + `tb_quote_items` con editor super admin e vista HR
-- `tb_contracts` con firma manuale esterna (`manual_external`)
-- `tb_events` con dashboard evento HR + pagina pubblica iscrizione
-- `tb_matching_decisions` — log base (shown_in_filter, selected_as_proposal, client choices). Dashboard analytics sopra può aspettare V1.5.
-- `user_events` — con gli eventi essenziali sopra
-- Cruscotto super admin "aziende TB" — versione base, aggregata su `user_events` e `tb_requests.status`
-
-**V2 (dopo validazione V1):**
-
-- Pannello ETS per ricevere richieste di quotazione e rispondere in app
-- Firma `click_in_app` con logging legale
-- Generazione PDF preventivo da dati strutturati
-- Analytics matching_lab per super admin
-- Notifiche push mobile per dipendenti
-
-**V3:**
-
-- DocuSign/firma qualificata
-- AI/scoring per matching automatico
-- Fatturazione elettronica integrata
+V1 è desktop-only nel pattern a due colonne. HR userà la pagina TB principalmente da computer. La versione mobile verrà disegnata in V2.
 
 ---
 
-## 10. Migrazione dati dalla vecchia piattaforma
+## 6. UI lato super admin
 
-I CSV storici con i format TB esistenti (Cartapesta, Cooking class, Dragon Boat, ecc.) vanno importati in `tb_formats` come catalogo iniziale.
+L'attuale `/super-admin/team-building/richieste/{id}` (vedi `src/pages/super-admin/TBRequestDetailPage.tsx`) va aggiornata per coerenza con il nuovo modello: drop degli stati granulari come driver di vista, gestione delle quote per-proposal, supporto per `is_active`. La forma esatta della UI super admin in V1 va affinata insieme all'implementazione, perché impatta meno sull'esperienza cliente.
 
-**Preparazione dati prima dell'import:**
-
-1. Identificare per ogni riga se ha ETS associata (risposta: mix). Se sì, matchare il nome con `associations.name` del DB attuale. Se non c'è match, decidere: (a) creare la riga in `associations`, (b) importare il format come `association_id = null` e popolare `tb_format_associations` con ETS candidate.
-2. Matchare le città con `cities.id`. Se città assente, crearla.
-3. Matchare categoria con `categories.id`. Se manca una categoria TB-specifica, aggiungerla.
-4. Pulire/normalizzare range partecipanti e range prezzo.
-5. Assegnare tag secondari e `location_type` a ogni format (lavoro manuale di super admin).
-
-**Modalità import.** Script SQL o edge function dedicata che legge CSV e insert-a. Da eseguire manualmente dal super admin, con preview dei risultati prima del commit. Non automatizzare questo step: la qualità del catalogo iniziale è decisiva per il matching, val la pena controllare riga per riga.
-
-**Prima di fare l'import**, Filippo mi condivide il CSV in un messaggio dedicato. Guardo struttura e qualità dati, poi costruiamo insieme lo script di import come prompt Lovable separato.
+Catalogo TB (`/super-admin/team-building/formats`) resta come oggi.
 
 ---
 
-## Come si usa questo documento
+## 7. UI lato ETS
 
-Per ogni prompt (creazione tabelle, pagina HR, editor preventivo, ecc.), il doc fornisce il contesto di cosa si sta costruendo e perché. Il prompt sarà un'istanza concreta di una sezione di questo doc.
+V1: ETS riceve email di richiesta quotazione e risponde via mail a `team@bravoapp.it`. Nessuna UI dedicata in app.
 
-Se durante la costruzione emerge una scelta di design che si discosta dal doc, **si aggiorna il doc prima di procedere**. Il doc resta allineato al codice; se il doc è obsoleto, non è più bussola ed è solo rumore.
-
-Responsabile del documento: Filippo (product owner).
+V2: pannello dedicato — struttura da definire quando ci arriveremo.
 
 ---
 
-_Versione 1.1 — Aprile 2026_
+## 8. Pagina pubblica iscrizione partecipanti
+
+`/iscrizione-evento/{slug}` — pagina pubblica senza login per i partecipanti, con form minimo (nome, email, privacy obbligatoria, intolleranze condizionali). Struttura sostanzialmente come oggi, da rivedere insieme a `tb_events` e `tb_event_participants` in sessione dedicata.
 
 ---
 
-## Appendice A — Decisioni emerse in fase di implementazione
+## 9. Email e notifiche
 
-Aggiornamento: 23 Aprile 2026
+Le email non sono più triggerate da transizioni di `tb_requests.status` (droppato), ma da eventi atomici sulle entità giuste.
 
-### A.1 Tag secondari unificati
+Lista preliminare degli eventi da coprire in V1, da consolidare insieme all'implementazione delle edge function:
 
-I tag secondari (`secondary_tags`) sono condivisi tra `experiences` e `tb_formats`. Non esiste un enum DB: restano come `text[]`. La costante TypeScript `AVAILABLE_TAGS` in `src/lib/tags.ts` è la sorgente di verità.
+- Creazione di una `tb_request` → super admin
+- Modifica del brief → super admin (con diff)
+- Aggiunta di una proposta → HR
+- Scarto di una proposta con richiesta alternativa → super admin
+- Richiesta preventivo da HR per una proposta → super admin
+- Richiesta quotazione ETS (struttura come oggi) → ETS
+- Invio preventivo (tb_quote → sent) → HR
+- Decisione cliente (accept / reject / modification) → super admin
+- Conferma data evento → HR
+- Reminder partecipante (giorno prima) → partecipanti
+- Evento completato → HR (eventuale link a tab Feedback)
 
-Set unificato (13 tag tematici):
-`Manuale, Creativo, Formativo, Intergenerazionale, Animali, Gruppo, Accessibile, Fisica, Inclusione, Sostenibilità, Cultura locale, Culinario, Sportivo`
+Notifiche in-app speculari, idempotenti.
 
-I valori "Indoor" e "Outdoor" sono stati rimossi dal set di tag e sostituiti dal campo dedicato `location_type` (vedi A.8).
+---
 
-### A.2 Categorie condivise
+## 10. Analytics
 
-`tb_formats.category_id` punta alla tabella `categories` esistente — stesse categorie del volontariato. Nessuna categoria nuova per il TB in V1.
+Eventi essenziali V1 in `user_events`, da consolidare quando implementiamo:
 
-### A.3 Mapping associazioni dal CSV
+- Eventi sulla richiesta: started, submitted, brief_updated
+- Eventi sulle proposte: viewed, marked_interested, declined, alternative_requested
+- Eventi sulle quote: requested, viewed, accepted, rejected, modification_requested
+- Eventi sull'evento: participant_registered, completed
+- Eventi sul feedback: submitted
 
-Il campo `association_names` del CSV storico viene usato per popolare `tb_format_associations`, matchando per nome con la tabella `associations` esistente.
+Cruscotto super admin `/super-admin/analytics/aziende-tb`: stato corrente di ogni azienda, alert per soglie. Forma esatta da definire dopo aver visto i primi dati reali.
 
-### A.4 Rimozione `company_service_config`
+---
 
-Il business model prevede che la subscription dia accesso a tutte le funzionalità. Il gating per servizio (`company_service_config`) è stato rimosso. Le RLS policies su `experiences` per HR Admin ora controllano solo `status = 'published' AND visibility = 'public'`.
+## 11. V1 / V2 / V3
 
-### A.5 Route naming
+**V1 — focus dell'implementazione attuale:**
 
-Le route TB seguono la tassonomia esistente dell'app:
+- Schema dati delle entità centrali (sez. 3.1–3.4) come descritto
+- Mantenimento delle entità di esecuzione esistenti (sez. 3.5), da revisionare quando arriveremo all'implementazione delle relative tab
+- Gestione proposte HR e super admin, incluso `is_active` e richiesta manuale di alternative
+- Gestione preventivi per-proposal
+- Vista HR `/hr/team-building/:id` con layout a due colonne, tab consolidate in `state = open`
+- Vista lista richieste `/hr/team-building` con struttura definita in sez. 5.1
+- Tab `state = confirmed` con struttura macro confermata, forma interna da disegnare
+- Email e analytics base
+- Migrazione DB descritta in sez. 12
 
-- `/super-admin/team-building/...` (non `/admin/...`)
-- `/hr/team-building/...`
+**V1.5 — assistenza al super admin:**
 
-### A.6 `user_events` — tabella analytics trasversale
+- Pre-filtro automatico del catalogo per il super admin nella scelta proposte
+- Suggerimenti automatici di proposte da disattivare dopo modifica brief
+- Lista richieste rifinita con i learning dei primi mesi
+- UI super admin rifinita
 
-Creata come tabella cross-cutting nel primo step di migrazione. Usata sia da TB che potenzialmente da volontariato e altri verticali futuri.
+**V2 — automazione e ETS in app:**
 
-### A.7 Post-vendita e partecipanti
+- Pannello ETS per quotazioni e gestione eventi
+- Firma `click_in_app`
+- Generazione automatica PDF preventivo
+- Automazione del nudge alternative per casi a basso rischio
+- Versione mobile della pagina TB
 
-Punto aperto: la pagina di iscrizione evento (`/iscrizione-evento/{slug}`) è pubblica e non richiede login. I partecipanti TB non diventano necessariamente employee nel sistema. Da rivalutare in V2.
+**V3 — AI matching:**
 
-### A.8 Unificazione `location_type`
+- Modello di scoring sulle decisioni storiche
+- Proposte automatiche di qualità per casi anche complessi
+- Eventuale integrazione fatturazione elettronica
 
-Il campo `location_type` (valori: `indoor`, `outdoor`, `both`) è stato aggiunto anche alla tabella `experiences`, sostituendo i tag "Indoor" e "Outdoor" che sono stati rimossi da `AVAILABLE_TAGS`. La sorgente di verità per il set di tag ora contiene 13 voci tematiche, senza i valori di location. Il campo `location_type` è la fonte unica per distinguere attività indoor, outdoor o entrambe, sia per le experiences che per i tb_formats.
+### 11.1 Ordine di implementazione
+
+1. DB additivo minimo per la lista
+   - Migration: ADD COLUMN tb_requests.state (GENERATED da status)
+   - Migration: ADD COLUMN tb_proposals.is_active (default true)
+
+2. Lista HR /hr/team-building
+   - Refactor di HRTeamBuildingPage.tsx con BravoCard + StatusSection
+   - Rimozione di ActiveCard e HistoryCard
+   - Archiviazione di team-building-nuova-interfaccia.md
+
+3. Resto del DB additivo (Fase 1 completa, sez. 12 step 1)
+   - Validazione tb_quotes.proposal_id non null
+   - Nuove RPC: hr_request_alternative_for_proposal, hr_update_brief, admin_deactivate_proposal
+   - Refactor RPC esistenti: chiave (request_id, proposal_id) invece di (request_id)
+
+4. Super admin workspace
+   - Refactor /super-admin/team-building/richieste/{id} al modello accumulativo
+   - Quote per-proposal in UI
+   - Toggle is_active operativo
+   - Aggiunta proposte in qualsiasi momento
+
+5. Dettaglio HR /hr/team-building/:id (state = open)
+   - Layout a due colonne
+   - Tab Proposte con nudge alternative
+   - Tab Quotazioni con card per-proposal
+   - Modifica brief in qualsiasi momento
+
+6. Email refactor
+   - Trigger sui nuovi eventi atomici delle entità giuste
+   - Drop dei trigger basati sulle transizioni di status
+
+7. Cleanup DB
+   - Conversione di state da GENERATED a colonna regolare
+   - DROP tb_requests.status, tb_request_status_log, tb_quotes.valid_until
+   - Drop RPC vecchie e vincoli obsoleti
+
+Cantiere parallelo (non blocca il resto):
+
+- Sessione dedicata: entità di esecuzione (tb_events, partecipanti, contratti, matching_decisions)
+- Tab Evento, Partecipanti, Documenti, Feedback (state = confirmed / completed)
+
+## 12. Migrazione DB
+
+La migrazione del modello attuale al nuovo richiede una sequenza ordinata di step, ognuno una migration separata, seguendo la regola **"aggiungi prima, rimuovi dopo"**.
+
+Sequenza ad alto livello (i singoli step DDL e RPC vanno scritti come Claude Code task dedicati):
+
+1. **Aggiunta dei nuovi campi** senza toccare i vecchi:
+   - `tb_requests.state` (enum nuovo, popolato in base allo `status` corrente)
+   - `tb_proposals.is_active` (default true per tutte le righe esistenti)
+   - `tb_quotes.proposal_id` reso effettivamente vincolante (oggi nullable in alcuni casi, da consolidare)
+
+2. **Aggiornamento delle RPC**:
+   - `admin_save_tb_quote_draft`, `admin_send_tb_quote`, `hr_decide_on_quote`, `admin_supersede_and_create_new_version`: passaggio da chiave `(request_id)` a `(request_id, proposal_id)`
+   - Nuove RPC necessarie: `hr_request_alternative_for_proposal`, `hr_update_brief`, `admin_deactivate_proposal`
+
+3. **Aggiornamento del frontend** per leggere `state` e ignorare `status`. Layout a due colonne sostituisce la vista verticale attuale.
+
+4. **Aggiornamento delle email**: ricondurre i trigger agli eventi atomici sulle entità giuste.
+
+5. **Pulizia** (solo dopo che V1 della nuova UI è in produzione e stabile):
+   - Drop di `tb_requests.status`
+   - Drop di `tb_request_status_log`
+   - Drop di `tb_quotes.valid_until`
+   - Drop dei vincoli obsoleti (es. `quote_already_exists` su `request_id`)
+
+Mai DROP + CREATE nello stesso step, mai modifiche alle RLS senza prima aggiungere le nuove policy.
+
+---
+
+## 13. Catalogo storico
+
+I CSV storici con i format TB pre-piattaforma vanno importati come catalogo iniziale di `tb_formats`. Il campo `association_names` del CSV viene matchato per nome con la tabella `associations` esistente per popolare `tb_format_associations`. Categorie del catalogo TB usano la stessa tabella `categories` del volontariato.
+
+---
+
+## Appendice — Termini di base
+
+- **Request**: il caso aperto, la pratica TB di un'azienda.
+- **Proposal**: una scheda di un format proposto da Bravo! a una specifica request.
+- **Quote**: un preventivo collegato a una specifica proposal di una specifica request.
+- **Event**: l'esecuzione concreta che nasce quando una quote viene accettata.
+
+---
+
+## Sessioni di lavoro da pianificare
+
+Tracciamo qui i punti del documento che richiedono una sessione dedicata prima di essere completati:
+
+- **Entità di esecuzione** (sez. 3.5): consolidare lo schema di `tb_events`, `tb_event_participants`, `tb_contracts`, `tb_matching_decisions` alla luce del nuovo modello.
+- **Tab `state = confirmed`** (sez. 5.2): disegnare in dettaglio le tab Evento, Partecipanti, Documenti.
+- **Tab `state = completed`** (sez. 5.2): disegnare in dettaglio la tab Feedback.
+- **UI super admin** (sez. 6): aggiornare il workspace `/super-admin/team-building/richieste/{id}` al nuovo modello.
+- **Email** (sez. 9): consolidare la lista finale dei template e i trigger esatti.
+- **Analytics** (sez. 10): definire il cruscotto super admin dopo aver visto i primi dati reali.
