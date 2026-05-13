@@ -79,6 +79,10 @@ interface TBEventRow {
   request_id: string;
   title: string | null;
   scheduled_datetime: string | null;
+}
+
+interface TBAcceptedProposalRow {
+  request_id: string;
   format: { image_url: string | null } | null;
 }
 
@@ -144,11 +148,13 @@ function detailRoute(req: TBRequestRow): string {
 function ScheduledEventCard({
   req,
   event,
+  imageUrl,
   index,
   onOpen,
 }: {
   req: TBRequestRow;
   event: TBEventRow | undefined;
+  imageUrl: string | null;
   index: number;
   onOpen: () => void;
 }) {
@@ -178,7 +184,7 @@ function ScheduledEventCard({
 
   return (
     <BravoCard
-      imageUrl={event?.format?.image_url ?? null}
+      imageUrl={imageUrl}
       imageAlt={req.title}
       aspectRatio="square"
       imageOverlay={dateBadge}
@@ -277,11 +283,13 @@ function OpenRequestCard({
 function ArchivedCard({
   req,
   event,
+  imageUrl,
   index,
   onOpen,
 }: {
   req: TBRequestRow;
   event: TBEventRow | undefined;
+  imageUrl: string | null;
   index: number;
   onOpen: () => void;
 }) {
@@ -324,11 +332,11 @@ function ArchivedCard({
     </div>
   );
 
-  // Per i completati: usa immagine evento se c'è, altrimenti placeholder con icona.
-  if (event?.format?.image_url || eventDate) {
+  // Per i completati: usa immagine proposta accettata se c'è, altrimenti placeholder con icona.
+  if (imageUrl || eventDate) {
     return (
       <BravoCard
-        imageUrl={event?.format?.image_url ?? null}
+        imageUrl={imageUrl ?? null}
         imageAlt={req.title}
         aspectRatio="square"
         imageOverlay={overlay}
@@ -442,7 +450,11 @@ export default function HRTeamBuildingPage() {
         .filter((r) => r.state === "confirmed")
         .map((r) => r.id);
 
-      const [proposalsRes, quotesRes, eventsRes] = await Promise.all([
+      const eventIds = reqs
+        .filter((r) => r.state === "confirmed" || r.state === "completed")
+        .map((r) => r.id);
+
+      const [proposalsRes, quotesRes, eventsRes, acceptedRes] = await Promise.all([
         openIds.length
           ? supabase
               .from("tb_proposals")
@@ -455,41 +467,49 @@ export default function HRTeamBuildingPage() {
               .select("request_id,status")
               .in("request_id", openIds)
           : Promise.resolve({ data: [], error: null }),
-        confirmedIds.length || reqs.some((r) => r.state === "completed")
+        eventIds.length
           ? supabase
               .from("tb_events")
-              .select(
-                "request_id,title,scheduled_datetime,format:tb_formats(image_url)",
-              )
-              .in(
-                "request_id",
-                reqs
-                  .filter(
-                    (r) => r.state === "confirmed" || r.state === "completed",
-                  )
-                  .map((r) => r.id),
-              )
+              .select("request_id,title,scheduled_datetime")
+              .in("request_id", eventIds)
+          : Promise.resolve({ data: [], error: null }),
+        eventIds.length
+          ? supabase
+              .from("tb_proposals")
+              .select("request_id, format:tb_formats(image_url)")
+              .in("request_id", eventIds)
+              .eq("client_status", "accepted")
+              .eq("is_active", true)
           : Promise.resolve({ data: [], error: null }),
       ]);
 
       if (proposalsRes.error) throw proposalsRes.error;
       if (quotesRes.error) throw quotesRes.error;
       if (eventsRes.error) throw eventsRes.error;
+      if (acceptedRes.error) throw acceptedRes.error;
 
       return {
         requests: reqs,
         proposals: (proposalsRes.data ?? []) as TBProposalRow[],
         quotes: (quotesRes.data ?? []) as TBQuoteRow[],
         events: (eventsRes.data ?? []) as TBEventRow[],
+        acceptedProposals: (acceptedRes.data ?? []) as TBAcceptedProposalRow[],
       };
     },
   });
 
-  const { scheduled, open, archived, eventByReq, draftRequest } = useMemo(() => {
+  const { scheduled, open, archived, eventByReq, imageByReq, draftRequest } = useMemo(() => {
     const requests = data?.requests ?? [];
     const proposals = data?.proposals ?? [];
     const quotes = data?.quotes ?? [];
     const events = data?.events ?? [];
+    const accepted = data?.acceptedProposals ?? [];
+
+    const imageByReq = new Map<string, string | null>();
+    for (const ap of accepted) {
+      imageByReq.set(ap.request_id, ap.format?.image_url ?? null);
+    }
+
 
     const proposalsByReq = new Map<string, TBProposalRow[]>();
     for (const p of proposals) {
@@ -565,7 +585,7 @@ export default function HRTeamBuildingPage() {
 
     const draftRequest = open.find((r) => r.status === "draft") ?? null;
 
-    return { scheduled, open, archived, eventByReq, draftRequest };
+    return { scheduled, open, archived, eventByReq, imageByReq, draftRequest };
   }, [data]);
 
   const hasAny =
@@ -664,6 +684,7 @@ export default function HRTeamBuildingPage() {
                   key={req.id}
                   req={req}
                   event={eventByReq.get(req.id)}
+                  imageUrl={imageByReq.get(req.id) ?? null}
                   index={i}
                   onOpen={() => navigate(detailRoute(req))}
                 />
@@ -716,6 +737,7 @@ export default function HRTeamBuildingPage() {
                     key={req.id}
                     req={req}
                     event={eventByReq.get(req.id)}
+                    imageUrl={imageByReq.get(req.id) ?? null}
                     index={i}
                     onOpen={() => navigate(detailRoute(req))}
                   />
