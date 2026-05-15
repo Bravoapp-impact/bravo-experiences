@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { CalendarDays, Users, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import PageSection from "@/components/common/PageSection";
 import { Badge } from "@/components/ui/badge";
 
 interface UpcomingEvent {
@@ -21,25 +21,17 @@ interface UpcomingEventsProps {
 export function UpcomingEvents({ events }: UpcomingEventsProps) {
   if (events.length === 0) {
     return (
-      <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-        <CardHeader>
-        <CardTitle className="text-base font-semibold">Prossimi Eventi</CardTitle>
-      </CardHeader>
-      <CardContent>
+      <PageSection title="Prossimi Eventi">
         <p className="text-[13px] text-muted-foreground text-center py-8">
-            Nessun evento in programma
-          </p>
-        </CardContent>
-      </Card>
+          Nessun evento in programma
+        </p>
+      </PageSection>
     );
   }
 
   return (
-    <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle className="text-base font-semibold">Prossimi Eventi</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <PageSection title="Prossimi Eventi">
+      <div className="space-y-3">
         {events.map((event, index) => (
           <motion.div
             key={event.id}
@@ -81,7 +73,7 @@ export function UpcomingEvents({ events }: UpcomingEventsProps) {
             </Badge>
           </motion.div>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </PageSection>
   );
 }
