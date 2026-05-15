@@ -229,7 +229,7 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
         <p className="text-xs text-muted-foreground mt-3">
           Mostrando {filteredBookings.length} di {bookings.length} prenotazioni
         </p>
-      </CardContent>
-    </Card>
+      </div>
+    </PageSection>
   );
 }
