@@ -360,6 +360,8 @@ export default function UsersPage() {
         <PageHeader
           title="Utenti"
           description="Gestisci tutti gli utenti registrati sulla piattaforma"
+          icon={Users}
+          iconColor="text-blue-500"
         />
 
         <motion.div
