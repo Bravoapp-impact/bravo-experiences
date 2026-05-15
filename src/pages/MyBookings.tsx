@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Loader2, ChevronDown } from "lucide-react";
+import { Calendar, ChevronDown } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { BookingCard } from "@/components/bookings/BookingCard";
 import { BookingDetailModal } from "@/components/bookings/BookingDetailModal";
