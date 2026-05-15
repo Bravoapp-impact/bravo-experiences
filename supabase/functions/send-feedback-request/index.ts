@@ -27,6 +27,8 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const appBaseUrl =
+      Deno.env.get("APP_BASE_URL") ?? "https://experiences.bravoapp.it";
 
     // Find bookings for events that ended ~24h ago (between 20h and 28h ago)
     const now = new Date();
@@ -129,7 +131,7 @@ serve(async (req: Request): Promise<Response> => {
               firstName: profile.first_name ?? "",
               experienceTitle,
               associationName,
-              feedbackUrl: "https://experiences.bravoapp.it/app/bookings",
+              feedbackUrl: `${appBaseUrl}/app/bookings`,
             },
           },
         },
