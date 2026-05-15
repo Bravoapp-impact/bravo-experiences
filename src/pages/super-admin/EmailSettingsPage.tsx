@@ -214,7 +214,7 @@ export default function EmailSettingsPage() {
             }
             description="Configura quali email inviare e quando"
           >
-            <CardContent className="space-y-6">
+            <div className="space-y-6">
               {loading ? (
                 <div className="space-y-4">
                   <Skeleton className="h-12 w-full" />
