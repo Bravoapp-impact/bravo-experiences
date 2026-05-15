@@ -300,6 +300,8 @@ export default function CompaniesPage() {
         <PageHeader
           title="Aziende"
           description="Gestisci le aziende clienti della piattaforma"
+          icon={Building2}
+          iconColor="text-blue-500"
           actions={
             <Button onClick={() => handleOpenDialog()} className="gap-2">
               <Plus className="h-4 w-4" />
