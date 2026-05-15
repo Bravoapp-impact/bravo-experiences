@@ -179,7 +179,7 @@ export function AdminLayout({
         )}
       >
         {/* Unified header with dropdown */}
-        <div className="px-3 pt-3 pb-2">
+        <div className="px-3 pt-3 pb-2 border-b border-border/60">
           <div className="flex items-center">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
