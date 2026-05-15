@@ -48,7 +48,7 @@ serve(async (req: Request): Promise<Response> => {
           )
         )
       `)
-      .eq("status", "confirmed");
+      .in("status", ["confirmed", "completed"]);
 
     if (bookingsError) {
       console.error("Error fetching bookings:", bookingsError);
