@@ -361,162 +361,156 @@ export default function HREmployeesPage() {
         <TopPerformersTable employees={employees} />
 
         {/* Filters */}
-        <Card className="border bg-card">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              {/* Search */}
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Cerca per nome o email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
+        <div className="flex flex-col sm:flex-row gap-4 pt-2 border-t border-border">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Cerca per nome o email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
+          </div>
 
-              {/* No participation filter */}
-              <div className="flex items-center gap-2 shrink-0">
-                <Switch
-                  id="no-participation"
-                  checked={showOnlyNoParticipation}
-                  onCheckedChange={setShowOnlyNoParticipation}
-                />
-                 <Label htmlFor="no-participation" className="text-sm cursor-pointer">
-                   Mostra utenti da coinvolgere
-                </Label>
-              </div>
+          {/* No participation filter */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Switch
+              id="no-participation"
+              checked={showOnlyNoParticipation}
+              onCheckedChange={setShowOnlyNoParticipation}
+            />
+            <Label htmlFor="no-participation" className="text-sm cursor-pointer">
+              Mostra utenti da coinvolgere
+            </Label>
+          </div>
 
-              {/* Export */}
-              <Button
-                variant="outline"
-                onClick={exportCSV}
-                className="gap-2 shrink-0"
-              >
-                <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">Esporta CSV</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Export */}
+          <Button
+            variant="outline"
+            onClick={exportCSV}
+            className="gap-2 shrink-0"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Esporta CSV</span>
+          </Button>
+        </div>
 
         {/* Employees Table */}
-        <Card className="border bg-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 -ml-3 font-medium"
+                    onClick={() => handleSort("name")}
+                  >
+                    Utente
+                    <ArrowUpDown className="h-3 w-3" />
+                  </Button>
+                </TableHead>
+                <TableHead className="hidden md:table-cell">Email</TableHead>
+                <TableHead className="text-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 font-medium"
+                    onClick={() => handleSort("experiences")}
+                  >
+                    Esperienze
+                    <ArrowUpDown className="h-3 w-3" />
+                  </Button>
+                </TableHead>
+                <TableHead className="text-center hidden sm:table-cell">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 font-medium"
+                    onClick={() => handleSort("hours")}
+                  >
+                    Ore
+                    <ArrowUpDown className="h-3 w-3" />
+                  </Button>
+                </TableHead>
+                <TableHead className="text-right hidden lg:table-cell">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 font-medium"
+                    onClick={() => handleSort("last_participation")}
+                  >
+                    Ultima partecipazione
+                    <ArrowUpDown className="h-3 w-3" />
+                  </Button>
+                </TableHead>
+                <TableHead className="w-10"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredEmployees.length === 0 ? (
                 <TableRow>
-                   <TableHead>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1 -ml-3 font-medium"
-                      onClick={() => handleSort("name")}
-                    >
-                      Utente
-                      <ArrowUpDown className="h-3 w-3" />
-                    </Button>
-                  </TableHead>
-                  <TableHead className="hidden md:table-cell">Email</TableHead>
-                  <TableHead className="text-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1 font-medium"
-                      onClick={() => handleSort("experiences")}
-                    >
-                      Esperienze
-                      <ArrowUpDown className="h-3 w-3" />
-                    </Button>
-                  </TableHead>
-                  <TableHead className="text-center hidden sm:table-cell">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1 font-medium"
-                      onClick={() => handleSort("hours")}
-                    >
-                      Ore
-                      <ArrowUpDown className="h-3 w-3" />
-                    </Button>
-                  </TableHead>
-                  <TableHead className="text-right hidden lg:table-cell">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1 font-medium"
-                      onClick={() => handleSort("last_participation")}
-                    >
-                      Ultima partecipazione
-                      <ArrowUpDown className="h-3 w-3" />
-                    </Button>
-                  </TableHead>
-                  <TableHead className="w-10"></TableHead>
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                    Nessun utente corrisponde ai filtri
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEmployees.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                      Nessun utente corrisponde ai filtri
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredEmployees.map((employee, index) => (
-                    <motion.tr
-                      key={employee.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.02 }}
-                      className="border-b border-border/50 last:border-0 cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => handleEmployeeClick(employee)}
-                    >
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="min-w-0">
-                            <p className="font-medium text-foreground truncate">
-                              {employee.first_name || employee.last_name
-                                ? `${employee.first_name || ""} ${employee.last_name || ""}`.trim()
-                                : "—"}
-                            </p>
-                            <p className="text-sm text-muted-foreground md:hidden truncate">
-                              {employee.email}
-                            </p>
-                          </div>
-                          {showOnlyNoParticipation && employee.total_experiences === 0 && (
-                            <Badge
-                              variant="outline"
-                              className="shrink-0 bg-primary/10 text-primary border-primary/20"
-                            >
-                              Da coinvolgere
-                            </Badge>
-                          )}
+              ) : (
+                filteredEmployees.map((employee, index) => (
+                  <motion.tr
+                    key={employee.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.02 }}
+                    className="border-b border-border/50 last:border-0 cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => handleEmployeeClick(employee)}
+                  >
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="min-w-0">
+                          <p className="font-medium text-foreground truncate">
+                            {employee.first_name || employee.last_name
+                              ? `${employee.first_name || ""} ${employee.last_name || ""}`.trim()
+                              : "—"}
+                          </p>
+                          <p className="text-sm text-muted-foreground md:hidden truncate">
+                            {employee.email}
+                          </p>
                         </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">
-                        {employee.email}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="font-medium">{employee.total_experiences}</span>
-                      </TableCell>
-                      <TableCell className="text-center hidden sm:table-cell">
-                        <span className="font-medium">{employee.total_hours}h</span>
-                      </TableCell>
-                      <TableCell className="text-right hidden lg:table-cell text-muted-foreground">
-                        {employee.last_participation
-                          ? format(new Date(employee.last_participation), "d MMM yyyy", { locale: it })
-                          : "—"}
-                      </TableCell>
-                      <TableCell className="w-10 text-muted-foreground">
-                        <ChevronRight className="h-4 w-4" />
-                      </TableCell>
-                    </motion.tr>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </Card>
+                        {showOnlyNoParticipation && employee.total_experiences === 0 && (
+                          <Badge
+                            variant="outline"
+                            className="shrink-0 bg-primary/10 text-primary border-primary/20"
+                          >
+                            Da coinvolgere
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">
+                      {employee.email}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className="font-medium">{employee.total_experiences}</span>
+                    </TableCell>
+                    <TableCell className="text-center hidden sm:table-cell">
+                      <span className="font-medium">{employee.total_hours}h</span>
+                    </TableCell>
+                    <TableCell className="text-right hidden lg:table-cell text-muted-foreground">
+                      {employee.last_participation
+                        ? format(new Date(employee.last_participation), "d MMM yyyy", { locale: it })
+                        : "—"}
+                    </TableCell>
+                    <TableCell className="w-10 text-muted-foreground">
+                      <ChevronRight className="h-4 w-4" />
+                    </TableCell>
+                  </motion.tr>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
         <EmployeeParticipationsDialog
           open={dialogOpen}
