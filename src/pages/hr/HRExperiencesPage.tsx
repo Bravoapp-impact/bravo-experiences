@@ -1,13 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import {
-  Calendar, CheckCircle2, Heart, MapPin, PackageOpen, Plus, Search, Trash2,
-} from "lucide-react";
+import { Calendar, Heart, MapPin, PackageOpen, Search } from "lucide-react";
 import { HRLayout } from "@/components/layout/HRLayout";
-import { HRExperienceMetrics } from "@/components/hr/HRExperienceMetrics";
-import { HRExperienceFilters } from "@/components/hr/HRExperienceFilters";
-import { HRExperienceCard } from "@/components/hr/HRExperienceCard";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { devLog } from "@/lib/logger";
@@ -15,15 +9,11 @@ import { devLog } from "@/lib/logger";
 import { PageHeader } from "@/components/common/PageHeader";
 import { LoadingState } from "@/components/common/LoadingState";
 import { EmptyState } from "@/components/common/EmptyState";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { BravoCard, BravoCardMetaItem } from "@/components/common/BravoCard";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { toast } from "@/hooks/use-toast";
 
 /* ── Types ── */
 
@@ -45,82 +35,25 @@ interface CatalogExperience {
   associations?: { name: string } | null;
 }
 
-interface ExperienceDate {
-  id: string;
-  start_datetime: string;
-  end_datetime: string;
-  max_participants: number;
-  volunteer_hours: number | null;
-  bookings: {
-    id: string;
-    status: string;
-    created_at: string;
-    user: { first_name: string | null; last_name: string | null; email: string };
-  }[];
-}
-
-interface StatsExperience {
-  id: string;
-  title: string;
-  description: string | null;
-  image_url: string | null;
-  status: string;
-  address: string | null;
-  sdgs: string[] | null;
-  category_id: string | null;
-  city_id: string | null;
-  association: { name: string } | null;
-  city: { name: string } | null;
-  category: { name: string } | null;
-  dates: ExperienceDate[];
-}
-
-interface Metrics {
-  activeExperiences: number;
-  futureEvents: number;
-  totalParticipations: number;
-  averageFillRate: number;
-}
-
 export default function HRExperiencesPage() {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Shared
   const [experiences, setExperiences] = useState<CatalogExperience[]>([]);
-  const [activatedIds, setActivatedIds] = useState<Set<string>>(new Set());
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [cities, setCities] = useState<{ id: string; name: string }[]>([]);
 
-  // Catalog filters
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [cityFilter, setCityFilter] = useState("all");
 
   const navigate = useNavigate();
 
-  // Stats tab
-  const [statsLoaded, setStatsLoaded] = useState(false);
-  const [statsLoading, setStatsLoading] = useState(false);
-  const [statsExperiences, setStatsExperiences] = useState<StatsExperience[]>([]);
-  const [statsSearch, setStatsSearch] = useState("");
-  const [statsCategoryFilter, setStatsCategoryFilter] = useState("all");
-  const [statsCityFilter, setStatsCityFilter] = useState("all");
-  const [showPastEvents, setShowPastEvents] = useState(false);
-
-  const [activeTab, setActiveTab] = useState("catalogo");
-
   useEffect(() => {
     if (profile?.company_id) fetchInitialData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.company_id]);
-
-  // Lazy-load stats when tab opens
-  useEffect(() => {
-    if (activeTab === "statistiche" && !statsLoaded && profile?.company_id) {
-      fetchStatsData();
-    }
-  }, [activeTab, statsLoaded, profile?.company_id]);
 
   const fetchInitialData = async () => {
     if (!profile?.company_id) return;
@@ -128,24 +61,20 @@ export default function HRExperiencesPage() {
       setLoading(true);
       setError(null);
 
-      const [catRes, cityRes, expRes, ecRes] = await Promise.all([
+      // RLS già restringe `experiences` alle sole esperienze attivate per la company dell'HR.
+      const [catRes, cityRes, expRes] = await Promise.all([
         supabase.from("categories").select("id, name").order("name"),
         supabase.from("cities").select("id, name").order("name"),
         supabase
           .from("experiences")
           .select(`id, title, description, image_url, city, address, status, sdgs, category, category_id, city_id, association_id, association_name, participant_info, categories:category_id (id, name), cities:city_id (id, name)`)
           .eq("status", "published")
-          .eq("visibility", "public")
           .order("created_at", { ascending: false }),
-        supabase
-          .from("experience_companies")
-          .select("experience_id")
-          .eq("company_id", profile.company_id),
       ]);
 
       const expRows = (expRes.data || []) as any[];
       const assocIds = Array.from(new Set(expRows.map((e) => e.association_id).filter(Boolean)));
-      let assocMap = new Map<string, { name: string; logo_url: string | null }>();
+      const assocMap = new Map<string, { name: string; logo_url: string | null }>();
       if (assocIds.length > 0) {
         const { data: assocData } = await supabase
           .from("associations_public")
@@ -166,7 +95,6 @@ export default function HRExperiencesPage() {
               : null,
         })) as CatalogExperience[]
       );
-      setActivatedIds(new Set((ecRes.data || []).map((r) => r.experience_id)));
     } catch (err) {
       devLog.error("Error fetching initial data:", err);
       setError("Errore nel caricamento");
@@ -175,197 +103,7 @@ export default function HRExperiencesPage() {
     }
   };
 
-  const fetchStatsData = async () => {
-    if (!profile?.company_id) return;
-    setStatsLoading(true);
-    try {
-      // 1. Get all company employee profiles
-      const { data: companyProfiles } = await supabase
-        .from("profiles")
-        .select("id, first_name, last_name, email")
-        .eq("company_id", profile.company_id);
-
-      const profileMap = new Map((companyProfiles || []).map((p) => [p.id, p]));
-      const companyUserIds = Array.from(profileMap.keys());
-
-      if (companyUserIds.length === 0) {
-        setStatsExperiences([]);
-        setStatsLoaded(true);
-        setStatsLoading(false);
-        return;
-      }
-
-      // 2. Get all non-cancelled bookings from company employees
-      const { data: bookingsData } = await supabase
-        .from("bookings")
-        .select("id, status, created_at, user_id, experience_date_id")
-        .in("user_id", companyUserIds)
-        .neq("status", "cancelled");
-
-      if (!bookingsData || bookingsData.length === 0) {
-        setStatsExperiences([]);
-        setStatsLoaded(true);
-        setStatsLoading(false);
-        return;
-      }
-
-      // 3. Get unique experience_date_ids, then fetch dates to get experience_ids
-      const dateIds = [...new Set(bookingsData.map((b) => b.experience_date_id))];
-      const { data: datesRaw, error: datesError } = await supabase
-        .from("experience_dates")
-        .select("id, experience_id, start_datetime, end_datetime, max_participants, volunteer_hours")
-        .in("id", dateIds)
-        .order("start_datetime", { ascending: true });
-
-      if (datesError) {
-        devLog.error("[Stats] experience_dates query failed:", datesError.message);
-      }
-
-      const uniqueExpIds = [...new Set((datesRaw || []).map((d) => d.experience_id))];
-
-      if (uniqueExpIds.length === 0) {
-        devLog.warn("[Stats] Found", bookingsData.length, "bookings but 0 experience_dates resolved — possible RLS issue on experience_dates");
-        setStatsExperiences([]);
-        setStatsLoaded(true);
-        setStatsLoading(false);
-        return;
-      }
-
-      // 4. Fetch full experience details (use RPC-free direct query — HR RLS allows seeing published/public)
-      const { data: expData } = await supabase
-        .from("experiences")
-        .select("id, title, description, image_url, status, address, sdgs, category_id, city_id, association_id, association_name, categories:category_id (id, name), cities:city_id (id, name)")
-        .in("id", uniqueExpIds);
-
-      // Fetch associations via public view (RLS-safe for HR)
-      const statsAssocIds = Array.from(
-        new Set(((expData || []) as any[]).map((e) => e.association_id).filter(Boolean))
-      );
-      const statsAssocMap = new Map<string, { name: string }>();
-      if (statsAssocIds.length > 0) {
-        const { data: assocData } = await supabase
-          .from("associations_public")
-          .select("id, name")
-          .in("id", statsAssocIds);
-        (assocData || []).forEach((a: any) => statsAssocMap.set(a.id, { name: a.name }));
-      }
-
-      // Also fetch ALL dates for these experiences (not just the ones with bookings)
-      const { data: allDatesData } = await supabase
-        .from("experience_dates")
-        .select("id, experience_id, start_datetime, end_datetime, max_participants, volunteer_hours")
-        .in("experience_id", uniqueExpIds)
-        .order("start_datetime", { ascending: true });
-
-      // 5. Build bookings lookup by date_id
-      const bookingsByDate = new Map<string, typeof bookingsData>();
-      bookingsData.forEach((b) => {
-        const list = bookingsByDate.get(b.experience_date_id) || [];
-        list.push(b);
-        bookingsByDate.set(b.experience_date_id, list);
-      });
-
-      // 6. Build dates map grouped by experience_id
-      const datesMap = new Map<string, ExperienceDate[]>();
-      (allDatesData || []).forEach((date) => {
-        const dateBookings = (bookingsByDate.get(date.id) || []).map((b) => ({
-          id: b.id,
-          status: b.status,
-          created_at: b.created_at,
-          user: profileMap.get(b.user_id) || { first_name: null, last_name: null, email: "" },
-        }));
-
-        const list = datesMap.get(date.experience_id) || [];
-        list.push({
-          id: date.id,
-          start_datetime: date.start_datetime,
-          end_datetime: date.end_datetime,
-          max_participants: date.max_participants,
-          volunteer_hours: date.volunteer_hours ? Number(date.volunteer_hours) : null,
-          bookings: dateBookings,
-        });
-        datesMap.set(date.experience_id, list);
-      });
-
-      // 7. Format final stats experiences
-      const formatted: StatsExperience[] = ((expData || []) as any[]).map((exp) => ({
-        id: exp.id,
-        title: exp.title,
-        description: exp.description,
-        image_url: exp.image_url,
-        status: exp.status,
-        address: exp.address,
-        sdgs: exp.sdgs,
-        category_id: exp.category_id,
-        city_id: exp.city_id,
-        association: exp.association_id
-          ? statsAssocMap.get(exp.association_id) ?? (exp.association_name ? { name: exp.association_name } : null)
-          : exp.association_name
-            ? { name: exp.association_name }
-            : null,
-        city: exp.cities as { name: string } | null,
-        category: exp.categories as { name: string } | null,
-        dates: datesMap.get(exp.id) || [],
-      }));
-
-      setStatsExperiences(formatted);
-      setStatsLoaded(true);
-    } catch (err) {
-      devLog.error("Error fetching stats:", err);
-    } finally {
-      setStatsLoading(false);
-    }
-  };
-
-  /* ── Activate / Deactivate ── */
-
-  const handleActivate = async (expId: string) => {
-    if (!profile?.company_id) return;
-    // Optimistic
-    setActivatedIds((prev) => new Set(prev).add(expId));
-    const { error } = await supabase
-      .from("experience_companies")
-      .insert({ experience_id: expId, company_id: profile.company_id });
-    if (error) {
-      devLog.error("Error activating:", error);
-      setActivatedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(expId);
-        return next;
-      });
-      toast({ title: "Errore nell'aggiunta al programma", variant: "destructive" });
-    } else {
-      toast({ title: "Aggiunta al programma" });
-      // Reset stats so they reload
-      setStatsLoaded(false);
-    }
-  };
-
-  const handleDeactivate = async (expId: string) => {
-    if (!profile?.company_id) return;
-    setActivatedIds((prev) => {
-      const next = new Set(prev);
-      next.delete(expId);
-      return next;
-    });
-    const { error } = await supabase
-      .from("experience_companies")
-      .delete()
-      .eq("experience_id", expId)
-      .eq("company_id", profile.company_id);
-    if (error) {
-      devLog.error("Error deactivating:", error);
-      setActivatedIds((prev) => new Set(prev).add(expId));
-      toast({ title: "Errore nella rimozione", variant: "destructive" });
-    } else {
-      toast({ title: "Rimossa dal programma" });
-      setStatsLoaded(false);
-    }
-  };
-
-  /* ── Filtered lists ── */
-
-  const filteredCatalog = useMemo(() => {
+  const filteredExperiences = useMemo(() => {
     return experiences.filter((exp) => {
       if (searchTerm && !exp.title.toLowerCase().includes(searchTerm.toLowerCase())) return false;
       if (categoryFilter !== "all" && exp.category_id !== categoryFilter) return false;
@@ -373,53 +111,6 @@ export default function HRExperiencesPage() {
       return true;
     });
   }, [experiences, searchTerm, categoryFilter, cityFilter]);
-
-  const programExperiences = useMemo(() => {
-    return experiences.filter((e) => activatedIds.has(e.id));
-  }, [experiences, activatedIds]);
-
-  const filteredStats = useMemo(() => {
-    const now = new Date();
-    return statsExperiences.filter((exp) => {
-      if (statsSearch && !exp.title.toLowerCase().includes(statsSearch.toLowerCase())) return false;
-      if (statsCategoryFilter !== "all" && exp.category_id !== statsCategoryFilter) return false;
-      if (statsCityFilter !== "all" && exp.city_id !== statsCityFilter) return false;
-      if (!showPastEvents) {
-        const hasFuture = exp.dates.some((d) => new Date(d.start_datetime) > now);
-        if (!hasFuture && exp.dates.length > 0) return false;
-      }
-      return true;
-    });
-  }, [statsExperiences, statsSearch, statsCategoryFilter, statsCityFilter, showPastEvents]);
-
-  const statsMetrics = useMemo<Metrics>(() => {
-    const now = new Date();
-    const activeExperiences = statsExperiences.length;
-    let futureEvents = 0, totalParticipations = 0, totalFillRate = 0, datesWithCapacity = 0;
-
-    statsExperiences.forEach((exp) => {
-      exp.dates.forEach((date) => {
-        const participated = date.bookings.filter((b) => ["confirmed", "completed", "verified"].includes(b.status)).length;
-        totalParticipations += participated;
-        if (new Date(date.start_datetime) > now) {
-          futureEvents++;
-        }
-        if (date.max_participants > 0) {
-          totalFillRate += (participated / date.max_participants) * 100;
-          datesWithCapacity++;
-        }
-      });
-    });
-
-    return {
-      activeExperiences,
-      futureEvents,
-      totalParticipations,
-      averageFillRate: datesWithCapacity > 0 ? Math.round(totalFillRate / datesWithCapacity) : 0,
-    };
-  }, [statsExperiences]);
-
-  /* ── Render ── */
 
   if (loading) {
     return <HRLayout><LoadingState message="Caricamento..." /></HRLayout>;
@@ -436,19 +127,16 @@ export default function HRExperiencesPage() {
   return (
     <HRLayout>
       <div className="space-y-6">
-        <PageHeader title="Volontariato aziendale" description="Gestisci il programma e monitora l'impatto" icon={Heart} iconColor="text-green-500" />
+        <PageHeader title="Volontariato aziendale" icon={Heart} iconColor="text-green-500" />
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="catalogo">Catalogo</TabsTrigger>
-            <TabsTrigger value="programma">
-              Il mio programma
-            </TabsTrigger>
-            <TabsTrigger value="statistiche">Statistiche</TabsTrigger>
-          </TabsList>
-
-          {/* ── TAB: Catalogo ── */}
-          <TabsContent value="catalogo" className="space-y-4 mt-4">
+        {experiences.length === 0 ? (
+          <EmptyState
+            icon={PackageOpen}
+            title="Nessuna esperienza nel tuo programma"
+            description="Contatta il tuo referente Bravo! per attivare le prime esperienze"
+          />
+        ) : (
+          <>
             <CatalogFilters
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
@@ -460,131 +148,31 @@ export default function HRExperiencesPage() {
               cities={cities}
             />
 
-            {filteredCatalog.length === 0 ? (
+            {filteredExperiences.length === 0 ? (
               <EmptyState icon={Search} title="Nessuna esperienza trovata" description="Prova a modificare i filtri di ricerca" />
             ) : (
-              <TooltipProvider delayDuration={300}>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                  {filteredCatalog.map((exp, i) => {
-                    const cityName = exp.cities?.name || exp.city;
-                    const metaItems: BravoCardMetaItem[] = [];
-                    if (cityName) metaItems.push({ icon: MapPin, text: cityName });
-                    return (
-                    <BravoCard key={exp.id} imageUrl={exp.image_url} imageAlt={exp.title} title={exp.title} metaItems={metaItems} index={i} onOpen={() => navigate(`/hr/experiences/${exp.id}`)} actions={
-                      activatedIds.has(exp.id) ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="inline-flex items-center gap-1 text-[11px] text-primary font-medium">
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                              Nel programma
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent>Questa esperienza è nel tuo programma</TooltipContent>
-                        </Tooltip>
-                      ) : (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-primary"
-                              onClick={(e) => { e.stopPropagation(); handleActivate(exp.id); }}
-                            >
-                              <Plus className="h-3.5 w-3.5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Aggiungi al programma</TooltipContent>
-                        </Tooltip>
-                      )
-                    } />
-                    );
-                  })}
-                </div>
-              </TooltipProvider>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {filteredExperiences.map((exp, i) => {
+                  const cityName = exp.cities?.name || exp.city;
+                  const metaItems: BravoCardMetaItem[] = [];
+                  if (cityName) metaItems.push({ icon: MapPin, text: cityName });
+                  return (
+                    <BravoCard
+                      key={exp.id}
+                      imageUrl={exp.image_url}
+                      imageAlt={exp.title}
+                      title={exp.title}
+                      metaItems={metaItems}
+                      index={i}
+                      onOpen={() => navigate(`/hr/experiences/${exp.id}`)}
+                    />
+                  );
+                })}
+              </div>
             )}
-          </TabsContent>
-
-          {/* ── TAB: Il mio programma ── */}
-          <TabsContent value="programma" className="space-y-4 mt-4">
-            {programExperiences.length === 0 ? (
-              <EmptyState
-                icon={PackageOpen}
-                title="Nessuna esperienza attiva"
-                description="Vai al Catalogo per aggiungere esperienze al programma"
-              />
-            ) : (
-              <TooltipProvider delayDuration={300}>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                  {programExperiences.map((exp, i) => {
-                    const cityName = exp.cities?.name || exp.city;
-                    const metaItems: BravoCardMetaItem[] = [];
-                    if (cityName) metaItems.push({ icon: MapPin, text: cityName });
-                    return (
-                    <BravoCard key={exp.id} imageUrl={exp.image_url} imageAlt={exp.title} title={exp.title} metaItems={metaItems} index={i} onOpen={() => navigate(`/hr/experiences/${exp.id}`)} actions={
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={(e) => { e.stopPropagation(); handleDeactivate(exp.id); }}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Rimuovi dal programma</TooltipContent>
-                      </Tooltip>
-                    } />
-                    );
-                  })}
-                </div>
-              </TooltipProvider>
-            )}
-          </TabsContent>
-
-          {/* ── TAB: Statistiche ── */}
-          <TabsContent value="statistiche" className="space-y-6 mt-4">
-            {statsLoading ? (
-              <LoadingState message="Caricamento statistiche..." />
-            ) : (
-              <>
-                <HRExperienceMetrics
-                  activeExperiences={statsMetrics.activeExperiences}
-                  futureEvents={statsMetrics.futureEvents}
-                  totalParticipations={statsMetrics.totalParticipations}
-                  averageFillRate={statsMetrics.averageFillRate}
-                />
-
-                <div className="pt-2 border-t border-border">
-                  <HRExperienceFilters
-                    searchTerm={statsSearch}
-                    onSearchChange={setStatsSearch}
-                    categoryFilter={statsCategoryFilter}
-                    onCategoryChange={setStatsCategoryFilter}
-                    cityFilter={statsCityFilter}
-                    onCityChange={setStatsCityFilter}
-                    showPastEvents={showPastEvents}
-                    onShowPastEventsChange={setShowPastEvents}
-                    categories={categories}
-                    cities={cities}
-                    resultCount={filteredStats.length}
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  {filteredStats.length === 0 ? (
-                    <div className="py-12 text-center">
-                      <p className="text-muted-foreground">Nessuna esperienza corrisponde ai filtri selezionati</p>
-                    </div>
-                  ) : (
-                    filteredStats.map((experience, index) => (
-                      <motion.div key={experience.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-                        <HRExperienceCard experience={experience} />
-                      </motion.div>
-                    ))
-                  )}
-                </div>
-              </>
-            )}
-          </TabsContent>
-        </Tabs>
+          </>
+        )}
       </div>
-
     </HRLayout>
   );
 }
