@@ -1,67 +1,27 @@
+## Obiettivo
+Stile Attio: separare visivamente l'header di pagina dal contenuto con una sottile linea orizzontale, allineata con la stessa linea nella sidebar che divide il blocco profilo dalle voci di menu.
+
 ## Cosa cambia
 
-1. **Allineamento verticale** tra l'header del contenuto pagina e il blocco "profilo" in cima alla sidebar (stile Attio).
-2. **Icona accanto al titolo** della pagina, presa dalla stessa voce attiva della sidebar (stesso colore/icona).
-3. Vale per **tutte le pagine admin** (Super Admin, HR, Association). Le pagine senza titolo erediteranno solo l'allineamento (stesso `padding-top`).
+### 1. `src/components/common/PageHeader.tsx`
+Aggiungere `border-b border-border/60 pb-3` al contenitore root del componente, così sotto al titolo (e relativa descrizione/azioni) compare una linea sottile che separa l'header dal resto della pagina.
+
+### 2. `src/components/layout/AdminLayout.tsx`
+Aggiungere `border-b border-border/60` al `<div className="px-3 pt-3 pb-2">` che contiene il dropdown profilo nella sidebar, in modo che la linea divida il blocco profilo dalle voci di navigazione sottostanti.
+
+### 3. Allineamento verticale
+Le due linee devono cadere allo stesso `Y`. Calcolo attuale:
+- Sidebar profilo: `pt-3` (12px) + bottone `py-2` con avatar `h-7` (28+16=44px) + `pb-2` (8px) = **64px** dal top.
+- Main su desktop: `pt-3` (12px) + `PageHeader min-h-[44px]` (44px) + nuovo `pb-3` (12px) = **68px**.
+
+Per farle combaciare cambio `pb-3` → `pb-2` su PageHeader (totale 64px). Su mobile c'è in più l'header `h-14` (56px) sopra al main, ma la linea sidebar è visibile solo a sidebar aperta in overlay e parte dal top a sé, quindi l'allineamento riguarda la vista desktop (≥ lg) — che è il caso d'uso reale.
 
 ## Cosa NON cambia
+- Nessuna modifica a logica, routing, RLS, query, edge functions.
+- Nessuna modifica agli altri layout (HR/Association/SuperAdmin) — usano tutti `AdminLayout` e `PageHeader`, quindi ereditano il cambio automaticamente.
+- Nessuna modifica a colori/tipografia esistenti del titolo.
+- Nessuna modifica a spacing dei contenuti sotto l'header (rimangono come oggi grazie a `space-y-*` dei singoli pages).
 
-- Logica, query, RLS, edge function.
-- Sidebar (struttura, voci, colori, dropdown).
-- Card, tabelle, `PageSection`, `CrudTableCard` e tutti i contenuti sotto l'header.
-- Layout pubblico/employee (`AppLayout`) — solo gli `AdminLayout`-based.
-
-## Come
-
-### 1. AdminLayout — allinea il `<main>` alla baseline della sidebar
-
-Il blocco profilo in sidebar è dentro `px-3 pt-3 pb-2` con un bottone `py-2 px-2` + avatar `h-7`. Il `<main>` oggi usa `p-4 sm:p-6 lg:p-8` → il titolo cade ~20px più in basso del profilo.
-
-Cambio in `src/components/layout/AdminLayout.tsx`:
-- `<main>` da `p-4 sm:p-6 lg:p-8` → `px-4 sm:px-6 lg:px-8 pt-3 pb-8` (top = `pt-3`, identico alla sidebar). Il padding interno dell'header verticale viene gestito dal nuovo `PageHeader` (vedi punto 2), così il titolo è perfettamente in linea col nome utente.
-
-### 2. PageHeader — nuova prop `icon` + altezza coerente con la riga profilo
-
-In `src/components/common/PageHeader.tsx`:
-- Aggiungo prop opzionale `icon?: LucideIcon` e `iconColor?: string`.
-- Il render diventa una riga con `min-h-[44px]` (= avatar `h-7` + `py-2` della sidebar), `items-center`. L'icona, se presente, è in un quadrato `h-7 w-7` con `bg-muted` + l'icona colorata (stesso pattern usato nel dropdown della sidebar), allineato a sinistra del titolo.
-- Layout: `<icon-box> <titolo + descrizione>` a sinistra, `actions` a destra. Su mobile il blocco actions va a capo come oggi.
-
-### 3. Pagine — passano `icon` e `iconColor` corrispondenti alla voce sidebar
-
-Ogni pagina che già usa `<PageHeader>` riceve `icon`/`iconColor` dalla rispettiva voce della propria sidebar (vedi `HRLayout.tsx`, `AssociationLayout.tsx`, `SuperAdminLayout.tsx`). Per evitare duplicazione, esporto da ciascun file di layout una mappa `href → { icon, iconColor }` e fornisco un piccolo helper `useSidebarItemMeta()` (basato su `useLocation`) che le pagine possono usare per ottenere l'icona corretta. La pagina passa il risultato direttamente a `<PageHeader icon={meta.icon} iconColor={meta.iconColor} />`.
-
-Pagine toccate (solo aggiunta delle 2 prop):
-- Super Admin: `Dashboard`, `Companies`, `Associations`, `Users`, `Experiences`, `Categories`, `Cities`, `AccessRequests`, `TBRequests`, `TBFormats`, `AccessCodes`, `EmailSettings`.
-- HR: `HRDashboard`, `HRExperiencesPage`, `HREmployeesPage`, `HRTeamBuildingPage`, e altre con `PageHeader`.
-- Association: `AssociationCalendarPage`, `AssociationHistoryPage`, `AssociationExperiencesPage`, ecc.
-
-### 4. Pagine senza `PageHeader`
-
-Nessuna modifica nei file pagina: ereditano automaticamente il nuovo `pt-3` del `<main>` quindi il loro contenuto inizia in linea col blocco profilo della sidebar.
-
-## Dettagli tecnici
-
-```text
-Sidebar header                Main
-┌──────────────────────┐     ┌────────────────────────────┐
-│ pt-3                 │     │ pt-3                       │
-│  ┌──────────────┐    │     │  ┌──┐                      │
-│  │ avatar h-7   │ Mario │  │  │■ │  Volontariato azie...│
-│  └──────────────┘ Demo │  │  └──┘  Gestisci program... │
-└──────────────────────┘     └────────────────────────────┘
-   ^ baseline allineate ^
-```
-
-Icona pagina: stesso glyph della sidebar, dimensione `h-4 w-4` dentro un riquadro `h-7 w-7 rounded-md bg-muted flex items-center justify-center`, con `iconColor` applicato all'icona (es. `text-green-500` per Volontariato).
-
-## Documentazione
-
-- `docs/design-system.md`: aggiungo sezione "Allineamento header pagina ↔ sidebar" e "Icona titolo".
-- `docs/log.md`: entry sintetica.
-- `mem://style/component-patterns`: aggiorno con la regola dell'icona accanto al titolo.
-
-## Fuori scope
-
-- Pagine di dettaglio (es. `/super-admin/companies/:id`) che non usano `PageHeader`: restano come sono, ereditano solo l'allineamento.
-- `AppLayout` employee (mobile-first): non toccato.
+## Note tecniche
+- Colore linea: `border-border/60` per restare sottile e coerente con lo stile flat Attio già adottato.
+- Solo Tailwind classes, nessun token nuovo da aggiungere.
