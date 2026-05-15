@@ -124,6 +124,8 @@ export default function CategoriesPage() {
         <PageHeader
           title="Categorie"
           description="Gestisci le categorie delle esperienze"
+          icon={Tag}
+          iconColor="text-amber-500"
           actions={
             <Button onClick={() => handleOpenDialog()} className="gap-2">
               <Plus className="h-4 w-4" />
