@@ -219,27 +219,56 @@ L'app segue una scala tipografica **unificata** su tutti i dispositivi (mobile, 
 
 ## 🧩 Componenti
 
-### Card
+### Card vs Sezione piatta (Attio-style)
+
+**Regola fondamentale:** la `<Card>` è riservata a blocchi che devono **spiccare visivamente come oggetti a sé stanti** sulla pagina. In tutti gli altri casi (tabelle, liste, form, widget di dashboard, contenuti dentro modali) il contenitore è **piatto sul background di pagina** e separato con hairline `border-b border-border`.
+
+Vale per **tutta l'app autenticata** (HR, Super Admin, Association) e anche dentro **modali e dialog**. La sezione employee mobile-first segue lo stesso principio.
+
+**Quando usare `<Card>`:**
+- ✅ Sidebar di dettaglio (es. sidebar nella pagina esperienza)
+- ✅ Item di una grid/catalogo (card esperienza, card format TB)
+- ✅ Hero metric card su dashboard (KPI principali che devono saltare all'occhio)
+- ✅ Empty state che deve attirare l'attenzione
+
+**Quando NON usare `<Card>` (usa `<PageSection>` o un semplice `<div>` con divisori):**
+- ❌ Wrapper attorno a tabelle e liste → flat con `border-b` tra le righe
+- ❌ Filtri sopra le tabelle → flat
+- ❌ Form e sezioni di settings → flat, separate da spacing/hairline
+- ❌ Widget secondari di dashboard → flat
+- ❌ Contenuti dentro modali (no card annidate)
 
 ```tsx
-// ✅ Corretto
+// ✅ Corretto: lista/tabella piatta
+<PageSection title="Utenti" description="Gestione team">
+  <Table>...</Table>
+</PageSection>
+
+// ✅ Corretto: card solo dove deve spiccare
 <Card className="border bg-card">
-  <CardContent className="p-4 sm:p-5">
-    ...
+  <CardContent className="p-4 sm:p-5">...</CardContent>
+</Card>
+
+// ❌ Non fare: card wrapper attorno a una tabella
+<Card>
+  <CardContent>
+    <Table>...</Table>
   </CardContent>
 </Card>
 
-// ❌ Non fare
+// ❌ Non fare: gradienti o bordi colorati
 <Card className="bg-gradient-to-br from-primary/10 ...">
 <Card className="hover:border-primary/30 hover:shadow-primary/5">
 ```
 
-**Regole Card:**
-- Background: `bg-card` (bianco) o nessuna classe (default)
+**Regole Card (quando serve):**
+- Background: `bg-card` o nessuna classe (default)
 - Bordo: `border` o `border-border/50`
 - Hover: `hover:shadow-md` (ombre neutre, MAI colorate)
 - NO gradienti colorati
 - NO bordi colorati al hover
+
+Riferimenti: `src/components/common/PageSection.tsx`, memoria `mem://style/card-vs-flat-section`.
 
 ### Button
 
