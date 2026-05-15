@@ -1,86 +1,38 @@
-# Eliminare lo sfarfallio: skeleton al posto degli spinner di pagina
+# Disabilitare animazioni di ingresso per eliminare il micro-flicker
 
-## Diagnosi del problema
+## Diagnosi
 
-Lo "sfarfallio" che vedi NON è causato da animazioni di entrata (fade-in/scale) — non ce ne sono nell'app. Le cause reali sono **due livelli di spinner che si alternano**:
+Lo skeleton ha tolto lo "spinner → spinner". Il micro-flicker residuo è dato dalle animazioni di ingresso framer-motion (`initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1 }}`) presenti su ~30 pagine e in `AppLayout` / `AdminLayout`. Quando i dati arrivano, lo skeleton viene sostituito dal contenuto che parte invisibile e fa fade-in: in quella frazione di secondo lo schermo "lampeggia".
 
-1. **Protected routes** (`ProtectedRoute`, `ProtectedHRRoute`, `ProtectedSuperAdminRoute`, `ProtectedAssociationRoute`): mentre `useAuth` controlla la sessione, mostrano uno spinner centrato a tutto schermo → la pagina sparisce.
-2. **Pagine** che, una volta dentro, mostrano un **secondo** spinner generico (`LoadingState` o `Loader2` inline) finché i dati non arrivano → un secondo "lampo" prima del contenuto.
+## Soluzione
 
-Risultato: sullo schermo vedi sequenza `spinner → spinner → contenuto`, da cui la sensazione di sfarfallio. Inoltre lo spinner non comunica la struttura della pagina, quindi sembra "lento" anche quando dura poco.
+Una sola modifica chirurgica in `src/App.tsx`: avvolgere l'intero albero in `<MotionConfig reducedMotion="always">` di framer-motion.
 
-## Obiettivo
+Effetto:
+- Tutti i `motion.*` esistenti **saltano** la transizione e vanno direttamente allo stato `animate`. Niente fade-in iniziale, niente slide-in, niente delay a cascata.
+- Le librerie di terze parti basate su framer-motion (es. radix tramite shadcn) non sono toccate — usano CSS keyframes Tailwind (accordion-down/up) che restano.
+- Hover/tap interactions e animazioni esplicite di feedback (es. spinner di submit) restano invariate, perché non sono entry animations.
 
-Sostituire gli spinner di **caricamento pagina/sezione** con **skeleton specifici** che riproducono il layout sottostante (header, card, tabella, ecc.). Mantenere gli spinner solo dove sono corretti: pulsanti in submit, upload avatar, dialog di conferma.
-
-## Cosa cambiare
-
-### 1. Loader globale unificato (route guards)
-- File: `ProtectedRoute.tsx`, `ProtectedHRRoute.tsx`, `ProtectedSuperAdminRoute.tsx`, `ProtectedAssociationRoute.tsx`.
-- Nuovo componente `AppBootSkeleton` che mostra uno scheletro neutro a tutto schermo (sidebar/topbar grigia + area contenuto con blocchi) **senza animate-spin**. Usa `Skeleton` shadcn (animate-pulse, già morbido).
-- Stesso skeleton in `ProtectedRoute` (employee mobile): mostra scheletro della bottom-nav + lista card.
-
-### 2. Skeleton per pagina (sostituiscono `LoadingState` / `Loader2` inline)
-
-Per ogni pagina che oggi mostra spinner a tutto schermo, creo uno skeleton coerente con il suo layout:
-
-- **HR area** (`HRHomePage`, `HRDashboard`, `HRExperiencesPage`, `HRExperienceDetail`, `HREmployeesPage`, `HRTeamBuildingPage`, `HRTBRequestDetailPage`, `HRTBProposalDetailPage`, `HRNewTBRequestPage`, `HRPlaceholderPage`, settings pages): `HRPageSkeleton` con sidebar + topbar + area centrale (titolo + 3-4 blocchi/tabella).
-- **Super Admin** (`SuperAdminDashboard`, `CompaniesPage`, `ExperiencesPage`, `UsersPage`, `AssociationsPage`, `CitiesPage`, `CategoriesPage`, `EmailSettingsPage`, `AccessCodesPage`, `AccessRequestsPage`, `TBFormatsPage`, `TBFormatDetailPage`, `TBRequestsPage`, `TBRequestDetailPage`, settings): `AdminTableSkeleton` (header pagina + righe tabella) e `AdminDetailSkeleton` (titolo + 2 colonne).
-- **Association** (`AssociationHome`, `AssociationExperiencesPage`, `AssociationExperienceDetail`, `AssociationHistoryPage`, `AssociationProfilePage`, `AssociationCalendarPage`, settings): skeleton analogo Admin.
-- **Employee mobile** (`MyBookings`, `Profile`, `Impact`): skeleton dedicato per ciascuna (card prenotazione, profilo, stat tiles). `Experiences` e `ExperienceDetail` hanno già skeleton — li allineo allo stesso stile.
-
-### 3. Eliminazione del doppio loader
-Quando la guard mostra `AppBootSkeleton` di shell e la pagina figlia ha il proprio skeleton dei dati, evito la transizione `spinner → spinner` mostrando direttamente lo skeleton della pagina dentro la shell quando l'auth è risolto ma i dati no. Pratica: la guard finisce → la pagina parte già con lo skeleton del suo layout (no LoadingState centrale).
-
-### 4. Cosa NON tocco (spinner legittimi)
-Resta `Loader2 animate-spin` dentro:
-- Pulsanti submit (Login, Register, ForgotPassword, ResetPassword, ProfileEditForm, ChangePasswordCard, ExperienceForm, ManageDatesDialog, AccessRequestModal, EnrollMFA, ChallengeMFA, StepWizard, TBFormatEditDialog, HRNewTBRequestPage submit).
-- Upload immagini (ProfileAvatarUpload, AvatarUploadBlock, LogoUpload).
-- AuthCallback (transizione brevissima di redirect — accettabile).
-- Riga tabella in fetch incrementale (`TableLoadingRow`, `DatesSidebar`, `MobileDateDrawer`, dialog dipendenti, EmailSettings test invio).
-
-Sono feedback di azione utente, non caricamento di pagina: non causano sfarfallio.
-
-## Dettagli tecnici
-
-### Nuovi file
 ```text
-src/components/common/skeletons/
-  AppBootSkeleton.tsx          // shell neutra (employee mobile / desktop)
-  HRPageSkeleton.tsx           // sidebar + header + content blocks
-  AdminTableSkeleton.tsx       // header + filtri + righe tabella
-  AdminDetailSkeleton.tsx      // header + 2 colonne (sidebar info + main)
-  AssociationPageSkeleton.tsx  // analogo HR ma con palette association
-  EmployeeListSkeleton.tsx     // bottom-nav + lista card mobile
-  EmployeeDetailSkeleton.tsx   // hero + descrizione + sidebar date
-```
-Tutti basati su `<Skeleton>` shadcn (già `animate-pulse rounded-md bg-muted`). Nessuna animazione aggiuntiva.
-
-### Pattern di sostituzione
-
-Prima:
-```tsx
-if (loading) return <LoadingState />;
-```
-Dopo:
-```tsx
-if (loading) return <HRPageSkeleton variant="table" />;
+src/App.tsx
+  <QueryClientProvider>
+    <ThemeProvider>
+      <MotionConfig reducedMotion="always">    ← nuovo
+        <AuthProvider> ... </AuthProvider>
+      </MotionConfig>
+    </ThemeProvider>
+  </QueryClientProvider>
 ```
 
-Per route guards:
-```tsx
-if (loading) return <AppBootSkeleton role="hr" />;
-```
-
-`LoadingState` resta nel codice ma deprecato (uso interno solo per pulsanti/dialog se serve testo "Caricamento...").
-
-### File toccati (lista completa)
-Route guards (4) + ~30 pagine elencate sopra. Solo sostituzione del blocco `if (loading)` — nessun cambio a logica dati, query, RLS, edge functions.
+## Cosa NON tocco
+- I singoli `motion.div` nelle pagine (restano nel codice, semplicemente "non animano" l'entrata). Vantaggio: zero rischio di regressioni, reversibile in una riga.
+- Animazioni CSS di componenti UI (accordion, dialog, sheet) — sono brevi, non causano flicker.
+- Skeleton (`animate-pulse`) — è il segnale di caricamento richiesto.
+- Spinner residui dentro pulsanti submit / upload.
 
 ## Verifica
-- Navigare tra `/login → /hr → /hr/users → /hr/team-building` osservando che tra una pagina e l'altra appaia lo skeleton del layout corretto, senza lampi bianchi né doppi spinner.
-- Stesso test su mobile per `/app/experiences`, `/app/bookings`, `/app/profile`.
-- Verifica visiva su super-admin e association.
+- Navigare `/login → /hr → /hr/volontariato → /hr/users → /app/experiences` osservando che il contenuto compaia "secco" appena pronto, senza fade né slide.
+- Confermare che hover su card/pulsanti funzioni ancora (non è entry animation).
 
 ## Fuori scope
-- Ottimizzazioni di performance reali (cache react-query, prefetch, code-splitting). Se vuoi le affrontiamo in un secondo step dedicato — questo intervento è puramente percettivo.
+- Rimozione fisica dei `motion.*` dal codice. Se in futuro vuoi un cleanup definitivo lo facciamo a parte; oggi non serve per risolvere il flicker.
