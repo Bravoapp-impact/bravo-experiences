@@ -168,9 +168,6 @@ const App = () => (
                 </ProtectedHRRoute>
               }
             />
-            <Route path="/hr/formazione" element={<ProtectedHRRoute><HRPlaceholderPage title="Formazione" /></ProtectedHRRoute>} />
-            <Route path="/hr/negozio" element={<ProtectedHRRoute><HRPlaceholderPage title="Negozio solidale" /></ProtectedHRRoute>} />
-            <Route path="/hr/convenzioni" element={<ProtectedHRRoute><HRPlaceholderPage title="Convenzioni" /></ProtectedHRRoute>} />
             <Route path="/hr/calendario" element={<ProtectedHRRoute><HRPlaceholderPage title="Calendario" /></ProtectedHRRoute>} />
             <Route path="/hr/galleria" element={<ProtectedHRRoute><HRPlaceholderPage title="Galleria" /></ProtectedHRRoute>} />
             <Route path="/hr/comunicazione" element={<ProtectedHRRoute><HRPlaceholderPage title="Comunicazione" /></ProtectedHRRoute>} />
