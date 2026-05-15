@@ -7,7 +7,7 @@ import { ClipboardList } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SuperAdminLayout } from "@/components/layout/SuperAdminLayout";
 import { PageHeader } from "@/components/common/PageHeader";
-import { Card } from "@/components/ui/card";
+import PageSection from "@/components/common/PageSection";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -108,10 +108,10 @@ export default function TBRequestsPage() {
           </Select>
         </div>
 
-        <Card className="overflow-hidden">
+        <PageSection>
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="bg-muted/50">
                 <TableHead>Azienda</TableHead>
                 <TableHead>Titolo richiesta</TableHead>
                 <TableHead>Stato</TableHead>
@@ -171,7 +171,7 @@ export default function TBRequestsPage() {
               )}
             </TableBody>
           </Table>
-        </Card>
+        </PageSection>
       </div>
     </SuperAdminLayout>
   );
