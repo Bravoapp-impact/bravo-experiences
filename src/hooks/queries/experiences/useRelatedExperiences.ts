@@ -4,19 +4,15 @@ import type { Experience } from "@/types/experiences";
 import { experienceKeys, type RelatedExperiencesParams } from "./keys";
 
 /**
- * Related experiences hooks (TanStack Query migration).
+ * Related experiences hook (TanStack Query).
  *
- * Two contexts share the same Supabase shape but differ in filtering:
- * - employee: experiences activated for the user's company (joined via
- *   experience_companies) in the same city, with future dates.
- * - hr: experiences in the same city that are NOT yet activated for the HR's
- *   company — discovery surface for activation.
+ * Employee context: experiences activated for the user's company (joined via
+ * experience_companies) in the same city, with future dates.
  *
- * Underlying queries are unchanged from the legacy hook; only fetching/caching
- * is reorganised. See docs/data-fetching.md.
+ * The HR-side variant has been removed: HR no longer curates the catalog.
  */
 
-const STALE_TIME_MS = 1000 * 60 * 2; // 2 minutes — activation is rare/manual.
+const STALE_TIME_MS = 1000 * 60 * 2;
 
 const mapRow = (e: any): Experience => ({
   id: e.id,
@@ -71,55 +67,6 @@ export function useRelatedExperiencesForEmployee(params: RelatedExperiencesParam
         .gte("experience_dates.start_datetime", new Date().toISOString())
         .limit(6);
 
-      if (error) throw error;
-      return dedupe((data ?? []) as any[]);
-    },
-  });
-}
-
-/**
- * HR context: experiences in the same city, with at least one future date,
- * NOT yet activated for the HR's company, excluding the current one.
- */
-export function useRelatedExperiencesForHR(params: RelatedExperiencesParams) {
-  const { currentExperienceId, cityId, companyId } = params;
-
-  return useQuery({
-    queryKey: experienceKeys.relatedFor("hr", params),
-    enabled: !!cityId && !!companyId,
-    staleTime: STALE_TIME_MS,
-    queryFn: async (): Promise<Experience[]> => {
-      // 1. IDs already activated for this company.
-      const { data: activated, error: activatedError } = await supabase
-        .from("experience_companies")
-        .select("experience_id")
-        .eq("company_id", companyId!);
-
-      if (activatedError) throw activatedError;
-
-      const excludeIds = new Set<string>((activated ?? []).map((r) => r.experience_id));
-      excludeIds.add(currentExperienceId);
-
-      // 2. Published public experiences in the same city with future dates.
-      let query = supabase
-        .from("experiences")
-        .select(`
-          id, title, description, image_url, association_name, city, address, category, sdgs,
-          associations:association_id (logo_url),
-          experience_dates!inner (id, start_datetime)
-        `)
-        .eq("city_id", cityId!)
-        .eq("status", "published")
-        .eq("visibility", "public")
-        .gte("experience_dates.start_datetime", new Date().toISOString())
-        .limit(6);
-
-      const excludeArr = Array.from(excludeIds);
-      if (excludeArr.length > 0) {
-        query = query.not("id", "in", `(${excludeArr.join(",")})`);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
       return dedupe((data ?? []) as any[]);
     },

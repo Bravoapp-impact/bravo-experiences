@@ -1,65 +1,104 @@
-import { Loader2, Plus, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { Users } from "lucide-react";
+
+export interface HRSidebarDate {
+  id: string;
+  start_datetime: string;
+  end_datetime: string | null;
+  bookings_count: number;
+}
 
 interface HRSidebarProps {
-  isActive: boolean;
-  isToggling: boolean;
-  onToggle: () => void;
-  upcomingDatesCount: number;
+  dates: HRSidebarDate[];
   defaultHours?: number | null;
 }
 
+const dateFmt = new Intl.DateTimeFormat("it-IT", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+});
+
+const timeFmt = new Intl.DateTimeFormat("it-IT", {
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+function pluralIscritti(n: number): string {
+  if (n === 1) return "1 iscritto";
+  return `${n} iscritti`;
+}
+
+const MAX_VISIBLE = 6;
+
 /**
- * Slim HR-side sidebar for the experience detail page.
- * Single primary action (add/remove from program) + light contextual info.
- * No booking management here — that lives in the future HR Calendar.
+ * Sidebar informativa stile Airbnb per la pagina dettaglio HR.
+ * Mostra le prossime date dell'esperienza con il numero di iscritti.
+ * Nessuna azione di curation: l'HR vede, il team Bravo! gestisce.
  */
-export function HRSidebar({
-  isActive,
-  isToggling,
-  onToggle,
-  defaultHours,
-}: HRSidebarProps) {
+export function HRSidebar({ dates, defaultHours }: HRSidebarProps) {
+  const visible = dates.slice(0, MAX_VISIBLE);
+  const hidden = Math.max(0, dates.length - MAX_VISIBLE);
+
   return (
-    <div className="border border-border rounded-2xl p-6 shadow-sm bg-card space-y-4">
-      <h3 className="text-lg font-semibold text-foreground">
-        {isActive ? "Nel tuo programma" : "Aggiungi al programma"}
-      </h3>
-
-      <p className="text-sm text-muted-foreground leading-relaxed">
-        {isActive
-          ? "Questa esperienza è attiva e visibile ai dipendenti della tua azienda."
-          : "Attiva questa esperienza per renderla disponibile ai dipendenti della tua azienda."}
-      </p>
-
-      <Button
-        onClick={onToggle}
-        disabled={isToggling}
-        variant="outline"
-        className={
-          isActive
-            ? "w-full h-12 text-base font-medium rounded-xl border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10 hover:text-destructive"
-            : "w-full h-12 text-base font-medium rounded-xl border-success/30 bg-success/10 text-success hover:bg-success/15 hover:text-success"
-        }
-      >
-        {isToggling ? (
-          <Loader2 className="h-5 w-5 animate-spin" />
-        ) : isActive ? (
-          "Rimuovi dal programma"
-        ) : (
-          <>
-            <Plus className="h-4 w-4 mr-2" />
-            Aggiungi al programma
-          </>
+    <div className="border border-border rounded-2xl bg-card shadow-sm overflow-hidden">
+      <div className="px-6 pt-6 pb-4">
+        <h3 className="text-base font-semibold text-foreground">Prossime date</h3>
+        {defaultHours && defaultHours > 0 && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Durata {defaultHours} {defaultHours === 1 ? "ora" : "ore"}
+          </p>
         )}
-      </Button>
+      </div>
 
-      {defaultHours && defaultHours > 0 && (
-        <div className="pt-2 border-t border-border/50">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="h-4 w-4 flex-shrink-0" />
-            <span>Questa attività ha una durata di {defaultHours} ore</span>
-          </div>
+      {dates.length === 0 ? (
+        <div className="border-t border-border/60 px-6 py-8 text-center text-sm text-muted-foreground">
+          Nessuna data programmata
+        </div>
+      ) : (
+        <div className="border-t border-border/60 divide-y divide-border/60">
+          {visible.map((d) => {
+            const start = new Date(d.start_datetime);
+            const end = d.end_datetime ? new Date(d.end_datetime) : null;
+            const dateLabel = dateFmt.format(start);
+            const timeLabel = end
+              ? `${timeFmt.format(start)}–${timeFmt.format(end)}`
+              : timeFmt.format(start);
+            const count = d.bookings_count;
+
+            return (
+              <div
+                key={d.id}
+                className="px-6 py-4 flex items-center justify-between gap-4"
+              >
+                <div className="min-w-0">
+                  <p className="text-[15px] font-medium text-foreground capitalize truncate">
+                    {dateLabel}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {timeLabel}
+                  </p>
+                </div>
+                <div
+                  className={`flex items-center gap-1.5 text-sm shrink-0 ${
+                    count > 0 ? "text-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  <Users className="h-3.5 w-3.5" />
+                  <span>{pluralIscritti(count)}</span>
+                </div>
+              </div>
+            );
+          })}
+
+          {hidden > 0 && (
+            <Link
+              to="/hr/calendario"
+              className="block px-6 py-3 text-sm text-center text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+            >
+              Vedi tutte ({dates.length})
+            </Link>
+          )}
         </div>
       )}
     </div>
