@@ -24,17 +24,17 @@ Non copre: calendario aggregato HR, galleria multimediale, report d'impatto, com
 
 Il referente HR vede una **vista unica** del proprio programma di volontariato, sotto la voce "Volontariato aziendale" della sidebar. La vista mostra le esperienze attivate per l'azienda — non un catalogo generale, ma la selezione concordata.
 
-Cliccando su un'esperienza, si apre il dettaglio (`/hr/experiences/:id`) con le informazioni del format e le date pianificate (proprie della propria company o aperte a tutte le aziende che hanno l'esperienza attiva).
+Cliccando su un'esperienza, si apre il dettaglio (`/hr/experiences/:id`) con le informazioni del format e la lista delle prossime date pianificate. Per ogni data, l'HR vede il numero di iscritti.
 
 Cosa HR fa direttamente nel volontariato:
 
 - Vede le esperienze attive nel proprio programma
 - Vede il dettaglio di ogni esperienza
-- Vede le date e i partecipanti di ogni esperienza
+- Vede le prossime date di ogni esperienza, con il numero di iscritti per ciascuna
 
 Cosa HR **non** fa nel volontariato:
 
-- Non cura un catalogo di esperienze candidate
+- Non cura un catalogo di esperienze candidate (a livello DB, le RLS impediscono qualsiasi `INSERT`/`DELETE` su `experience_companies` da parte di HR)
 - Non gestisce date o capienze
 - Non modifica le esperienze attive
 - Non configura il budget ore individuale (lo richiede al referente Bravo!, che lo setta su `hour_budgets`)
@@ -66,7 +66,7 @@ Il super-admin è l'orchestratore del verticale. Responsabilità operative:
 - Attivare le esperienze per ogni azienda cliente (bridge `experience_companies`)
 - Configurare `hour_budgets` quando viene firmato un contratto
 - Coordinare con le ETS le date company-specific richieste dall'azienda
-- Gestire modifiche al programma quando HR le richiede
+- Smistare modifiche al programma quando HR le richiede
 - Gestire i suggerimenti ETS in arrivo (flusso trasversale, fuori da questo documento)
 - Gestire casi limite (cancellazioni, sovrapposizioni, ETS in difficoltà)
 
@@ -148,6 +148,8 @@ Campi chiave:
 
 L'ETS crea l'esperienza in `draft`. Il super-admin rivede e passa a `published`. Una volta `published`, l'esperienza è candidata ad essere attivata per le aziende via `experience_companies`.
 
+**RLS attuale per HR**: vede solo le `experiences` con `status = 'published'` che hanno una riga corrispondente in `experience_companies` per la propria company. Policy `HR can view own program experiences v4` (maggio 2026).
+
 ### `experience_companies`
 
 Bridge N:N. Decide quali aziende vedono quali esperienze.
@@ -155,6 +157,8 @@ Bridge N:N. Decide quali aziende vedono quali esperienze.
 Campi: `experience_id`, `company_id`, eventuali timestamp di attivazione.
 
 Una riga in questa tabella è ciò che HR vede come "esperienza nel mio programma". L'attivazione la fa il super-admin.
+
+**RLS attuale**: HR può leggere (`SELECT`) le righe della propria company (policy `HR can view own company experience_companies`, maggio 2026). Non può scrivere: solo il super-admin esegue `INSERT`/`UPDATE`/`DELETE`.
 
 ### `experience_dates`
 
@@ -261,7 +265,7 @@ Tutte le RPC seguono il pattern `SECURITY DEFINER`, `SET search_path = public, p
 | `get_user_association_id(user_uuid)` | Lookup association dal profilo | Trasversale, RLS |
 | `is_admin`, `is_super_admin`, `is_association_admin` | Wrapper booleani per ruolo | Trasversali, RLS |
 
-**Punto da verificare in codice**: il comportamento di `process_completed_events` rispetto a `no_show`. Se il cron marca solo `completed` e il `no_show` è manuale, serve un'UI nel pannello ETS per segnare le assenze a fine evento. Se invece il cron li gestisce entrambi sulla base di un flag presenza, l'UI di "segna presenze" va comunque costruita perché qualcuno deve popolare quel flag. È una verifica che impatta l'esperienza dell'ETS e il dato di partecipazione che alimenta i report.
+**Punto aperto**: il comportamento di `process_completed_events` rispetto a `no_show`. Se il cron marca solo `completed` e il `no_show` è manuale, serve un'UI nel pannello ETS per segnare le assenze a fine evento. Se invece il cron li gestisce entrambi sulla base di un flag presenza, l'UI di "segna presenze" va comunque costruita perché qualcuno deve popolare quel flag. Impatta l'esperienza dell'ETS e il dato di partecipazione che alimenta i report.
 
 ---
 
