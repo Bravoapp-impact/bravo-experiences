@@ -436,7 +436,7 @@ export default function HRExperiencesPage() {
   return (
     <HRLayout>
       <div className="space-y-6">
-        <PageHeader title="Volontariato aziendale" description="Gestisci il programma e monitora l'impatto" />
+        <PageHeader title="Volontariato aziendale" description="Gestisci il programma e monitora l'impatto" icon={Heart} iconColor="text-green-500" />
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
