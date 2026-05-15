@@ -1,5 +1,4 @@
 import { ReactNode } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CrudSearchBar } from "./CrudSearchBar";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +14,14 @@ interface CrudTableCardProps {
   hideSearch?: boolean;
 }
 
+/**
+ * Flat CRUD list section: title + actions row, optional search/filters row,
+ * then content (typically a table). No card wrapper — uses the page background
+ * with a hairline separator under the header (Attio-style).
+ *
+ * The component name is kept for backward compatibility but it no longer renders
+ * a <Card>. Use this for any admin list/table page.
+ */
 export function CrudTableCard({
   title,
   searchValue = "",
@@ -29,36 +36,33 @@ export function CrudTableCard({
   const showSearchRow = !hideSearch && onSearchChange;
 
   return (
-    <Card className={cn("border-border/50 bg-card/80 backdrop-blur-sm", className)}>
-      <CardHeader className="pb-4">
-        <div className="flex flex-col gap-4">
-          {/* Header row: title + actions */}
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">{title}</h3>
-            {actions && <div className="flex items-center gap-2">{actions}</div>}
-          </div>
+    <section className={cn("space-y-4", className)}>
+      {/* Header row: title + actions */}
+      <div className="flex items-center justify-between gap-3 pb-3 border-b border-border">
+        <h3 className="text-base font-semibold text-foreground">{title}</h3>
+        {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+      </div>
 
-          {/* Search and filters row */}
-          {(showSearchRow || filters) && (
-            <div className="flex flex-col sm:flex-row gap-3">
-              {showSearchRow && (
-                <CrudSearchBar
-                  value={searchValue}
-                  onChange={onSearchChange}
-                  placeholder={searchPlaceholder}
-                  className="sm:w-64"
-                />
-              )}
-              {filters && (
-                <div className="flex flex-wrap items-center gap-2">
-                  {filters}
-                </div>
-              )}
+      {/* Search and filters row */}
+      {(showSearchRow || filters) && (
+        <div className="flex flex-col sm:flex-row gap-3">
+          {showSearchRow && (
+            <CrudSearchBar
+              value={searchValue}
+              onChange={onSearchChange}
+              placeholder={searchPlaceholder}
+              className="sm:w-64"
+            />
+          )}
+          {filters && (
+            <div className="flex flex-wrap items-center gap-2">
+              {filters}
             </div>
           )}
         </div>
-      </CardHeader>
-      <CardContent className="pt-0">{children}</CardContent>
-    </Card>
+      )}
+
+      {children}
+    </section>
   );
 }
