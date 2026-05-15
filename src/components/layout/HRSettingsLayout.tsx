@@ -11,9 +11,6 @@ import {
   Receipt,
   Heart,
   UsersRound,
-  GraduationCap,
-  ShoppingBag,
-  Ticket,
   ArrowLeft,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
