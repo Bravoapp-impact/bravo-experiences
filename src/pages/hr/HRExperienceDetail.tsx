@@ -1,45 +1,33 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Check, Plus } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HRLayout } from "@/components/layout/HRLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { devLog } from "@/lib/logger";
 import type { Experience, ExperienceReview } from "@/types/experiences";
 
 import { ExperienceDetailContent } from "@/components/experience-detail/ExperienceDetailContent";
-import type { UpcomingDateItem } from "@/components/experience-detail/UpcomingDatesSection";
-import { HRSidebar } from "@/components/hr/HRSidebar";
-import { HRMobileActionDrawer } from "@/components/hr/HRMobileActionDrawer";
-import { HRRelatedExperiences } from "@/components/hr/HRRelatedExperiences";
+import { HRSidebar, type HRSidebarDate } from "@/components/hr/HRSidebar";
 
 export default function HRExperienceDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const { toast } = useToast();
-  const isMobile = useIsMobile();
 
   const [experience, setExperience] = useState<Experience | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  const [upcomingDates, setUpcomingDates] = useState<UpcomingDateItem[]>([]);
+  const [upcomingDates, setUpcomingDates] = useState<HRSidebarDate[]>([]);
 
   // Reviews
   const [reviews, setReviews] = useState<ExperienceReview[]>([]);
   const [avgRating, setAvgRating] = useState<number | null>(null);
   const [reviewCount, setReviewCount] = useState(0);
-
-  // Curation state
-  const [isActive, setIsActive] = useState(false);
-  const [isToggling, setIsToggling] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   // ─── Fetch experience ───
   useEffect(() => {
@@ -108,27 +96,47 @@ export default function HRExperienceDetail() {
     fetchExperience();
   }, [id]);
 
-  // ─── Fetch upcoming dates (no bookings) ───
+  // ─── Fetch upcoming dates + bookings count ───
   useEffect(() => {
     if (!id) return;
 
     const fetchDates = async () => {
       try {
-        const { data, error } = await supabase
+        const { data: datesData, error: datesError } = await supabase
           .from("experience_dates")
-          .select("id, start_datetime, end_datetime, volunteer_hours")
+          .select("id, start_datetime, end_datetime")
           .eq("experience_id", id)
           .gte("start_datetime", new Date().toISOString())
           .order("start_datetime", { ascending: true });
 
-        if (error) throw error;
+        if (datesError) throw datesError;
+
+        const dateRows = datesData ?? [];
+        if (dateRows.length === 0) {
+          setUpcomingDates([]);
+          return;
+        }
+
+        const dateIds = dateRows.map((d) => d.id);
+        const { data: bookingsData, error: bookingsError } = await supabase
+          .from("bookings")
+          .select("experience_date_id, status")
+          .in("experience_date_id", dateIds)
+          .in("status", ["confirmed", "completed"]);
+
+        if (bookingsError) throw bookingsError;
+
+        const counts = new Map<string, number>();
+        (bookingsData ?? []).forEach((b) => {
+          counts.set(b.experience_date_id, (counts.get(b.experience_date_id) ?? 0) + 1);
+        });
 
         setUpcomingDates(
-          (data || []).map((d) => ({
+          dateRows.map((d) => ({
             id: d.id,
             start_datetime: d.start_datetime,
             end_datetime: d.end_datetime,
-            volunteer_hours: d.volunteer_hours,
+            bookings_count: counts.get(d.id) ?? 0,
           }))
         );
       } catch (err) {
@@ -211,65 +219,6 @@ export default function HRExperienceDetail() {
     fetchReviews();
   }, [id]);
 
-  // ─── Fetch activation state ───
-  useEffect(() => {
-    if (!id || !profile?.company_id) return;
-
-    const fetchActivation = async () => {
-      const { data } = await supabase
-        .from("experience_companies")
-        .select("experience_id")
-        .eq("experience_id", id)
-        .eq("company_id", profile.company_id)
-        .maybeSingle();
-
-      setIsActive(!!data);
-    };
-
-    fetchActivation();
-  }, [id, profile?.company_id]);
-
-  // ─── Toggle activation ───
-  const handleToggle = async () => {
-    if (!id || !profile?.company_id) return;
-
-    setIsToggling(true);
-    const wasActive = isActive;
-    // Optimistic
-    setIsActive(!wasActive);
-
-    try {
-      if (wasActive) {
-        const { error } = await supabase
-          .from("experience_companies")
-          .delete()
-          .eq("experience_id", id)
-          .eq("company_id", profile.company_id);
-        if (error) throw error;
-        toast({ title: "Rimossa dal programma" });
-      } else {
-        const { error } = await supabase
-          .from("experience_companies")
-          .insert({ experience_id: id, company_id: profile.company_id });
-        if (error) throw error;
-        toast({ title: "Aggiunta al programma" });
-      }
-      setDrawerOpen(false);
-    } catch (err) {
-      // Revert
-      setIsActive(wasActive);
-      devLog.error("Error toggling activation:", err);
-      toast({
-        variant: "destructive",
-        title: wasActive
-          ? "Errore nella rimozione"
-          : "Errore nell'aggiunta al programma",
-      });
-    } finally {
-      setIsToggling(false);
-    }
-  };
-
   const goBack = () => navigate("/hr/volontariato");
 
   // ─── Loading ───
@@ -307,7 +256,7 @@ export default function HRExperienceDetail() {
 
   return (
     <HRLayout>
-      <div className="max-w-6xl mx-auto px-4 lg:px-8 pb-28 lg:pb-12">
+      <div className="max-w-6xl mx-auto px-4 lg:px-8 pb-12">
         <button
           onClick={goBack}
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4 py-2"
@@ -322,15 +271,6 @@ export default function HRExperienceDetail() {
           avgRating={avgRating}
           reviewCount={reviewCount}
           relatedCompanyId={profile?.company_id ?? null}
-          upcomingDates={upcomingDates}
-          relatedExperiencesSlot={
-            <HRRelatedExperiences
-              currentExperienceId={experience.id}
-              cityId={experience.city_id ?? null}
-              companyId={profile?.company_id ?? null}
-              cityName={experience.city_name ?? experience.city ?? null}
-            />
-          }
           sidebarSlot={
             <motion.div
               className="hidden lg:block w-[380px] flex-shrink-0 sticky top-24 self-start"
@@ -339,54 +279,21 @@ export default function HRExperienceDetail() {
               transition={{ delay: 0.2 }}
             >
               <HRSidebar
-                isActive={isActive}
-                isToggling={isToggling}
-                onToggle={handleToggle}
-                upcomingDatesCount={upcomingDates.length}
+                dates={upcomingDates}
                 defaultHours={experience.default_hours ?? null}
               />
             </motion.div>
           }
         />
-      </div>
 
-      {/* Mobile sticky CTA */}
-      {isMobile && (
-        <>
-          <div className="fixed bottom-0 left-0 right-0 p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] bg-background/95 backdrop-blur-sm border-t border-border z-40">
-            <Button
-              onClick={() =>
-                isActive ? setDrawerOpen(true) : handleToggle()
-              }
-              disabled={isToggling}
-              variant="outline"
-              className="w-full h-12 text-base font-medium rounded-xl border-success/30 bg-success/10 text-success hover:bg-success/15 hover:text-success"
-            >
-              {isActive ? (
-                <>
-                  <Check className="h-4 w-4 mr-2" />
-                  Nel programma
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Aggiungi al programma
-                </>
-              )}
-            </Button>
-          </div>
-
-          <HRMobileActionDrawer
-            open={drawerOpen}
-            onOpenChange={setDrawerOpen}
-            isActive={isActive}
-            isToggling={isToggling}
-            onToggle={handleToggle}
-            upcomingDatesCount={upcomingDates.length}
+        {/* Mobile: stessa info sotto al contenuto */}
+        <div className="lg:hidden mt-8">
+          <HRSidebar
+            dates={upcomingDates}
             defaultHours={experience.default_hours ?? null}
           />
-        </>
-      )}
+        </div>
+      </div>
     </HRLayout>
   );
 }
