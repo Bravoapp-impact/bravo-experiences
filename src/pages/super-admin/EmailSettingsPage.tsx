@@ -312,8 +312,8 @@ export default function EmailSettingsPage() {
                   </Button>
                 </>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </PageSection>
         )}
       </div>
     </SuperAdminLayout>
