@@ -11,9 +11,6 @@ import {
   Receipt,
   Heart,
   UsersRound,
-  GraduationCap,
-  ShoppingBag,
-  Ticket,
   ArrowLeft,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -35,9 +32,6 @@ const sidebarItems: SidebarItem[] = [
   // section "Iniziative" before 10
   { label: "Volontariato", icon: Heart, href: "/hr/impostazioni/volontariato", iconColor: "text-rose-500" },
   { label: "Team Building", icon: UsersRound, href: "/hr/impostazioni/team-building", iconColor: "text-orange-500" },
-  { label: "Formazione", icon: GraduationCap, href: "/hr/impostazioni/formazione", iconColor: "text-indigo-500" },
-  { label: "Negozio Solidale", icon: ShoppingBag, href: "/hr/impostazioni/negozio", iconColor: "text-pink-500" },
-  { label: "Convenzioni", icon: Ticket, href: "/hr/impostazioni/convenzioni", iconColor: "text-teal-500" },
 ];
 
 export default function HRSettingsLayout() {

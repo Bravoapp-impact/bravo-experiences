@@ -34,6 +34,8 @@ Cose che sappiamo essere imperfette o incomplete, ma che non bloccano lo sprint 
 
 **Audit di sicurezza RLS/SECURITY DEFINER.** Lovable ha prodotto un inventario di punti deboli durante l'hardening dello sprint TB preventivi. Da rivedere e classificare per priorità in uno sprint dedicato.
 
+**Rimettere "Formazione", "Negozio solidale", "Convenzioni" nella sidebar HR.** Voci e relative sezioni Impostazioni rimosse temporaneamente dalla sidebar HR (e dal layout impostazioni) perché non ancora implementate. Le route placeholder e le pagine di settings vanno ripristinate quando i moduli verranno aperti. Riferimenti rimossi in `HRLayout.tsx`, `HRSettingsLayout.tsx`, `App.tsx` (route `/hr/formazione`, `/hr/negozio`, `/hr/convenzioni` e relative `impostazioni/*`).
+
 **Ambiente di staging assente.** Bravo! oggi non ha un ambiente di staging separato dalla produzione pubblica. Durante la migrazione email questo ha creato un momento di rischio (schermata bianca in produzione durante un fix). Prima di aprire il self-serve a settembre, va affrontato. Collegato alla decisione corrispondente in §1.
 
 **Drop colonne legacy su `experiences` e `experience_dates`.** `experience_dates.company_id`, `experiences.city`, `experiences.category`, `experiences.association_name` sono colonne sostituite da foreign key (`city_id`, `category_id`, `association_id`) ma ancora presenti nel DB. Prima di droppare va verificato che nessun frontend le legga ancora — se sì, riscrivere il frontend prima del drop. Regola "aggiungi prima, rimuovi dopo".
