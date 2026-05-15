@@ -109,6 +109,8 @@ export default function CitiesPage() {
         <PageHeader
           title="Città"
           description="Gestisci le città dove operiamo"
+          icon={MapPin}
+          iconColor="text-cyan-500"
           actions={
             <Button onClick={() => handleOpenDialog()} className="gap-2">
               <Plus className="h-4 w-4" />
