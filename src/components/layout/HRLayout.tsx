@@ -24,15 +24,12 @@ const sidebarItems: SidebarItem[] = [
   // section label "Iniziative" before index 2
   { label: "Volontariato aziendale", icon: Heart, href: "/hr/volontariato", iconColor: "text-green-500" },
   { label: "Team building sociali", icon: Star, href: "/hr/team-building", iconColor: "text-orange-500" },
-  { label: "Formazione", icon: GraduationCap, href: "/hr/formazione", iconColor: "text-indigo-500" },
-  { label: "Negozio solidale", icon: ShoppingBag, href: "/hr/negozio", iconColor: "text-pink-500" },
-  { label: "Convenzioni", icon: Ticket, href: "/hr/convenzioni", iconColor: "text-teal-500" },
-  // section label "Gestione" before index 7
+  // section label "Gestione" before index 4
   { label: "Calendario", icon: CalendarDays, href: "/hr/calendario", iconColor: "text-cyan-500" },
   { label: "Utenti", icon: Users, href: "/hr/users", iconColor: "text-blue-500" },
   { label: "Galleria", icon: Image, href: "/hr/galleria", iconColor: "text-amber-500" },
   { label: "Comunicazione", icon: MessageSquare, href: "/hr/comunicazione", iconColor: "text-purple-500" },
-  // separator after index 10
+  // separator after index 7
   { label: "Report", icon: BarChart3, href: "/hr/report", iconColor: "text-rose-500" },
 ];
 
