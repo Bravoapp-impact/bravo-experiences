@@ -129,7 +129,7 @@ serve(async (req: Request): Promise<Response> => {
               firstName: profile.first_name ?? "",
               experienceTitle,
               associationName,
-              feedbackUrl: "https://bravo-experiences.lovable.app/app/bookings",
+              feedbackUrl: "https://experiences.bravoapp.it/app/bookings",
             },
           },
         },
