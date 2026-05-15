@@ -11,7 +11,7 @@ import { HRExperienceCard } from "@/components/hr/HRExperienceCard";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { devLog } from "@/lib/logger";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { PageHeader } from "@/components/common/PageHeader";
 import { LoadingState } from "@/components/common/LoadingState";
 import { EmptyState } from "@/components/common/EmptyState";
