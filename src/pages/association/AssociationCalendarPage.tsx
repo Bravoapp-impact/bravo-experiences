@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { CalendarDays } from "lucide-react";
 import { AssociationLayout } from "@/components/layout/AssociationLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import { CalendarHeader } from "@/components/association/calendar/CalendarHeader";
