@@ -23,7 +23,7 @@ const FeedbackRequestEmail = ({
   firstName,
   experienceTitle = "la tua esperienza",
   associationName,
-  feedbackUrl = 'https://bravo-experiences.lovable.app/app/bookings',
+  feedbackUrl = 'https://experiences.bravoapp.it/app/bookings',
 }: FeedbackRequestProps) => (
   <Html lang="it" dir="ltr">
     <Head />
