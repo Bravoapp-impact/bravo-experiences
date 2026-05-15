@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { Eye, ExternalLink } from "lucide-react";
+import { Eye, ExternalLink, Inbox } from "lucide-react";
 import { SuperAdminLayout } from "@/components/layout/SuperAdminLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -172,6 +172,8 @@ export default function AccessRequestsPage() {
         <PageHeader
           title="Richieste Accesso"
           description={`${pendingCount} richieste in attesa`}
+          icon={Inbox}
+          iconColor="text-purple-500"
         />
 
         {/* Filters */}

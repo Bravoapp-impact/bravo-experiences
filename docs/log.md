@@ -132,3 +132,16 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 - `docs/log.md`
 
 **Follow-up.** A regime, ogni sessione che tocca DB / RLS / RPC / edge function deve aggiornare anche `architettura.md` oltre al log.
+
+---
+
+## 2026-05-15 — Header pagina allineato alla sidebar + icona titolo
+
+**Cosa cambia.** Il `<main>` di `AdminLayout` ora usa `pt-3` (allineato al `pt-3` della sidebar): il titolo della pagina cade alla stessa altezza del nome utente in alto a sinistra, stile Attio. `PageHeader` accetta `icon` e `iconColor` opzionali e renderizza un quadrato `h-7 w-7 rounded-md bg-muted` con l'icona della voce sidebar corrispondente, accanto al titolo.
+
+**File / aree toccate.**
+- `src/components/layout/AdminLayout.tsx`
+- `src/components/common/PageHeader.tsx`
+- Tutte le pagine che usano `PageHeader` (Super Admin, HR, Association) — aggiunta `icon` + `iconColor` coerenti con la sidebar.
+
+**Follow-up.** Le pagine con header custom inline (es. `AccessCodesPage`, `ExperiencesPage`, `TBFormatsPage`, `EmailSettingsPage`, `AssociationHistoryPage`, `AssociationExperiencesPage`, `HRHomePage`, `AssociationHome`) ereditano l'allineamento via `pt-3` ma non l'icona — migrare a `PageHeader` in un passaggio successivo.

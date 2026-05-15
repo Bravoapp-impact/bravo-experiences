@@ -9,6 +9,7 @@ import {
   Archive,
   ChevronDown,
   CalendarClock,
+  Star,
   type LucideIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -663,6 +664,8 @@ export default function HRTeamBuildingPage() {
       <div className="space-y-8">
         <PageHeader
           title="Team building sociali"
+          icon={Star}
+          iconColor="text-orange-500"
           actions={
             <Button size="sm" onClick={handleNewRequest}>
               <Plus className="h-4 w-4 mr-1.5" />

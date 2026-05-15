@@ -335,6 +335,8 @@ export default function HREmployeesPage() {
           <PageHeader
             title="Utenti"
             description="Monitora la partecipazione degli utenti"
+            icon={Users}
+            iconColor="text-blue-500"
           />
           <EmptyState
             icon={Users}
@@ -352,6 +354,8 @@ export default function HREmployeesPage() {
           <PageHeader
             title="Utenti"
             description={`${employees.length} utent${employees.length === 1 ? "e" : "i"} registrat${employees.length === 1 ? "o" : "i"}${noParticipationCount > 0 ? ` • ${noParticipationCount} da coinvolgere` : ""}`}
+            icon={Users}
+            iconColor="text-blue-500"
         />
 
         {/* Metrics Cards */}

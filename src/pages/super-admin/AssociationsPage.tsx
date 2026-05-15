@@ -10,6 +10,7 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
+  Heart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -374,6 +375,8 @@ export default function AssociationsPage() {
         <PageHeader
           title="Associazioni"
           description="Gestisci i partner del volontariato"
+          icon={Heart}
+          iconColor="text-rose-500"
           actions={
             <Button onClick={() => handleOpenDialog()} className="gap-2">
               <Plus className="h-4 w-4" />

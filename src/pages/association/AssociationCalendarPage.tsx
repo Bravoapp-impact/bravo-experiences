@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { CalendarDays } from "lucide-react";
 import { AssociationLayout } from "@/components/layout/AssociationLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import { CalendarHeader } from "@/components/association/calendar/CalendarHeader";
@@ -108,7 +109,7 @@ export default function AssociationCalendarPage() {
   return (
     <AssociationLayout>
       <div className="space-y-4">
-        <PageHeader title="Calendario" description="Visualizza e gestisci tutte le date programmate" />
+        <PageHeader title="Calendario" description="Visualizza e gestisci tutte le date programmate" icon={CalendarDays} iconColor="text-cyan-500" />
 
         <CalendarHeader
           currentDate={currentDate}

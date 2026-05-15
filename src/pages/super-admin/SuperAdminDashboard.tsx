@@ -7,6 +7,7 @@ import {
   Calendar,
   Clock,
   Heart,
+  Home,
   TrendingUp,
 } from "lucide-react";
 
@@ -153,6 +154,8 @@ export default function SuperAdminDashboard() {
         <PageHeader
           title="Dashboard"
           description="Panoramica globale della piattaforma Bravo!"
+          icon={Home}
+          iconColor="text-violet-500"
         />
 
         {/* Stats Grid */}

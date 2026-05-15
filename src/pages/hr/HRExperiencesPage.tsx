@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Calendar, CheckCircle2, MapPin, PackageOpen, Plus, Search, Trash2,
+  Calendar, CheckCircle2, Heart, MapPin, PackageOpen, Plus, Search, Trash2,
 } from "lucide-react";
 import { HRLayout } from "@/components/layout/HRLayout";
 import { HRExperienceMetrics } from "@/components/hr/HRExperienceMetrics";
@@ -436,7 +436,7 @@ export default function HRExperiencesPage() {
   return (
     <HRLayout>
       <div className="space-y-6">
-        <PageHeader title="Volontariato aziendale" description="Gestisci il programma e monitora l'impatto" />
+        <PageHeader title="Volontariato aziendale" description="Gestisci il programma e monitora l'impatto" icon={Heart} iconColor="text-green-500" />
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
