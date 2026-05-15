@@ -9,6 +9,7 @@ import {
   Archive,
   ChevronDown,
   CalendarClock,
+  Star,
   type LucideIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
