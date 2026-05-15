@@ -238,6 +238,12 @@ Vale per **tutta l'app autenticata** (HR, Super Admin, Association) e anche dent
 - ❌ Widget secondari di dashboard → flat
 - ❌ Contenuti dentro modali (no card annidate)
 
+**Standard tabella (riferimento: `/super-admin/associations`):**
+- nessun wrapper `<Card>` — solo `<PageSection>` o `<CrudTableCard>`
+- `<TableHeader>` con riga `bg-muted/50`
+- righe separate da `border-b border-border` (default già presente in `TableRow`)
+- opzionalmente le righe possono essere wrappate in `rounded-lg border border-border overflow-hidden` per dare un contorno discreto, ma il contenitore esterno resta piatto
+
 ```tsx
 // ✅ Corretto: lista/tabella piatta
 <PageSection title="Utenti" description="Gestione team">
