@@ -170,40 +170,39 @@ export default function EmailSettingsPage() {
           </div>
         </div>
 
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="text-base flex items-center gap-2">
+        <PageSection
+          title={
+            <span className="flex items-center gap-2">
               <Building2 className="h-5 w-5 text-bravo-purple" />
               Seleziona Azienda
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading && companies.length === 0 ? (
-              <Skeleton className="h-10 w-full" />
-            ) : (
-              <Select
-                value={selectedCompanyId}
-                onValueChange={setSelectedCompanyId}
-              >
-                <SelectTrigger className="w-full sm:w-80">
-                  <SelectValue placeholder="Seleziona un'azienda" />
-                </SelectTrigger>
-                <SelectContent>
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id}>
-                      {company.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </CardContent>
-        </Card>
+            </span>
+          }
+        >
+          {loading && companies.length === 0 ? (
+            <Skeleton className="h-10 w-full" />
+          ) : (
+            <Select
+              value={selectedCompanyId}
+              onValueChange={setSelectedCompanyId}
+            >
+              <SelectTrigger className="w-full sm:w-80">
+                <SelectValue placeholder="Seleziona un'azienda" />
+              </SelectTrigger>
+              <SelectContent>
+                {companies.map((company) => (
+                  <SelectItem key={company.id} value={company.id}>
+                    {company.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </PageSection>
 
         {selectedCompanyId && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
+          <PageSection
+            title={
+              <span className="flex items-center gap-2">
                 <Mail className="h-5 w-5 text-bravo-purple" />
                 Impostazioni Email
                 {selectedCompany && (
@@ -211,11 +210,10 @@ export default function EmailSettingsPage() {
                     {selectedCompany.name}
                   </Badge>
                 )}
-              </CardTitle>
-              <CardDescription>
-                Configura quali email inviare e quando
-              </CardDescription>
-            </CardHeader>
+              </span>
+            }
+            description="Configura quali email inviare e quando"
+          >
             <CardContent className="space-y-6">
               {loading ? (
                 <div className="space-y-4">
