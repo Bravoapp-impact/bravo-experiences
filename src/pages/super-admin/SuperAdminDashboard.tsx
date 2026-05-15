@@ -7,6 +7,7 @@ import {
   Calendar,
   Clock,
   Heart,
+  Home,
   TrendingUp,
 } from "lucide-react";
 
