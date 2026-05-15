@@ -109,7 +109,7 @@ export default function AssociationCalendarPage() {
   return (
     <AssociationLayout>
       <div className="space-y-4">
-        <PageHeader title="Calendario" description="Visualizza e gestisci tutte le date programmate" />
+        <PageHeader title="Calendario" description="Visualizza e gestisci tutte le date programmate" icon={CalendarDays} iconColor="text-cyan-500" />
 
         <CalendarHeader
           currentDate={currentDate}
