@@ -246,93 +246,77 @@ export default function HRHomePage() {
         </motion.div>
 
         {/* Widgets */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-8 pt-2 border-t border-border">
           {/* Upcoming Initiatives */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-            <Card className="border bg-card h-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-base">
-                    <Calendar className="h-4 w-4 text-primary" />
-                    Prossime iniziative
-                  </span>
-                  <Button variant="ghost" size="sm" className="text-xs text-muted-foreground gap-1" onClick={() => navigate("/hr/report")}>
-                    Vedi tutte
-                    <ArrowRight className="h-3 w-3" />
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {upcomingDates.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <CalendarX className="h-8 w-8 text-muted-foreground/40 mb-2" />
-                    <p className="text-sm text-muted-foreground">Nessuna iniziativa nei prossimi 7 giorni</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {upcomingDates.map((date) => (
-                      <div key={date.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-md border border-border/40 bg-card hover:bg-muted/30 transition-colors">
-                        <div className="flex-1 min-w-0 mb-2 sm:mb-0">
-                          <p className="text-sm font-medium text-foreground truncate">{date.experience.title}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {format(new Date(date.start_datetime), "EEE d MMM · HH:mm", { locale: it })} – {format(new Date(date.end_datetime), "HH:mm")}
-                            {date.experience.city && ` · ${date.experience.city}`}
-                          </p>
-                        </div>
-                        <Badge variant={date.confirmed_count >= date.max_participants ? "destructive" : "secondary"} className="flex items-center gap-1 text-xs shrink-0">
-                          <Users className="h-3 w-3" />
-                          {date.confirmed_count}/{date.max_participants}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
+          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-border">
+              <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
+                <Calendar className="h-4 w-4 text-primary" />
+                Prossime iniziative
+              </h2>
+              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground gap-1 h-7" onClick={() => navigate("/hr/report")}>
+                Vedi tutte
+                <ArrowRight className="h-3 w-3" />
+              </Button>
+            </div>
+            {upcomingDates.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <CalendarX className="h-8 w-8 text-muted-foreground/40 mb-2" />
+                <p className="text-sm text-muted-foreground">Nessuna iniziativa nei prossimi 7 giorni</p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-border">
+                {upcomingDates.map((date) => (
+                  <li key={date.id} className="flex flex-col sm:flex-row sm:items-center justify-between py-3 first:pt-0 last:pb-0">
+                    <div className="flex-1 min-w-0 mb-2 sm:mb-0">
+                      <p className="text-sm font-medium text-foreground truncate">{date.experience.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {format(new Date(date.start_datetime), "EEE d MMM · HH:mm", { locale: it })} – {format(new Date(date.end_datetime), "HH:mm")}
+                        {date.experience.city && ` · ${date.experience.city}`}
+                      </p>
+                    </div>
+                    <Badge variant={date.confirmed_count >= date.max_participants ? "destructive" : "secondary"} className="flex items-center gap-1 text-xs shrink-0">
+                      <Users className="h-3 w-3" />
+                      {date.confirmed_count}/{date.max_participants}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </motion.section>
 
           {/* Quick Summary */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <Card className="border bg-card h-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <BarChart3 className="h-4 w-4 text-primary" />
-                  Riepilogo rapido
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 rounded-md border border-border/40">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-blue-500/10">
-                        <Users className="h-4 w-4 text-blue-500" />
-                      </div>
-                      <span className="text-sm text-muted-foreground">Utenti</span>
-                    </div>
-                    <span className="text-lg font-bold text-foreground">{metrics.employeesCount}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-md border border-border/40">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-orange-500/10">
-                        <Clock className="h-4 w-4 text-orange-500" />
-                      </div>
-                      <span className="text-sm text-muted-foreground">Ore volontariato</span>
-                    </div>
-                    <span className="text-lg font-bold text-foreground">{metrics.totalVolunteerHours.toFixed(1)}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-md border border-border/40">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-green-500/10">
-                        <TrendingUp className="h-4 w-4 text-green-500" />
-                      </div>
-                      <span className="text-sm text-muted-foreground">Tasso partecipazione</span>
-                    </div>
-                    <span className="text-lg font-bold text-foreground">{metrics.participationRate}%</span>
-                  </div>
+          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <div className="flex items-center gap-2 pb-3 mb-3 border-b border-border">
+              <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
+                <BarChart3 className="h-4 w-4 text-primary" />
+                Riepilogo rapido
+              </h2>
+            </div>
+            <ul className="divide-y divide-border">
+              <li className="flex items-center justify-between py-3 first:pt-0">
+                <div className="flex items-center gap-3">
+                  <Users className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm text-muted-foreground">Utenti</span>
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+                <span className="text-base font-semibold text-foreground">{metrics.employeesCount}</span>
+              </li>
+              <li className="flex items-center justify-between py-3">
+                <div className="flex items-center gap-3">
+                  <Clock className="h-4 w-4 text-orange-500" />
+                  <span className="text-sm text-muted-foreground">Ore volontariato</span>
+                </div>
+                <span className="text-base font-semibold text-foreground">{metrics.totalVolunteerHours.toFixed(1)}</span>
+              </li>
+              <li className="flex items-center justify-between py-3 last:pb-0">
+                <div className="flex items-center gap-3">
+                  <TrendingUp className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-muted-foreground">Tasso partecipazione</span>
+                </div>
+                <span className="text-base font-semibold text-foreground">{metrics.participationRate}%</span>
+              </li>
+            </ul>
+          </motion.section>
         </div>
       </div>
     </HRLayout>
