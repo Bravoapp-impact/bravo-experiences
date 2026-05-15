@@ -65,14 +65,14 @@ export function TopPerformersTable({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.25 }}
     >
-      <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
+      <PageSection
+        title={
+          <span className="flex items-center gap-2">
             <Trophy className="h-4 w-4 text-primary" />
             Top Performers
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
+          </span>
+        }
+      >
           {topPerformers.length === 0 ? (
             <div className="py-8 text-center">
               <p className="text-sm text-muted-foreground">
