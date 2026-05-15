@@ -13,7 +13,7 @@ import {
   Heart,
   CalendarIcon,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import PageSection from "@/components/common/PageSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -413,62 +413,56 @@ export default function AccessCodesPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="border bg-card">
-            <CardHeader>
-              <div className="flex flex-col gap-4">
-                <CardTitle className="text-base">
-                  {filteredCodes.length} Codici
-                </CardTitle>
-                <div className="flex flex-wrap gap-3">
-                  <div className="relative flex-1 min-w-[200px]">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Cerca codice o entità..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  <Select
-                    value={entityTypeFilter}
-                    onValueChange={setEntityTypeFilter}
-                  >
-                    <SelectTrigger className="w-40 bg-background">
-                      <SelectValue placeholder="Tipo" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover">
-                      <SelectItem value="all">Tutti i tipi</SelectItem>
-                      <SelectItem value="company">Aziende</SelectItem>
-                      <SelectItem value="association">Associazioni</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={roleFilter} onValueChange={setRoleFilter}>
-                    <SelectTrigger className="w-44 bg-background">
-                      <SelectValue placeholder="Ruolo" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover">
-                      <SelectItem value="all">Tutti i ruoli</SelectItem>
-                      {ROLE_OPTIONS.map((r) => (
-                        <SelectItem key={r.value} value={r.value}>
-                          {r.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-32 bg-background">
-                      <SelectValue placeholder="Stato" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover">
-                      <SelectItem value="all">Tutti</SelectItem>
-                      <SelectItem value="active">Attivi</SelectItem>
-                      <SelectItem value="inactive">Inattivi</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          <PageSection
+            title={`${filteredCodes.length} Codici`}
+          >
+            <div className="flex flex-wrap gap-3 mb-4">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cerca codice o entità..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
               </div>
-            </CardHeader>
-            <CardContent>
+              <Select
+                value={entityTypeFilter}
+                onValueChange={setEntityTypeFilter}
+              >
+                <SelectTrigger className="w-40 bg-background">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="all">Tutti i tipi</SelectItem>
+                  <SelectItem value="company">Aziende</SelectItem>
+                  <SelectItem value="association">Associazioni</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="w-44 bg-background">
+                  <SelectValue placeholder="Ruolo" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="all">Tutti i ruoli</SelectItem>
+                  {ROLE_OPTIONS.map((r) => (
+                    <SelectItem key={r.value} value={r.value}>
+                      {r.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-32 bg-background">
+                  <SelectValue placeholder="Stato" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="all">Tutti</SelectItem>
+                  <SelectItem value="active">Attivi</SelectItem>
+                  <SelectItem value="inactive">Inattivi</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
               <div className="rounded-lg border border-border overflow-hidden overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -623,8 +617,7 @@ export default function AccessCodesPage() {
                   </TableBody>
                 </Table>
               </div>
-            </CardContent>
-          </Card>
+          </PageSection>
         </motion.div>
       </div>
 
