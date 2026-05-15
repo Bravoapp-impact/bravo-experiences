@@ -179,21 +179,23 @@ export function ExperienceDetailContent({
             </motion.div>
           )}
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            <Separator className="my-8" />
-            {relatedExperiencesSlot ?? (
-              <RelatedExperiences
-                currentExperienceId={experience.id}
-                cityId={experience.city_id ?? null}
-                companyId={relatedCompanyId}
-                cityName={experience.city_name ?? experience.city ?? null}
-              />
-            )}
-          </motion.div>
+          {showRelatedExperiences && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <Separator className="my-8" />
+              {relatedExperiencesSlot ?? (
+                <RelatedExperiences
+                  currentExperienceId={experience.id}
+                  cityId={experience.city_id ?? null}
+                  companyId={relatedCompanyId}
+                  cityName={experience.city_name ?? experience.city ?? null}
+                />
+              )}
+            </motion.div>
+          )}
         </div>
 
         {sidebarSlot}
