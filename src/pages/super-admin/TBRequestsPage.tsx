@@ -76,7 +76,7 @@ export default function TBRequestsPage() {
   return (
     <SuperAdminLayout>
       <div className="space-y-5">
-        <PageHeader title="Richieste TB" description={description} />
+        <PageHeader title="Richieste TB" description={description} icon={ClipboardList} iconColor="text-rose-500" />
 
         <div className="flex flex-wrap items-center gap-2">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
