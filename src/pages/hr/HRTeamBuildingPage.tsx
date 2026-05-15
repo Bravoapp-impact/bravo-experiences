@@ -703,7 +703,7 @@ export default function HRTeamBuildingPage() {
             count={open.length}
             iconClassName="text-amber-500"
           >
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,240px))] gap-4">
               {open.map((req, i) => (
                 <OpenRequestCard
                   key={req.id}
