@@ -40,6 +40,11 @@ interface ExperienceDetailContentProps {
    * to show "esperienze da attivare" instead of "esperienze nella tua azienda".
    */
   relatedExperiencesSlot?: ReactNode;
+  /**
+   * If false, hides the related-experiences block entirely (HR informational view).
+   * Defaults to true.
+   */
+  showRelatedExperiences?: boolean;
 }
 
 /**
