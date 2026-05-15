@@ -270,7 +270,7 @@ export default function HRExperienceDetail() {
           reviews={reviews}
           avgRating={avgRating}
           reviewCount={reviewCount}
-          relatedCompanyId={profile?.company_id ?? null}
+          showRelatedExperiences={false}
           sidebarSlot={
             <motion.div
               className="hidden lg:block w-[380px] flex-shrink-0 sticky top-24 self-start"
