@@ -111,7 +111,7 @@ export default function TBRequestsPage() {
         <PageSection>
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow>
                 <TableHead>Azienda</TableHead>
                 <TableHead>Titolo richiesta</TableHead>
                 <TableHead>Stato</TableHead>

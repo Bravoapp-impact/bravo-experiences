@@ -123,10 +123,9 @@ export default function CitiesPage() {
           onSearchChange={setSearchTerm}
           searchPlaceholder="Cerca città..."
         >
-          <div className="rounded-lg border border-border overflow-hidden">
             <Table>
               <TableHeader>
-                <tr className="bg-muted/50">
+                <tr>
                   <TableHead>Città</TableHead>
                   <TableHead>Provincia</TableHead>
                   <TableHead>Regione</TableHead>
@@ -169,7 +168,6 @@ export default function CitiesPage() {
                 )}
               </TableBody>
             </Table>
-          </div>
         </CrudTableCard>
       </div>
 

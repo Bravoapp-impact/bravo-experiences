@@ -394,10 +394,9 @@ export default function AssociationsPage() {
             searchPlaceholder="Cerca associazione..."
             filters={statusFilterSelect}
           >
-            <div className="rounded-lg border border-border overflow-hidden">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/50">
+                  <TableRow>
                     <TableHead className="w-12"></TableHead>
                     <TableHead>Associazione</TableHead>
                     <TableHead>Contatto</TableHead>
@@ -579,7 +578,6 @@ export default function AssociationsPage() {
                   )}
                 </TableBody>
               </Table>
-            </div>
           </CrudTableCard>
         </motion.div>
       </div>
