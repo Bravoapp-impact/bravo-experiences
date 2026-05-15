@@ -25,7 +25,7 @@ export function PageHeader({
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 min-h-[44px] pb-2 border-b border-border/60",
+        "relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 min-h-[44px] pb-3 after:absolute after:bottom-0 after:left-[-1rem] after:right-[-1rem] sm:after:left-[-1.5rem] sm:after:right-[-1.5rem] lg:after:left-[-2rem] lg:after:right-[-2rem] after:h-px after:bg-border/60",
         className,
       )}
     >
