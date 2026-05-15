@@ -195,9 +195,6 @@ const App = () => (
               <Route path="fatturazione" element={<SettingsDisabled />} />
               <Route path="volontariato" element={<SettingsVolunteering />} />
               <Route path="team-building" element={<SettingsDisabled />} />
-              <Route path="formazione" element={<SettingsDisabled />} />
-              <Route path="negozio" element={<SettingsDisabled />} />
-              <Route path="convenzioni" element={<SettingsDisabled />} />
             </Route>
             <Route
               path="/hr/team-building"
