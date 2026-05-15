@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Search, User, Building2, AlertTriangle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -367,117 +367,116 @@ export default function UsersPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="border bg-card">
-            <CardHeader>
-              <CardTitle className="text-base">{users.length} Utenti</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Filters */}
-              <div className="flex flex-col sm:flex-row gap-3 mb-6">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Cerca per nome o email..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+          <section className="space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <h3 className="text-base font-semibold text-foreground">{users.length} Utenti</h3>
+            </div>
 
-                <Select value={roleFilter} onValueChange={setRoleFilter}>
-                  <SelectTrigger className="w-full sm:w-40 bg-background">
-                    <SelectValue placeholder="Ruolo" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover">
-                    <SelectItem value="all">Tutti i ruoli</SelectItem>
-                    <SelectItem value="employee">Dipendente</SelectItem>
-                    <SelectItem value="hr_admin">HR Admin</SelectItem>
-                    <SelectItem value="association_admin">Admin Associazione</SelectItem>
-                    <SelectItem value="super_admin">Super Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={companyFilter} onValueChange={setCompanyFilter}>
-                  <SelectTrigger className="w-full sm:w-48 bg-background">
-                    <SelectValue placeholder="Azienda" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover">
-                    <SelectItem value="all">Tutte le aziende</SelectItem>
-                    {companies.map((company) => (
-                      <SelectItem key={company.id} value={company.id}>
-                        {company.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cerca per nome o email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
               </div>
 
-              {/* Table */}
-              <div className="rounded-lg border border-border overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <tr className="bg-muted/50">
-                      <TableHead>Utente</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Ruolo</TableHead>
-                      <TableHead>Azienda/Associazione</TableHead>
-                      <TableHead>Registrato il</TableHead>
-                      <TableHead className="text-right">Azioni</TableHead>
-                    </tr>
-                  </TableHeader>
-                  <TableBody>
-                    {loading ? (
-                      <TableLoadingRow colSpan={6} />
-                    ) : filteredUsers.length === 0 ? (
-                      <TableEmptyRow
-                        colSpan={6}
-                        icon={User}
-                        message="Nessun utente trovato"
-                        description="Non ci sono utenti che corrispondono ai filtri."
-                      />
-                    ) : (
-                      filteredUsers.map((user, index) => (
-                        <CrudTableRow key={user.id} index={index}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-full bg-bravo-purple/10 flex items-center justify-center">
-                                <User className="h-4 w-4 text-bravo-purple" />
-                              </div>
-                              <span className="font-medium">
-                                {user.first_name || user.last_name
-                                  ? `${user.first_name || ""} ${user.last_name || ""}`.trim()
-                                  : "—"}
-                              </span>
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="w-full sm:w-40 bg-background">
+                  <SelectValue placeholder="Ruolo" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="all">Tutti i ruoli</SelectItem>
+                  <SelectItem value="employee">Dipendente</SelectItem>
+                  <SelectItem value="hr_admin">HR Admin</SelectItem>
+                  <SelectItem value="association_admin">Admin Associazione</SelectItem>
+                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={companyFilter} onValueChange={setCompanyFilter}>
+                <SelectTrigger className="w-full sm:w-48 bg-background">
+                  <SelectValue placeholder="Azienda" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="all">Tutte le aziende</SelectItem>
+                  {companies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <tr className="border-b border-border">
+                    <TableHead>Utente</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Ruolo</TableHead>
+                    <TableHead>Azienda/Associazione</TableHead>
+                    <TableHead>Registrato il</TableHead>
+                    <TableHead className="text-right">Azioni</TableHead>
+                  </tr>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableLoadingRow colSpan={6} />
+                  ) : filteredUsers.length === 0 ? (
+                    <TableEmptyRow
+                      colSpan={6}
+                      icon={User}
+                      message="Nessun utente trovato"
+                      description="Non ci sono utenti che corrispondono ai filtri."
+                    />
+                  ) : (
+                    filteredUsers.map((user, index) => (
+                      <CrudTableRow key={user.id} index={index}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-bravo-purple/10 flex items-center justify-center">
+                              <User className="h-4 w-4 text-bravo-purple" />
                             </div>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {user.email}
-                          </TableCell>
-                          <TableCell>{getRoleBadge(user.role)}</TableCell>
-                          <TableCell>{getEntityDisplay(user)}</TableCell>
-                          <TableCell>
-                            {format(new Date(user.created_at), "dd MMM yyyy", {
-                              locale: it,
-                            })}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <CrudTableActions
-                              onEdit={() => handleOpenEdit(user)}
-                              onDelete={() => handleOpenDelete(user)}
-                            />
-                          </TableCell>
-                        </CrudTableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+                            <span className="font-medium">
+                              {user.first_name || user.last_name
+                                ? `${user.first_name || ""} ${user.last_name || ""}`.trim()
+                                : "—"}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {user.email}
+                        </TableCell>
+                        <TableCell>{getRoleBadge(user.role)}</TableCell>
+                        <TableCell>{getEntityDisplay(user)}</TableCell>
+                        <TableCell>
+                          {format(new Date(user.created_at), "dd MMM yyyy", {
+                            locale: it,
+                          })}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <CrudTableActions
+                            onEdit={() => handleOpenEdit(user)}
+                            onDelete={() => handleOpenDelete(user)}
+                          />
+                        </TableCell>
+                      </CrudTableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
 
-              <p className="text-xs text-muted-foreground mt-3">
-                Mostrando {filteredUsers.length} di {users.length} utenti
-              </p>
-            </CardContent>
-          </Card>
+            <p className="text-xs text-muted-foreground">
+              Mostrando {filteredUsers.length} di {users.length} utenti
+            </p>
+          </section>
         </motion.div>
       </div>
 

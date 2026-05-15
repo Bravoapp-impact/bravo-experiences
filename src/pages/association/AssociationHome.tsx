@@ -17,7 +17,7 @@ import {
   BarChart3,
   CalendarDays,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -257,125 +257,113 @@ export default function AssociationHome() {
         </motion.div>
 
         {/* Widgets */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-8 pt-2 border-t border-border">
           {/* Upcoming Activities */}
-          <motion.div
+          <motion.section
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
           >
-            <Card className="border bg-card h-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-base">
-                    <Calendar className="h-4 w-4 text-primary" />
-                    Prossime attività
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs text-muted-foreground gap-1"
-                    onClick={() => navigate("/association/calendar")}
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-border">
+              <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
+                <Calendar className="h-4 w-4 text-primary" />
+                Prossime attività
+              </h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground gap-1 h-7"
+                onClick={() => navigate("/association/calendar")}
+              >
+                Vedi tutte
+                <ArrowRight className="h-3 w-3" />
+              </Button>
+            </div>
+            {upcomingDates.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <CalendarX className="h-8 w-8 text-muted-foreground/40 mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  Nessuna attività nei prossimi 7 giorni
+                </p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-border">
+                {upcomingDates.map((date) => (
+                  <li
+                    key={date.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between py-3 first:pt-0 last:pb-0"
                   >
-                    Vedi tutte
-                    <ArrowRight className="h-3 w-3" />
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {upcomingDates.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <CalendarX className="h-8 w-8 text-muted-foreground/40 mb-2" />
-                    <p className="text-sm text-muted-foreground">
-                      Nessuna attività nei prossimi 7 giorni
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {upcomingDates.map((date) => (
-                      <div
-                        key={date.id}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-md border border-border/40 bg-card hover:bg-muted/30 transition-colors"
-                      >
-                        <div className="flex-1 min-w-0 mb-2 sm:mb-0">
-                          <p className="text-sm font-medium text-foreground truncate">
-                            {date.experience.title}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {format(
-                              new Date(date.start_datetime),
-                              "EEE d MMM · HH:mm",
-                              { locale: it }
-                            )}{" "}
-                            –{" "}
-                            {format(new Date(date.end_datetime), "HH:mm")}
-                            {date.experience.city &&
-                              ` · ${date.experience.city}`}
-                          </p>
-                        </div>
-                        <Badge
-                          variant={
-                            date.confirmed_count >= date.max_participants
-                              ? "destructive"
-                              : "secondary"
-                          }
-                          className="flex items-center gap-1 text-xs shrink-0"
-                        >
-                          <Users className="h-3 w-3" />
-                          {date.confirmed_count}/{date.max_participants}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
+                    <div className="flex-1 min-w-0 mb-2 sm:mb-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {date.experience.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {format(
+                          new Date(date.start_datetime),
+                          "EEE d MMM · HH:mm",
+                          { locale: it }
+                        )}{" "}
+                        –{" "}
+                        {format(new Date(date.end_datetime), "HH:mm")}
+                        {date.experience.city &&
+                          ` · ${date.experience.city}`}
+                      </p>
+                    </div>
+                    <Badge
+                      variant={
+                        date.confirmed_count >= date.max_participants
+                          ? "destructive"
+                          : "secondary"
+                      }
+                      className="flex items-center gap-1 text-xs shrink-0"
+                    >
+                      <Users className="h-3 w-3" />
+                      {date.confirmed_count}/{date.max_participants}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </motion.section>
 
           {/* To manage */}
-          <motion.div
+          <motion.section
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <Card className="border bg-card h-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <FileEdit className="h-4 w-4 text-primary" />
-                  Da gestire
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {drafts.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <CheckCircle2 className="h-8 w-8 text-primary/40 mb-2" />
-                    <p className="text-sm text-muted-foreground">
-                      Tutto in ordine!
+            <div className="flex items-center gap-2 pb-3 mb-3 border-b border-border">
+              <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
+                <FileEdit className="h-4 w-4 text-primary" />
+                Da gestire
+              </h2>
+            </div>
+            {drafts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <CheckCircle2 className="h-8 w-8 text-primary/40 mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  Tutto in ordine!
+                </p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-border">
+                {drafts.map((exp) => (
+                  <li
+                    key={exp.id}
+                    onClick={() => navigate("/association/experiences")}
+                    className="flex items-center justify-between py-3 first:pt-0 last:pb-0 cursor-pointer hover:bg-muted/30 -mx-2 px-2 rounded transition-colors"
+                  >
+                    <p className="text-sm font-medium text-foreground truncate flex-1 min-w-0 mr-3">
+                      {exp.title}
                     </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {drafts.map((exp) => (
-                      <div
-                        key={exp.id}
-                        onClick={() =>
-                          navigate("/association/experiences")
-                        }
-                        className="flex items-center justify-between p-3 rounded-md border border-border/40 bg-card hover:bg-muted/30 transition-colors cursor-pointer"
-                      >
-                        <p className="text-sm font-medium text-foreground truncate flex-1 min-w-0 mr-3">
-                          {exp.title}
-                        </p>
-                        <Badge variant="outline" className="text-xs shrink-0">
-                          Bozza
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
+                    <Badge variant="outline" className="text-xs shrink-0">
+                      Bozza
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </motion.section>
         </div>
       </div>
     </AssociationLayout>

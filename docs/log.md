@@ -43,6 +43,35 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-15 — UI: rimozione card-wrapper a favore di layout piatto stile Attio
+
+**Contesto.** Incongruenza visiva tra pagine "a riquadri" (HR Home, dashboard super-admin, liste con `<Card>` che wrappano una tabella) e pagine "piatte" (impostazioni profilo). Decisa una regola unica: la `<Card>` resta riservata ai blocchi che devono spiccare visivamente; tutto il resto va piatto sul background della pagina, separato da hairline e spacing.
+
+**Cosa cambia.**
+- Nuovo componente `src/components/common/PageSection.tsx` come alternativa flat a `<Card>` per liste/widget/sezioni di settings.
+- `src/components/crud/CrudTableCard.tsx` riscritto: stesso nome e stessa API, ma non renderizza più il wrapper `<Card>` — solo header con hairline + content. Propaga il layout piatto a tutte le liste super-admin (Users, Companies, Associations, Experiences, TBFormats, TBRequests, AccessCodes, AccessRequests, Cities, Categories, EmailSettings).
+- HR: `HRHomePage` (widget "Prossime iniziative" + "Riepilogo rapido"), `HREmployeesPage` (filtri + tabella utenti), `HRExperiencesPage` (filtri tab statistiche) — tutti appiattiti su background unico, divisori a linea.
+- Super Admin: `UsersPage` rifatto a mano (non passava da `CrudTableCard`); `SuperAdminDashboard` "Azioni Rapide" appiattito.
+- Association: `AssociationHome` widget appiattiti.
+- Stessa regola applicata anche al dark theme (nessuna eccezione per il canvas).
+
+**Impatto.** `UI` · `Design system`
+
+**File / aree toccate.**
+- `src/components/common/PageSection.tsx` (nuovo)
+- `src/components/crud/CrudTableCard.tsx` (riscritto, no Card wrapper)
+- `src/pages/hr/HRHomePage.tsx`, `src/pages/hr/HREmployeesPage.tsx`, `src/pages/hr/HRExperiencesPage.tsx`
+- `src/pages/super-admin/UsersPage.tsx`, `src/pages/super-admin/SuperAdminDashboard.tsx`
+- `src/pages/association/AssociationHome.tsx`
+
+**Follow-up.** Sweep successiva su:
+- HR: `HRTBRequestDetailPage`, `HRTBProposalDetailPage`, modali HR (`HRBookingsDialog`, `EmployeeParticipationsDialog`), `BookingsTable`, `TopPerformersTable`.
+- Super Admin: `TBRequestDetailPage`, `TBFormatDetailPage`, `tb-quote-editor/*`, modali (`ExperienceDateDialog`, `TBFormatEditDialog`, `VisibilityDialog`).
+- Association: `AssociationHistoryPage`, `AssociationPublicProfile`, modali condivisi (`BookingDetailModal`, `FeedbackModal`).
+- `EmployeeMetricsCards`: tenere come MetricCard (numeri hero) ma verificare coerenza wrapper.
+
+---
+
 ### 2026-05-13 — TB rollout: Step 1 + Step 2 (lista HR riprogettata)
 
 **Contesto.** Avvio dell'implementazione del nuovo modello "bacheca accumulativa" descritto in `tb-flow.md`. Si parte dagli step abilitanti: DB additivo minimo (Step 1) e riprogettazione della lista HR `/hr/team-building` (Step 2).

@@ -11,7 +11,7 @@ import { HRExperienceCard } from "@/components/hr/HRExperienceCard";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { devLog } from "@/lib/logger";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { PageHeader } from "@/components/common/PageHeader";
 import { LoadingState } from "@/components/common/LoadingState";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -550,31 +550,27 @@ export default function HRExperiencesPage() {
                   averageFillRate={statsMetrics.averageFillRate}
                 />
 
-                <Card className="border bg-card">
-                  <CardContent className="p-4 sm:p-6">
-                    <HRExperienceFilters
-                      searchTerm={statsSearch}
-                      onSearchChange={setStatsSearch}
-                      categoryFilter={statsCategoryFilter}
-                      onCategoryChange={setStatsCategoryFilter}
-                      cityFilter={statsCityFilter}
-                      onCityChange={setStatsCityFilter}
-                      showPastEvents={showPastEvents}
-                      onShowPastEventsChange={setShowPastEvents}
-                      categories={categories}
-                      cities={cities}
-                      resultCount={filteredStats.length}
-                    />
-                  </CardContent>
-                </Card>
+                <div className="pt-2 border-t border-border">
+                  <HRExperienceFilters
+                    searchTerm={statsSearch}
+                    onSearchChange={setStatsSearch}
+                    categoryFilter={statsCategoryFilter}
+                    onCategoryChange={setStatsCategoryFilter}
+                    cityFilter={statsCityFilter}
+                    onCityChange={setStatsCityFilter}
+                    showPastEvents={showPastEvents}
+                    onShowPastEventsChange={setShowPastEvents}
+                    categories={categories}
+                    cities={cities}
+                    resultCount={filteredStats.length}
+                  />
+                </div>
 
                 <div className="space-y-4">
                   {filteredStats.length === 0 ? (
-                    <Card className="border-border/50 bg-card/80">
-                      <CardContent className="py-12 text-center">
-                        <p className="text-muted-foreground">Nessuna esperienza corrisponde ai filtri selezionati</p>
-                      </CardContent>
-                    </Card>
+                    <div className="py-12 text-center">
+                      <p className="text-muted-foreground">Nessuna esperienza corrisponde ai filtri selezionati</p>
+                    </div>
                   ) : (
                     filteredStats.map((experience, index) => (
                       <motion.div key={experience.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>

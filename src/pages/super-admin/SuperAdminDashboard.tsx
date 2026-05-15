@@ -9,7 +9,7 @@ import {
   Heart,
   TrendingUp,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { SuperAdminLayout } from "@/components/layout/SuperAdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { devLog } from "@/lib/logger";
@@ -177,43 +177,39 @@ export default function SuperAdminDashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <Card className="border bg-card">
-            <CardHeader>
-              <CardTitle>Azioni Rapide</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Link
-                  to="/super-admin/companies"
-                  className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                >
-                  <Building2 className="h-5 w-5 text-primary" />
-                  <span className="font-medium">Gestisci Aziende</span>
-                </Link>
-                <Link
-                  to="/super-admin/experiences"
-                  className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                >
-                  <Calendar className="h-5 w-5 text-primary" />
-                  <span className="font-medium">Gestisci Esperienze</span>
-                </Link>
-                <Link
-                  to="/super-admin/assignments"
-                  className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                >
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  <span className="font-medium">Assegna Esperienze</span>
-                </Link>
-                <Link
-                  to="/super-admin/users"
-                  className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                >
-                  <Users className="h-5 w-5 text-primary" />
-                  <span className="font-medium">Visualizza Utenti</span>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+          <section>
+            <h2 className="text-base font-semibold text-foreground pb-3 mb-4 border-b border-border">Azioni Rapide</h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Link
+                to="/super-admin/companies"
+                className="flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+              >
+                <Building2 className="h-5 w-5 text-primary" />
+                <span className="font-medium text-sm">Gestisci Aziende</span>
+              </Link>
+              <Link
+                to="/super-admin/experiences"
+                className="flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+              >
+                <Calendar className="h-5 w-5 text-primary" />
+                <span className="font-medium text-sm">Gestisci Esperienze</span>
+              </Link>
+              <Link
+                to="/super-admin/assignments"
+                className="flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+              >
+                <TrendingUp className="h-5 w-5 text-primary" />
+                <span className="font-medium text-sm">Assegna Esperienze</span>
+              </Link>
+              <Link
+                to="/super-admin/users"
+                className="flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+              >
+                <Users className="h-5 w-5 text-primary" />
+                <span className="font-medium text-sm">Visualizza Utenti</span>
+              </Link>
+            </div>
+          </section>
         </motion.div>
       </div>
     </SuperAdminLayout>
