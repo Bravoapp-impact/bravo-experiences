@@ -463,10 +463,9 @@ export default function AccessCodesPage() {
                 </SelectContent>
               </Select>
             </div>
-              <div className="rounded-lg border border-border overflow-hidden overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-muted/50">
+                    <TableRow>
                       <TableHead>Codice</TableHead>
                       <TableHead>Entità</TableHead>
                       <TableHead>Ruolo</TableHead>
@@ -616,7 +615,6 @@ export default function AccessCodesPage() {
                     )}
                   </TableBody>
                 </Table>
-              </div>
           </PageSection>
         </motion.div>
       </div>

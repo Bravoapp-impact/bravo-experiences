@@ -319,10 +319,9 @@ export default function CompaniesPage() {
             onSearchChange={setSearchTerm}
             searchPlaceholder="Cerca azienda..."
           >
-            <div className="rounded-lg border border-border overflow-hidden">
               <Table>
                 <TableHeader>
-                  <tr className="bg-muted/50">
+                  <tr>
                     <TableHead>Azienda</TableHead>
                     <TableHead>Codici Accesso</TableHead>
                     <TableHead>Utenti</TableHead>
@@ -392,7 +391,6 @@ export default function CompaniesPage() {
                   )}
                 </TableBody>
               </Table>
-            </div>
           </CrudTableCard>
         </motion.div>
       </div>

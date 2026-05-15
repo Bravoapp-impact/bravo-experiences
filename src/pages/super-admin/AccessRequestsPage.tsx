@@ -203,7 +203,6 @@ export default function AccessRequestsPage() {
         </div>
 
         {/* Table */}
-        <div className="rounded-lg border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
@@ -268,7 +267,6 @@ export default function AccessRequestsPage() {
               )}
             </TableBody>
           </Table>
-        </div>
       </div>
 
       {/* Detail Dialog */}

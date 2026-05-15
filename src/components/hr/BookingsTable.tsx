@@ -170,10 +170,9 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
         </div>
 
         {/* Table */}
-        <div className="rounded-lg border border-border overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow>
                 <TableHead>Utente</TableHead>
                 <TableHead>Esperienza</TableHead>
                 <TableHead>Data</TableHead>
@@ -224,7 +223,6 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
               )}
             </TableBody>
           </Table>
-        </div>
 
         <p className="text-xs text-muted-foreground mt-3">
           Mostrando {filteredBookings.length} di {bookings.length} prenotazioni

@@ -538,10 +538,9 @@ export default function ExperiencesPage() {
                   </div>
                 }
               >
-                  <div className="rounded-lg border border-border overflow-hidden">
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-muted/50">
+                        <TableRow>
                           <TableHead className="w-12"></TableHead>
                           <TableHead>Esperienza</TableHead>
                           <TableHead>Città</TableHead>
@@ -792,7 +791,6 @@ export default function ExperiencesPage() {
                         )}
                       </TableBody>
                     </Table>
-                  </div>
               </PageSection>
             </motion.div>
       </div>

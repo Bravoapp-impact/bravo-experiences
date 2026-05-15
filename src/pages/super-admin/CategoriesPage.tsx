@@ -138,10 +138,9 @@ export default function CategoriesPage() {
           onSearchChange={setSearchTerm}
           searchPlaceholder="Cerca categoria..."
         >
-          <div className="rounded-lg border border-border overflow-hidden">
             <Table>
               <TableHeader>
-                <tr className="bg-muted/50">
+                <tr>
                   <TableHead>Categoria</TableHead>
                   <TableHead>Descrizione</TableHead>
                   <TableHead>SDG Default</TableHead>
@@ -201,7 +200,6 @@ export default function CategoriesPage() {
                 )}
               </TableBody>
             </Table>
-          </div>
         </CrudTableCard>
       </div>
 

@@ -290,10 +290,9 @@ export default function TBFormatsPage() {
               </div>
             }
           >
-              <div className="rounded-lg border border-border overflow-hidden">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-muted/50">
+                    <TableRow>
                       <TableHead>Format</TableHead>
                       <TableHead>Categoria</TableHead>
                       
@@ -395,7 +394,6 @@ export default function TBFormatsPage() {
                     )}
                   </TableBody>
                 </Table>
-              </div>
           </PageSection>
         </motion.div>
       </div>
