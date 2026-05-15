@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2 } from "lucide-react";
+import { AppBootSkeleton } from "@/components/common/skeletons/AppBootSkeleton";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -11,14 +11,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const location = useLocation();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Caricamento...</p>
-        </div>
-      </div>
-    );
+    return <AppBootSkeleton role="employee" />;
   }
 
   if (!user) {

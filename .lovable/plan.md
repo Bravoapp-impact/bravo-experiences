@@ -1,43 +1,86 @@
+# Eliminare lo sfarfallio: skeleton al posto degli spinner di pagina
 
-# Fix invio reminder + URL email centralizzato
+## Diagnosi del problema
+
+Lo "sfarfallio" che vedi NON è causato da animazioni di entrata (fade-in/scale) — non ce ne sono nell'app. Le cause reali sono **due livelli di spinner che si alternano**:
+
+1. **Protected routes** (`ProtectedRoute`, `ProtectedHRRoute`, `ProtectedSuperAdminRoute`, `ProtectedAssociationRoute`): mentre `useAuth` controlla la sessione, mostrano uno spinner centrato a tutto schermo → la pagina sparisce.
+2. **Pagine** che, una volta dentro, mostrano un **secondo** spinner generico (`LoadingState` o `Loader2` inline) finché i dati non arrivano → un secondo "lampo" prima del contenuto.
+
+Risultato: sullo schermo vedi sequenza `spinner → spinner → contenuto`, da cui la sensazione di sfarfallio. Inoltre lo spinner non comunica la struttura della pagina, quindi sembra "lento" anche quando dura poco.
 
 ## Obiettivo
-1. Risolvere il bug del cron `send-booking-reminders-hourly` (0% success → 401).
-2. Introdurre una env var unica `APP_BASE_URL` per tutti i link nelle email, così cambi futuri di dominio si fanno in un punto solo.
 
-## Modifiche
+Sostituire gli spinner di **caricamento pagina/sezione** con **skeleton specifici** che riproducono il layout sottostante (header, card, tabella, ecc.). Mantenere gli spinner solo dove sono corretti: pulsanti in submit, upload avatar, dialog di conferma.
 
-### 1. `supabase/functions/send-booking-reminders/index.ts`
-Allineare il pattern di auth a quello di `send-feedback-request`:
-- Se l'`Authorization` header contiene il `SERVICE_ROLE_KEY` → bypass `auth.getUser()` e check `super_admin` (chiamata da cron).
-- Altrimenti, mantenere il flusso attuale (`auth.getUser()` + check `super_admin`) per le invocazioni manuali.
+## Cosa cambiare
 
-### 2. Riscrivere il cron `send-booking-reminders-hourly`
-- `cron.unschedule('send-booking-reminders-hourly')`
-- Ricreare il job leggendo il service role key dal Vault (`email_queue_service_role_key`, già usato da `process-email-queue`) invece dell'anon key hardcoded.
-- Mantenere la cadenza oraria attuale.
+### 1. Loader globale unificato (route guards)
+- File: `ProtectedRoute.tsx`, `ProtectedHRRoute.tsx`, `ProtectedSuperAdminRoute.tsx`, `ProtectedAssociationRoute.tsx`.
+- Nuovo componente `AppBootSkeleton` che mostra uno scheletro neutro a tutto schermo (sidebar/topbar grigia + area contenuto con blocchi) **senza animate-spin**. Usa `Skeleton` shadcn (animate-pulse, già morbido).
+- Stesso skeleton in `ProtectedRoute` (employee mobile): mostra scheletro della bottom-nav + lista card.
 
-### 3. Aggiungere secret runtime `APP_BASE_URL`
-Tramite `add_secret`. Valore: `https://experiences.bravoapp.it`.
-Usato dalle wrapper edge function come unica fonte di verità per i link in-app.
+### 2. Skeleton per pagina (sostituiscono `LoadingState` / `Loader2` inline)
 
-### 4. Aggiornare le wrapper edge function per leggere `APP_BASE_URL`
-- `send-feedback-request/index.ts`: rimuovere l'URL hardcoded, leggere da `Deno.env.get("APP_BASE_URL")` con fallback `https://experiences.bravoapp.it`, passare `feedbackUrl: ${APP_BASE_URL}/app/bookings` in `templateData`.
-- `send-booking-confirmation/index.ts`: se in futuro servirà passare un link app, già pronto. Per ora aggiungere solo la lettura dell'env var (no-op sui template attuali che non hanno link in-app).
-- `send-booking-reminders/index.ts`: idem (no-op: il template reminder non ha link in-app oggi).
+Per ogni pagina che oggi mostra spinner a tutto schermo, creo uno skeleton coerente con il suo layout:
 
-I template (`feedback-request.tsx`) mantengono il default hardcoded come fallback per la preview dashboard — nessuna modifica al rendering visivo.
+- **HR area** (`HRHomePage`, `HRDashboard`, `HRExperiencesPage`, `HRExperienceDetail`, `HREmployeesPage`, `HRTeamBuildingPage`, `HRTBRequestDetailPage`, `HRTBProposalDetailPage`, `HRNewTBRequestPage`, `HRPlaceholderPage`, settings pages): `HRPageSkeleton` con sidebar + topbar + area centrale (titolo + 3-4 blocchi/tabella).
+- **Super Admin** (`SuperAdminDashboard`, `CompaniesPage`, `ExperiencesPage`, `UsersPage`, `AssociationsPage`, `CitiesPage`, `CategoriesPage`, `EmailSettingsPage`, `AccessCodesPage`, `AccessRequestsPage`, `TBFormatsPage`, `TBFormatDetailPage`, `TBRequestsPage`, `TBRequestDetailPage`, settings): `AdminTableSkeleton` (header pagina + righe tabella) e `AdminDetailSkeleton` (titolo + 2 colonne).
+- **Association** (`AssociationHome`, `AssociationExperiencesPage`, `AssociationExperienceDetail`, `AssociationHistoryPage`, `AssociationProfilePage`, `AssociationCalendarPage`, settings): skeleton analogo Admin.
+- **Employee mobile** (`MyBookings`, `Profile`, `Impact`): skeleton dedicato per ciascuna (card prenotazione, profilo, stat tiles). `Experiences` e `ExperienceDetail` hanno già skeleton — li allineo allo stesso stile.
 
-### 5. Deploy
-Deployare le 3 wrapper modificate:
-`send-feedback-request`, `send-booking-reminders`, `send-booking-confirmation`.
+### 3. Eliminazione del doppio loader
+Quando la guard mostra `AppBootSkeleton` di shell e la pagina figlia ha il proprio skeleton dei dati, evito la transizione `spinner → spinner` mostrando direttamente lo skeleton della pagina dentro la shell quando l'auth è risolto ma i dati no. Pratica: la guard finisce → la pagina parte già con lo skeleton del suo layout (no LoadingState centrale).
 
-## Cosa NON tocco
-- Template React Email (visual invariato).
-- `email_logs` / idempotency.
-- `process-email-queue` e infrastruttura coda.
-- `auth-email-hook` (già aggiornato in turno precedente).
+### 4. Cosa NON tocco (spinner legittimi)
+Resta `Loader2 animate-spin` dentro:
+- Pulsanti submit (Login, Register, ForgotPassword, ResetPassword, ProfileEditForm, ChangePasswordCard, ExperienceForm, ManageDatesDialog, AccessRequestModal, EnrollMFA, ChallengeMFA, StepWizard, TBFormatEditDialog, HRNewTBRequestPage submit).
+- Upload immagini (ProfileAvatarUpload, AvatarUploadBlock, LogoUpload).
+- AuthCallback (transizione brevissima di redirect — accettabile).
+- Riga tabella in fetch incrementale (`TableLoadingRow`, `DatesSidebar`, `MobileDateDrawer`, dialog dipendenti, EmailSettings test invio).
+
+Sono feedback di azione utente, non caricamento di pagina: non causano sfarfallio.
+
+## Dettagli tecnici
+
+### Nuovi file
+```text
+src/components/common/skeletons/
+  AppBootSkeleton.tsx          // shell neutra (employee mobile / desktop)
+  HRPageSkeleton.tsx           // sidebar + header + content blocks
+  AdminTableSkeleton.tsx       // header + filtri + righe tabella
+  AdminDetailSkeleton.tsx      // header + 2 colonne (sidebar info + main)
+  AssociationPageSkeleton.tsx  // analogo HR ma con palette association
+  EmployeeListSkeleton.tsx     // bottom-nav + lista card mobile
+  EmployeeDetailSkeleton.tsx   // hero + descrizione + sidebar date
+```
+Tutti basati su `<Skeleton>` shadcn (già `animate-pulse rounded-md bg-muted`). Nessuna animazione aggiuntiva.
+
+### Pattern di sostituzione
+
+Prima:
+```tsx
+if (loading) return <LoadingState />;
+```
+Dopo:
+```tsx
+if (loading) return <HRPageSkeleton variant="table" />;
+```
+
+Per route guards:
+```tsx
+if (loading) return <AppBootSkeleton role="hr" />;
+```
+
+`LoadingState` resta nel codice ma deprecato (uso interno solo per pulsanti/dialog se serve testo "Caricamento...").
+
+### File toccati (lista completa)
+Route guards (4) + ~30 pagine elencate sopra. Solo sostituzione del blocco `if (loading)` — nessun cambio a logica dati, query, RLS, edge functions.
 
 ## Verifica
-- Trigger manuale di `send-booking-reminders-hourly` via SQL o attesa del prossimo run, controllo log edge function (atteso: 200, non più 401).
-- Trigger di `send-feedback-request` di test, verifica che il link nell'email punti a `https://experiences.bravoapp.it/app/bookings` letto dall'env var.
+- Navigare tra `/login → /hr → /hr/users → /hr/team-building` osservando che tra una pagina e l'altra appaia lo skeleton del layout corretto, senza lampi bianchi né doppi spinner.
+- Stesso test su mobile per `/app/experiences`, `/app/bookings`, `/app/profile`.
+- Verifica visiva su super-admin e association.
+
+## Fuori scope
+- Ottimizzazioni di performance reali (cache react-query, prefetch, code-splitting). Se vuoi le affrontiamo in un secondo step dedicato — questo intervento è puramente percettivo.

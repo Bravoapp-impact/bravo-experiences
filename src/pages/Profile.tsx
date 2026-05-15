@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LogOut, Building2, Mail, Loader2, Clock } from "lucide-react";
+import { LogOut, Building2, Mail, Clock } from "lucide-react";
+import { AppBootSkeleton } from "@/components/common/skeletons/AppBootSkeleton";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,11 +38,7 @@ export default function Profile() {
 
   // Show loading while checking role or redirecting
   if (loading || (profile?.role && profile.role !== "employee")) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <AppBootSkeleton role="employee" />;
   }
 
   const handleSignOut = async () => {

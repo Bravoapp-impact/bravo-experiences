@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Heart, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { HRLayout } from "@/components/layout/HRLayout";
-import { LoadingState } from "@/components/common/LoadingState";
+import { PageSkeleton } from "@/components/common/skeletons/PageSkeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -121,7 +121,7 @@ export default function HRTBProposalDetailPage() {
   if (isLoading) {
     return (
       <HRLayout>
-        <LoadingState />
+        <PageSkeleton variant="detail" />
       </HRLayout>
     );
   }

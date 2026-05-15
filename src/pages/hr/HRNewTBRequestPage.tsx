@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { PageSkeleton } from "@/components/common/skeletons/PageSkeleton";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -733,9 +734,7 @@ export default function HRNewTBRequestPage() {
   if (bootstrapping) {
     return (
       <HRLayout>
-        <div className="flex items-center justify-center py-20 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" />
-        </div>
+        <PageSkeleton variant="form" />
       </HRLayout>
     );
   }

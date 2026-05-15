@@ -8,6 +8,7 @@ import {
   Loader2, MapPin, PackageOpen, Plus, Pencil, Trash2, FileText,
   CheckCircle2, Archive, ChevronRight, Calendar, Send, Copy, MoreHorizontal,
 } from "lucide-react";
+import { PageSkeleton } from "@/components/common/skeletons/PageSkeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BravoCard, BravoCardMetaItem } from "@/components/common/BravoCard";
@@ -305,12 +306,7 @@ export default function AssociationExperiencesPage() {
   if (loading) {
     return (
       <AssociationLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Caricamento esperienze...</p>
-          </div>
-        </div>
+        <PageSkeleton variant="grid" />
       </AssociationLayout>
     );
   }
