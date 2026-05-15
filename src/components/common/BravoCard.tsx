@@ -65,7 +65,7 @@ export function BravoCard({
           {imageOverlay}
         </div>
         <div className="pt-2 space-y-1">
-          <h3 className="text-[15px] font-medium text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+          <h3 className="text-[13px] sm:text-[15px] font-medium text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
             {title}
           </h3>
           {subtitleSlot}
