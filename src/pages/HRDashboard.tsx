@@ -223,6 +223,8 @@ export default function HRDashboard() {
         <PageHeader
           title="Dashboard"
           description="Panoramica dell'impatto sociale della tua azienda"
+          icon={Home}
+          iconColor="text-violet-500"
         />
 
         {/* Metrics Cards - 5 cards */}
