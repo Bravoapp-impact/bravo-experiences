@@ -172,6 +172,8 @@ export default function AccessRequestsPage() {
         <PageHeader
           title="Richieste Accesso"
           description={`${pendingCount} richieste in attesa`}
+          icon={Inbox}
+          iconColor="text-purple-500"
         />
 
         {/* Filters */}
