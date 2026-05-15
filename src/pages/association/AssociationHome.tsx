@@ -24,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { devLog } from "@/lib/logger";
-import { LoadingState } from "@/components/common/LoadingState";
+import { PageSkeleton } from "@/components/common/skeletons/PageSkeleton";
 import { toast } from "@/hooks/use-toast";
 
 interface UpcomingDate {
@@ -161,7 +161,7 @@ export default function AssociationHome() {
   if (loading) {
     return (
       <AssociationLayout>
-        <LoadingState message="Caricamento..." />
+        <PageSkeleton variant="dashboard" />
       </AssociationLayout>
     );
   }

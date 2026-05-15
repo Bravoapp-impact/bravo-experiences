@@ -10,7 +10,7 @@ import { CalendarEvent, ViewMode } from "@/components/association/calendar/calen
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { startOfMonth, endOfMonth, addDays, subDays, format } from "date-fns";
-import { LoadingState } from "@/components/common/LoadingState";
+import { PageSkeleton } from "@/components/common/skeletons/PageSkeleton";
 import { ManageDatesDialog } from "@/components/association/ManageDatesDialog";
 import { devLog } from "@/lib/logger";
 
@@ -122,7 +122,7 @@ export default function AssociationCalendarPage() {
         />
 
         {loading ? (
-          <LoadingState />
+          <PageSkeleton variant="list" />
         ) : (
           <>
             {viewMode === "month" && (

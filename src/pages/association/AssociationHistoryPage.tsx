@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import { AssociationLayout } from "@/components/layout/AssociationLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Users, History, CalendarCheck } from "lucide-react";
+import { Users, History, CalendarCheck } from "lucide-react";
+import { PageSkeleton } from "@/components/common/skeletons/PageSkeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import PageSection from "@/components/common/PageSection";
 import { Badge } from "@/components/ui/badge";
@@ -105,12 +106,7 @@ export default function AssociationHistoryPage() {
   if (loading) {
     return (
       <AssociationLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Caricamento storico...</p>
-          </div>
-        </div>
+        <PageSkeleton variant="table" />
       </AssociationLayout>
     );
   }

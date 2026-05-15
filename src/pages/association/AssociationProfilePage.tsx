@@ -1,6 +1,6 @@
 import { AssociationLayout } from "@/components/layout/AssociationLayout";
 import { useAuth } from "@/hooks/useAuth";
-import { LoadingState } from "@/components/common/LoadingState";
+import { PageSkeleton } from "@/components/common/skeletons/PageSkeleton";
 import AssociationPublicProfile from "@/components/association/AssociationPublicProfile";
 
 export default function AssociationProfilePage() {
@@ -9,7 +9,7 @@ export default function AssociationProfilePage() {
   if (loading || !profile?.association_id) {
     return (
       <AssociationLayout>
-        <LoadingState message="Caricamento profilo..." />
+        <PageSkeleton variant="detail" />
       </AssociationLayout>
     );
   }
