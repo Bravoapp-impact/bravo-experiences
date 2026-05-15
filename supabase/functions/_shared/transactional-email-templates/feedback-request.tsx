@@ -71,7 +71,7 @@ export const template = {
     firstName: 'Giulia',
     experienceTitle: 'Pulizia parco urbano',
     associationName: 'Associazione Verde',
-    feedbackUrl: 'https://bravo-experiences.lovable.app/app/bookings',
+    feedbackUrl: 'https://experiences.bravoapp.it/app/bookings',
   },
 } satisfies TemplateEntry
 
