@@ -4,7 +4,8 @@ import { AssociationLayout } from "@/components/layout/AssociationLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Users, History, CalendarCheck } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import PageSection from "@/components/common/PageSection";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -169,14 +170,14 @@ export default function AssociationHistoryPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <PageSection
+            title={
+              <span className="flex items-center gap-2">
                 <History className="h-5 w-5 text-primary" />
                 Date Passate
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+              </span>
+            }
+          >
               {pastDates.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <History className="h-12 w-12 text-muted-foreground/50 mb-4" />
@@ -223,8 +224,7 @@ export default function AssociationHistoryPage() {
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+          </PageSection>
         </motion.div>
       </div>
     </AssociationLayout>
