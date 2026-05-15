@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Home } from "lucide-react";
 import { HRLayout } from "@/components/layout/HRLayout";
 import { MetricsCards } from "@/components/hr/MetricsCards";
 import { SDGImpactGrid } from "@/components/hr/SDGImpactGrid";
