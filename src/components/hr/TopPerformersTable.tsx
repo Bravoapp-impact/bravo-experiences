@@ -142,8 +142,7 @@ export function TopPerformersTable({
               </div>
             </>
           )}
-        </CardContent>
-      </Card>
+      </PageSection>
     </motion.div>
   );
 }
