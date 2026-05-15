@@ -179,13 +179,13 @@ export function AdminLayout({
         )}
       >
         {/* Unified header with dropdown */}
-        <div className="px-3 pt-3 pb-3 border-b border-border/60">
+        <div className="px-3 pt-3 pb-2">
           <div className="flex items-center">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="w-full justify-start gap-2 h-11 py-0 px-2"
+                  className="w-full justify-start gap-2 h-auto py-2 px-2"
                 >
                   <Avatar className="h-7 w-7 shrink-0">
                     <AvatarImage src={entityLogoUrl} alt={entityName} />
