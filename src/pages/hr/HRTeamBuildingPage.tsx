@@ -681,7 +681,7 @@ export default function HRTeamBuildingPage() {
             count={scheduled.length}
             iconClassName="text-emerald-500"
           >
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,240px))] gap-4">
               {scheduled.map((req, i) => (
                 <ScheduledEventCard
                   key={req.id}
@@ -703,7 +703,7 @@ export default function HRTeamBuildingPage() {
             count={open.length}
             iconClassName="text-amber-500"
           >
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,240px))] gap-4">
               {open.map((req, i) => (
                 <OpenRequestCard
                   key={req.id}
@@ -734,7 +734,7 @@ export default function HRTeamBuildingPage() {
               </div>
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mt-4">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,240px))] gap-4 mt-4">
                 {archived.map((req, i) => (
                   <ArchivedCard
                     key={req.id}
