@@ -3,13 +3,7 @@ import { SuperAdminLayout } from "@/components/layout/SuperAdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { devLog } from "@/lib/logger";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import PageSection from "@/components/common/PageSection";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -176,40 +170,39 @@ export default function EmailSettingsPage() {
           </div>
         </div>
 
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="text-base flex items-center gap-2">
+        <PageSection
+          title={
+            <span className="flex items-center gap-2">
               <Building2 className="h-5 w-5 text-bravo-purple" />
               Seleziona Azienda
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading && companies.length === 0 ? (
-              <Skeleton className="h-10 w-full" />
-            ) : (
-              <Select
-                value={selectedCompanyId}
-                onValueChange={setSelectedCompanyId}
-              >
-                <SelectTrigger className="w-full sm:w-80">
-                  <SelectValue placeholder="Seleziona un'azienda" />
-                </SelectTrigger>
-                <SelectContent>
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id}>
-                      {company.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </CardContent>
-        </Card>
+            </span>
+          }
+        >
+          {loading && companies.length === 0 ? (
+            <Skeleton className="h-10 w-full" />
+          ) : (
+            <Select
+              value={selectedCompanyId}
+              onValueChange={setSelectedCompanyId}
+            >
+              <SelectTrigger className="w-full sm:w-80">
+                <SelectValue placeholder="Seleziona un'azienda" />
+              </SelectTrigger>
+              <SelectContent>
+                {companies.map((company) => (
+                  <SelectItem key={company.id} value={company.id}>
+                    {company.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </PageSection>
 
         {selectedCompanyId && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
+          <PageSection
+            title={
+              <span className="flex items-center gap-2">
                 <Mail className="h-5 w-5 text-bravo-purple" />
                 Impostazioni Email
                 {selectedCompany && (
@@ -217,12 +210,11 @@ export default function EmailSettingsPage() {
                     {selectedCompany.name}
                   </Badge>
                 )}
-              </CardTitle>
-              <CardDescription>
-                Configura quali email inviare e quando
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+              </span>
+            }
+            description="Configura quali email inviare e quando"
+          >
+            <div className="space-y-6">
               {loading ? (
                 <div className="space-y-4">
                   <Skeleton className="h-12 w-full" />
@@ -320,8 +312,8 @@ export default function EmailSettingsPage() {
                   </Button>
                 </>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </PageSection>
         )}
       </div>
     </SuperAdminLayout>

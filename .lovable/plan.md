@@ -1,92 +1,57 @@
+# Refactor tabelle "Attio-style" — sweep finale
+
 ## Obiettivo
+Tutte le tabelle e liste dell'app devono avere lo stesso look della pagina `/super-admin/associations`:
+- nessun wrapper `<Card>` attorno alla tabella
+- header tabella con `bg-muted/50`
+- righe separate da `border-b border-border` (hairline)
+- contenitore = `PageSection` (flat su page background)
 
-Eliminare l'incongruenza tra pagine "a riquadri" (es. HR Home, Super Admin Dashboard, liste con `<Card>` che wrappa una tabella) e pagine "piatte" (es. impostazioni profilo). Standard target: **layout piatto su background unico, separazioni con linee/spacing**, in stile Attio. Le `<Card>` restano un'eccezione, non la regola.
+## Risposta alla domanda "ha senso modificare un componente tabella?"
+**Sì, in parte — ma non serve creare un nuovo componente.** Il "look" è già governato da tre primitive condivise che oggi sono già allineate:
 
-## Principio guida (regola da inserire nel design system)
+- `src/components/ui/table.tsx` → `TableRow` ha già `border-b` di default ✓
+- `src/components/crud/CrudTableCard.tsx` → già refactored, **non** wrappa più in `<Card>`, ha già header con hairline ✓
+- `src/components/crud/CrudTableRow.tsx` → già `border-b` ✓
 
-Una `<Card>` si usa **solo** quando il blocco deve spiccare visivamente come oggetto a sé:
+Quindi la "vera" modifica al componente tabella **è già stata fatta** nello scorso giro. Ciò che resta è **bonificare i call-site** che ancora avvolgono manualmente la tabella in `<Card>` invece di usare `CrudTableCard` o `PageSection`.
 
-- sidebar di prenotazione su pagina dettaglio esperienza
-- card di un item dentro una griglia (es. esperienza, format TB) — il "card" è il dato stesso
-- riquadri evidenza in stati vuoti / call-to-action prominenti
+L'unica piccola aggiunta utile a livello di sistema è una convenzione esplicita nel `Table`:
+- aggiungere classe header standard `bg-muted/50` come default opzionale via prop `variant="flat"` su `TableHeader`, **oppure** (più semplice e meno invasivo) lasciare `Table` invariato e applicare `bg-muted/50` sull'unico `TableRow` dell'header — è già il pattern di `AssociationsPage` e di `CrudTableCard`. Scelgo la seconda via per non toccare le primitive shadcn.
 
-In tutti gli altri casi (tabelle, liste, form sezionati, widget di dashboard, contenuto di modali) il contenitore è **piatto sul background della pagina**, e gli elementi sono separati da:
+## Cosa cambia (call-site da bonificare)
 
-- titolo di sezione + spacing verticale generoso
-- `border-b border-border` come hairline tra righe / sotto-sezioni
-- per tabelle: nessun wrapper `rounded-lg border` attorno; solo header con `border-b` e righe con `border-b border-border/60`
+Tabelle/liste che ancora usano `<Card><CardHeader/><CardContent><Table/></CardContent></Card>`:
 
-## Inventario (output dell'analisi)
+1. `src/components/hr/BookingsTable.tsx` → rimuovere Card, usare `PageSection` (titolo "Prenotazioni recenti")
+2. `src/components/hr/TopPerformersTable.tsx` → rimuovere Card, usare `PageSection` con titolo "Top Performers"
+3. `src/components/hr/UpcomingEvents.tsx` → rimuovere Card wrapper attorno alla lista
+4. `src/pages/Impact.tsx` → tabelle/liste in card → `PageSection`
+5. `src/pages/Profile.tsx` (sezione bookings se presente) → `PageSection`
+6. `src/pages/super-admin/TBRequestsPage.tsx` → liste dentro Card → `PageSection` o `CrudTableCard`
+7. `src/pages/super-admin/AccessCodesPage.tsx` → idem
+8. `src/pages/super-admin/EmailSettingsPage.tsx` → tabelle log → `PageSection`
+9. `src/pages/super-admin/ExperiencesPage.tsx` → eventuali tabelle ancora wrappate → `PageSection`
+10. `src/pages/super-admin/TBFormatsPage.tsx` → idem
+11. `src/pages/association/AssociationHistoryPage.tsx` → tabella storico → `PageSection`
 
-Card da rimuovere/appiattire (lista non esaustiva, da consolidare in fase 1):
-
-**HR**
-
-- `HRHomePage.tsx` — Card "Prossime iniziative" e "Riepilogo rapido": diventano sezioni piatte con titolo + lista a linee
-- `HREmployeesPage.tsx` — Card filtri + Card tabella utenti: tabella diretta su background, filtri sopra senza wrapper
-- `HRExperiencesPage.tsx` — Card filtri + Card empty state: appiattire
-- `HRTBRequestDetailPage.tsx`, `HRTBProposalDetailPage.tsx` — sezioni status/brief in card → sezioni a linee
-- `HRBookingsDialog`, `EmployeeParticipationsDialog`, `BookingsTable` — tabelle senza wrapper Card
-
-**Super Admin**
-
-- `SuperAdminDashboard.tsx` — Card "Azioni Rapide" + statistiche secondarie: appiattire (le metric card in alto restano, vedi sotto)
-- `UsersPage`, `CompaniesPage`, `AssociationsPage`, `ExperiencesPage`, `TBFormatsPage`, `TBRequestsPage`, `AccessCodesPage`, `AccessRequestsPage`, `CitiesPage`, `CategoriesPage`, `EmailSettingsPage` — tutte hanno `<Card>` che wrappa filtri + tabella → appiattire
-- `TBRequestDetailPage`, `TBFormatDetailPage` — sezioni in card → sezioni a linee
-- `tb-quote-editor/QuoteEditor`, `QuoteReadOnlyView`, `QuoteHistoryAccordion`, `ClientModificationsPanel` — ridurre wrapper Card, mantenerla solo se serve a isolare il preventivo come "oggetto"
-
-**Association**
-
-- `AssociationHome`, `AssociationHistoryPage`, `AssociationExperiencesPage` (se presente la stessa logica) — stesso trattamento
-
-**Componenti condivisi**
-
-- `CrudTableCard` — diventa `CrudTableSection` (o si toglie il bordo/background mantenendo solo il padding e l'header)
-- `BookingsTable`, `TopPerformersTable`, `EmployeeMetricsCards` (parte non-metric) — togliere wrapper Card
-- `MetricCard` — **resta** (è un blocco che deve spiccare per attirare attenzione su un numero)
-
-**Modali**
-
-- `BookingDetailModal`, `FeedbackModal`, `ExperienceDateDialog`, `TBFormatEditDialog`, `VisibilityDialog`, dialog del quote editor — rimuovere card annidate dentro il `DialogContent`, usare sezioni con `border-b`
+Per ognuno: **nessuna modifica funzionale**, solo rimozione del wrapper `Card/CardHeader/CardContent` e sostituzione con `PageSection` (titolo + opzionale description). Header tabella allineato a `bg-muted/50`. Tutto il resto (logica, fetch, query, RLS, props) resta invariato.
 
 ## Cosa NON cambia
+- `MetricCard`, `EmployeeMetricsCards`, `SDGImpactGrid`, `HRExperienceCard`, `BookingCard`, sidebar prenotazione su detail page, empty states "hero", grid items → restano `<Card>` (devono spiccare, regola già codificata in `mem://style/card-vs-flat-section`).
+- Primitive `src/components/ui/table.tsx` e `src/components/ui/card.tsx` → invariate.
+- Modali di dettaglio (BookingDetailModal, FeedbackModal, ecc.) → fuori scope di questo giro (saranno il prossimo sweep).
+- Logica, query, RLS, RPC, edge function → zero modifiche.
 
-- Card "evidenza" su pagine pubbliche e employee:
-  - sidebar prenotazione su `ExperienceDetail` (DateSlotCard / DatesSidebar)
-  - card item di griglia (HRExperienceCard, ExperienceCardRich/Compact, BravoCard, TB format card)
-  - MetricCard nelle dashboard (numeri "hero")
-- Layout AdminLayout / Sidebar / header pagina
-- Logica, dati, RLS, RPC, edge functions, routing — niente di tutto questo viene toccato
-- Stile pagine auth (login/register/reset)
+## Approccio operativo
+Un solo passaggio, file per file, in ordine:
+1. HR (`BookingsTable`, `TopPerformersTable`, `UpcomingEvents`) — visibile in HR Home
+2. Super Admin (`TBRequestsPage`, `AccessCodesPage`, `EmailSettingsPage`, `ExperiencesPage`, `TBFormatsPage`)
+3. Cross-role (`Impact`, `Profile`, `AssociationHistoryPage`)
 
-## Approccio in 3 step incrementali
+Verifica visiva al termine confrontando con `/super-admin/associations`.
 
-**Step 1 — Definire il pattern e applicarlo a un'area pilota (HR)**
-
-- Aggiungere in `docs/design-system.md` la regola "Card vs sezione piatta" con esempi do/don't
-- Creare (se serve) un piccolo componente `<PageSection title description>` che renderizza titolo + spacing + `border-b` finale, da usare al posto di `<Card>` per i blocchi piatti
-- Refactor pagine HR: `HRHomePage`, `HREmployeesPage`, `HRExperiencesPage`, dettagli TB, modali HR
-- Test visivo desktop + mobile su tutte le pagine HR
-
-**Step 2 — Super Admin**
-
-- Refactor di `CrudTableCard` (rendere il bordo/background opzionale, default off) — questo propaga la modifica su quasi tutte le liste super-admin in un colpo solo
-- Refactor pagine super-admin che non passano da CrudTableCard (Dashboard, dettaglio TB, quote editor)
-- Refactor modali super-admin
-
-**Step 3 — Association**
-
-- Stesso trattamento sulle pagine association (Home, History, dettagli, modali)
-- Pulizia finale: rimuovere import `Card` non più usati, verificare che nessun `bg-card` residuo crei "isole" indesiderate
-
-## Aggiornamenti documentazione (a fine implementazione)
-
-- `docs/design-system.md` — sezione "Card vs sezione piatta"
-- `docs/log.md` — entry per ciascuno step
-- `docs/aperto.md` — eventuali pagine lasciate a card per scelta esplicita, con motivazione
-- Memoria progetto: aggiungere riga in `mem://style/component-patterns` con la nuova regola
-
-## Domande aperte (rispondibili anche dopo l'approvazione del piano)
-
-1. Vuoi che parta dall'area HR (più visibile, dove hai notato l'incongruenza) o preferisci iniziare da Super Admin (più pagine, più impatto sistemico)? -> ok
-2. Sul dark theme: la regola "no card" rischia di far perdere gerarchia perché tutto diventa stesso colore. Vuoi che mantenga `bg-card` come canvas pagina nel dark mode (pagina = card, sezioni piatte dentro), o anche in dark applichiamo lo stesso principio piatto? -> applichiamo lo stesso principio sul dark theme
+## Aggiornamenti documentazione
+- `docs/log.md`: entry "Sweep Card→PageSection per tabelle/liste"
+- `docs/aperto.md`: rimuovere voce "follow-up sweep tabelle"; aggiungere "modali da bonificare" come prossimo step
+- `docs/design-system.md`: aggiungere nota "header tabella sempre `bg-muted/50`" nella sezione Card vs sezione piatta

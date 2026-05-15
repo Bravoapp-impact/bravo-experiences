@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { Download, Search, Filter } from "lucide-react";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import PageSection from "@/components/common/PageSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -106,17 +106,16 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
   };
 
   return (
-    <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <CardTitle className="text-base">Lista Prenotazioni</CardTitle>
-          <Button onClick={exportCSV} variant="outline" size="sm" className="gap-2">
-            <Download className="h-4 w-4" />
-            Esporta CSV
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
+    <PageSection
+      title="Lista Prenotazioni"
+      actions={
+        <Button onClick={exportCSV} variant="outline" size="sm" className="gap-2">
+          <Download className="h-4 w-4" />
+          Esporta CSV
+        </Button>
+      }
+    >
+      <div>
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <div className="relative flex-1">
@@ -230,7 +229,7 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
         <p className="text-xs text-muted-foreground mt-3">
           Mostrando {filteredBookings.length} di {bookings.length} prenotazioni
         </p>
-      </CardContent>
-    </Card>
+      </div>
+    </PageSection>
   );
 }

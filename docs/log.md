@@ -43,6 +43,27 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-15 — UI: sweep finale Card→PageSection per tabelle/liste
+
+**Contesto.** Secondo passaggio del refactor stile Attio: bonifica dei call-site rimasti che ancora avvolgono tabelle e liste in `<Card><CardHeader/><CardContent/>`. Riferimento visivo: `/super-admin/associations`. Le primitive (`ui/table.tsx`, `crud/CrudTableCard.tsx`, `crud/CrudTableRow.tsx`) erano già allineate, non serviva un nuovo componente "Table".
+
+**Cosa cambia.**
+- HR: `BookingsTable`, `TopPerformersTable`, `UpcomingEvents` → `PageSection` (no Card wrapper).
+- Super Admin: `TBRequestsPage`, `TBFormatsPage`, `AccessCodesPage`, `ExperiencesPage`, `EmailSettingsPage` → `PageSection`. Header tabella allineato con `bg-muted/50`.
+- Association: `AssociationHistoryPage` → lista "Date Passate" piatta, summary cards (metriche hero) restano `<Card>` per regola.
+
+**Impatto.** `UI` · `Design system`
+
+**File / aree toccate.**
+- `src/components/hr/BookingsTable.tsx`, `src/components/hr/TopPerformersTable.tsx`, `src/components/hr/UpcomingEvents.tsx`
+- `src/pages/super-admin/{TBRequestsPage,TBFormatsPage,AccessCodesPage,ExperiencesPage,EmailSettingsPage}.tsx`
+- `src/pages/association/AssociationHistoryPage.tsx`
+- `docs/design-system.md` (nota header tabella `bg-muted/50`)
+
+**Follow-up.** Modali (`BookingDetailModal`, `FeedbackModal`, `ExperienceDateDialog`, `TBFormatEditDialog`, `VisibilityDialog`) e detail pages TB (`HRTBRequestDetailPage`, `HRTBProposalDetailPage`, `TBRequestDetailPage`, `TBFormatDetailPage`, `tb-quote-editor/*`) restano da bonificare. Pagine employee-facing (`Impact`, `Profile`) lasciate nello stile Airbnb attuale.
+
+---
+
 ### 2026-05-15 — UI: rimozione card-wrapper a favore di layout piatto stile Attio
 
 **Contesto.** Incongruenza visiva tra pagine "a riquadri" (HR Home, dashboard super-admin, liste con `<Card>` che wrappano una tabella) e pagine "piatte" (impostazioni profilo). Decisa una regola unica: la `<Card>` resta riservata ai blocchi che devono spiccare visivamente; tutto il resto va piatto sul background della pagina, separato da hairline e spacing.
