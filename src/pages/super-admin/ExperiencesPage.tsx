@@ -793,8 +793,7 @@ export default function ExperiencesPage() {
                       </TableBody>
                     </Table>
                   </div>
-                </CardContent>
-              </Card>
+              </PageSection>
             </motion.div>
       </div>
 
