@@ -151,7 +151,7 @@ export default function HRExperiencesPage() {
             {filteredExperiences.length === 0 ? (
               <EmptyState icon={Search} title="Nessuna esperienza trovata" description="Prova a modificare i filtri di ricerca" />
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,240px))] gap-4">
                 {filteredExperiences.map((exp, i) => {
                   const cityName = exp.cities?.name || exp.city;
                   const metaItems: BravoCardMetaItem[] = [];
