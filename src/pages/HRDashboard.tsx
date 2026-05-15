@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { devLog } from "@/lib/logger";
 import { PageHeader } from "@/components/common/PageHeader";
-import { LoadingState } from "@/components/common/LoadingState";
+import { PageSkeleton } from "@/components/common/skeletons/PageSkeleton";
 
 interface DashboardData {
   employeesCount: number;
@@ -212,7 +212,7 @@ export default function HRDashboard() {
   if (loading) {
     return (
       <HRLayout>
-        <LoadingState message="Caricamento dashboard..." />
+        <PageSkeleton variant="dashboard" />
       </HRLayout>
     );
   }

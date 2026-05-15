@@ -18,7 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { HRLayout } from "@/components/layout/HRLayout";
 import { PageHeader } from "@/components/common/PageHeader";
-import { LoadingState } from "@/components/common/LoadingState";
+import { PageSkeleton } from "@/components/common/skeletons/PageSkeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -629,7 +629,7 @@ export default function HRTeamBuildingPage() {
   if (isLoading) {
     return (
       <HRLayout>
-        <LoadingState />
+        <PageSkeleton variant="list" />
       </HRLayout>
     );
   }

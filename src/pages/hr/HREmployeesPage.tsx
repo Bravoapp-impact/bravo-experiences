@@ -31,7 +31,7 @@ import { EmployeeParticipationsDialog } from "@/components/hr/EmployeeParticipat
 import { EmployeeMetricsCards } from "@/components/hr/EmployeeMetricsCards";
 import { TopPerformersTable } from "@/components/hr/TopPerformersTable";
 import { PageHeader } from "@/components/common/PageHeader";
-import { LoadingState } from "@/components/common/LoadingState";
+import { PageSkeleton } from "@/components/common/skeletons/PageSkeleton";
 import { EmptyState } from "@/components/common/EmptyState";
 
 interface EmployeeStats {
@@ -309,7 +309,7 @@ export default function HREmployeesPage() {
   if (loading) {
     return (
       <HRLayout>
-        <LoadingState message="Caricamento utenti..." />
+        <PageSkeleton variant="dashboard" />
       </HRLayout>
     );
   }

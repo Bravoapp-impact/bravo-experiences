@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { devLog } from "@/lib/logger";
 
 import { PageHeader } from "@/components/common/PageHeader";
-import { LoadingState } from "@/components/common/LoadingState";
+import { PageSkeleton } from "@/components/common/skeletons/PageSkeleton";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Input } from "@/components/ui/input";
 import { BravoCard, BravoCardMetaItem } from "@/components/common/BravoCard";
@@ -113,7 +113,7 @@ export default function HRExperiencesPage() {
   }, [experiences, searchTerm, categoryFilter, cityFilter]);
 
   if (loading) {
-    return <HRLayout><LoadingState message="Caricamento..." /></HRLayout>;
+    return <HRLayout><PageSkeleton variant="grid" /></HRLayout>;
   }
 
   if (error) {
