@@ -18,7 +18,7 @@ import {
   Lock,
   Globe,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import PageSection from "@/components/common/PageSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -496,52 +496,48 @@ export default function ExperiencesPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <Card className="border bg-card">
-                <CardHeader>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <CardTitle className="text-base">
-                      {experiences.length} Esperienze
-                    </CardTitle>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <div className="relative w-full sm:w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Cerca..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                      <Select value={cityFilter} onValueChange={setCityFilter}>
-                        <SelectTrigger className="w-full sm:w-44 bg-background">
-                          <SelectValue placeholder="Città" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover max-h-72">
-                          <SelectItem value="all">Tutte le città</SelectItem>
-                          <SelectItem value="none">Senza città</SelectItem>
-                          {cities.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {c.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="w-full sm:w-40 bg-background">
-                          <SelectValue placeholder="Stato" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover">
-                          <SelectItem value="all">Tutti</SelectItem>
-                          <SelectItem value="published">Pubblicate</SelectItem>
-                          <SelectItem value="draft">Bozze</SelectItem>
-                          <SelectItem value="pending_review">In revisione</SelectItem>
-                          <SelectItem value="archived">Archiviate</SelectItem>
-                        </SelectContent>
-                      </Select>
+              <PageSection
+                title={`${experiences.length} Esperienze`}
+                actions={
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative w-full sm:w-64">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Cerca..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
                     </div>
+                    <Select value={cityFilter} onValueChange={setCityFilter}>
+                      <SelectTrigger className="w-full sm:w-44 bg-background">
+                        <SelectValue placeholder="Città" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover max-h-72">
+                        <SelectItem value="all">Tutte le città</SelectItem>
+                        <SelectItem value="none">Senza città</SelectItem>
+                        {cities.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-full sm:w-40 bg-background">
+                        <SelectValue placeholder="Stato" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover">
+                        <SelectItem value="all">Tutti</SelectItem>
+                        <SelectItem value="published">Pubblicate</SelectItem>
+                        <SelectItem value="draft">Bozze</SelectItem>
+                        <SelectItem value="pending_review">In revisione</SelectItem>
+                        <SelectItem value="archived">Archiviate</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                </CardHeader>
-                <CardContent>
+                }
+              >
                   <div className="rounded-lg border border-border overflow-hidden">
                     <Table>
                       <TableHeader>
