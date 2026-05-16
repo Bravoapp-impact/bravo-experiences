@@ -66,6 +66,8 @@ Cose che sappiamo essere imperfette o incomplete, ma che non bloccano lo sprint 
 
 **Campo "margine % desiderato" nel `QuoteEditor`.** Quality of life: se valorizzato, calcola automaticamente `unit_price_final` da `unit_price_ets`. Da introdurre quando il volume di preventivi cresce.
 
+**Etichette "Pubblica/Privata" nella tabella esperienze (super-admin).** Il `VisibilityDialog` ora usa "Condivisa/Esclusiva" allineato al modello prodotto (trigger DB che vincola le esperienze esclusive a una sola azienda). La tabella in `ExperiencesPage.tsx` legge ancora `visibility === "private"` per mostrare badge "Privata"/"Pubblica": va rinominato in "Esclusiva"/"Condivisa" per coerenza terminologica. Solo cambio di copy, nessuna logica.
+
 **Template email in italiano hardcoded.** Funziona finché il target è Italia. Quando si aprirà a un cliente non italofono, la struttura attuale richiede la moltiplicazione dei template per lingua. Vincolo architetturale da riconoscere, non da risolvere oggi.
 
 ---
