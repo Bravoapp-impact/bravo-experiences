@@ -1,10 +1,16 @@
-# Super-admin Workspace — Volontariato
+# Super-admin Workspace
 
 Piano di implementazione per riorganizzare la sezione super-admin del volontariato secondo il modello a 2 assi (`experiences.visibility` × `experience_dates.company_id`, vedi `volunteering.md` §4), allineandola in stile e profondità alle viste HR e ETS.
+Da valutare anche come integrare questa sezione con tutte le altre operazioni eseguite dal super admin, anche sugli altri verticali.
+La sezione infatti non deve semplicemente gestire il volontariato, ma tutto ciò che riguarda un'azienda specifica, oltre che il modello di funzionamento di tutta la piattaforma.
+la sezione del super admin deve anche permettere di gestire ciò che viene fatto dalle associazioni.
+Insomma, da valutare un refactor completo, che permetta una gestione più semplice e efficente.
+Prima di scendere nel dettaglio, capire come impostare il flusso di alto livello: workspace dedicati per aziende? Per gli ETS? i flussi che hanno bisogno vs quelli che non hanno bisogno di interventi manuali.
+Solo dopo, scendere nel dettaglio di ogni verticale e andare a modificare il funzionamento attuale.
 
 ---
 
-## 1. Stato attuale e perché non funziona
+## 1. Stato attuale della sezione volontariato e perché non funziona
 
 Oggi la gestione super-admin del volontariato vive interamente in `/super-admin/experiences` come **lista con dialog sovrapposti**:
 
@@ -23,17 +29,17 @@ Inoltre l'`ExperienceDateDialog` non permette oggi di riservare una data a una s
 
 ## 2. Cosa cambia, in sintesi
 
-Inversione del centro di gravità: **company-first**. Un workspace dedicato per ogni azienda diventa l'hub centrale di tutte le operazioni che la riguardano (programma volontariato, anagrafica, hour budget, dipendenti, in futuro TB). La pagina esperienza diventa il dettaglio pieno (al posto dei dialog sovrapposti). La lista esperienze si semplifica, diventando un indice navigazionale.
+Inversione del centro di gravità: **company-first**. Un workspace dedicato per ogni azienda diventa l'hub centrale di tutte le operazioni che la riguardano (programma volontariato, anagrafica, hour budget, dipendenti, Team Building). La pagina esperienza diventa il dettaglio pieno (al posto dei dialog sovrapposti). La lista esperienze si semplifica, diventando un indice navigazionale.
 
 Tre nuove route, una rifatta, una semplificata:
 
-| Route | Stato | Cosa è |
-| --- | --- | --- |
-| `/super-admin/companies/:id` | **Nuova** | Workspace company — hub operativo per una singola azienda |
-| `/super-admin/experiences/:id` | **Nuova** | Dettaglio esperienza pieno, in stile HR/ETS |
-| `/super-admin/experiences` | Semplificata | Indice piatto, solo righe + filtri |
-| `/super-admin/companies` | Invariata | Lista, ma le righe linkano al workspace |
-| `ExperienceDateDialog` | Esteso | Aggiunge campo "Disponibile a" |
+| Route                          | Stato        | Cosa è                                                    |
+| ------------------------------ | ------------ | --------------------------------------------------------- |
+| `/super-admin/companies/:id`   | **Nuova**    | Workspace company — hub operativo per una singola azienda |
+| `/super-admin/experiences/:id` | **Nuova**    | Dettaglio esperienza pieno, in stile HR/ETS               |
+| `/super-admin/experiences`     | Semplificata | Indice piatto, solo righe + filtri                        |
+| `/super-admin/companies`       | Invariata    | Lista, ma le righe linkano al workspace                   |
+| `ExperienceDateDialog`         | Esteso       | Aggiunge campo "Disponibile a"                            |
 
 ---
 
@@ -46,6 +52,7 @@ Ordine pensato per **non rompere mai il flusso operativo esistente**: prima si a
 L'azione operativa più semplice e isolata. Sblocca subito il modello a 2 assi senza dipendenze su pagine nuove.
 
 **Cosa cambia.**
+
 - Nuovo campo nel dialog: **"Disponibile a"** (RadioGroup)
   - "Tutte le aziende che hanno l'esperienza" → `company_id = NULL`
   - "Solo a una specifica azienda" → mostra select con la lista delle aziende attivate per quell'esperienza (`experience_companies` filtrato)
@@ -56,6 +63,7 @@ L'azione operativa più semplice e isolata. Sblocca subito il modello a 2 assi s
 **File toccati.** `src/components/super-admin/ExperienceDateDialog.tsx`.
 
 **Test manuali.**
+
 - Esperienza condivisa, data NULL → resta NULL.
 - Esperienza condivisa, data con `company_id` esistente → preselezionato corretto.
 - Cambio da "Tutte" a "Solo a" senza selezionare azienda → blocco salvataggio con toast.
@@ -112,6 +120,7 @@ Sostituisce il combo `ExperienceEditDialog` + `ExperiencePreviewModal`. Una pagi
 Una volta che Step 2 e 3 sono completi e testati in produzione, la lista esperienze diventa un **indice navigazionale** puro.
 
 **Cosa cambia.**
+
 - Rimosse le date inline dalle righe (oggi mostrate in expand). Le date si gestiscono dal dettaglio.
 - Rimossi `ExperienceEditDialog` (sostituito da modifica nel dettaglio) e `ExperiencePreviewModal` (sostituito dal dettaglio stesso, che ha già la sezione contenuto).
 - `VisibilityDialog` rimosso dalla lista (la visibilità si cambia dal dettaglio o dal workspace company).
