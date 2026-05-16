@@ -147,8 +147,9 @@ Campi chiave:
 - `volunteer_hours` — ore-volontario per partecipazione tipo (default, può essere sovrascritto sulla singola `experience_date`)
 - `sdgs` (array)
 - `status` enum: `draft` / `published` / `archived`
+- `visibility` enum: `public` (condivisa, attivabile per più aziende via `experience_companies`) / `private` (esclusiva di una sola azienda, vincolata da trigger DB — vedi sotto)
 
-L'ETS crea l'esperienza in `draft`. Il super-admin rivede e passa a `published`. Una volta `published`, l'esperienza è candidata ad essere attivata per le aziende via `experience_companies`.
+L'ETS crea l'esperienza in `draft`. Il super-admin rivede e passa a `published`. Una volta `published`, l'esperienza è candidata ad essere attivata per le aziende via `experience_companies`. La scelta `public`/`private` è del super-admin e si imposta dal `VisibilityDialog` (toggle "Condivisa"/"Esclusiva").
 
 **RLS attuale per HR**: vede solo le `experiences` con `status = 'published'` che hanno una riga corrispondente in `experience_companies` per la propria company. Policy `HR can view own program experiences v4` (maggio 2026).
 
