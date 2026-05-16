@@ -602,24 +602,30 @@ import { MetricCard } from "@/components/common/MetricCard";
 
 ---
 
-### LoadingState
+### Loading states (convenzione)
 
-Stato di caricamento standard con spinner e messaggio.
+Dal 2026-05-15 la regola unica per i caricamenti è:
 
-**Path:** `src/components/common/LoadingState.tsx`
+- **Caricamento iniziale pagina** → `PageSkeleton` (`src/components/common/skeletons/PageSkeleton.tsx`) con `variant` tra `list` / `table` / `detail` / `dashboard` / `form` / `grid`. Lo skeleton mima la struttura della pagina sottostante, così l'utente percepisce continuità invece di un'interruzione.
+- **Fase di auth / boot** (route guards, attesa di `useAuth`) → `AppBootSkeleton` (`src/components/common/skeletons/AppBootSkeleton.tsx`) con `role="admin"` (shell sidebar) o `role="employee"` (shell mobile + bottom nav).
+- **Stati locali brevi** (pulsanti in submit, upload in corso, azioni inline) → `Loader2` di lucide è consentito.
+- **Niente spinner full-screen, niente `LoadingState` full-page.** Il componente legacy `LoadingState` esiste ancora ma è da considerare deprecato: nelle pagine già migrate è stato sostituito da `PageSkeleton`; nelle nuove pagine non va introdotto.
+
+Animazioni di ingresso pagina (`motion.*` con `initial opacity:0 / y:10`) sono disattivate globalmente via `<MotionConfig reducedMotion="always">` in `src/App.tsx` per eliminare il micro-flicker tra skeleton e contenuto. Hover/tap interactions e CSS keyframes (accordion, dialog, sheet, `animate-pulse`) restano invariati.
 
 ```tsx
-import { LoadingState } from "@/components/common/LoadingState";
+import { PageSkeleton } from "@/components/common/skeletons/PageSkeleton";
 
-// Uso base
-<LoadingState />
-
-// Con messaggio custom
-<LoadingState message="Caricamento dipendenti..." />
-
-// Altezza ridotta (non full viewport)
-<LoadingState message="Attendere..." fullHeight={false} />
+if (loading) return <PageSkeleton variant="table" rows={8} />;
 ```
+
+---
+
+### LoadingState (legacy — deprecato)
+
+Spinner full-page legacy. Mantenuto per retrocompatibilità nelle pagine non ancora migrate. **Non usare in codice nuovo:** preferire `PageSkeleton` / `AppBootSkeleton`.
+
+**Path:** `src/components/common/LoadingState.tsx`
 
 **Props:**
 | Prop | Tipo | Obbligatorio | Default | Descrizione |
