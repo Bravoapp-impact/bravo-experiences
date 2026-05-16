@@ -202,7 +202,7 @@ Le route sono protette da componenti dedicati: `ProtectedRoute` (dipendente logg
 | Route | Cosa è |
 | --- | --- |
 | `/hr` | Home dashboard contestuale |
-| `/hr/volontariato` | Esperienze attivate + statistiche |
+| `/hr/volontariato` | Vista unica del programma volontariato attivato per l'azienda (HR read-only, curation lato super-admin) |
 | `/hr/experiences/:id` | Dettaglio esperienza in chiave HR |
 | `/hr/users` | Dipendenti registrati della propria company |
 | `/hr/report` | Dashboard report (esistente, evolverà) |
