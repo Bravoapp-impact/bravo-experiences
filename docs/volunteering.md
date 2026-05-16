@@ -66,6 +66,8 @@ Il super-admin è l'orchestratore del verticale. Responsabilità operative:
 - Attivare le esperienze per ogni azienda cliente (bridge `experience_companies`)
 - Configurare `hour_budgets` quando viene firmato un contratto
 - Coordinare con le ETS le date company-specific richieste dall'azienda
+- Riservare date a singole aziende valorizzando `experience_dates.company_id` (azione esclusiva super-admin — l'ETS crea sempre date aperte)
+- Decidere se un'esperienza è condivisa (`visibility = 'public'`, attivabile per più aziende) o esclusiva (`visibility = 'private'`, vincolata a una sola azienda dal trigger DB)
 - Smistare modifiche al programma quando HR le richiede
 - Gestire i suggerimenti ETS in arrivo (flusso trasversale, fuori da questo documento)
 - Gestire casi limite (cancellazioni, sovrapposizioni, ETS in difficoltà)
