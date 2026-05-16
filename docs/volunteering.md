@@ -206,6 +206,23 @@ Campi:
 
 Vincoli RLS in `INSERT`: vedi §3.2.
 
+### RLS volontariato — policy correnti (maggio 2026)
+
+Cleanup della sessione 2026-05-16. Migration in 2 blocchi (aggiungi prima, rimuovi dopo) per non aprire finestre senza copertura.
+
+**Aggiunte / rinominate:**
+
+- `hr_view_experience_dates_v5` su `experience_dates`: HR vede le date di esperienze attivate per la propria company (join `experience_companies`) e filtra `company_id IS NULL OR company_id = my_company`. Rispetto a v4 rimuove il filtro `visibility = 'public'`, che era un bug: escludeva tutte le date delle esperienze esclusive (`private`) — esattamente quelle riservate alla company.
+- `employees_view_dates_v3` su `experience_dates`: aggiunge `company_id IS NULL OR company_id = my_company`. Rispetto a v2 chiude il bug per cui il dipendente vedeva date riservate ad altre aziende.
+- `association_manage_own_experience_dates_v2` su `experience_dates`: ETS gestisce le proprie date (USING per association_id), con `WITH CHECK` che impedisce di valorizzare `company_id`. Solo super-admin può riservare una data a una company.
+
+**Rimosse:**
+
+- `hr_view_experience_dates_v4`, `employees_view_dates_v2`, vecchie policy ETS su `experience_dates` (sostituite).
+- **Falla di privilege escalation chiusa:** `HR admin can activate experiences for own company` (INSERT su `experience_companies`) e `HR admin can deactivate experiences for own company` (DELETE su `experience_companies`). Residui del modello in cui HR curava il catalogo: oggi la curation è esclusivamente super-admin.
+- Policy duplicate: `HR admin can view own company experience_companies`, `Admins can view all experience dates`, `Admins can view all experiences`.
+
+
 ### `hour_budgets`
 
 Tetto annuo individuale di ore di volontariato per dipendente, per company.
