@@ -43,6 +43,32 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-16 — Volontariato: modello esclusività a 2 assi + cleanup RLS
+
+**Contesto.** Il modello di esclusività delle esperienze era ambiguo a livello DB: nessun vincolo impediva a un'esperienza `private` di avere più aziende nel bridge, le RLS HR/dipendente avevano bug (HR non vedeva date di esperienze private; dipendenti vedevano date riservate ad altre aziende), e HR aveva ancora INSERT/DELETE su `experience_companies` (residuo del modello in cui HR curava il catalogo). Lo `Switch "privata"` del `VisibilityDialog` non rifletteva nessuna delle decisioni reali.
+
+**Cosa cambia.**
+- Modello a 2 assi indipendenti formalizzato: asse esperienza (`experiences.visibility` = `public`/`private`) + asse data (`experience_dates.company_id` NULL o valorizzato). Caso d'uso target "canile alternato": esperienza `public` con date riservate ad aziende diverse (A il 1°/3° mercoledì, B il 2°/4°).
+- RLS migrate in 2 blocchi (add-then-drop):
+  - `hr_view_experience_dates_v5` (rimuove filtro `visibility = 'public'` di v4 che escludeva date di esperienze private; mantiene `experience_companies` + `company_id IS NULL OR my_company`)
+  - `employees_view_dates_v3` (aggiunge `company_id IS NULL OR my_company`, fix bug v2 che mostrava date riservate ad altre aziende)
+  - `association_manage_own_experience_dates_v2` (ETS gestisce proprie date, `WITH CHECK` impedisce di valorizzare `company_id`)
+- Falla privilege escalation chiusa: rimosse `HR admin can activate/deactivate experiences for own company` su `experience_companies`. La curation è esclusivamente super-admin.
+- Duplicate rimosse: `HR admin can view own company experience_companies`, `Admins can view all experience dates`, `Admins can view all experiences`.
+- Trigger DB di consistenza: funzione `public.enforce_private_experience_single_company()` con 2 trigger gemelli — `enforce_private_single_company_on_bridge` (BEFORE INSERT su `experience_companies`) e `enforce_private_single_company_on_experiences` (BEFORE UPDATE OF visibility su `experiences`). Garantiscono `visibility = 'private'` ⇔ ≤1 azienda nel bridge. Messaggi di errore in italiano.
+- UI: `VisibilityDialog` refactorato. Toggle "Condivisa"/"Esclusiva" al posto dello `Switch "privata"`. Esclusiva = RadioGroup single-select, azienda obbligatoria. Condivisa = Checkbox multi-select (0-N). Copy: "Visibilità e assegnazione", "Visibile a una sola azienda…" / "Visibile a tutte le aziende selezionate". Sequenza di salvataggio: DELETE bridge → UPDATE visibility → INSERT bridge, progettata per rispettare il trigger.
+
+**Impatto.** `DB schema` · `RLS` · `UI` · `Docs`
+
+**File / aree toccate.**
+- `experience_dates`, `experience_companies`, `experiences` (policy + trigger + funzione)
+- `src/components/super-admin/VisibilityDialog.tsx`
+- `docs/volunteering.md`, `docs/architettura.md`
+
+**Follow-up.** `src/pages/super-admin/ExperiencesPage.tsx` legge ancora `visibility === "private"` per i badge in tabella — funziona (i valori DB restano `public`/`private`), ma le etichette UI andrebbero rinominate in "Esclusiva"/"Condivisa" per coerenza con il nuovo copy del dialog.
+
+---
+
 ### 2026-05-15 — UI: disattivate entry animations framer-motion (no flicker)
 
 **Contesto.** Dopo l'introduzione degli skeleton (entry sotto) restava un micro-flicker percepibile: lo skeleton spariva e il contenuto vero entrava con `motion.*` (`initial opacity:0, y:10 → animate opacity:1`) presente in ~30 pagine. In quella frazione di secondo lo schermo "lampeggiava".
