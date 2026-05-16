@@ -161,7 +161,14 @@ Campi: `experience_id`, `company_id`, eventuali timestamp di attivazione.
 
 Una riga in questa tabella è ciò che HR vede come "esperienza nel mio programma". L'attivazione la fa il super-admin.
 
-**RLS attuale**: HR può leggere (`SELECT`) le righe della propria company (policy `HR can view own company experience_companies`, maggio 2026). Non può scrivere: solo il super-admin esegue `INSERT`/`UPDATE`/`DELETE`.
+**RLS attuale**: HR può leggere (`SELECT`) le righe della propria company. Non può scrivere: solo il super-admin esegue `INSERT`/`UPDATE`/`DELETE`. A maggio 2026 sono state rimosse le policy legacy `HR admin can activate experiences for own company` (INSERT) e `HR admin can deactivate experiences for own company` (DELETE), residui del modello in cui HR curava il catalogo — chiusura di una falla di privilege escalation.
+
+**Trigger di consistenza esclusività.** Due trigger DB garantiscono l'invariante `visibility = 'private'` ⇔ al più 1 riga nel bridge per quell'esperienza:
+
+- `enforce_private_single_company_on_bridge` (BEFORE INSERT su `experience_companies`): blocca l'aggiunta di una seconda riga se l'esperienza è `private`
+- `enforce_private_single_company_on_experiences` (BEFORE UPDATE OF visibility su `experiences`): blocca il passaggio a `private` se nel bridge ci sono già >1 aziende
+
+Entrambi richiamano la funzione `public.enforce_private_experience_single_company()`. Messaggi di errore in italiano. La sequenza di salvataggio nel `VisibilityDialog` rispetta il trigger: DELETE bridge → UPDATE visibility → INSERT bridge.
 
 ### `experience_dates`
 
@@ -176,9 +183,14 @@ Campi chiave:
 - `volunteer_hours` — può sovrascrivere il default dell'esperienza
 - `company_id` (FK, nullable) — se valorizzato, la data è riservata a quella sola company; se `NULL`, è aperta a tutte le aziende che hanno l'esperienza attiva
 
-Il `company_id` è il meccanismo che permette all'ETS di proporre date dedicate a una specifica azienda (es. "lunedì 15 giugno per HAVAS"), mantenendo separate le date aperte (es. "ogni martedì del mese, aperto a tutti"). È il punto di contatto tra "richieste delle aziende" e "disponibilità delle ETS" — oggi mediato dal super-admin, in futuro potrà evolvere.
+**Modello a 2 assi indipendenti.** L'esclusività vive su due assi distinti:
 
-L'ETS è l'autore principale delle date e le inserisce dal proprio pannello.
+- Asse esperienza: `experiences.visibility` (`public` / `private`)
+- Asse data: `experience_dates.company_id` (`NULL` / valorizzato)
+
+I due assi non sono accoppiati. Una stessa esperienza condivisa (`public`) può avere alcune date aperte (`company_id IS NULL`) e altre riservate ad aziende diverse. Caso d'uso target ("canile alternato"): l'ETS organizza un turno bisettimanale al canile, l'azienda A prenota il 1° e 3° mercoledì del mese (date con `company_id = A`), l'azienda B prenota il 2° e 4° (date con `company_id = B`), senza che A veda le date di B e viceversa. L'esperienza in sé è `public` e attivata per entrambe.
+
+**Chi imposta `company_id` sulle date.** Solo il super-admin. L'ETS crea sempre date aperte: la RLS `association_manage_own_experience_dates_v2` ha un `WITH CHECK` che impedisce all'ETS di valorizzare `company_id`. La riservazione di una data a una specifica azienda è un'azione di mediazione e resta in mano a Bravo!.
 
 ### `bookings`
 
