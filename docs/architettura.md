@@ -101,6 +101,8 @@ Le policy concrete sono tante e cambiano. Quello che resta stabile sono i patter
 
 **REVOKE column-level su dati sensibili.** Quando una colonna contiene un dato che deve restare invisibile a un ruolo (margini ETS, prezzi ETS, costi interni), la protezione passa da `REVOKE SELECT (colonna) ON tabella FROM authenticated`, non da un filtro nella query. La RPC SECURITY DEFINER può comunque leggere la colonna perché gira come owner. Pattern applicato su `tb_quotes.bravo_margin_*`, `tb_quotes.total_amount_ets`, `tb_quote_items.unit_price_ets`, `tb_quote_items.total_ets`, `tb_quote_items.association_id`, `tb_quote_items.proposal_id`.
 
+**Trigger DB di consistenza esclusività.** Quando un invariante di dominio non è esprimibile come RLS (es. "se l'esperienza è `private`, può esserci al più 1 azienda nel bridge"), si usa un trigger BEFORE come ultimo livello di difesa. Caso vivo: `public.enforce_private_experience_single_company()` con due trigger gemelli — `enforce_private_single_company_on_bridge` (BEFORE INSERT su `experience_companies`) e `enforce_private_single_company_on_experiences` (BEFORE UPDATE OF visibility su `experiences`) — garantiscono che `visibility = 'private'` ⇔ al più 1 riga nel bridge. La sequenza di salvataggio lato UI (DELETE bridge → UPDATE visibility → INSERT bridge) è progettata per rispettare il trigger.
+
 **Regola di evoluzione.** Aggiungere policy nuove prima di rimuovere quelle vecchie (le RLS sono OR-evaluated, allargare è sempre sicuro, restringere è un punto di non ritorno). Mai DROP+CREATE nello stesso step. Dettagli operativi in `CLAUDE.md`.
 
 ---
