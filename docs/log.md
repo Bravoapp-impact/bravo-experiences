@@ -43,6 +43,85 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-15 — UI: disattivate entry animations framer-motion (no flicker)
+
+**Contesto.** Dopo l'introduzione degli skeleton (entry sotto) restava un micro-flicker percepibile: lo skeleton spariva e il contenuto vero entrava con `motion.*` (`initial opacity:0, y:10 → animate opacity:1`) presente in ~30 pagine. In quella frazione di secondo lo schermo "lampeggiava".
+
+**Cosa cambia.**
+- `src/App.tsx`: wrap globale `<MotionConfig reducedMotion="always">` da framer-motion. Tutti i `motion.*` esistenti saltano la transizione e vanno direttamente allo stato `animate` — niente fade-in iniziale, niente slide-in, niente delay a cascata.
+- Hover/tap, animazioni di submit (spinner pulsanti), CSS keyframes (accordion, dialog, sheet) e `animate-pulse` degli skeleton restano invariati: non sono entry animations.
+- Nessuna rimozione fisica dei `motion.*` dal codice: la scelta è reversibile in una riga.
+
+**Impatto.** `UI`
+
+**File / aree toccate.**
+- `src/App.tsx`
+
+**Follow-up.** Cleanup futuro opzionale: rimuovere fisicamente i `motion.*` di sole entry animation quando si toccano le rispettive pagine.
+
+---
+
+### 2026-05-15 — UI: skeleton al posto degli spinner full-screen
+
+**Contesto.** L'app sfarfallava nei caricamenti: prima lo spinner del route guard, poi lo spinner della pagina, poi il contenuto. Richiesta esplicita di rimuovere gli spinner generici e mostrare uno **skeleton che anticipi la struttura della pagina sottostante**, così l'utente capisce che sta caricando senza interruzioni visive.
+
+**Cosa cambia.**
+- Nuovi componenti `src/components/common/skeletons/PageSkeleton.tsx` (varianti `list` / `table` / `detail` / `dashboard` / `form` / `grid`) e `AppBootSkeleton.tsx` (shell completo lato admin/sidebar oppure mobile/employee).
+- Route guards (`ProtectedRoute`, `ProtectedHRRoute`, `ProtectedSuperAdminRoute`, `ProtectedAssociationRoute`) sostituiscono lo spinner centrato con `AppBootSkeleton` (role `admin` / `employee`).
+- Migrate da `LoadingState` / `Loader2` full-page a `PageSkeleton`: **HR** (`HRHomePage`, `HRDashboard`, `HRExperiencesPage`, `HRTeamBuildingPage`, `HRTBProposalDetailPage`, `HRNewTBRequestPage`, `HREmployeesPage`), **Association** (`AssociationHome`, `AssociationExperiencesPage`, `AssociationHistoryPage`, `AssociationCalendarPage`, `AssociationProfilePage`), **Employee** (`Profile`, `MyBookings`).
+- Spinner legittimi preservati: dentro pulsanti submit, upload in corso, azioni inline brevi.
+
+**Impatto.** `UI` · `Design system`
+
+**File / aree toccate.**
+- `src/components/common/skeletons/{PageSkeleton,AppBootSkeleton}.tsx` (nuovi)
+- `src/components/Protected{,HR,SuperAdmin,Association}Route.tsx`
+- 14 pagine sopra elencate
+- `docs/design-system.md` (nuova nota "Loading states")
+
+**Follow-up.** Estendere il pattern alle pagine super-admin che eventualmente usano ancora `LoadingState`/spinner full-page (sweep secondario quando le si tocca).
+
+---
+
+### 2026-05-15 — HR: `/hr/experiences/:id` diventa puramente informativa
+
+**Contesto.** Il modello di prodotto è cambiato: l'HR non cura più il catalogo, lo *vede*. La pagina di dettaglio esperienza HR conteneva ancora tutta la logica di curation (attivazione/disattivazione esperienza per la propria azienda) ereditata dal modello precedente.
+
+**Cosa cambia.**
+- `src/pages/hr/HRExperienceDetail.tsx`: rimossi `isActive`, `isToggling`, `drawerOpen`, `handleToggle`, `fetchActivation`, `HRMobileActionDrawer`, `HRRelatedExperiencesList` di curation. Resta solo la vista informativa.
+- Sidebar dettaglio riportata a stile Airbnb (coerente col resto delle viste experience-detail).
+- Nessuna azione HR di attivazione/disattivazione su `experience_companies`: la curation è in mano al team Bravo!.
+
+**Impatto.** `UI` · `Prodotto`
+
+**File / aree toccate.**
+- `src/pages/hr/HRExperienceDetail.tsx`
+- `src/components/hr/HRSidebar.tsx` (e componenti correlati al dettaglio)
+
+**Follow-up.** —
+
+---
+
+### 2026-05-15 — HR: `/hr/volontariato` come vista unica del programma aziendale
+
+**Contesto.** Stesso cambio di modello dell'entry sopra: l'HR non vede più "il catalogo Bravo! da cui scegliere" + "il proprio programma" + "le statistiche" come tab separati. Vede direttamente, in una sola pagina, **il programma di volontariato attivato per la sua azienda** dal team Bravo!. RLS lato DB già aggiornate (HR non può scrivere su `experience_companies`).
+
+**Cosa cambia.**
+- `src/pages/hr/HRExperiencesPage.tsx` riscritta: rimossi i 3 tab (Catalogo / Il mio programma / Statistiche), `handleActivate`/`handleDeactivate`, lo stato `activatedIds`, gli stati `statsExperiences`/`statsLoading`/`statsLoaded`. Singola lista delle esperienze attivate per l'azienda.
+- Grid card: su `HRExperiencesPage` e `HRTeamBuildingPage` sostituito `grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5` con `grid-cols-[repeat(auto-fill,minmax(...))]` — cap dimensionale per evitare card troppo grandi su schermi larghi. Card volutamente un filo più grandi di quelle del catalogo employee (`/app/experiences`).
+- `src/components/common/BravoCard.tsx`: titolo `text-[13px]` → `text-[15px]`.
+
+**Impatto.** `UI` · `Prodotto`
+
+**File / aree toccate.**
+- `src/pages/hr/HRExperiencesPage.tsx`
+- `src/pages/hr/HRTeamBuildingPage.tsx`
+- `src/components/common/BravoCard.tsx`
+
+**Follow-up.** Allineare `docs/volunteering.md` e `docs/architettura.md` se descrivono ancora HR come curatore (vedi questa stessa sessione).
+
+---
+
 ### 2026-05-15 — UI: sweep finale Card→PageSection per tabelle/liste
 
 **Contesto.** Secondo passaggio del refactor stile Attio: bonifica dei call-site rimasti che ancora avvolgono tabelle e liste in `<Card><CardHeader/><CardContent/>`. Riferimento visivo: `/super-admin/associations`. Le primitive (`ui/table.tsx`, `crud/CrudTableCard.tsx`, `crud/CrudTableRow.tsx`) erano già allineate, non serviva un nuovo componente "Table".
