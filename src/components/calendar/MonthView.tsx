@@ -45,7 +45,7 @@ export function MonthView({ currentDate, events, onViewModeChange, onDateChange,
   const now = startOfDay(new Date());
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-card">
+    <div className="border rounded-lg overflow-hidden bg-card h-full flex flex-col">
       {/* Weekday header */}
       <div className="grid grid-cols-7 border-b bg-muted/30">
         {WEEKDAYS.map(d => (
@@ -56,7 +56,7 @@ export function MonthView({ currentDate, events, onViewModeChange, onDateChange,
       </div>
 
       {/* Days grid */}
-      <div className="grid grid-cols-7">
+      <div className="grid grid-cols-7 grid-rows-6 flex-1 min-h-0">
         {days.map((day) => {
           const key = format(day, "yyyy-MM-dd");
           const dayEvents = eventsByDay.get(key) || [];
