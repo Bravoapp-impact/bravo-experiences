@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-type Variant = "list" | "table" | "detail" | "dashboard" | "form" | "grid";
+type Variant = "list" | "table" | "detail" | "dashboard" | "form" | "grid" | "calendar";
 
 interface PageSkeletonProps {
   variant?: Variant;
