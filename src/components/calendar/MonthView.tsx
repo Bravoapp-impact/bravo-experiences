@@ -32,6 +32,8 @@ export function MonthView({ currentDate, events, onViewModeChange, onDateChange,
     return eachDayOfInterval({ start: calStart, end: calEnd });
   }, [currentDate]);
 
+  const weeks = days.length / 7;
+
   const eventsByDay = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
     events.forEach(ev => {
