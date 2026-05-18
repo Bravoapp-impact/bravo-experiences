@@ -38,7 +38,7 @@ export function WeekView({ currentDate, events, onEventDeleted, popoverMode }: W
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-card">
+    <div className="border rounded-lg overflow-hidden bg-card h-full flex flex-col">
       {/* Header */}
       <div className="grid grid-cols-[50px_repeat(7,1fr)] border-b bg-muted/30">
         <div />
