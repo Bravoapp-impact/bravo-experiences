@@ -1,24 +1,33 @@
-# Sidebar Calendario — allineamento a sinistra
+## Pianificazione: Semplificazione Galleria HR
 
-## Diagnosi
-La sidebar ha attualmente `pl-10 pr-3`: avevo aggiunto 40px di padding-left per allineare il primo elemento al **testo** "Calendario" (che è spostato a destra dall'icona 28px + gap 12px del `PageHeader`).
+### Obiettivo
+Ridurre la superficie di funzionalità della galleria HR togliendo controlli avanzati (evidenziazione, nascondimento, filtro enti) per semplificare l'interfaccia.
 
-Lo spazio rosso che evidenzi è proprio questo `pl-10`. Vuoi invece che la sidebar parta dal **bordo sinistro del `<main>`** (lo stesso X dell'icona calendario azzurra).
+### Modifiche previste
 
-## Modifica
+#### 1. Filtri (`src/components/hr-gallery/GalleryFilters.tsx`)
+- Rimuovere il filtro multi-select **"Enti partner"** (prop `associationOptions` e relativo componente `MultiSelectFilter`).
+- Rimuovere lo switch **"Solo in evidenza"**.
+- Rimuovere lo switch **"Mostra nascoste"**.
+- Aggiornare `GalleryFiltersState` e `EMPTY_FILTERS` di conseguenza (campi `associationIds`, `onlyFeatured`, `includeHidden`).
 
-### `src/components/hr/calendar/CalendarFiltersSidebar.tsx` (riga 80)
-Ramo expanded della `<aside>`:
+#### 2. Pagina Galleria (`src/pages/hr/HRGalleryPage.tsx`)
+- Rimuovere il calcolo di `associationOptions` (non più necessario).
+- Rimuovere la sezione **"In evidenza"** (sezione con le foto `is_featured` e titolo con stella).
+- Aggiornare la query `useCompanyGallery` per non passare più `onlyFeatured`, `includeHidden`, `associationIds`.
+- La query `allPhotos` per le opzioni esperienza resta senza `includeHidden`.
 
-```diff
-- <aside className="w-[260px] bg-background shrink-0 flex flex-col h-full pl-10 pr-3">
-+ <aside className="w-[260px] bg-background shrink-0 flex flex-col h-full pr-3">
-```
+#### 3. Lightbox Azioni (`src/components/hr-gallery/PhotoLightbox.tsx`)
+- Rimuovere i pulsanti toolbar:
+  - **Metti in evidenza** (stella)
+  - **Nascondi / Rendi visibile** (occhio)
+- Mantenere: didascalia, download, elimina.
+- Rimuovere gli hook e le funzioni correlate (`useTogglePhotoFeatured`, `useUpdatePhotoStatus`, stati e handler per hide/show/featured).
 
-Risultato:
-- "FILTRI", la checkbox di "VOLONTARIATO AZIENDALE" e le esperienze partono dall'X dell'icona calendario (bordo sinistro del main, dato dal `px-6` di `AdminLayout`).
-- Il calendario resta alla distanza attuale grazie al `pl-6` su `calendarBody`.
-- La sidebar si riduce nettamente in spazio sprecato a sinistra.
+### File coinvolti
+- `src/components/hr-gallery/GalleryFilters.tsx`
+- `src/pages/hr/HRGalleryPage.tsx`
+- `src/components/hr-gallery/PhotoLightbox.tsx`
 
-## File toccati
-- `src/components/hr/calendar/CalendarFiltersSidebar.tsx`
+### Hook da dismettere (cleanup opzionale)
+- `useTogglePhotoFeatured` e `useUpdatePhotoStatus` non saranno più usati dalla galleria HR. Rimangono in codebase ma inutilizzati per questo flusso.
