@@ -44,6 +44,7 @@ export function BookingCard({
   hasReview = false,
   onView,
   onFeedback,
+  onUploadPhoto,
 }: BookingCardProps) {
   const experience = booking.experience_dates.experiences;
   const startDate = new Date(booking.experience_dates.start_datetime);
