@@ -48,7 +48,6 @@ export function EmployeeMetricsCards({
       segment: "active",
       label: "Attivi",
       value: activeCount,
-      subLabel: totalCount > 0 ? `${activePercentage}% dei registrati` : undefined,
       icon: UserCheck,
       iconColor: "text-primary",
       iconBgColor: "bg-primary/10",
