@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal } from "lucide-react";
+import { ChevronRight, ChevronDown, PanelLeftClose, PanelLeft } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -80,8 +80,7 @@ export function CalendarFiltersSidebar({
     <aside className="w-[260px] bg-background shrink-0 flex flex-col h-full pr-3">
       <div className="flex items-center justify-between py-2 border-b border-border">
         <div className="flex items-center gap-2 text-xs font-semibold text-foreground uppercase tracking-wide">
-          <SlidersHorizontal className="h-3.5 w-3.5" />
-          Filtri
+          Iniziative
         </div>
         {onCollapsedChange && (
           <Button
@@ -90,7 +89,7 @@ export function CalendarFiltersSidebar({
             className="h-7 w-7"
             onClick={() => onCollapsedChange(true)}
           >
-            <ChevronLeft className="h-4 w-4" />
+            <PanelLeftClose className="h-4 w-4" />
           </Button>
         )}
       </div>
