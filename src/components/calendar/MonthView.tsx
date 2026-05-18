@@ -67,7 +67,7 @@ export function MonthView({ currentDate, events, onViewModeChange, onDateChange,
           return (
             <div
               key={key}
-              className={`min-h-[90px] sm:min-h-[110px] border-b border-r p-1 ${
+              className={`min-h-[60px] border-b border-r p-1 overflow-hidden flex flex-col ${
                 !inMonth ? "bg-muted/10" : ""
               } ${isPast ? "opacity-50" : ""}`}
             >
