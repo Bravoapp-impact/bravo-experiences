@@ -32,9 +32,6 @@ export function EmployeeMetricsCards({
   activeSegment,
   onSegmentChange,
 }: EmployeeMetricsCardsProps) {
-  const activePercentage =
-    totalCount > 0 ? Math.round((activeCount / totalCount) * 100) : 0;
-
   const metrics: MetricDef[] = [
     {
       segment: "all",
@@ -48,7 +45,6 @@ export function EmployeeMetricsCards({
       segment: "active",
       label: "Attivi",
       value: activeCount,
-      subLabel: totalCount > 0 ? `${activePercentage}% dei registrati` : undefined,
       icon: UserCheck,
       iconColor: "text-primary",
       iconBgColor: "bg-primary/10",
