@@ -1,118 +1,73 @@
 ## Obiettivo
 
-Trasformare `/hr/calendario` da placeholder a pagina calendario completa (Mese/Settimana/Giorno) riusando i componenti già esistenti del calendario Associazione, senza duplicare codice.
+Aggiungere alla pagina `/hr/calendario` una sidebar laterale stile Google Calendar che permetta di filtrare gli eventi mostrati per esperienza, raggruppati per macro-categoria (Volontariato aziendale oggi, predisposto per Team Building in futuro).
 
-## 1. Estrazione componenti calendar in location condivisa
+## Layout pagina
 
-Sposto la cartella `src/components/association/calendar/` → `src/components/calendar/` (7 file: `CalendarHeader`, `MonthView`, `WeekView`, `DayView`, `EventBlock`, `DayDetailPopover`, `calendar-types`).
-
-I componenti sono già scritti in modo agnostico: `MonthView`/`WeekView`/`DayView` ricevono solo `events` + callback, non sanno nulla dell'associazione. L'unico file con accoppiamento operativo è `DayDetailPopover` (fa update/delete diretto su `experience_dates`).
-
-Aggiorno gli import in `src/pages/association/AssociationCalendarPage.tsx` (5 import). Nessun cambio di comportamento.
-
-## 2. Generalizzazione del `DayDetailPopover` con un prop `mode`
-
-Estendo il popover esistente con un prop `mode: "association" | "hr"` (default `"association"` per retrocompat).
-
-- `mode="association"`: comportamento attuale identico (edit inline + delete + count globale).
-- `mode="hr"`: vista read-only. Mostra titolo esperienza, fascia oraria + ore, contatore `{confirmed_count}/{max_participants} dipendenti iscritti`, CTA "Vedi esperienza" che naviga a `/hr/experiences/:experience_id`. Nessuna sezione edit/delete, nessun `AlertDialog`.
-
-In `hr` mode il prop `onDeleted` diventa opzionale (non chiamato).
-
-Scelgo l'estensione invece di un componente separato perché il chrome (popover, header con colore+titolo+data, close button) è identico — separarlo significherebbe duplicare ~40 righe per evitare un branch di ~30.
-
-Il prop viene passato attraverso `MonthView`/`WeekView`/`DayView` come `popoverMode?: "association" | "hr"` (default `"association"`).
-
-## 3. Nuova pagina `src/pages/hr/HRCalendarPage.tsx`
-
-Struttura speculare a `AssociationCalendarPage` ma con:
-
-- `HRLayout` invece di `AssociationLayout`
-- `PageHeader` con titolo "Calendario", icona `CalendarDays`, `iconColor="text-cyan-500"`
-- `CalendarHeader` senza `onAddDate`/`onExperiencePicked` (HR non aggiunge date)
-- `MonthView`/`WeekView`/`DayView` con `popoverMode="hr"` e `onEventDeleted={fetchEvents}` (no-op innocuo)
-
-### Fetch dati (scope HR)
-
-```ts
-// Step 1 — esperienze attivate per la mia company
-const { data: ec } = await supabase
-  .from("experience_companies")
-  .select("experience_id")
-  .eq("company_id", myCompanyId);
-const experienceIds = (ec ?? []).map(r => r.experience_id);
-
-// Step 2 — date in range, RLS filtra automaticamente
-//   (hr_view_experience_dates_v5 garantisce company_id IS NULL || = my_company
-//    e che l'esperienza sia pubblicata e attivata per la company)
-const { data: dates } = await supabase
-  .from("experience_dates")
-  .select("id, start_datetime, end_datetime, max_participants, company_id, experiences!inner(id, title)")
-  .in("experience_id", experienceIds)
-  .gte("start_datetime", rangeStart.toISOString())
-  .lte("start_datetime", rangeEnd.toISOString());
+```text
+┌─────────────────────────────────────────────────────────┐
+│ PageHeader: Calendario                                  │
+├──────────┬──────────────────────────────────────────────┤
+│ Filtri   │ CalendarHeader (Oggi, nav, viste)            │
+│          ├──────────────────────────────────────────────┤
+│ ▼ Volont.│                                              │
+│  ☑ ● Es1 │            MonthView / WeekView / DayView    │
+│  ☑ ● Es2 │            (riceve `events` già filtrati)    │
+│  ☑ ● Es3 │                                              │
+│          │                                              │
+└──────────┴──────────────────────────────────────────────┘
 ```
 
-### Contatore "miei colleghi iscritti"
+- Flex orizzontale: sidebar `w-[260px]` con `border-r border-border`, contenuto cresce a riempire.
+- Bottone toggle (icona chevron) in cima alla sidebar per collassare a una colonnina stretta (`w-10`) che mostra solo l'icona di espansione. Stato persistito in `localStorage` (chiave `hr-calendar-filters-collapsed`).
+- Mobile (`<lg`): la sidebar diventa un drawer (shadcn `Sheet`) aperto da un bottone in alto a sinistra del `CalendarHeader`.
 
-Per ciascuna data il count va calcolato sui soli `bookings` confermati di utenti della mia company:
+## Componente nuovo: `CalendarFiltersSidebar`
 
-```ts
-// 1. lista dipendenti della company
-const { data: emps } = await supabase
-  .from("profiles").select("id").eq("company_id", myCompanyId);
-const empIds = emps.map(e => e.id);
+Path: `src/components/hr/calendar/CalendarFiltersSidebar.tsx`.
 
-// 2. bookings confermati limitati a questi user_id
-const { data: bookings } = await supabase
-  .from("bookings")
-  .select("experience_date_id")
-  .in("experience_date_id", dateIds)
-  .in("user_id", empIds)
-  .eq("status", "confirmed");
-```
+Props:
+- `groups: Array<{ id: string; label: string; experiences: { id: string; title: string }[] }>`
+- `selectedIds: Set<string>`
+- `onChange: (next: Set<string>) => void`
+- `collapsed: boolean`
+- `onCollapsedChange: (c: boolean) => void`
 
-Aggrego in una `Map<dateId, count>` e popolo `confirmed_count` su `CalendarEvent`.
+Struttura interna:
+- Header con titolo "Filtri" e bottone chevron (toggle collapsed).
+- Per ogni gruppo: header collassabile (shadcn `Collapsible`) con:
+  - Checkbox "Tutte" in tristate (none / some / all) che attiva o disattiva tutto il gruppo.
+  - Label del gruppo (es. "Volontariato aziendale").
+- Lista esperienze del gruppo:
+  - `<Checkbox>` shadcn + pallino colore 10px (`getEventColor(exp.id)` come `background`) + titolo troncato a 1 riga (`truncate`) con `Tooltip` per il nome completo.
+- Empty state per gruppo vuoto: testo muted "Nessuna esperienza nel programma".
+- Quando `collapsed`: mostra solo i pallini colore impilati verticalmente, senza testo (compatto).
 
-## 4. Route in `src/App.tsx`
+Architettura pronta per più gruppi: la prop `groups` è un array, quindi aggiungere Team Building in futuro è solo aggiungere un elemento all'array nella pagina. In v1 viene passato un singolo gruppo "Volontariato aziendale". Nel codice della pagina lasciare un `// TODO: aggiungere gruppo Team Building quando tb_events sono consolidati`.
 
-Sostituisco:
-```tsx
-<Route path="/hr/calendario" element={<ProtectedHRRoute><HRPlaceholderPage title="Calendario" /></ProtectedHRRoute>} />
-```
-con:
-```tsx
-<Route path="/hr/calendario" element={<ProtectedHRRoute><HRCalendarPage /></ProtectedHRRoute>} />
-```
+## Modifiche a `HRCalendarPage`
 
-Aggiungo l'import di `HRCalendarPage` (lazy se gli altri HR sono lazy, coerente con il pattern esistente).
+1. Nuovo stato:
+   - `experiencesList: { id; title }[]` — derivato da `experience_companies` × `experiences` (status `published`) della company. Fetchato una volta (separato dal range).
+   - `selectedIds: Set<string>` — inizializzato con tutti gli id quando `experiencesList` arriva. Default = tutto selezionato.
+   - `filtersCollapsed: boolean` — letto da `localStorage`.
 
-## 5. Vincoli rispettati
+2. Fetch esperienze: nuovo `useEffect`/callback `fetchExperiences()` che query `experience_companies` join `experiences` filtrate per `company_id` e `status='published'`, ordinate per `title`. Quando arriva, se `selectedIds` è `null/empty` lo inizializza con tutti gli id. Quando arrivano nuove esperienze (aggiunte dopo) le considera selezionate per default.
 
-- Nessuna nuova migration, nessuna RPC: RLS `hr_view_experience_dates_v5` già filtra correttamente.
-- Calendario Associazione invariato in comportamento.
-- Layout piatto (niente `<Card>` attorno alle viste).
-- Loading: `PageSkeleton variant="list"` (stesso del calendario Associazione).
+3. Filtro client-side: `const visibleEvents = useMemo(() => events.filter(e => selectedIds.has(e.experience_id)), [events, selectedIds])`. Passato a `MonthView/WeekView/DayView`.
+
+4. Layout: wrappare il contenuto in un `<div className="flex gap-0">` con la sidebar a sinistra e il calendario a destra (`flex-1 min-w-0`). La `PageHeader` resta sopra a tutta larghezza.
+
+5. Mobile: usare `useIsMobile` (o classi responsive) per renderizzare la sidebar come `Sheet` apribile da un `Button` con icona `SlidersHorizontal` posizionato accanto al `CalendarHeader`.
+
+## Vincoli rispettati
+
+- Componenti `MonthView/WeekView/DayView/CalendarHeader/DayDetailPopover` invariati: già accettano `events` come prop, basta passare l'array filtrato.
+- `getEventColor` riusato da `calendar-types.ts` per i pallini.
+- Style Attio-flat: niente Card wrapper sulla sidebar, solo `border-r`.
+- Empty state per company senza esperienze.
 
 ## File toccati
 
-```text
-src/components/calendar/                     ← NUOVO (spostato da association/calendar/)
-  CalendarHeader.tsx
-  MonthView.tsx
-  WeekView.tsx
-  DayView.tsx
-  EventBlock.tsx
-  DayDetailPopover.tsx                       ← +prop mode "association"|"hr"
-  calendar-types.ts
-
-src/components/association/calendar/         ← RIMOSSA
-
-src/pages/association/AssociationCalendarPage.tsx   ← solo import path
-src/pages/hr/HRCalendarPage.tsx              ← NUOVO
-src/App.tsx                                  ← route HR aggiornata
-```
-
-## Aperti
-
-Nessun decision-point: tutto il comportamento HR è specificato nel brief. Procedo all'implementazione all'approvazione.
+- `src/components/hr/calendar/CalendarFiltersSidebar.tsx` (nuovo).
+- `src/pages/hr/HRCalendarPage.tsx` (fetch esperienze, stato filtri, layout flex, drawer mobile).

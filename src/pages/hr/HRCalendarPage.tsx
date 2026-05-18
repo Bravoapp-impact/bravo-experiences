@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { CalendarDays } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { CalendarDays, SlidersHorizontal } from "lucide-react";
 import { HRLayout } from "@/components/layout/HRLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import { CalendarHeader } from "@/components/calendar/CalendarHeader";
@@ -12,15 +12,70 @@ import { useAuth } from "@/hooks/useAuth";
 import { startOfMonth, endOfMonth, addDays, subDays } from "date-fns";
 import { PageSkeleton } from "@/components/common/skeletons/PageSkeleton";
 import { devLog } from "@/lib/logger";
+import { CalendarFiltersSidebar, CalendarFilterGroup } from "@/components/hr/calendar/CalendarFiltersSidebar";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
+
+const FILTERS_COLLAPSED_KEY = "hr-calendar-filters-collapsed";
 
 export default function HRCalendarPage() {
   const { profile } = useAuth();
+  const isMobile = useIsMobile();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [experiencesList, setExperiencesList] = useState<{ id: string; title: string }[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [filtersCollapsed, setFiltersCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(FILTERS_COLLAPSED_KEY) === "1";
+  });
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const companyId = profile?.company_id;
+
+  const handleSetFiltersCollapsed = (c: boolean) => {
+    setFiltersCollapsed(c);
+    try {
+      localStorage.setItem(FILTERS_COLLAPSED_KEY, c ? "1" : "0");
+    } catch {}
+  };
+
+  // Fetch lista esperienze attivate per la company (una volta)
+  const fetchExperiences = useCallback(async () => {
+    if (!companyId) return;
+    try {
+      const { data: ec } = await supabase
+        .from("experience_companies")
+        .select("experience_id")
+        .eq("company_id", companyId);
+      const ids = (ec ?? []).map((r) => r.experience_id);
+      if (ids.length === 0) {
+        setExperiencesList([]);
+        return;
+      }
+      const { data: exps } = await supabase
+        .from("experiences")
+        .select("id, title")
+        .in("id", ids)
+        .eq("status", "published")
+        .order("title", { ascending: true });
+      const list = (exps ?? []) as { id: string; title: string }[];
+      setExperiencesList(list);
+      // Default: tutte selezionate; mantieni quelle già selezionate e aggiungi le nuove
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        list.forEach((e) => {
+          if (prev.size === 0 || !prev.has(e.id)) next.add(e.id);
+        });
+        return next;
+      });
+    } catch (err) {
+      devLog.error("Error fetching HR calendar experiences:", err);
+    }
+  }, [companyId]);
 
   const fetchEvents = useCallback(async () => {
     if (!companyId) return;
@@ -30,7 +85,6 @@ export default function HRCalendarPage() {
     const rangeEnd = addDays(endOfMonth(currentDate), 7);
 
     try {
-      // 1. Esperienze attivate per la company
       const { data: ec, error: ecErr } = await supabase
         .from("experience_companies")
         .select("experience_id")
@@ -43,7 +97,6 @@ export default function HRCalendarPage() {
         return;
       }
 
-      // 2. Date nel range (RLS filtra company_id IS NULL || = my_company)
       const { data: dates, error: datesErr } = await supabase
         .from("experience_dates")
         .select(`
@@ -60,7 +113,6 @@ export default function HRCalendarPage() {
       const countsMap = new Map<string, number>();
 
       if (dateIds.length > 0) {
-        // 3. Dipendenti della company
         const { data: emps } = await supabase
           .from("profiles")
           .select("id")
@@ -68,7 +120,6 @@ export default function HRCalendarPage() {
         const empIds = (emps || []).map((e) => e.id);
 
         if (empIds.length > 0) {
-          // 4. Bookings confermati limitati a colleghi della company
           const { data: bookings } = await supabase
             .from("bookings")
             .select("experience_date_id")
@@ -107,6 +158,88 @@ export default function HRCalendarPage() {
     fetchEvents();
   }, [fetchEvents]);
 
+  useEffect(() => {
+    fetchExperiences();
+  }, [fetchExperiences]);
+
+  // TODO: aggiungere gruppo "Team Building" quando i tb_events saranno consolidati
+  const filterGroups: CalendarFilterGroup[] = useMemo(
+    () => [
+      {
+        id: "volunteering",
+        label: "Volontariato aziendale",
+        experiences: experiencesList,
+      },
+    ],
+    [experiencesList]
+  );
+
+  const visibleEvents = useMemo(
+    () => events.filter((e) => selectedIds.has(e.experience_id)),
+    [events, selectedIds]
+  );
+
+  const calendarBody = (
+    <div className="flex-1 min-w-0 space-y-4">
+      <div className="flex items-center gap-2">
+        {isMobile && (
+          <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="h-8 w-8 shrink-0">
+                <SlidersHorizontal className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 w-[280px]">
+              <CalendarFiltersSidebar
+                groups={filterGroups}
+                selectedIds={selectedIds}
+                onChange={setSelectedIds}
+              />
+            </SheetContent>
+          </Sheet>
+        )}
+        <div className="flex-1 min-w-0">
+          <CalendarHeader
+            currentDate={currentDate}
+            viewMode={viewMode}
+            onDateChange={setCurrentDate}
+            onViewModeChange={setViewMode}
+          />
+        </div>
+      </div>
+
+      {loading ? (
+        <PageSkeleton variant="calendar" />
+      ) : (
+        <>
+          {viewMode === "month" && (
+            <MonthView
+              currentDate={currentDate}
+              events={visibleEvents}
+              onViewModeChange={setViewMode}
+              onDateChange={setCurrentDate}
+              popoverMode="hr"
+            />
+          )}
+          {viewMode === "week" && (
+            <WeekView
+              currentDate={currentDate}
+              events={visibleEvents}
+              popoverMode="hr"
+            />
+          )}
+          {viewMode === "day" && (
+            <DayView
+              currentDate={currentDate}
+              events={visibleEvents}
+              popoverMode="hr"
+            />
+          )}
+        </>
+      )}
+    </div>
+  );
+
   return (
     <HRLayout>
       <div className="space-y-4">
@@ -116,42 +249,18 @@ export default function HRCalendarPage() {
           iconColor="text-cyan-500"
         />
 
-        <CalendarHeader
-          currentDate={currentDate}
-          viewMode={viewMode}
-          onDateChange={setCurrentDate}
-          onViewModeChange={setViewMode}
-        />
-
-        {loading ? (
-          <PageSkeleton variant="calendar" />
-        ) : (
-          <>
-            {viewMode === "month" && (
-              <MonthView
-                currentDate={currentDate}
-                events={events}
-                onViewModeChange={setViewMode}
-                onDateChange={setCurrentDate}
-                popoverMode="hr"
-              />
-            )}
-            {viewMode === "week" && (
-              <WeekView
-                currentDate={currentDate}
-                events={events}
-                popoverMode="hr"
-              />
-            )}
-            {viewMode === "day" && (
-              <DayView
-                currentDate={currentDate}
-                events={events}
-                popoverMode="hr"
-              />
-            )}
-          </>
-        )}
+        <div className="flex items-stretch gap-4">
+          {!isMobile && (
+            <CalendarFiltersSidebar
+              groups={filterGroups}
+              selectedIds={selectedIds}
+              onChange={setSelectedIds}
+              collapsed={filtersCollapsed}
+              onCollapsedChange={handleSetFiltersCollapsed}
+            />
+          )}
+          {calendarBody}
+        </div>
       </div>
     </HRLayout>
   );
