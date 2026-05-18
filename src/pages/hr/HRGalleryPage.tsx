@@ -95,7 +95,7 @@ export default function HRGalleryPage() {
 
   return (
     <HRLayout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
         <PageHeader title="Galleria" icon={ImageIcon} iconColor="text-amber-500" />
 
         {/* Moderation banner */}
@@ -132,37 +132,33 @@ export default function HRGalleryPage() {
           </div>
         ) : (
           <>
-            {/* Filters */}
-            <PageSection>
-              <GalleryFilters
-                value={filters}
-                onChange={setFilters}
-                experienceOptions={experienceOptions}
-              />
-            </PageSection>
+            <GalleryFilters
+              value={filters}
+              onChange={setFilters}
+              experienceOptions={experienceOptions}
+            />
 
-            {/* Main gallery */}
-            <PageSection title="Galleria">
-              {isLoading ? (
-                <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
-                  {Array.from({ length: 10 }).map((_, i) => (
-                    <Skeleton key={i} className="aspect-square rounded-md" />
-                  ))}
-                </div>
-              ) : noResultsForFilters ? (
-                <p className="text-sm text-muted-foreground py-8 text-center">
-                  Nessuna foto corrisponde ai filtri selezionati.
-                </p>
-              ) : (
-                <RowsPhotoAlbum
-                  photos={mainAlbum}
-                  targetRowHeight={(containerWidth) =>
-                    containerWidth < 640 ? 200 : 250
-                  }
-                  onClick={({ index }) => setLightboxIndex(index)}
-                />
-              )}
-            </PageSection>
+            {isLoading ? (
+              <div className="grid grid-cols-3 md:grid-cols-5 gap-1">
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <Skeleton key={i} className="aspect-square rounded-md" />
+                ))}
+              </div>
+            ) : noResultsForFilters ? (
+              <p className="text-sm text-muted-foreground py-8 text-center">
+                Nessuna foto corrisponde ai filtri selezionati.
+              </p>
+            ) : (
+              <RowsPhotoAlbum
+                photos={mainAlbum}
+                spacing={4}
+                padding={0}
+                targetRowHeight={(containerWidth) =>
+                  containerWidth < 640 ? 200 : 250
+                }
+                onClick={({ index }) => setLightboxIndex(index)}
+              />
+            )}
           </>
         )}
       </div>
