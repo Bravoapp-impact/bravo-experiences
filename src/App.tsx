@@ -70,6 +70,7 @@ import TBRequestDetailPage from "./pages/super-admin/TBRequestDetailPage";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
 import HRPlaceholderPage from "./pages/hr/HRPlaceholderPage";
+import HRGalleryPage from "./pages/hr/HRGalleryPage";
 import Unsubscribe from "./pages/Unsubscribe";
 
 const queryClient = new QueryClient();
