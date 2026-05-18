@@ -33,6 +33,7 @@ interface BookingCardProps {
   onCancel: (bookingId: string) => void;
   onView: (booking: any) => void;
   onFeedback?: (booking: any) => void;
+  onUploadPhoto?: (booking: any) => void;
   isCancelling?: boolean;
 }
 
