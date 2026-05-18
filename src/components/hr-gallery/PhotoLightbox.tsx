@@ -6,14 +6,7 @@ import Captions from "yet-another-react-lightbox/plugins/captions";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import "yet-another-react-lightbox/styles.css";
 import "yet-another-react-lightbox/plugins/captions.css";
-import {
-  Star,
-  Eye,
-  EyeOff,
-  Trash2,
-  Pencil,
-  Download,
-} from "lucide-react";
+import { Trash2, Pencil, Download } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -35,11 +28,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { CompanyGalleryPhoto } from "@/hooks/queries/gallery/useCompanyGallery";
-import { useTogglePhotoFeatured } from "@/hooks/queries/gallery/useTogglePhotoFeatured";
-import {
-  useUpdatePhotoStatus,
-  useDeletePhoto,
-} from "@/hooks/queries/gallery/useUpdatePhotoStatus";
+import { useDeletePhoto } from "@/hooks/queries/gallery/useUpdatePhotoStatus";
 import { useUpdatePhotoCaption } from "@/hooks/queries/gallery/useUpdatePhotoCaption";
 
 interface Props {
@@ -63,8 +52,6 @@ export function PhotoLightbox({
   onOpenChange,
   companyId,
 }: Props) {
-  const toggleFeatured = useTogglePhotoFeatured();
-  const updateStatus = useUpdatePhotoStatus();
   const deletePhoto = useDeletePhoto();
   const updateCaption = useUpdatePhotoCaption();
 
@@ -107,45 +94,11 @@ export function PhotoLightbox({
 
   if (!current) return null;
 
-  const handleToggleFeatured = async () => {
-    try {
-      await toggleFeatured.mutateAsync({
-        photoId: current.id,
-        isFeatured: !current.is_featured,
-        companyId,
-      });
-      toast.success(
-        current.is_featured
-          ? "Foto rimossa dagli evidenziati"
-          : "Foto messa in evidenza",
-      );
-    } catch (e: any) {
-      toast.error(e?.message || "Errore.");
-    }
-  };
-
-  const handleToggleHidden = async () => {
-    const nextStatus = current.status === "hidden" ? "approved" : "hidden";
-    try {
-      await updateStatus.mutateAsync({
-        photoId: current.id,
-        status: nextStatus,
-        companyId,
-      });
-      toast.success(
-        nextStatus === "hidden" ? "Foto nascosta" : "Foto visibile",
-      );
-    } catch (e: any) {
-      toast.error(e?.message || "Errore.");
-    }
-  };
-
   const handleDelete = async () => {
     try {
       await deletePhoto.mutateAsync({ photoId: current.id, companyId });
       toast.success("Foto eliminata.");
       setConfirmDelete(false);
-      // Close lightbox if we deleted the last photo
       if (photos.length <= 1) onOpenChange(false);
     } catch (e: any) {
       toast.error(e?.message || "Errore.");
@@ -172,31 +125,6 @@ export function PhotoLightbox({
   };
 
   const toolbarButtons = [
-    <button
-      key="feature"
-      type="button"
-      className="yarl__button"
-      title={current.is_featured ? "Rimuovi dagli evidenziati" : "Metti in evidenza"}
-      onClick={handleToggleFeatured}
-    >
-      <Star
-        className="h-5 w-5"
-        fill={current.is_featured ? "currentColor" : "none"}
-      />
-    </button>,
-    <button
-      key="hide"
-      type="button"
-      className="yarl__button"
-      title={current.status === "hidden" ? "Rendi visibile" : "Nascondi"}
-      onClick={handleToggleHidden}
-    >
-      {current.status === "hidden" ? (
-        <EyeOff className="h-5 w-5" />
-      ) : (
-        <Eye className="h-5 w-5" />
-      )}
-    </button>,
     <button
       key="caption"
       type="button"

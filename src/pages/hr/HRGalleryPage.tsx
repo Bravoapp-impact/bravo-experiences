@@ -4,12 +4,7 @@ import {
   type Photo as AlbumPhoto,
 } from "react-photo-album";
 import "react-photo-album/rows.css";
-import {
-  Image as ImageIcon,
-  ImageOff,
-  AlertCircle,
-  Star,
-} from "lucide-react";
+import { Image as ImageIcon, ImageOff, AlertCircle } from "lucide-react";
 import { HRLayout } from "@/components/layout/HRLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import PageSection from "@/components/common/PageSection";
@@ -48,17 +43,12 @@ export default function HRGalleryPage() {
 
   const { data: photos = [], isLoading } = useCompanyGallery(companyId, {
     experienceIds: filters.experienceIds,
-    associationIds: filters.associationIds,
     dateFrom: dateFromIso,
     dateTo: dateToIso,
-    onlyFeatured: filters.onlyFeatured,
-    includeHidden: filters.includeHidden,
   });
 
   // Fetch all (unfiltered) to populate filter options & detect total empty state
-  const { data: allPhotos = [] } = useCompanyGallery(companyId, {
-    includeHidden: true,
-  });
+  const { data: allPhotos = [] } = useCompanyGallery(companyId, {});
 
   const { data: pending = [] } = usePendingPhotos(companyId);
 
@@ -66,10 +56,6 @@ export default function HRGalleryPage() {
   const { data: signedUrls = {} } = useSignedPhotoUrls(paths);
   const dims = useImageDimensions(Object.values(signedUrls));
 
-  const featuredPhotos = useMemo(
-    () => photos.filter((p) => p.is_featured && p.status === "approved"),
-    [photos],
-  );
   const mainPhotos = photos;
 
   const experienceOptions: GalleryFilterOption[] = useMemo(() => {
@@ -77,16 +63,6 @@ export default function HRGalleryPage() {
     allPhotos.forEach((p) => {
       const exp = p.experience_dates?.experiences;
       if (exp?.id && exp.title) map.set(exp.id, exp.title);
-    });
-    return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
-  }, [allPhotos]);
-
-  const associationOptions: GalleryFilterOption[] = useMemo(() => {
-    const map = new Map<string, string>();
-    allPhotos.forEach((p) => {
-      const exp = p.experience_dates?.experiences;
-      if (exp?.association_id && exp.association_name)
-        map.set(exp.association_id, exp.association_name);
     });
     return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
   }, [allPhotos]);
@@ -106,11 +82,6 @@ export default function HRGalleryPage() {
       })
       .filter((x): x is AlbumPhoto => x !== null);
 
-  const featuredAlbum = useMemo(
-    () => buildAlbumPhotos(featuredPhotos),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [featuredPhotos, signedUrls, dims],
-  );
   const mainAlbum = useMemo(
     () => buildAlbumPhotos(mainPhotos),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -167,34 +138,8 @@ export default function HRGalleryPage() {
                 value={filters}
                 onChange={setFilters}
                 experienceOptions={experienceOptions}
-                associationOptions={associationOptions}
               />
             </PageSection>
-
-            {/* Featured */}
-            {featuredAlbum.length > 0 && (
-              <PageSection
-                title={
-                  <span className="inline-flex items-center gap-2">
-                    <Star className="h-4 w-4 text-amber-500" />
-                    In evidenza
-                  </span>
-                }
-              >
-                <RowsPhotoAlbum
-                  photos={featuredAlbum}
-                  targetRowHeight={200}
-                  onClick={({ index }) => {
-                    // Featured index maps to main index by photo id
-                    const photo = featuredPhotos[index];
-                    const mainIdx = mainPhotos.findIndex(
-                      (p) => p.id === photo?.id,
-                    );
-                    if (mainIdx >= 0) setLightboxIndex(mainIdx);
-                  }}
-                />
-              </PageSection>
-            )}
 
             {/* Main gallery */}
             <PageSection title="Galleria">

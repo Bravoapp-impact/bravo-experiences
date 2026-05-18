@@ -10,8 +10,6 @@ import {
 import type { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -35,39 +33,27 @@ export interface GalleryFilterOption {
 
 export interface GalleryFiltersState {
   experienceIds: string[];
-  associationIds: string[];
   dateRange: DateRange | undefined;
-  onlyFeatured: boolean;
-  includeHidden: boolean;
 }
 
 export const EMPTY_FILTERS: GalleryFiltersState = {
   experienceIds: [],
-  associationIds: [],
   dateRange: undefined,
-  onlyFeatured: false,
-  includeHidden: false,
 };
 
 interface Props {
   value: GalleryFiltersState;
   onChange: (next: GalleryFiltersState) => void;
   experienceOptions: GalleryFilterOption[];
-  associationOptions: GalleryFilterOption[];
 }
 
 export function GalleryFilters({
   value,
   onChange,
   experienceOptions,
-  associationOptions,
 }: Props) {
   const hasActiveFilter =
-    value.experienceIds.length > 0 ||
-    value.associationIds.length > 0 ||
-    !!value.dateRange?.from ||
-    value.onlyFeatured ||
-    value.includeHidden;
+    value.experienceIds.length > 0 || !!value.dateRange?.from;
 
   const setFilter = <K extends keyof GalleryFiltersState>(
     key: K,
@@ -82,32 +68,10 @@ export function GalleryFilters({
         selectedIds={value.experienceIds}
         onChange={(ids) => setFilter("experienceIds", ids)}
       />
-      <MultiSelectFilter
-        label="Enti partner"
-        options={associationOptions}
-        selectedIds={value.associationIds}
-        onChange={(ids) => setFilter("associationIds", ids)}
-      />
       <DateRangeFilter
         value={value.dateRange}
         onChange={(r) => setFilter("dateRange", r)}
       />
-
-      <label className="flex items-center gap-2 cursor-pointer">
-        <Switch
-          checked={value.onlyFeatured}
-          onCheckedChange={(v) => setFilter("onlyFeatured", v)}
-        />
-        <Label className="text-sm cursor-pointer">Solo in evidenza</Label>
-      </label>
-
-      <label className="flex items-center gap-2 cursor-pointer">
-        <Switch
-          checked={value.includeHidden}
-          onCheckedChange={(v) => setFilter("includeHidden", v)}
-        />
-        <Label className="text-sm cursor-pointer">Mostra nascoste</Label>
-      </label>
 
       {hasActiveFilter && (
         <Button
