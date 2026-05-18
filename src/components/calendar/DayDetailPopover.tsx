@@ -89,7 +89,7 @@ export function DayDetailPopover({ event, open, onOpenChange, onDeleted, childre
       toast({ title: "Data aggiornata" });
       setIsEditing(false);
       onOpenChange(false);
-      onDeleted(); // triggers refetch
+      onDeleted?.(); // triggers refetch
     } catch (e: any) {
       toast({ variant: "destructive", title: "Errore", description: e.message });
     } finally {
@@ -104,7 +104,7 @@ export function DayDetailPopover({ event, open, onOpenChange, onDeleted, childre
       if (error) throw error;
       toast({ title: "Data eliminata" });
       onOpenChange(false);
-      onDeleted();
+      onDeleted?.();
     } catch (e: any) {
       toast({ variant: "destructive", title: "Errore", description: e.message });
     } finally {
