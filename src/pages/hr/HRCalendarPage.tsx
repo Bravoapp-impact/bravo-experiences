@@ -112,7 +112,6 @@ export default function HRCalendarPage() {
       <div className="space-y-4">
         <PageHeader
           title="Calendario"
-          description="Tutte le date programmate del tuo programma di volontariato"
           icon={CalendarDays}
           iconColor="text-cyan-500"
         />
