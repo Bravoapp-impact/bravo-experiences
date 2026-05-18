@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfMonth } from "date-fns";
 import { it } from "date-fns/locale";
 import {
   Users,
@@ -16,9 +16,6 @@ import { devLog } from "@/lib/logger";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -28,11 +25,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EmployeeParticipationsDialog } from "@/components/hr/EmployeeParticipationsDialog";
-import { EmployeeMetricsCards } from "@/components/hr/EmployeeMetricsCards";
-import { TopPerformersTable } from "@/components/hr/TopPerformersTable";
+import {
+  EmployeeMetricsCards,
+  type EmployeeSegment,
+} from "@/components/hr/EmployeeMetricsCards";
 import { PageHeader } from "@/components/common/PageHeader";
 import { PageSkeleton } from "@/components/common/skeletons/PageSkeleton";
 import { EmptyState } from "@/components/common/EmptyState";
+import { cn } from "@/lib/utils";
 
 interface EmployeeStats {
   id: string;
@@ -42,30 +42,38 @@ interface EmployeeStats {
   total_experiences: number;
   total_hours: number;
   last_participation: string | null;
+  created_at: string;
 }
 
 type SortField = "name" | "experiences" | "hours" | "last_participation";
 type SortDirection = "asc" | "desc";
 
-interface MonthlyData {
-  month: string;
-  count: number;
-}
+const SEGMENTS: { id: EmployeeSegment; label: string }[] = [
+  { id: "all", label: "Tutti" },
+  { id: "top", label: "Top Performers" },
+  { id: "active", label: "Attivi" },
+  { id: "inactive", label: "Da coinvolgere" },
+  { id: "new", label: "Nuovi questo mese" },
+];
+
+const getMedal = (position: number): string | null => {
+  if (position === 0) return "🥇";
+  if (position === 1) return "🥈";
+  if (position === 2) return "🥉";
+  return null;
+};
 
 export default function HREmployeesPage() {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [employees, setEmployees] = useState<EmployeeStats[]>([]);
-  const [monthlyTrend, setMonthlyTrend] = useState<MonthlyData[]>([]);
 
-  // Filters and sorting
   const [searchTerm, setSearchTerm] = useState("");
-  const [showOnlyNoParticipation, setShowOnlyNoParticipation] = useState(false);
+  const [segment, setSegment] = useState<EmployeeSegment>("all");
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
-  // Dialog state
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeStats | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -82,10 +90,9 @@ export default function HREmployeesPage() {
       setLoading(true);
       setError(null);
 
-      // Fetch all employees of the company (including hr_admin)
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, email, role")
+        .select("id, first_name, last_name, email, role, created_at")
         .eq("company_id", profile.company_id)
         .in("role", ["employee", "hr_admin"]);
 
@@ -99,7 +106,6 @@ export default function HREmployeesPage() {
 
       const userIds = profilesData.map((p) => p.id);
 
-      // Fetch all bookings for these users with experience_dates for hours
       const { data: bookingsData, error: bookingsError } = await supabase
         .from("bookings")
         .select(`
@@ -117,14 +123,11 @@ export default function HREmployeesPage() {
 
       if (bookingsError) throw bookingsError;
 
-      // Calculate stats per employee
-      const statsMap = new Map<string, {
-        total_experiences: number;
-        total_hours: number;
-        last_participation: string | null;
-      }>();
+      const statsMap = new Map<
+        string,
+        { total_experiences: number; total_hours: number; last_participation: string | null }
+      >();
 
-      // Initialize all employees with zero stats
       profilesData.forEach((p) => {
         statsMap.set(p.id, {
           total_experiences: 0,
@@ -133,32 +136,6 @@ export default function HREmployeesPage() {
         });
       });
 
-      // Calculate monthly trend (last 3 months)
-      const now = new Date();
-      const monthlyData: MonthlyData[] = [];
-      
-      for (let i = 2; i >= 0; i--) {
-        const monthDate = subMonths(now, i);
-        const monthStart = startOfMonth(monthDate);
-        const monthEnd = endOfMonth(monthDate);
-        
-        const count = (bookingsData || []).filter((booking) => {
-          const expDate = booking.experience_dates as unknown as {
-            start_datetime: string;
-          };
-          const bookingDate = new Date(expDate.start_datetime);
-          return bookingDate >= monthStart && bookingDate <= monthEnd && bookingDate <= now;
-        }).length;
-        
-        monthlyData.push({
-          month: format(monthDate, "MMM", { locale: it }),
-          count,
-        });
-      }
-      
-      setMonthlyTrend(monthlyData);
-
-      // Aggregate bookings data
       (bookingsData || []).forEach((booking) => {
         const stats = statsMap.get(booking.user_id);
         if (!stats) return;
@@ -168,9 +145,8 @@ export default function HREmployeesPage() {
           volunteer_hours: number | null;
         };
 
-        // Only count past experiences as "completed"
         const startDate = new Date(expDate.start_datetime);
-        if (startDate > new Date()) return; // Skip future bookings
+        if (startDate > new Date()) return;
 
         stats.total_experiences += 1;
         stats.total_hours += expDate.volunteer_hours ? Number(expDate.volunteer_hours) : 0;
@@ -183,7 +159,6 @@ export default function HREmployeesPage() {
         }
       });
 
-      // Combine profile data with stats
       const employeesWithStats: EmployeeStats[] = profilesData.map((p) => {
         const stats = statsMap.get(p.id)!;
         return {
@@ -194,6 +169,7 @@ export default function HREmployeesPage() {
           total_experiences: stats.total_experiences,
           total_hours: stats.total_hours,
           last_participation: stats.last_participation,
+          created_at: p.created_at,
         };
       });
 
@@ -206,9 +182,64 @@ export default function HREmployeesPage() {
     }
   };
 
-  // Filtered and sorted employees
+  // Top-3 ranking on entire company set
+  const topRanking = useMemo(() => {
+    const rank = new Map<string, number>();
+    [...employees]
+      .filter((e) => e.total_experiences > 0)
+      .sort((a, b) => {
+        if (b.total_experiences !== a.total_experiences) {
+          return b.total_experiences - a.total_experiences;
+        }
+        return b.total_hours - a.total_hours;
+      })
+      .forEach((e, i) => rank.set(e.id, i));
+    return rank;
+  }, [employees]);
+
+  // Metrics
+  const monthStart = useMemo(() => startOfMonth(new Date()), []);
+  const totalCount = employees.length;
+  const activeCount = employees.filter((e) => e.total_experiences >= 1).length;
+  const inactiveCount = totalCount - activeCount;
+  const newThisMonthCount = employees.filter(
+    (e) => new Date(e.created_at) >= monthStart,
+  ).length;
+
   const filteredEmployees = useMemo(() => {
     let result = [...employees];
+
+    // Segment filter
+    switch (segment) {
+      case "active":
+        result = result.filter((e) => e.total_experiences >= 1);
+        break;
+      case "inactive":
+        result = result.filter((e) => e.total_experiences === 0);
+        break;
+      case "new":
+        result = result.filter((e) => new Date(e.created_at) >= monthStart);
+        break;
+      case "top": {
+        const topIds = new Set(
+          [...employees]
+            .filter((e) => e.total_experiences > 0)
+            .sort((a, b) => {
+              if (b.total_experiences !== a.total_experiences) {
+                return b.total_experiences - a.total_experiences;
+              }
+              return b.total_hours - a.total_hours;
+            })
+            .slice(0, 5)
+            .map((e) => e.id),
+        );
+        result = result.filter((e) => topIds.has(e.id));
+        break;
+      }
+      case "all":
+      default:
+        break;
+    }
 
     // Search filter
     if (searchTerm) {
@@ -217,25 +248,25 @@ export default function HREmployeesPage() {
         (e) =>
           e.email.toLowerCase().includes(search) ||
           (e.first_name?.toLowerCase() || "").includes(search) ||
-          (e.last_name?.toLowerCase() || "").includes(search)
+          (e.last_name?.toLowerCase() || "").includes(search),
       );
     }
 
-    // No participation filter
-    if (showOnlyNoParticipation) {
-      result = result.filter((e) => e.total_experiences === 0);
+    // Top segment keeps ranking order regardless of sort
+    if (segment === "top") {
+      result.sort((a, b) => (topRanking.get(a.id) ?? 99) - (topRanking.get(b.id) ?? 99));
+      return result;
     }
 
-    // Sorting
     result.sort((a, b) => {
       let comparison = 0;
-
       switch (sortField) {
-        case "name":
+        case "name": {
           const nameA = `${a.first_name || ""} ${a.last_name || ""}`.trim().toLowerCase();
           const nameB = `${b.first_name || ""} ${b.last_name || ""}`.trim().toLowerCase();
           comparison = nameA.localeCompare(nameB);
           break;
+        }
         case "experiences":
           comparison = a.total_experiences - b.total_experiences;
           break;
@@ -246,15 +277,17 @@ export default function HREmployeesPage() {
           if (!a.last_participation && !b.last_participation) comparison = 0;
           else if (!a.last_participation) comparison = -1;
           else if (!b.last_participation) comparison = 1;
-          else comparison = new Date(a.last_participation).getTime() - new Date(b.last_participation).getTime();
+          else
+            comparison =
+              new Date(a.last_participation).getTime() -
+              new Date(b.last_participation).getTime();
           break;
       }
-
       return sortDirection === "asc" ? comparison : -comparison;
     });
 
     return result;
-  }, [employees, searchTerm, showOnlyNoParticipation, sortField, sortDirection]);
+  }, [employees, segment, searchTerm, sortField, sortDirection, monthStart, topRanking]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -304,8 +337,6 @@ export default function HREmployeesPage() {
     URL.revokeObjectURL(url);
   };
 
-  const noParticipationCount = employees.filter((e) => e.total_experiences === 0).length;
-
   if (loading) {
     return (
       <HRLayout>
@@ -327,17 +358,11 @@ export default function HREmployeesPage() {
     );
   }
 
-  // Empty state - no employees
   if (employees.length === 0) {
     return (
       <HRLayout>
         <div className="space-y-6">
-          <PageHeader
-            title="Utenti"
-            description="Monitora la partecipazione degli utenti"
-            icon={Users}
-            iconColor="text-blue-500"
-          />
+          <PageHeader title="Utenti" icon={Users} iconColor="text-blue-500" />
           <EmptyState
             icon={Users}
             title="Nessun utente registrato"
@@ -348,56 +373,67 @@ export default function HREmployeesPage() {
     );
   }
 
+  // For metric-card segment highlight, only highlight when segment matches an exposed card
+  const metricsActiveSegment: EmployeeSegment =
+    segment === "top" ? "all" : segment;
+
   return (
     <HRLayout>
       <div className="space-y-6">
-          <PageHeader
-            title="Utenti"
-            description={`${employees.length} utent${employees.length === 1 ? "e" : "i"} registrat${employees.length === 1 ? "o" : "i"}${noParticipationCount > 0 ? ` • ${noParticipationCount} da coinvolgere` : ""}`}
-            icon={Users}
-            iconColor="text-blue-500"
+        <PageHeader title="Utenti" icon={Users} iconColor="text-blue-500" />
+
+        <EmployeeMetricsCards
+          totalCount={totalCount}
+          activeCount={activeCount}
+          inactiveCount={inactiveCount}
+          newThisMonthCount={newThisMonthCount}
+          activeSegment={metricsActiveSegment}
+          onSegmentChange={setSegment}
         />
 
-        {/* Metrics Cards */}
-        <EmployeeMetricsCards employees={employees} monthlyTrend={monthlyTrend} />
-
-        {/* Top Performers */}
-        <TopPerformersTable employees={employees} />
-
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 pt-2 border-t border-border">
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Cerca per nome o email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
+        {/* Segment pills + search + export */}
+        <div className="flex flex-col gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Cerca per nome o email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Button
+              variant="outline"
+              onClick={exportCSV}
+              className="gap-2 shrink-0"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Esporta CSV</span>
+            </Button>
           </div>
 
-          {/* No participation filter */}
-          <div className="flex items-center gap-2 shrink-0">
-            <Switch
-              id="no-participation"
-              checked={showOnlyNoParticipation}
-              onCheckedChange={setShowOnlyNoParticipation}
-            />
-            <Label htmlFor="no-participation" className="text-sm cursor-pointer">
-              Mostra utenti da coinvolgere
-            </Label>
+          <div className="flex flex-wrap gap-2">
+            {SEGMENTS.map((s) => {
+              const isActive = segment === s.id;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setSegment(s.id)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-sm font-medium border transition-colors",
+                    isActive
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground",
+                  )}
+                  aria-pressed={isActive}
+                >
+                  {s.label}
+                </button>
+              );
+            })}
           </div>
-
-          {/* Export */}
-          <Button
-            variant="outline"
-            onClick={exportCSV}
-            className="gap-2 shrink-0"
-          >
-            <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">Esporta CSV</span>
-          </Button>
         </div>
 
         {/* Employees Table */}
@@ -461,56 +497,57 @@ export default function HREmployeesPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredEmployees.map((employee, index) => (
-                  <motion.tr
-                    key={employee.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.02 }}
-                    className="border-b border-border/50 last:border-0 cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => handleEmployeeClick(employee)}
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="min-w-0">
-                          <p className="font-medium text-foreground truncate">
-                            {employee.first_name || employee.last_name
-                              ? `${employee.first_name || ""} ${employee.last_name || ""}`.trim()
-                              : "—"}
-                          </p>
-                          <p className="text-sm text-muted-foreground md:hidden truncate">
-                            {employee.email}
-                          </p>
+                filteredEmployees.map((employee, index) => {
+                  const rank = topRanking.get(employee.id);
+                  const medal = rank !== undefined ? getMedal(rank) : null;
+                  return (
+                    <motion.tr
+                      key={employee.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.02 }}
+                      className="border-b border-border/50 last:border-0 cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleEmployeeClick(employee)}
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {medal && (
+                            <span className="text-lg shrink-0" aria-label={`Top ${(rank ?? 0) + 1}`}>
+                              {medal}
+                            </span>
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-medium text-foreground truncate">
+                              {employee.first_name || employee.last_name
+                                ? `${employee.first_name || ""} ${employee.last_name || ""}`.trim()
+                                : "—"}
+                            </p>
+                            <p className="text-sm text-muted-foreground md:hidden truncate">
+                              {employee.email}
+                            </p>
+                          </div>
                         </div>
-                        {showOnlyNoParticipation && employee.total_experiences === 0 && (
-                          <Badge
-                            variant="outline"
-                            className="shrink-0 bg-primary/10 text-primary border-primary/20"
-                          >
-                            Da coinvolgere
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {employee.email}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="font-medium">{employee.total_experiences}</span>
-                    </TableCell>
-                    <TableCell className="text-center hidden sm:table-cell">
-                      <span className="font-medium">{employee.total_hours}h</span>
-                    </TableCell>
-                    <TableCell className="text-right hidden lg:table-cell text-muted-foreground">
-                      {employee.last_participation
-                        ? format(new Date(employee.last_participation), "d MMM yyyy", { locale: it })
-                        : "—"}
-                    </TableCell>
-                    <TableCell className="w-10 text-muted-foreground">
-                      <ChevronRight className="h-4 w-4" />
-                    </TableCell>
-                  </motion.tr>
-                ))
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">
+                        {employee.email}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="font-medium">{employee.total_experiences}</span>
+                      </TableCell>
+                      <TableCell className="text-center hidden sm:table-cell">
+                        <span className="font-medium">{employee.total_hours}h</span>
+                      </TableCell>
+                      <TableCell className="text-right hidden lg:table-cell text-muted-foreground">
+                        {employee.last_participation
+                          ? format(new Date(employee.last_participation), "d MMM yyyy", { locale: it })
+                          : "—"}
+                      </TableCell>
+                      <TableCell className="w-10 text-muted-foreground">
+                        <ChevronRight className="h-4 w-4" />
+                      </TableCell>
+                    </motion.tr>
+                  );
+                })
               )}
             </TableBody>
           </Table>
