@@ -391,29 +391,19 @@ export default function HREmployeesPage() {
           onSegmentChange={setSegment}
         />
 
-        {/* Segment pills + search + export */}
-        <div className="flex flex-col gap-3 pt-2">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Cerca per nome o email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Button
-              variant="outline"
-              onClick={exportCSV}
-              className="gap-2 shrink-0"
-            >
-              <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Esporta CSV</span>
-            </Button>
+        {/* Search + pills + export, single row on lg+ */}
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3 pt-2">
+          <div className="relative w-full lg:w-64 shrink-0">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Cerca per nome o email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 flex-1 min-w-0">
             {SEGMENTS.map((s) => {
               const isActive = segment === s.id;
               return (
@@ -434,6 +424,15 @@ export default function HREmployeesPage() {
               );
             })}
           </div>
+
+          <Button
+            variant="outline"
+            onClick={exportCSV}
+            className="gap-2 shrink-0 lg:ml-auto"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Esporta CSV</span>
+          </Button>
         </div>
 
         {/* Employees Table */}
