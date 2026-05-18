@@ -1,169 +1,120 @@
 import { motion } from "framer-motion";
-import { Clock, UserCheck, TrendingUp } from "lucide-react";
+import { Users, UserCheck, UserPlus, UserX, LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
+import { cn } from "@/lib/utils";
 
-interface EmployeeStats {
-  id: string;
-  total_experiences: number;
-  total_hours: number;
-}
-
-interface MonthlyData {
-  month: string;
-  count: number;
-}
+export type EmployeeSegment = "all" | "top" | "active" | "inactive" | "new";
 
 interface EmployeeMetricsCardsProps {
-  employees: EmployeeStats[];
-  monthlyTrend: MonthlyData[];
+  totalCount: number;
+  activeCount: number;
+  inactiveCount: number;
+  newThisMonthCount: number;
+  activeSegment: EmployeeSegment;
+  onSegmentChange: (segment: EmployeeSegment) => void;
+}
+
+interface MetricDef {
+  segment: EmployeeSegment;
+  label: string;
+  value: string | number;
+  subLabel?: string;
+  icon: LucideIcon;
+  iconColor: string;
+  iconBgColor: string;
 }
 
 export function EmployeeMetricsCards({
-  employees,
-  monthlyTrend,
+  totalCount,
+  activeCount,
+  inactiveCount,
+  newThisMonthCount,
+  activeSegment,
+  onSegmentChange,
 }: EmployeeMetricsCardsProps) {
-  // Calculate metrics
-  const activeEmployees = employees.filter((e) => e.total_experiences > 0);
-  const totalHours = employees.reduce((sum, e) => sum + e.total_hours, 0);
-
-  const avgHoursPerEmployee =
-    activeEmployees.length > 0
-      ? (totalHours / activeEmployees.length).toFixed(1)
-      : "0";
-
   const activePercentage =
-    employees.length > 0
-      ? Math.round((activeEmployees.length / employees.length) * 100)
-      : 0;
+    totalCount > 0 ? Math.round((activeCount / totalCount) * 100) : 0;
 
-  // Get current month trend indicator
-  const currentMonthCount = monthlyTrend[monthlyTrend.length - 1]?.count || 0;
-  const previousMonthCount = monthlyTrend[monthlyTrend.length - 2]?.count || 0;
-  const trendDirection =
-    currentMonthCount >= previousMonthCount ? "up" : "down";
+  const metrics: MetricDef[] = [
+    {
+      segment: "all",
+      label: "Registrati",
+      value: totalCount,
+      icon: Users,
+      iconColor: "text-blue-500",
+      iconBgColor: "bg-blue-500/10",
+    },
+    {
+      segment: "active",
+      label: "Attivi",
+      value: activeCount,
+      subLabel: totalCount > 0 ? `${activePercentage}% dei registrati` : undefined,
+      icon: UserCheck,
+      iconColor: "text-primary",
+      iconBgColor: "bg-primary/10",
+    },
+    {
+      segment: "inactive",
+      label: "Da coinvolgere",
+      value: inactiveCount,
+      icon: UserX,
+      iconColor: "text-bravo-orange",
+      iconBgColor: "bg-bravo-orange/10",
+    },
+    {
+      segment: "new",
+      label: "Nuovi questo mese",
+      value: newThisMonthCount,
+      icon: UserPlus,
+      iconColor: "text-bravo-purple",
+      iconBgColor: "bg-bravo-purple/10",
+    },
+  ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-      {/* Ore Medie per Dipendente */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        <Card className="border-border/50 bg-card/80 backdrop-blur-sm h-full">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-start gap-3 sm:gap-4">
-              <div className="p-2.5 sm:p-3 rounded-xl bg-bravo-orange/10 shrink-0">
-                <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-bravo-orange" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xl font-bold text-foreground">
-                  {avgHoursPerEmployee}h
-                </p>
-                <p className="text-[11px] text-muted-foreground leading-tight">
-                   Ore Medie per Utente
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Percentuale Dipendenti Attivi */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <Card className="border-border/50 bg-card/80 backdrop-blur-sm h-full">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-start gap-3 sm:gap-4">
-              <div className="p-2.5 sm:p-3 rounded-xl bg-bravo-purple/10 shrink-0">
-                <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-bravo-purple" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xl font-bold text-foreground">
-                  {activePercentage}%
-                </p>
-                <p className="text-[11px] text-muted-foreground leading-tight">
-                   Utenti Attivi
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Trend Mensile */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <Card className="border-border/50 bg-card/80 backdrop-blur-sm h-full">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-start gap-3 sm:gap-4">
-              <div
-                className={`p-2.5 sm:p-3 rounded-xl shrink-0 ${
-                  trendDirection === "up"
-                    ? "bg-primary/10"
-                    : "bg-destructive/10"
-                }`}
-              >
-                <TrendingUp
-                  className={`h-5 w-5 sm:h-6 sm:w-6 ${
-                    trendDirection === "up"
-                      ? "text-primary"
-                      : "text-destructive rotate-180"
-                  }`}
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[11px] text-muted-foreground leading-tight mb-2">
-                  Trend Partecipazioni
-                </p>
-                {monthlyTrend.length > 0 ? (
-                  <div className="h-16">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={monthlyTrend} barCategoryGap="20%">
-                        <XAxis
-                          dataKey="month"
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                        />
-                        <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                          {monthlyTrend.map((_, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={
-                                index === monthlyTrend.length - 1
-                                  ? "hsl(var(--primary))"
-                                  : "hsl(var(--primary) / 0.3)"
-                              }
-                            />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {metrics.map((m, i) => {
+        const isActive = activeSegment === m.segment;
+        const Icon = m.icon;
+        return (
+          <motion.button
+            key={m.segment}
+            type="button"
+            onClick={() => onSegmentChange(m.segment)}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 * i }}
+            className="text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-xl"
+            aria-pressed={isActive}
+          >
+            <Card
+              className={cn(
+                "h-full transition-all bg-card/80 backdrop-blur-sm hover:shadow-md",
+                isActive
+                  ? "border-primary/60 bg-primary/[0.04] shadow-sm"
+                  : "border-border/50",
+              )}
+            >
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex items-start gap-3 sm:gap-4 h-full">
+                  <div className={cn("p-2.5 sm:p-3 rounded-xl shrink-0", m.iconBgColor)}>
+                    <Icon className={cn("h-5 w-5 sm:h-6 sm:w-6", m.iconColor)} />
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Nessun dato disponibile
-                  </p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xl font-bold text-foreground">{m.value}</p>
+                    <p className="text-[11px] text-muted-foreground leading-tight">
+                      {m.label}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 min-h-[14px]">
+                      {m.subLabel ?? "\u00A0"}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.button>
+        );
+      })}
     </div>
   );
 }
