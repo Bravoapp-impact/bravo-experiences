@@ -125,8 +125,8 @@ function FilterGroupBlock({ group, selectedIds, onToggleOne, onToggleGroup }: Fi
   const someChecked = selected > 0 && selected < total;
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen} className="px-2 pb-2">
-      <div className="flex items-center gap-2 px-1 py-1.5">
+    <Collapsible open={open} onOpenChange={setOpen} className="pb-2">
+      <div className="flex items-center gap-2 py-1.5">
         <Checkbox
           checked={allChecked ? true : someChecked ? "indeterminate" : false}
           onCheckedChange={(c) => onToggleGroup(!!c)}
@@ -141,7 +141,7 @@ function FilterGroupBlock({ group, selectedIds, onToggleOne, onToggleGroup }: Fi
         </CollapsibleTrigger>
       </div>
 
-      <CollapsibleContent className="pl-6 space-y-0.5">
+      <CollapsibleContent className="space-y-0.5">
         {total === 0 ? (
           <p className="text-xs text-muted-foreground py-1">Nessuna esperienza nel programma</p>
         ) : (
@@ -150,7 +150,7 @@ function FilterGroupBlock({ group, selectedIds, onToggleOne, onToggleGroup }: Fi
             return (
               <label
                 key={exp.id}
-                className="flex items-center gap-2 py-1 px-1 rounded hover:bg-muted/50 cursor-pointer"
+                className="flex items-center gap-2 py-1 rounded hover:bg-muted/50 cursor-pointer"
               >
                 <Checkbox checked={checked} onCheckedChange={() => onToggleOne(exp.id)} />
                 <span
