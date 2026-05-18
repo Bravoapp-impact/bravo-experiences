@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal } from "lucide-react";
+import { ChevronRight, ChevronDown, PanelLeftClose, PanelLeft } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
