@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { MapPin, Clock, ChevronRight } from "lucide-react";
+import { MapPin, Clock, ChevronRight, ImagePlus } from "lucide-react";
 import { format, differenceInMinutes } from "date-fns";
 import { it } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +33,7 @@ interface BookingCardProps {
   onCancel: (bookingId: string) => void;
   onView: (booking: any) => void;
   onFeedback?: (booking: any) => void;
+  onUploadPhoto?: (booking: any) => void;
   isCancelling?: boolean;
 }
 
@@ -43,6 +44,7 @@ export function BookingCard({
   hasReview = false,
   onView,
   onFeedback,
+  onUploadPhoto,
 }: BookingCardProps) {
   const experience = booking.experience_dates.experiences;
   const startDate = new Date(booking.experience_dates.start_datetime);
@@ -91,17 +93,34 @@ export function BookingCard({
           <Badge variant="secondary" className="text-xs">
             Assente
           </Badge>
-        ) : !hasReview && onFeedback ? (
-          <Badge
-            className="text-xs cursor-pointer bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
-            onClick={(e) => {
-              e.stopPropagation();
-              onFeedback(booking);
-            }}
-          >
-            Lascia feedback
-          </Badge>
-        ) : null}
+        ) : (
+          <div className="flex items-center gap-1.5">
+            {onUploadPhoto && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onUploadPhoto(booking);
+                }}
+                className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-md border border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <ImagePlus className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Carica foto</span>
+              </button>
+            )}
+            {!hasReview && onFeedback && (
+              <Badge
+                className="text-xs cursor-pointer bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onFeedback(booking);
+                }}
+              >
+                Lascia feedback
+              </Badge>
+            )}
+          </div>
+        )}
         <ChevronRight className="h-4 w-4 text-muted-foreground" />
       </motion.div>
     );

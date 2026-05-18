@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LogOut, Search, Calendar, Sprout, User } from "lucide-react";
+import { LogOut, Search, Calendar, Sprout, User, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
@@ -95,6 +95,18 @@ export function AppLayout({ children }: AppLayoutProps) {
               >
                 <Calendar className="h-4 w-4" />
                 <span className="hidden lg:inline">Prenotazioni</span>
+              </Link>
+
+              <Link
+                to="/app/gallery"
+                className={`text-sm font-medium transition-colors flex items-center gap-2 px-3 py-2 rounded-lg ${
+                  isActive("/app/gallery")
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                <ImageIcon className="h-4 w-4" />
+                <span className="hidden lg:inline">Galleria</span>
               </Link>
 
               <Link

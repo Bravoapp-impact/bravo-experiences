@@ -6,6 +6,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { BookingCard } from "@/components/bookings/BookingCard";
 import { BookingDetailModal } from "@/components/bookings/BookingDetailModal";
 import { FeedbackModal } from "@/components/bookings/FeedbackModal";
+import { PhotoUploadDialog } from "@/components/gallery/PhotoUploadDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -45,6 +46,7 @@ export default function MyBookings() {
   const [historyExpanded, setHistoryExpanded] = useState(false);
   const [reviewedBookingIds, setReviewedBookingIds] = useState<Set<string>>(new Set());
   const [feedbackBooking, setFeedbackBooking] = useState<Booking | null>(null);
+  const [uploadDialogBooking, setUploadDialogBooking] = useState<Booking | null>(null);
 
   const fetchBookings = async () => {
     if (!user) return;
@@ -319,6 +321,7 @@ export default function MyBookings() {
                           onCancel={handleCancel}
                           onView={setSelectedBooking}
                           onFeedback={["confirmed", "completed"].includes(booking.status) ? setFeedbackBooking : undefined}
+                          onUploadPhoto={["confirmed", "completed"].includes(booking.status) ? setUploadDialogBooking : undefined}
                         />
                       ))}
                     </div>
@@ -345,6 +348,17 @@ export default function MyBookings() {
         onSubmitted={handleFeedbackSubmitted}
         booking={feedbackBooking}
       />
+
+      {/* Photo Upload Dialog */}
+      {uploadDialogBooking && (
+        <PhotoUploadDialog
+          open={!!uploadDialogBooking}
+          onOpenChange={(o) => !o && setUploadDialogBooking(null)}
+          experienceDateId={uploadDialogBooking.experience_dates.id}
+          experienceTitle={uploadDialogBooking.experience_dates.experiences.title}
+          eventDate={uploadDialogBooking.experience_dates.start_datetime}
+        />
+      )}
     </AppLayout>
   );
 }

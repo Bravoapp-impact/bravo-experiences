@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Search, Calendar, Sprout, User } from "lucide-react";
+import { Search, Calendar, Sprout, User, Image as ImageIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +14,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { path: "/app/experiences", label: "Esplora", icon: Search },
   { path: "/app/bookings", label: "Prenotazioni", icon: Calendar },
+  { path: "/app/gallery", label: "Galleria", icon: ImageIcon },
   { path: "/app/impact", label: "Impatto", icon: Sprout },
   { path: "/app/profile", label: "Profilo", icon: User, useAvatar: true },
 ];

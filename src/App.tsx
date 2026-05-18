@@ -19,6 +19,7 @@ import Experiences from "./pages/Experiences";
 import ExperienceDetail from "./pages/ExperienceDetail";
 import MyBookings from "./pages/MyBookings";
 import Impact from "./pages/Impact";
+import Gallery from "./pages/Gallery";
 import Profile from "./pages/Profile";
 import HRDashboard from "./pages/HRDashboard";
 import HRHomePage from "./pages/hr/HRHomePage";
@@ -120,6 +121,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Impact />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/app/gallery"
+              element={
+                <ProtectedRoute>
+                  <Gallery />
                 </ProtectedRoute>
               }
             />
