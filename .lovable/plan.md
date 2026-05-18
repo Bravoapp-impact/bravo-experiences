@@ -1,73 +1,64 @@
+# Calendario HR — layout full-height e divisori continui
+
 ## Obiettivo
+Riprodurre la sensazione di Google Calendar:
+- nessuno spazio bianco tra la nav HR globale e la sidebar dei filtri;
+- bordo verticale continuo tra sidebar filtri e calendario, dal top al bottom della viewport;
+- celle del MonthView che riempiono lo spazio verticale disponibile (6 righe equidistribuite, niente buco bianco sotto).
 
-Aggiungere alla pagina `/hr/calendario` una sidebar laterale stile Google Calendar che permetta di filtrare gli eventi mostrati per esperienza, raggruppati per macro-categoria (Volontariato aziendale oggi, predisposto per Team Building in futuro).
+## Modifiche
 
-## Layout pagina
+### 1. `src/pages/hr/HRCalendarPage.tsx`
+- Wrapper esterno: rimuovere `space-y-4` dove va in conflitto con il blocco full-height. Mantenere il `PageHeader` con i suoi margini normali sopra.
+- Il container che racchiude `CalendarFiltersSidebar` + `calendarBody` diventa:
+  ```tsx
+  <div className="flex -mx-4 sm:-mx-6 lg:-mx-8 -mb-4 sm:-mb-6 lg:-mb-8 h-[calc(100vh-180px)]">
+  ```
+  - margini negativi per annullare il padding orizzontale e bottom del `<main>` di `AdminLayout` (la sidebar dei filtri si attacca alla nav globale e al fondo viewport);
+  - `gap-4` rimosso: la separazione visiva la fa il `border-r` della sidebar;
+  - `180px` è un valore di partenza da tarare visivamente (header app + `PageHeader` + spacing) per arrivare esattamente al fondo viewport.
+- `calendarBody`: passa da `space-y-4` a `flex flex-col h-full`. La toolbar (`CalendarHeader` + bottone mobile filtri) resta in alto come riga fissa con un piccolo margine bottom; la view del calendario (`MonthView`/`WeekView`/`DayView`) ha classe `flex-1 min-h-0` per occupare il resto.
+- Aggiungere padding orizzontale interno al `calendarBody` (es. `px-4 sm:px-6 lg:px-8`) per ricreare la gronda persa dai margini negativi, lasciando però la sidebar filtri attaccata al bordo sinistro.
+- Mobile (`isMobile`): la sidebar resta `Sheet` come oggi; sul container desktop il layout full-height entra in vigore solo da `md:` o equivalente per non rompere mobile.
 
-```text
-┌─────────────────────────────────────────────────────────┐
-│ PageHeader: Calendario                                  │
-├──────────┬──────────────────────────────────────────────┤
-│ Filtri   │ CalendarHeader (Oggi, nav, viste)            │
-│          ├──────────────────────────────────────────────┤
-│ ▼ Volont.│                                              │
-│  ☑ ● Es1 │            MonthView / WeekView / DayView    │
-│  ☑ ● Es2 │            (riceve `events` già filtrati)    │
-│  ☑ ● Es3 │                                              │
-│          │                                              │
-└──────────┴──────────────────────────────────────────────┘
-```
+### 2. `src/components/hr/calendar/CalendarFiltersSidebar.tsx`
+- Root `<aside>`: aggiungere `h-full` (mantiene `flex flex-col` esistente) così il `border-r` si estende fino al fondo della viewport.
 
-- Flex orizzontale: sidebar `w-[260px]` con `border-r border-border`, contenuto cresce a riempire.
-- Bottone toggle (icona chevron) in cima alla sidebar per collassare a una colonnina stretta (`w-10`) che mostra solo l'icona di espansione. Stato persistito in `localStorage` (chiave `hr-calendar-filters-collapsed`).
-- Mobile (`<lg`): la sidebar diventa un drawer (shadcn `Sheet`) aperto da un bottone in alto a sinistra del `CalendarHeader`.
+### 3. `src/components/calendar/MonthView.tsx`
+- Root del componente: da `border rounded-lg overflow-hidden bg-card` a `border rounded-lg overflow-hidden bg-card h-full flex flex-col` (consentire ai contenitori parent di passare l'altezza).
+- Header dei giorni: resta fisso (riga grid 7 colonne).
+- Grid celle: da
+  ```tsx
+  <div className="grid grid-cols-7">
+  ```
+  a
+  ```tsx
+  <div className="grid grid-cols-7 grid-rows-6 flex-1 min-h-0">
+  ```
+- Cella singola: rimuovere `min-h-[90px] sm:min-h-[110px]`, sostituire con `min-h-[60px]` come fallback per viewport corte e `overflow-hidden` per evitare che troppi eventi sforino la cella.
+- Le 6 righe sono garantite da `startOfWeek(monthStart) → endOfWeek(monthEnd)` (sempre 42 celle).
 
-## Componente nuovo: `CalendarFiltersSidebar`
+### 4. `src/components/calendar/WeekView.tsx`
+- Root: aggiungere `h-full flex flex-col`.
+- Sostituire `overflow-y-auto max-h-[600px]` sul grid orario con `flex-1 min-h-0 overflow-y-auto` così si adatta allo spazio disponibile.
 
-Path: `src/components/hr/calendar/CalendarFiltersSidebar.tsx`.
+### 5. `src/components/calendar/DayView.tsx`
+- Stessa logica del WeekView: `h-full flex flex-col` sul root e `flex-1 min-h-0 overflow-y-auto` al posto di `max-h-[600px]`.
 
-Props:
-- `groups: Array<{ id: string; label: string; experiences: { id: string; title: string }[] }>`
-- `selectedIds: Set<string>`
-- `onChange: (next: Set<string>) => void`
-- `collapsed: boolean`
-- `onCollapsedChange: (c: boolean) => void`
+### 6. `src/pages/association/AssociationCalendarPage.tsx`
+Condivide gli stessi componenti calendario. Per non rompere nulla:
+- Avvolgere `CalendarHeader` + view in un container `flex flex-col h-[calc(100vh-180px)]` con la view in `flex-1 min-h-0`, in modo che `MonthView/WeekView/DayView` ricevano l'altezza che ora si aspettano.
+- Mantenere il `PageHeader` e il dialog `ManageDatesDialog` invariati.
 
-Struttura interna:
-- Header con titolo "Filtri" e bottone chevron (toggle collapsed).
-- Per ogni gruppo: header collassabile (shadcn `Collapsible`) con:
-  - Checkbox "Tutte" in tristate (none / some / all) che attiva o disattiva tutto il gruppo.
-  - Label del gruppo (es. "Volontariato aziendale").
-- Lista esperienze del gruppo:
-  - `<Checkbox>` shadcn + pallino colore 10px (`getEventColor(exp.id)` come `background`) + titolo troncato a 1 riga (`truncate`) con `Tooltip` per il nome completo.
-- Empty state per gruppo vuoto: testo muted "Nessuna esperienza nel programma".
-- Quando `collapsed`: mostra solo i pallini colore impilati verticalmente, senza testo (compatto).
-
-Architettura pronta per più gruppi: la prop `groups` è un array, quindi aggiungere Team Building in futuro è solo aggiungere un elemento all'array nella pagina. In v1 viene passato un singolo gruppo "Volontariato aziendale". Nel codice della pagina lasciare un `// TODO: aggiungere gruppo Team Building quando tb_events sono consolidati`.
-
-## Modifiche a `HRCalendarPage`
-
-1. Nuovo stato:
-   - `experiencesList: { id; title }[]` — derivato da `experience_companies` × `experiences` (status `published`) della company. Fetchato una volta (separato dal range).
-   - `selectedIds: Set<string>` — inizializzato con tutti gli id quando `experiencesList` arriva. Default = tutto selezionato.
-   - `filtersCollapsed: boolean` — letto da `localStorage`.
-
-2. Fetch esperienze: nuovo `useEffect`/callback `fetchExperiences()` che query `experience_companies` join `experiences` filtrate per `company_id` e `status='published'`, ordinate per `title`. Quando arriva, se `selectedIds` è `null/empty` lo inizializza con tutti gli id. Quando arrivano nuove esperienze (aggiunte dopo) le considera selezionate per default.
-
-3. Filtro client-side: `const visibleEvents = useMemo(() => events.filter(e => selectedIds.has(e.experience_id)), [events, selectedIds])`. Passato a `MonthView/WeekView/DayView`.
-
-4. Layout: wrappare il contenuto in un `<div className="flex gap-0">` con la sidebar a sinistra e il calendario a destra (`flex-1 min-w-0`). La `PageHeader` resta sopra a tutta larghezza.
-
-5. Mobile: usare `useIsMobile` (o classi responsive) per renderizzare la sidebar come `Sheet` apribile da un `Button` con icona `SlidersHorizontal` posizionato accanto al `CalendarHeader`.
-
-## Vincoli rispettati
-
-- Componenti `MonthView/WeekView/DayView/CalendarHeader/DayDetailPopover` invariati: già accettano `events` come prop, basta passare l'array filtrato.
-- `getEventColor` riusato da `calendar-types.ts` per i pallini.
-- Style Attio-flat: niente Card wrapper sulla sidebar, solo `border-r`.
-- Empty state per company senza esperienze.
+## Vincoli
+- Nessuna modifica a `AdminLayout`, ad altre pagine HR/Association o alla logica di fetch.
+- Il drawer mobile dei filtri resta com'è: il layout full-height vale per desktop.
+- Da verificare visivamente il valore `100vh - 180px` su 1353×828 (viewport corrente) e a viewport più alte; se serve, esporlo come variabile.
 
 ## File toccati
-
-- `src/components/hr/calendar/CalendarFiltersSidebar.tsx` (nuovo).
-- `src/pages/hr/HRCalendarPage.tsx` (fetch esperienze, stato filtri, layout flex, drawer mobile).
+- `src/pages/hr/HRCalendarPage.tsx`
+- `src/components/hr/calendar/CalendarFiltersSidebar.tsx`
+- `src/components/calendar/MonthView.tsx`
+- `src/components/calendar/WeekView.tsx`
+- `src/components/calendar/DayView.tsx`
+- `src/pages/association/AssociationCalendarPage.tsx`
