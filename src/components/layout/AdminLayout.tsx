@@ -335,7 +335,7 @@ export function AdminLayout({
         </header>
 
         {/* Page content */}
-        <main className="px-4 sm:px-6 lg:px-8 pt-3 pb-8">{children}</main>
+        <main className="px-4 sm:px-6 lg:px-6 pt-3 pb-8">{children}</main>
       </div>
     </div>
   );

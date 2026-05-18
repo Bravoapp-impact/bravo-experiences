@@ -250,7 +250,7 @@ export default function HRCalendarPage() {
         iconColor="text-cyan-500"
       />
 
-      <div className="flex -mx-4 sm:-mx-6 lg:-mx-8 -mb-4 sm:-mb-6 lg:-mb-8 h-[calc(100vh-180px)]">
+      <div className="flex -mx-4 sm:-mx-6 lg:-mx-6 -mb-4 sm:-mb-6 lg:-mb-8 h-[calc(100vh-180px)]">
         {!isMobile && (
           <CalendarFiltersSidebar
             groups={filterGroups}
