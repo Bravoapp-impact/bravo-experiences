@@ -6,6 +6,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { BookingCard } from "@/components/bookings/BookingCard";
 import { BookingDetailModal } from "@/components/bookings/BookingDetailModal";
 import { FeedbackModal } from "@/components/bookings/FeedbackModal";
+import { PhotoUploadDialog } from "@/components/gallery/PhotoUploadDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
