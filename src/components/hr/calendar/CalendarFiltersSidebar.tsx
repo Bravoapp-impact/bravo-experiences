@@ -46,7 +46,7 @@ export function CalendarFiltersSidebar({
 
   if (collapsed) {
     return (
-      <aside className="w-10 border-r border-border bg-background flex flex-col items-center py-2 gap-2 shrink-0 h-full">
+      <aside className="w-10 bg-background flex flex-col items-center py-2 gap-2 shrink-0 h-full">
         <Button
           variant="ghost"
           size="icon"
@@ -77,8 +77,8 @@ export function CalendarFiltersSidebar({
   }
 
   return (
-    <aside className="w-[260px] border-r border-border bg-background shrink-0 flex flex-col h-full">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+    <aside className="w-[260px] bg-background shrink-0 flex flex-col h-full px-3">
+      <div className="flex items-center justify-between py-2 border-b border-border">
         <div className="flex items-center gap-2 text-xs font-semibold text-foreground uppercase tracking-wide">
           <SlidersHorizontal className="h-3.5 w-3.5" />
           Filtri
@@ -125,8 +125,8 @@ function FilterGroupBlock({ group, selectedIds, onToggleOne, onToggleGroup }: Fi
   const someChecked = selected > 0 && selected < total;
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen} className="px-2 pb-2">
-      <div className="flex items-center gap-2 px-1 py-1.5">
+    <Collapsible open={open} onOpenChange={setOpen} className="pb-2">
+      <div className="flex items-center gap-2 py-1.5">
         <Checkbox
           checked={allChecked ? true : someChecked ? "indeterminate" : false}
           onCheckedChange={(c) => onToggleGroup(!!c)}
@@ -141,7 +141,7 @@ function FilterGroupBlock({ group, selectedIds, onToggleOne, onToggleGroup }: Fi
         </CollapsibleTrigger>
       </div>
 
-      <CollapsibleContent className="pl-6 space-y-0.5">
+      <CollapsibleContent className="space-y-0.5">
         {total === 0 ? (
           <p className="text-xs text-muted-foreground py-1">Nessuna esperienza nel programma</p>
         ) : (
@@ -150,7 +150,7 @@ function FilterGroupBlock({ group, selectedIds, onToggleOne, onToggleGroup }: Fi
             return (
               <label
                 key={exp.id}
-                className="flex items-center gap-2 py-1 px-1 rounded hover:bg-muted/50 cursor-pointer"
+                className="flex items-center gap-2 py-1 rounded hover:bg-muted/50 cursor-pointer"
               >
                 <Checkbox checked={checked} onCheckedChange={() => onToggleOne(exp.id)} />
                 <span

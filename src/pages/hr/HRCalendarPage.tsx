@@ -180,7 +180,7 @@ export default function HRCalendarPage() {
   );
 
   const calendarBody = (
-    <div className="flex-1 min-w-0 flex flex-col h-full px-4 sm:px-6 lg:px-6 py-4">
+    <div className="flex-1 min-w-0 flex flex-col h-full py-4">
       <div className="flex items-center gap-2 mb-4">
         {isMobile && (
           <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
@@ -250,7 +250,7 @@ export default function HRCalendarPage() {
         iconColor="text-cyan-500"
       />
 
-      <div className="flex -mx-4 sm:-mx-6 lg:-mx-6 -mb-4 sm:-mb-6 lg:-mb-8 h-[calc(100vh-180px)]">
+      <div className="flex -mb-4 sm:-mb-6 lg:-mb-8 h-[calc(100vh-140px)]">
         {!isMobile && (
           <CalendarFiltersSidebar
             groups={filterGroups}

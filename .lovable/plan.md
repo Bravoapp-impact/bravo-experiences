@@ -1,64 +1,49 @@
-# Calendario HR — layout full-height e divisori continui
+# Calendario HR — allineamento sidebar al titolo + cleanup divisori + altezza piena
 
 ## Obiettivo
-Riprodurre la sensazione di Google Calendar:
-- nessuno spazio bianco tra la nav HR globale e la sidebar dei filtri;
-- bordo verticale continuo tra sidebar filtri e calendario, dal top al bottom della viewport;
-- celle del MonthView che riempiono lo spazio verticale disponibile (6 righe equidistribuite, niente buco bianco sotto).
+1. `PageHeader` "Calendario" resta sopra. La `CalendarFiltersSidebar` parte dallo stesso X del titolo.
+2. Tutto il contenuto della sidebar (header "FILTRI", label gruppo "VOLONTARIATO AZIENDALE", sotto-voci con checkbox+pallino+nome) parte dallo stesso bordo sinistro — niente indentazione progressiva.
+3. Nessun `border-r` verticale tra sidebar e calendario.
+4. Il calendario riempie l'altezza disponibile della pagina; nei mesi a 5 settimane le celle sono più alte (niente riga vuota).
 
 ## Modifiche
 
 ### 1. `src/pages/hr/HRCalendarPage.tsx`
-- Wrapper esterno: rimuovere `space-y-4` dove va in conflitto con il blocco full-height. Mantenere il `PageHeader` con i suoi margini normali sopra.
-- Il container che racchiude `CalendarFiltersSidebar` + `calendarBody` diventa:
-  ```tsx
-  <div className="flex -mx-4 sm:-mx-6 lg:-mx-8 -mb-4 sm:-mb-6 lg:-mb-8 h-[calc(100vh-180px)]">
+- Container full-height: rimuovere i margini negativi orizzontali; tenere solo quelli verticali per attaccarsi al fondo.
+  ```diff
+  - <div className="flex -mx-4 sm:-mx-6 lg:-mx-6 -mb-4 sm:-mb-6 lg:-mb-8 h-[calc(100vh-180px)]">
+  + <div className="flex -mb-4 sm:-mb-6 lg:-mb-8 h-[calc(100vh-180px)]">
   ```
-  - margini negativi per annullare il padding orizzontale e bottom del `<main>` di `AdminLayout` (la sidebar dei filtri si attacca alla nav globale e al fondo viewport);
-  - `gap-4` rimosso: la separazione visiva la fa il `border-r` della sidebar;
-  - `180px` è un valore di partenza da tarare visivamente (header app + `PageHeader` + spacing) per arrivare esattamente al fondo viewport.
-- `calendarBody`: passa da `space-y-4` a `flex flex-col h-full`. La toolbar (`CalendarHeader` + bottone mobile filtri) resta in alto come riga fissa con un piccolo margine bottom; la view del calendario (`MonthView`/`WeekView`/`DayView`) ha classe `flex-1 min-h-0` per occupare il resto.
-- Aggiungere padding orizzontale interno al `calendarBody` (es. `px-4 sm:px-6 lg:px-8`) per ricreare la gronda persa dai margini negativi, lasciando però la sidebar filtri attaccata al bordo sinistro.
-- Mobile (`isMobile`): la sidebar resta `Sheet` come oggi; sul container desktop il layout full-height entra in vigore solo da `md:` o equivalente per non rompere mobile.
+  Così sidebar e titolo condividono lo stesso `px-6` del `<main>` e partono dallo stesso X.
+- `calendarBody`: rimuovere `px-4 sm:px-6 lg:px-6` (ora ridondante).
+- Tarare `h-[calc(100vh-180px)]` se serve dopo i cambi (il valore dipende da header app + `PageHeader`).
 
 ### 2. `src/components/hr/calendar/CalendarFiltersSidebar.tsx`
-- Root `<aside>`: aggiungere `h-full` (mantiene `flex flex-col` esistente) così il `border-r` si estende fino al fondo della viewport.
+- Root `<aside>` (entrambi i rami): rimuovere `border-r border-border`.
+- **Allineamento contenuto sidebar**: tutti i blocchi partono dallo stesso `pl-0` interno.
+  - Header "FILTRI": cambiare `px-3` in `px-0` (con eventuale `gap` invariato).
+  - `FilterGroupBlock` wrapper: cambiare `px-2 pb-2` in `pb-2` (no padding-left).
+  - Riga label gruppo: rimuovere `px-1` (lasciare solo `py-1.5`).
+  - `CollapsibleContent`: cambiare `pl-6 space-y-0.5` in `space-y-0.5` (niente indent rispetto alla label).
+  - Singola voce esperienza (`<label>`): rimuovere `px-1` (lasciare `py-1` e `gap-2`).
+- Mantenere il `border-b border-border` sotto la riga "FILTRI" (divisore orizzontale interno).
+- Aggiungere un padding orizzontale **unico** al contenitore esterno della sidebar (es. `px-3` sul root `<aside>`) per non incollare le voci al bordo. In questo modo tutto il contenuto è allineato a uno stesso X interno alla sidebar.
 
 ### 3. `src/components/calendar/MonthView.tsx`
-- Root del componente: da `border rounded-lg overflow-hidden bg-card` a `border rounded-lg overflow-hidden bg-card h-full flex flex-col` (consentire ai contenitori parent di passare l'altezza).
-- Header dei giorni: resta fisso (riga grid 7 colonne).
-- Grid celle: da
+- Calcolare il numero di settimane: `const weeks = days.length / 7;`.
+- Sostituire `grid-rows-6` con uno style inline (per evitare problemi col purge Tailwind):
   ```tsx
-  <div className="grid grid-cols-7">
+  <div
+    className="grid grid-cols-7 flex-1 min-h-0"
+    style={{ gridTemplateRows: `repeat(${weeks}, minmax(0, 1fr))` }}
+  >
   ```
-  a
-  ```tsx
-  <div className="grid grid-cols-7 grid-rows-6 flex-1 min-h-0">
-  ```
-- Cella singola: rimuovere `min-h-[90px] sm:min-h-[110px]`, sostituire con `min-h-[60px]` come fallback per viewport corte e `overflow-hidden` per evitare che troppi eventi sforino la cella.
-- Le 6 righe sono garantite da `startOfWeek(monthStart) → endOfWeek(monthEnd)` (sempre 42 celle).
+- Le celle riempiono lo spazio verticale: in mesi a 5 settimane risultano più alte; in mesi a 6, più basse.
 
-### 4. `src/components/calendar/WeekView.tsx`
-- Root: aggiungere `h-full flex flex-col`.
-- Sostituire `overflow-y-auto max-h-[600px]` sul grid orario con `flex-1 min-h-0 overflow-y-auto` così si adatta allo spazio disponibile.
-
-### 5. `src/components/calendar/DayView.tsx`
-- Stessa logica del WeekView: `h-full flex flex-col` sul root e `flex-1 min-h-0 overflow-y-auto` al posto di `max-h-[600px]`.
-
-### 6. `src/pages/association/AssociationCalendarPage.tsx`
-Condivide gli stessi componenti calendario. Per non rompere nulla:
-- Avvolgere `CalendarHeader` + view in un container `flex flex-col h-[calc(100vh-180px)]` con la view in `flex-1 min-h-0`, in modo che `MonthView/WeekView/DayView` ricevano l'altezza che ora si aspettano.
-- Mantenere il `PageHeader` e il dialog `ManageDatesDialog` invariati.
-
-## Vincoli
-- Nessuna modifica a `AdminLayout`, ad altre pagine HR/Association o alla logica di fetch.
-- Il drawer mobile dei filtri resta com'è: il layout full-height vale per desktop.
-- Da verificare visivamente il valore `100vh - 180px` su 1353×828 (viewport corrente) e a viewport più alte; se serve, esporlo come variabile.
+### 4. Altezza piena del blocco calendario
+- Mantenere `h-[calc(100vh-180px)]` come oggi, ma rifinire il valore dopo aver rimosso i `-mx`. Se necessario, sostituire con una variabile CSS o `flex-1 min-h-0` ereditato dal parent `<main>` (richiede `min-h-screen flex flex-col` su `AdminLayout`; più invasivo — da fare solo se la costante non basta).
 
 ## File toccati
 - `src/pages/hr/HRCalendarPage.tsx`
 - `src/components/hr/calendar/CalendarFiltersSidebar.tsx`
 - `src/components/calendar/MonthView.tsx`
-- `src/components/calendar/WeekView.tsx`
-- `src/components/calendar/DayView.tsx`
-- `src/pages/association/AssociationCalendarPage.tsx`
