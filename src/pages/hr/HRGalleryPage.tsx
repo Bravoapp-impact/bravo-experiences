@@ -149,15 +149,17 @@ export default function HRGalleryPage() {
                 Nessuna foto corrisponde ai filtri selezionati.
               </p>
             ) : (
-              <RowsPhotoAlbum
-                photos={mainAlbum}
-                spacing={4}
-                padding={0}
-                targetRowHeight={(containerWidth) =>
-                  containerWidth < 640 ? 200 : 250
-                }
-                onClick={({ index }) => setLightboxIndex(index)}
-              />
+              <div className="overflow-hidden rounded-2xl">
+                <RowsPhotoAlbum
+                  photos={mainAlbum}
+                  spacing={2}
+                  padding={0}
+                  targetRowHeight={(containerWidth) =>
+                    containerWidth < 640 ? 200 : 250
+                  }
+                  onClick={({ index }) => setLightboxIndex(index)}
+                />
+              </div>
             )}
           </>
         )}
