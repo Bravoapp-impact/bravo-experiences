@@ -46,6 +46,7 @@ export default function MyBookings() {
   const [historyExpanded, setHistoryExpanded] = useState(false);
   const [reviewedBookingIds, setReviewedBookingIds] = useState<Set<string>>(new Set());
   const [feedbackBooking, setFeedbackBooking] = useState<Booking | null>(null);
+  const [uploadDialogBooking, setUploadDialogBooking] = useState<Booking | null>(null);
 
   const fetchBookings = async () => {
     if (!user) return;
