@@ -180,8 +180,8 @@ export default function HRCalendarPage() {
   );
 
   const calendarBody = (
-    <div className="flex-1 min-w-0 space-y-4">
-      <div className="flex items-center gap-2">
+    <div className="flex-1 min-w-0 flex flex-col h-full px-4 sm:px-6 lg:px-8 py-4">
+      <div className="flex items-center gap-2 mb-4">
         {isMobile && (
           <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
             <SheetTrigger asChild>
@@ -208,59 +208,59 @@ export default function HRCalendarPage() {
         </div>
       </div>
 
-      {loading ? (
-        <PageSkeleton variant="calendar" />
-      ) : (
-        <>
-          {viewMode === "month" && (
-            <MonthView
-              currentDate={currentDate}
-              events={visibleEvents}
-              onViewModeChange={setViewMode}
-              onDateChange={setCurrentDate}
-              popoverMode="hr"
-            />
-          )}
-          {viewMode === "week" && (
-            <WeekView
-              currentDate={currentDate}
-              events={visibleEvents}
-              popoverMode="hr"
-            />
-          )}
-          {viewMode === "day" && (
-            <DayView
-              currentDate={currentDate}
-              events={visibleEvents}
-              popoverMode="hr"
-            />
-          )}
-        </>
-      )}
+      <div className="flex-1 min-h-0">
+        {loading ? (
+          <PageSkeleton variant="calendar" />
+        ) : (
+          <>
+            {viewMode === "month" && (
+              <MonthView
+                currentDate={currentDate}
+                events={visibleEvents}
+                onViewModeChange={setViewMode}
+                onDateChange={setCurrentDate}
+                popoverMode="hr"
+              />
+            )}
+            {viewMode === "week" && (
+              <WeekView
+                currentDate={currentDate}
+                events={visibleEvents}
+                popoverMode="hr"
+              />
+            )}
+            {viewMode === "day" && (
+              <DayView
+                currentDate={currentDate}
+                events={visibleEvents}
+                popoverMode="hr"
+              />
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 
   return (
     <HRLayout>
-      <div className="space-y-4">
-        <PageHeader
-          title="Calendario"
-          icon={CalendarDays}
-          iconColor="text-cyan-500"
-        />
+      <PageHeader
+        title="Calendario"
+        icon={CalendarDays}
+        iconColor="text-cyan-500"
+      />
 
-        <div className="flex items-stretch gap-4">
-          {!isMobile && (
-            <CalendarFiltersSidebar
-              groups={filterGroups}
-              selectedIds={selectedIds}
-              onChange={setSelectedIds}
-              collapsed={filtersCollapsed}
-              onCollapsedChange={handleSetFiltersCollapsed}
-            />
-          )}
-          {calendarBody}
-        </div>
+      <div className="flex -mx-4 sm:-mx-6 lg:-mx-8 -mb-4 sm:-mb-6 lg:-mb-8 h-[calc(100vh-180px)]">
+        {!isMobile && (
+          <CalendarFiltersSidebar
+            groups={filterGroups}
+            selectedIds={selectedIds}
+            onChange={setSelectedIds}
+            collapsed={filtersCollapsed}
+            onCollapsedChange={handleSetFiltersCollapsed}
+          />
+        )}
+        {calendarBody}
       </div>
     </HRLayout>
   );

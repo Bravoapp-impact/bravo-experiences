@@ -108,9 +108,9 @@ export default function AssociationCalendarPage() {
 
   return (
     <AssociationLayout>
-      <div className="space-y-4">
-        <PageHeader title="Calendario" description="Visualizza e gestisci tutte le date programmate" icon={CalendarDays} iconColor="text-cyan-500" />
+      <PageHeader title="Calendario" description="Visualizza e gestisci tutte le date programmate" icon={CalendarDays} iconColor="text-cyan-500" />
 
+      <div className="flex flex-col h-[calc(100vh-180px)] mt-4">
         <CalendarHeader
           currentDate={currentDate}
           viewMode={viewMode}
@@ -121,35 +121,37 @@ export default function AssociationCalendarPage() {
           onExperiencePicked={experiences.length > 1 ? handleExperiencePicked : undefined}
         />
 
-        {loading ? (
-          <PageSkeleton variant="calendar" />
-        ) : (
-          <>
-            {viewMode === "month" && (
-              <MonthView
-                currentDate={currentDate}
-                events={events}
-                onViewModeChange={setViewMode}
-                onDateChange={setCurrentDate}
-                onEventDeleted={fetchEvents}
-              />
-            )}
-            {viewMode === "week" && (
-              <WeekView
-                currentDate={currentDate}
-                events={events}
-                onEventDeleted={fetchEvents}
-              />
-            )}
-            {viewMode === "day" && (
-              <DayView
-                currentDate={currentDate}
-                events={events}
-                onEventDeleted={fetchEvents}
-              />
-            )}
-          </>
-        )}
+        <div className="flex-1 min-h-0 mt-4">
+          {loading ? (
+            <PageSkeleton variant="calendar" />
+          ) : (
+            <>
+              {viewMode === "month" && (
+                <MonthView
+                  currentDate={currentDate}
+                  events={events}
+                  onViewModeChange={setViewMode}
+                  onDateChange={setCurrentDate}
+                  onEventDeleted={fetchEvents}
+                />
+              )}
+              {viewMode === "week" && (
+                <WeekView
+                  currentDate={currentDate}
+                  events={events}
+                  onEventDeleted={fetchEvents}
+                />
+              )}
+              {viewMode === "day" && (
+                <DayView
+                  currentDate={currentDate}
+                  events={events}
+                  onEventDeleted={fetchEvents}
+                />
+              )}
+            </>
+          )}
+        </div>
       </div>
 
 

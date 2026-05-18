@@ -46,7 +46,7 @@ export function CalendarFiltersSidebar({
 
   if (collapsed) {
     return (
-      <aside className="w-10 border-r border-border bg-background flex flex-col items-center py-2 gap-2 shrink-0">
+      <aside className="w-10 border-r border-border bg-background flex flex-col items-center py-2 gap-2 shrink-0 h-full">
         <Button
           variant="ghost"
           size="icon"
@@ -77,7 +77,7 @@ export function CalendarFiltersSidebar({
   }
 
   return (
-    <aside className="w-[260px] border-r border-border bg-background shrink-0 flex flex-col">
+    <aside className="w-[260px] border-r border-border bg-background shrink-0 flex flex-col h-full">
       <div className="flex items-center justify-between px-3 py-2 border-b border-border">
         <div className="flex items-center gap-2 text-xs font-semibold text-foreground uppercase tracking-wide">
           <SlidersHorizontal className="h-3.5 w-3.5" />
