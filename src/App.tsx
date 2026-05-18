@@ -29,6 +29,7 @@ import HRNewTBRequestPage from "./pages/hr/HRNewTBRequestPage";
 import HRTBRequestDetailPage from "./pages/hr/HRTBRequestDetailPage";
 import HRTBProposalDetailPage from "./pages/hr/HRTBProposalDetailPage";
 import HREmployeesPage from "./pages/hr/HREmployeesPage";
+import HRCalendarPage from "./pages/hr/HRCalendarPage";
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import CompaniesPage from "./pages/super-admin/CompaniesPage";
 import ExperiencesPage from "./pages/super-admin/ExperiencesPage";
@@ -170,7 +171,7 @@ const App = () => (
                 </ProtectedHRRoute>
               }
             />
-            <Route path="/hr/calendario" element={<ProtectedHRRoute><HRPlaceholderPage title="Calendario" /></ProtectedHRRoute>} />
+            <Route path="/hr/calendario" element={<ProtectedHRRoute><HRCalendarPage /></ProtectedHRRoute>} />
             <Route path="/hr/galleria" element={<ProtectedHRRoute><HRPlaceholderPage title="Galleria" /></ProtectedHRRoute>} />
             <Route path="/hr/comunicazione" element={<ProtectedHRRoute><HRPlaceholderPage title="Comunicazione" /></ProtectedHRRoute>} />
             <Route

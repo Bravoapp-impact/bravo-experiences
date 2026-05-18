@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Trash2, Users, Clock, X, Pencil } from "lucide-react";
+import { Trash2, Users, Clock, X, Pencil, ExternalLink } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,21 +21,26 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+export type DayDetailPopoverMode = "association" | "hr";
+
 interface DayDetailPopoverProps {
   event: CalendarEvent;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onDeleted: () => void;
+  onDeleted?: () => void;
   children: React.ReactNode;
+  mode?: DayDetailPopoverMode;
 }
 
-export function DayDetailPopover({ event, open, onOpenChange, onDeleted, children }: DayDetailPopoverProps) {
+export function DayDetailPopover({ event, open, onOpenChange, onDeleted, children, mode = "association" }: DayDetailPopoverProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
   const color = getEventColor(event.experience_id);
+  const isHr = mode === "hr";
 
   const start = new Date(event.start_datetime);
   const end = new Date(event.end_datetime);
@@ -83,7 +89,7 @@ export function DayDetailPopover({ event, open, onOpenChange, onDeleted, childre
       toast({ title: "Data aggiornata" });
       setIsEditing(false);
       onOpenChange(false);
-      onDeleted(); // triggers refetch
+      onDeleted?.(); // triggers refetch
     } catch (e: any) {
       toast({ variant: "destructive", title: "Errore", description: e.message });
     } finally {
@@ -98,7 +104,7 @@ export function DayDetailPopover({ event, open, onOpenChange, onDeleted, childre
       if (error) throw error;
       toast({ title: "Data eliminata" });
       onOpenChange(false);
-      onDeleted();
+      onDeleted?.();
     } catch (e: any) {
       toast({ variant: "destructive", title: "Errore", description: e.message });
     } finally {
@@ -180,29 +186,49 @@ export function DayDetailPopover({ event, open, onOpenChange, onDeleted, childre
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Users className="h-3.5 w-3.5" />
-                    <span>{event.confirmed_count}/{event.max_participants} partecipanti</span>
+                    <span>
+                      {event.confirmed_count}/{event.max_participants}{" "}
+                      {isHr ? "dipendenti iscritti" : "partecipanti"}
+                    </span>
                   </div>
                 </div>
 
                 <div className="border-t pt-2 space-y-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start h-8 text-xs"
-                    onClick={() => setIsEditing(true)}
-                  >
-                    <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                    Modifica data
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 h-8 text-xs"
-                    onClick={() => setDeleteOpen(true)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                    Elimina data
-                  </Button>
+                  {isHr ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start h-8 text-xs"
+                      onClick={() => {
+                        onOpenChange(false);
+                        navigate(`/hr/experiences/${event.experience_id}`);
+                      }}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                      Vedi esperienza
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start h-8 text-xs"
+                        onClick={() => setIsEditing(true)}
+                      >
+                        <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                        Modifica data
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 h-8 text-xs"
+                        onClick={() => setDeleteOpen(true)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                        Elimina data
+                      </Button>
+                    </>
+                  )}
                 </div>
               </>
             )}

@@ -6,20 +6,21 @@ import {
 import { it } from "date-fns/locale";
 import { CalendarEvent, ViewMode } from "./calendar-types";
 import { EventBlock } from "./EventBlock";
-import { DayDetailPopover } from "./DayDetailPopover";
+import { DayDetailPopover, DayDetailPopoverMode } from "./DayDetailPopover";
 
 interface MonthViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   onViewModeChange: (mode: ViewMode) => void;
   onDateChange: (date: Date) => void;
-  onEventDeleted: () => void;
+  onEventDeleted?: () => void;
+  popoverMode?: DayDetailPopoverMode;
 }
 
 const WEEKDAYS = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
 const MAX_VISIBLE = 2;
 
-export function MonthView({ currentDate, events, onViewModeChange, onDateChange, onEventDeleted }: MonthViewProps) {
+export function MonthView({ currentDate, events, onViewModeChange, onDateChange, onEventDeleted, popoverMode }: MonthViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
 
@@ -89,6 +90,7 @@ export function MonthView({ currentDate, events, onViewModeChange, onDateChange,
                       if (open) setSelectedEvent(ev);
                     }}
                     onDeleted={onEventDeleted}
+                    mode={popoverMode}
                   >
                     <div>
                       <EventBlock event={ev} compact />
