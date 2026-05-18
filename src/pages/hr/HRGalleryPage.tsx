@@ -154,6 +154,13 @@ export default function HRGalleryPage() {
                   photos={mainAlbum}
                   spacing={2}
                   padding={0}
+                  componentsProps={{
+                    button: {
+                      className: "block min-h-0 p-0 leading-none",
+                      style: { padding: 0, minHeight: 0, lineHeight: 0 },
+                    },
+                    image: { className: "block" },
+                  }}
                   targetRowHeight={(containerWidth) =>
                     containerWidth < 640 ? 200 : 250
                   }
