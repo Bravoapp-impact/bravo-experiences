@@ -32,9 +32,6 @@ export function EmployeeMetricsCards({
   activeSegment,
   onSegmentChange,
 }: EmployeeMetricsCardsProps) {
-  const activePercentage =
-    totalCount > 0 ? Math.round((activeCount / totalCount) * 100) : 0;
-
   const metrics: MetricDef[] = [
     {
       segment: "all",
