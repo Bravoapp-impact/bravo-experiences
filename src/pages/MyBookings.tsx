@@ -348,6 +348,17 @@ export default function MyBookings() {
         onSubmitted={handleFeedbackSubmitted}
         booking={feedbackBooking}
       />
+
+      {/* Photo Upload Dialog */}
+      {uploadDialogBooking && (
+        <PhotoUploadDialog
+          open={!!uploadDialogBooking}
+          onOpenChange={(o) => !o && setUploadDialogBooking(null)}
+          experienceDateId={uploadDialogBooking.experience_dates.id}
+          experienceTitle={uploadDialogBooking.experience_dates.experiences.title}
+          eventDate={uploadDialogBooking.experience_dates.start_datetime}
+        />
+      )}
     </AppLayout>
   );
 }
