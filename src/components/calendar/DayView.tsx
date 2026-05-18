@@ -2,18 +2,19 @@ import { useMemo, useState } from "react";
 import { format, isSameDay, isBefore, startOfDay } from "date-fns";
 import { it } from "date-fns/locale";
 import { CalendarEvent, getEventColor, getEventBgColor } from "./calendar-types";
-import { DayDetailPopover } from "./DayDetailPopover";
+import { DayDetailPopover, DayDetailPopoverMode } from "./DayDetailPopover";
 
 interface DayViewProps {
   currentDate: Date;
   events: CalendarEvent[];
-  onEventDeleted: () => void;
+  onEventDeleted?: () => void;
+  popoverMode?: DayDetailPopoverMode;
 }
 
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 6:00-22:00
 const HOUR_HEIGHT = 64;
 
-export function DayView({ currentDate, events, onEventDeleted }: DayViewProps) {
+export function DayView({ currentDate, events, onEventDeleted, popoverMode }: DayViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const isPast = isBefore(currentDate, startOfDay(new Date()));
