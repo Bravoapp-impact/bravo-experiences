@@ -58,7 +58,10 @@ export function MonthView({ currentDate, events, onViewModeChange, onDateChange,
       </div>
 
       {/* Days grid */}
-      <div className="grid grid-cols-7 grid-rows-6 flex-1 min-h-0">
+      <div
+        className="grid grid-cols-7 flex-1 min-h-0"
+        style={{ gridTemplateRows: `repeat(${weeks}, minmax(0, 1fr))` }}
+      >
         {days.map((day) => {
           const key = format(day, "yyyy-MM-dd");
           const dayEvents = eventsByDay.get(key) || [];
