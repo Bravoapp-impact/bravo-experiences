@@ -3,6 +3,15 @@
  * Pattern: `[entity, operation, ...params]` — see docs/data-fetching.md.
  */
 
+export interface CompanyGalleryFilters {
+  experienceIds?: string[];
+  associationIds?: string[];
+  dateFrom?: string | null;
+  dateTo?: string | null;
+  onlyFeatured?: boolean;
+  includeHidden?: boolean;
+}
+
 export const galleryKeys = {
   all: ["gallery"] as const,
 
@@ -14,4 +23,14 @@ export const galleryKeys = {
 
   signedUrls: (paths: string[]) =>
     [...galleryKeys.all, "signed", paths] as const,
+
+  // Company-wide (HR / super admin views)
+  companyAll: (companyId: string) =>
+    [...galleryKeys.all, "company", companyId] as const,
+  companyGallery: (companyId: string, filters: CompanyGalleryFilters) =>
+    [...galleryKeys.companyAll(companyId), "list", filters] as const,
+  pendingPhotos: (companyId: string) =>
+    [...galleryKeys.companyAll(companyId), "pending"] as const,
+  featuredPhotos: (companyId: string) =>
+    [...galleryKeys.companyAll(companyId), "featured"] as const,
 };
