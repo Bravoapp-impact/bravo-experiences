@@ -122,7 +122,7 @@ export default function AssociationCalendarPage() {
         />
 
         {loading ? (
-          <PageSkeleton variant="list" />
+          <PageSkeleton variant="calendar" />
         ) : (
           <>
             {viewMode === "month" && (

@@ -124,7 +124,7 @@ export default function HRCalendarPage() {
         />
 
         {loading ? (
-          <PageSkeleton variant="list" />
+          <PageSkeleton variant="calendar" />
         ) : (
           <>
             {viewMode === "month" && (
