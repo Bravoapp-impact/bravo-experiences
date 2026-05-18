@@ -321,6 +321,7 @@ export default function MyBookings() {
                           onCancel={handleCancel}
                           onView={setSelectedBooking}
                           onFeedback={["confirmed", "completed"].includes(booking.status) ? setFeedbackBooking : undefined}
+                          onUploadPhoto={["confirmed", "completed"].includes(booking.status) ? setUploadDialogBooking : undefined}
                         />
                       ))}
                     </div>
