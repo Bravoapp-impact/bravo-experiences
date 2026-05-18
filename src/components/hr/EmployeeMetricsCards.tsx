@@ -91,8 +91,8 @@ export function EmployeeMetricsCards({
                   : "border-border/50",
               )}
             >
-              <CardContent className="p-4 sm:p-5">
-                <div className="flex items-start gap-3 sm:gap-4 h-full">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3 sm:gap-4">
                   <div className={cn("p-2.5 sm:p-3 rounded-xl shrink-0", m.iconBgColor)}>
                     <Icon className={cn("h-5 w-5 sm:h-6 sm:w-6", m.iconColor)} />
                   </div>
@@ -100,9 +100,6 @@ export function EmployeeMetricsCards({
                     <p className="text-xl font-bold text-foreground">{m.value}</p>
                     <p className="text-[11px] text-muted-foreground leading-tight">
                       {m.label}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5 min-h-[14px]">
-                      {m.subLabel ?? "\u00A0"}
                     </p>
                   </div>
                 </div>
