@@ -70,6 +70,8 @@ Cose che sappiamo essere imperfette o incomplete, ma che non bloccano lo sprint 
 
 **Template email in italiano hardcoded.** Funziona finché il target è Italia. Quando si aprirà a un cliente non italofono, la struttura attuale richiede la moltiplicazione dei template per lingua. Vincolo architetturale da riconoscere, non da risolvere oggi.
 
+**Pagina "Utenti HR" single-vertical.** Oggi la pagina `/hr/users` mostra metriche, segmenti e funnel solo per la verticalità volontariato (ore, presenze, top performer). Quando apriremo formazione, negozio solidale e team building come verticali complete, la pagina dovrà diventare cross-verticale: ogni card metrica dovrà supportare il breakdown per verticalità (o almeno la selezione della verticalità attiva), e i segmenti "Attivi / Da coinvolgere / Nuovi" dovranno essere ricalibrati per non essere esclusivamente volontariato-centrici. Da affrontare quando la seconda verticale (dopo volontariato) sarà in produzione.
+
 ---
 
 ## Prossimi sprint
