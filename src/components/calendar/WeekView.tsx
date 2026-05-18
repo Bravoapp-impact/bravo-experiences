@@ -57,7 +57,7 @@ export function WeekView({ currentDate, events, onEventDeleted, popoverMode }: W
       </div>
 
       {/* Time grid */}
-      <div className="grid grid-cols-[50px_repeat(7,1fr)] overflow-y-auto max-h-[600px]">
+      <div className="grid grid-cols-[50px_repeat(7,1fr)] overflow-y-auto flex-1 min-h-0">
         {/* Time labels */}
         <div className="relative">
           {HOURS.map(h => (
