@@ -1,33 +1,20 @@
-## Pianificazione: Semplificazione Galleria HR
+## Armonizzazione padding/spacing Galleria HR
 
-### Obiettivo
-Ridurre la superficie di funzionalità della galleria HR togliendo controlli avanzati (evidenziazione, nascondimento, filtro enti) per semplificare l'interfaccia.
+### Problemi rilevati
 
-### Modifiche previste
+Confrontando con altre pagine HR (`HRExperiencesPage`, `HREmployeesPage`):
 
-#### 1. Filtri (`src/components/hr-gallery/GalleryFilters.tsx`)
-- Rimuovere il filtro multi-select **"Enti partner"** (prop `associationOptions` e relativo componente `MultiSelectFilter`).
-- Rimuovere lo switch **"Solo in evidenza"**.
-- Rimuovere lo switch **"Mostra nascoste"**.
-- Aggiornare `GalleryFiltersState` e `EMPTY_FILTERS` di conseguenza (campi `associationIds`, `onlyFeatured`, `includeHidden`).
+- **Doppio padding**: la pagina Galleria usa `p-6 space-y-6`, mentre le altre pagine usano solo `space-y-6` (il padding orizzontale/verticale è già fornito da `HRLayout`). Per questo il titolo appare più in basso e tutto il contenuto è troppo "spinto" verso il centro.
+- **Gap eccessivo fra sezioni**: si combinano `space-y-6` (24px) + `PageSection` con `py-6` (48px totali tra header → filtri → galleria).
+- **Gap tra foto troppo ampio**: `RowsPhotoAlbum` usa lo spacing di default (~20px). Per uno stile Apple Photos più denso conviene 2–4px.
 
-#### 2. Pagina Galleria (`src/pages/hr/HRGalleryPage.tsx`)
-- Rimuovere il calcolo di `associationOptions` (non più necessario).
-- Rimuovere la sezione **"In evidenza"** (sezione con le foto `is_featured` e titolo con stella).
-- Aggiornare la query `useCompanyGallery` per non passare più `onlyFeatured`, `includeHidden`, `associationIds`.
-- La query `allPhotos` per le opzioni esperienza resta senza `includeHidden`.
+### Modifiche (`src/pages/hr/HRGalleryPage.tsx`)
 
-#### 3. Lightbox Azioni (`src/components/hr-gallery/PhotoLightbox.tsx`)
-- Rimuovere i pulsanti toolbar:
-  - **Metti in evidenza** (stella)
-  - **Nascondi / Rendi visibile** (occhio)
-- Mantenere: didascalia, download, elimina.
-- Rimuovere gli hook e le funzioni correlate (`useTogglePhotoFeatured`, `useUpdatePhotoStatus`, stati e handler per hide/show/featured).
+1. Container: da `<div className="p-6 space-y-6">` a `<div className="space-y-6">` per allinearsi alle altre pagine HR.
+2. Rimuovere il wrapper `<PageSection>` attorno ai filtri (basta un blocco semplice) per evitare doppio padding verticale.
+3. Passare `spacing={2}` e `padding={0}` a `RowsPhotoAlbum` per ridurre il gap fra le foto.
+4. Stessi accorgimenti anche per lo stato di loading skeleton (ridurre `gap-2` resta ok).
 
-### File coinvolti
-- `src/components/hr-gallery/GalleryFilters.tsx`
-- `src/pages/hr/HRGalleryPage.tsx`
-- `src/components/hr-gallery/PhotoLightbox.tsx`
+### File toccato
 
-### Hook da dismettere (cleanup opzionale)
-- `useTogglePhotoFeatured` e `useUpdatePhotoStatus` non saranno più usati dalla galleria HR. Rimangono in codebase ma inutilizzati per questo flusso.
+- `src/pages/hr/HRGalleryPage.tsx` (unico file, modifiche puramente di layout/spacing).
