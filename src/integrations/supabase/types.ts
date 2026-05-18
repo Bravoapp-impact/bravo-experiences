@@ -312,6 +312,7 @@ export type Database = {
       companies: {
         Row: {
           created_at: string
+          gallery_visible_to_employees: boolean
           id: string
           logo_url: string | null
           max_concurrent_absences: number | null
@@ -319,6 +320,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          gallery_visible_to_employees?: boolean
           id?: string
           logo_url?: string | null
           max_concurrent_absences?: number | null
@@ -326,6 +328,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          gallery_visible_to_employees?: boolean
           id?: string
           logo_url?: string | null
           max_concurrent_absences?: number | null
@@ -712,6 +715,89 @@ export type Database = {
             columns: ["city_id"]
             isOneToOne: false
             referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gallery_photos: {
+        Row: {
+          caption: string | null
+          company_id: string
+          consent_confirmed: boolean
+          created_at: string
+          experience_date_id: string
+          id: string
+          is_featured: boolean
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          storage_path: string
+          updated_at: string
+          uploaded_by: string | null
+          uploader_role: string
+        }
+        Insert: {
+          caption?: string | null
+          company_id: string
+          consent_confirmed?: boolean
+          created_at?: string
+          experience_date_id: string
+          id?: string
+          is_featured?: boolean
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          storage_path: string
+          updated_at?: string
+          uploaded_by?: string | null
+          uploader_role: string
+        }
+        Update: {
+          caption?: string | null
+          company_id?: string
+          consent_confirmed?: boolean
+          created_at?: string
+          experience_date_id?: string
+          id?: string
+          is_featured?: boolean
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          storage_path?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          uploader_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gallery_photos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gallery_photos_experience_date_id_fkey"
+            columns: ["experience_date_id"]
+            isOneToOne: false
+            referencedRelation: "experience_dates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gallery_photos_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gallery_photos_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
