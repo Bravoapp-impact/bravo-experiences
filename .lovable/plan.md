@@ -1,28 +1,24 @@
-# Calendario HR — fix allineamento X sidebar/titolo + gap col calendario
+# Sidebar Calendario — allineamento a sinistra
 
 ## Diagnosi
-Il titolo "Calendario" nel `PageHeader` è preceduto da un'icona (`h-7 w-7`) + `gap-3`, quindi il testo "Calendario" inizia a **~40px** dal bordo sinistro del `<main>`.
+La sidebar ha attualmente `pl-10 pr-3`: avevo aggiunto 40px di padding-left per allineare il primo elemento al **testo** "Calendario" (che è spostato a destra dall'icona 28px + gap 12px del `PageHeader`).
 
-La sidebar invece ha solo `px-3` (12px): la checkbox "VOLONTARIATO AZIENDALE" inizia a **~12px**. Da qui il disallineamento visibile nello screenshot (le checkbox sono più a sinistra del titolo).
+Lo spazio rosso che evidenzi è proprio questo `pl-10`. Vuoi invece che la sidebar parta dal **bordo sinistro del `<main>`** (lo stesso X dell'icona calendario azzurra).
 
-Sono due "origini" diverse: l'icona del PageHeader sposta il titolo a destra, ma la sidebar non lo segue.
+## Modifica
 
-## Modifiche
+### `src/components/hr/calendar/CalendarFiltersSidebar.tsx` (riga 80)
+Ramo expanded della `<aside>`:
 
-### 1. `src/components/hr/calendar/CalendarFiltersSidebar.tsx`
-Allineare il **primo elemento interattivo della sidebar** (checkbox/label) allo stesso X del **testo "Calendario"**.
-- Root `<aside>` (ramo expanded): sostituire `px-3` con `pl-10 pr-3` (40px a sinistra ≈ icona 28px + gap 12px del PageHeader).
-- Stessa logica sul ramo collapsed se vogliamo che la freccia sia allineata: lì la sidebar è larga 40px e centrata, va lasciata com'è (è uno stato compresso, l'allineamento perfetto non è critico).
+```diff
+- <aside className="w-[260px] bg-background shrink-0 flex flex-col h-full pl-10 pr-3">
++ <aside className="w-[260px] bg-background shrink-0 flex flex-col h-full pr-3">
+```
 
-### 2. `src/pages/hr/HRCalendarPage.tsx`
-Aggiungere distanza orizzontale tra sidebar e calendario.
-- `calendarBody`: aggiungere `pl-6` (24px) al padding già presente:
-  ```diff
-  - <div className="flex-1 min-w-0 flex flex-col h-full py-4">
-  + <div className="flex-1 min-w-0 flex flex-col h-full py-4 pl-6">
-  ```
-- In alternativa, mettere `gap-6` sul container flex padre. Preferisco `pl-6` sul body per non spingere la sidebar.
+Risultato:
+- "FILTRI", la checkbox di "VOLONTARIATO AZIENDALE" e le esperienze partono dall'X dell'icona calendario (bordo sinistro del main, dato dal `px-6` di `AdminLayout`).
+- Il calendario resta alla distanza attuale grazie al `pl-6` su `calendarBody`.
+- La sidebar si riduce nettamente in spazio sprecato a sinistra.
 
 ## File toccati
 - `src/components/hr/calendar/CalendarFiltersSidebar.tsx`
-- `src/pages/hr/HRCalendarPage.tsx`
