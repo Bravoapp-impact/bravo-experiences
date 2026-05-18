@@ -9,6 +9,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { devLog } from "@/lib/logger";
@@ -32,6 +40,13 @@ interface ExperienceDateDialogProps {
   onSaved: () => void;
 }
 
+type AvailabilityMode = "all" | "single";
+
+interface CompanyOption {
+  id: string;
+  name: string;
+}
+
 export function ExperienceDateDialog({
   open,
   onOpenChange,
@@ -49,6 +64,11 @@ export function ExperienceDateDialog({
     volunteer_hours: 2,
     beneficiaries_count: 0,
   });
+  const [availabilityMode, setAvailabilityMode] = useState<AvailabilityMode>("all");
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
+  const [visibility, setVisibility] = useState<"public" | "private">("public");
+  const [activatedCompanies, setActivatedCompanies] = useState<CompanyOption[]>([]);
+  const [loadingScope, setLoadingScope] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -79,6 +99,64 @@ export function ExperienceDateDialog({
     }
   }, [experienceDate, open]);
 
+  // Fetch visibility + activated companies when dialog opens
+  useEffect(() => {
+    if (!open || !experienceId) return;
+
+    let cancelled = false;
+    setLoadingScope(true);
+
+    (async () => {
+      try {
+        const [expRes, ecRes] = await Promise.all([
+          supabase
+            .from("experiences")
+            .select("visibility")
+            .eq("id", experienceId)
+            .maybeSingle(),
+          supabase
+            .from("experience_companies")
+            .select("company_id, companies:company_id (id, name)")
+            .eq("experience_id", experienceId),
+        ]);
+
+        if (cancelled) return;
+
+        const vis = (expRes.data?.visibility === "private" ? "private" : "public") as
+          | "public"
+          | "private";
+        setVisibility(vis);
+
+        const companies: CompanyOption[] = (ecRes.data ?? [])
+          .map((row: any) => row.companies)
+          .filter((c: any): c is CompanyOption => !!c && !!c.id && !!c.name)
+          .sort((a, b) => a.name.localeCompare(b.name));
+        setActivatedCompanies(companies);
+
+        // Initialize mode/selection
+        const existingCompanyId = experienceDate?.company_id ?? null;
+        if (vis === "private") {
+          setAvailabilityMode("single");
+          setSelectedCompanyId(existingCompanyId ?? companies[0]?.id ?? "");
+        } else if (existingCompanyId) {
+          setAvailabilityMode("single");
+          setSelectedCompanyId(existingCompanyId);
+        } else {
+          setAvailabilityMode("all");
+          setSelectedCompanyId("");
+        }
+      } catch (e) {
+        devLog.error("Error loading experience scope:", e);
+      } finally {
+        if (!cancelled) setLoadingScope(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, experienceId, experienceDate]);
+
   const handleSave = async () => {
     if (!formData.start_date || !formData.start_time || !formData.end_date || !formData.end_time) {
       toast({
@@ -101,6 +179,15 @@ export function ExperienceDateDialog({
       return;
     }
 
+    if (availabilityMode === "single" && !selectedCompanyId) {
+      toast({
+        variant: "destructive",
+        title: "Errore",
+        description: "Seleziona l'azienda a cui riservare la data",
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       const payload = {
@@ -110,6 +197,7 @@ export function ExperienceDateDialog({
         max_participants: formData.max_participants,
         volunteer_hours: formData.volunteer_hours,
         beneficiaries_count: formData.beneficiaries_count,
+        company_id: availabilityMode === "single" ? selectedCompanyId : null,
       };
 
       if (experienceDate) {
@@ -147,6 +235,10 @@ export function ExperienceDateDialog({
       setSaving(false);
     }
   };
+
+  const noCompaniesActivated = activatedCompanies.length === 0;
+  const singleDisabledForPublic = visibility === "public" && noCompaniesActivated;
+  const radioLocked = visibility === "private";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -208,6 +300,70 @@ export function ExperienceDateDialog({
           </div>
 
           <div className="space-y-2">
+            <Label>Disponibile a</Label>
+            <RadioGroup
+              value={availabilityMode}
+              onValueChange={(v) => {
+                if (radioLocked) return;
+                setAvailabilityMode(v as AvailabilityMode);
+                if (v === "all") setSelectedCompanyId("");
+              }}
+              disabled={loadingScope || radioLocked}
+            >
+              <div className="flex items-start gap-2">
+                <RadioGroupItem
+                  value="all"
+                  id="avail-all"
+                  disabled={radioLocked}
+                  className="mt-0.5"
+                />
+                <Label htmlFor="avail-all" className="font-normal cursor-pointer">
+                  Tutte le aziende che hanno l'esperienza
+                </Label>
+              </div>
+              <div className="flex items-start gap-2">
+                <RadioGroupItem
+                  value="single"
+                  id="avail-single"
+                  disabled={singleDisabledForPublic}
+                  className="mt-0.5"
+                />
+                <Label
+                  htmlFor="avail-single"
+                  className={`font-normal cursor-pointer ${singleDisabledForPublic ? "opacity-50" : ""}`}
+                >
+                  Solo una specifica azienda
+                </Label>
+              </div>
+            </RadioGroup>
+
+            {singleDisabledForPublic && (
+              <p className="text-xs text-muted-foreground">
+                Attiva prima questa esperienza per almeno un'azienda dal dialog visibilità
+              </p>
+            )}
+
+            {availabilityMode === "single" && !singleDisabledForPublic && (
+              <Select
+                value={selectedCompanyId}
+                onValueChange={setSelectedCompanyId}
+                disabled={radioLocked || activatedCompanies.length <= 1 && radioLocked}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona azienda" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activatedCompanies.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="max_participants">Posti Massimi *</Label>
             <Input
               id="max_participants"
@@ -261,7 +417,7 @@ export function ExperienceDateDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annulla
           </Button>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving || loadingScope}>
             {saving ? "Salvataggio..." : "Salva"}
           </Button>
         </DialogFooter>
