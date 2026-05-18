@@ -99,6 +99,7 @@ export function DayView({ currentDate, events, onEventDeleted }: DayViewProps) {
                   if (open) setSelectedEvent(ev);
                 }}
                 onDeleted={onEventDeleted}
+                mode={popoverMode}
               >
                 <button
                   className="absolute rounded-md px-2 py-1 text-left overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
