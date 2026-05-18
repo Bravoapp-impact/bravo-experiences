@@ -18,7 +18,6 @@ interface MetricDef {
   segment: EmployeeSegment;
   label: string;
   value: string | number;
-  subLabel?: string;
   icon: LucideIcon;
   iconColor: string;
   iconBgColor: string;
