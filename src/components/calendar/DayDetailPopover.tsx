@@ -186,29 +186,49 @@ export function DayDetailPopover({ event, open, onOpenChange, onDeleted, childre
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Users className="h-3.5 w-3.5" />
-                    <span>{event.confirmed_count}/{event.max_participants} partecipanti</span>
+                    <span>
+                      {event.confirmed_count}/{event.max_participants}{" "}
+                      {isHr ? "dipendenti iscritti" : "partecipanti"}
+                    </span>
                   </div>
                 </div>
 
                 <div className="border-t pt-2 space-y-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start h-8 text-xs"
-                    onClick={() => setIsEditing(true)}
-                  >
-                    <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                    Modifica data
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 h-8 text-xs"
-                    onClick={() => setDeleteOpen(true)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                    Elimina data
-                  </Button>
+                  {isHr ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start h-8 text-xs"
+                      onClick={() => {
+                        onOpenChange(false);
+                        navigate(`/hr/experiences/${event.experience_id}`);
+                      }}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                      Vedi esperienza
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start h-8 text-xs"
+                        onClick={() => setIsEditing(true)}
+                      >
+                        <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                        Modifica data
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 h-8 text-xs"
+                        onClick={() => setDeleteOpen(true)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                        Elimina data
+                      </Button>
+                    </>
+                  )}
                 </div>
               </>
             )}
