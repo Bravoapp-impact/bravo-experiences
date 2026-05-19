@@ -72,6 +72,7 @@ import AuthCallback from "./pages/AuthCallback";
 import HRPlaceholderPage from "./pages/hr/HRPlaceholderPage";
 import HRGalleryPage from "./pages/hr/HRGalleryPage";
 import Unsubscribe from "./pages/Unsubscribe";
+import PublicAssociationSuggestion from "./pages/PublicAssociationSuggestion";
 
 const queryClient = new QueryClient();
 
@@ -93,6 +94,7 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
+            <Route path="/suggerisci-ets/:token" element={<PublicAssociationSuggestion />} />
             <Route
               path="/app/experiences"
               element={

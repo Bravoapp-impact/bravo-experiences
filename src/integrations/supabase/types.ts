@@ -153,6 +153,63 @@ export type Database = {
           },
         ]
       }
+      association_suggestions: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          suggested_city: string | null
+          suggested_name: string
+          suggester_email: string | null
+          suggester_name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          suggested_city?: string | null
+          suggested_name: string
+          suggester_email?: string | null
+          suggester_name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          suggested_city?: string | null
+          suggested_name?: string
+          suggester_email?: string | null
+          suggester_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "association_suggestions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "association_suggestions_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       associations: {
         Row: {
           address: string | null
@@ -317,6 +374,7 @@ export type Database = {
           logo_url: string | null
           max_concurrent_absences: number | null
           name: string
+          suggestion_token: string
         }
         Insert: {
           created_at?: string
@@ -325,6 +383,7 @@ export type Database = {
           logo_url?: string | null
           max_concurrent_absences?: number | null
           name: string
+          suggestion_token?: string
         }
         Update: {
           created_at?: string
@@ -333,6 +392,7 @@ export type Database = {
           logo_url?: string | null
           max_concurrent_absences?: number | null
           name?: string
+          suggestion_token?: string
         }
         Relationships: []
       }
@@ -2141,6 +2201,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      regenerate_suggestion_token: { Args: never; Returns: string }
       validate_access_code: {
         Args: { p_code: string }
         Returns: {

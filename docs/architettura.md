@@ -75,6 +75,7 @@ Pipeline a coda con retry e suppression. Dettagli in `transactional-emails.md`.
 | `email_settings` | Opt-out company-level configurabile dall'HR |
 | `email_unsubscribe_tokens` | Token one-click unsubscribe per email |
 | `suppressed_emails` | Email bloccate (unsubscribe, bounce, complaint) |
+| `association_suggestions` | Suggerimenti ETS raccolti dai dipendenti tramite link pubblico per-company (token su `companies.suggestion_token`) |
 | `pgmq.auth_emails`, `pgmq.transactional_emails` | Code di invio (più rispettivi dead-letter) |
 
 ### 2.6 Galleria
@@ -185,6 +186,7 @@ Tutte in `supabase/functions/`. Convenzione: `verify_jwt = false` con autenticaz
 | `handle-email-suppression` | Webhook bounce/complaint dal provider |
 | `preview-transactional-email` | Utility super admin per anteprima template |
 | `booking-ics` | Endpoint pubblico (`?booking_id=<uuid>`) che restituisce il `.ics` della prenotazione confermata. Linkato nell'email di conferma per Outlook/Apple/altri client. Pattern documentato in `transactional-emails.md` §"Allegati e calendari" |
+| `submit-association-suggestion` | Endpoint pubblico (`?token=<uuid>`) per la pagina `/suggerisci-ets/:token`. `GET` risolve token → nome azienda, `POST` inserisce un suggerimento ETS via service-role. Rate-limited per IP. |
 
 Pattern e regole per aggiungere una nuova email: `transactional-emails.md`.
 
@@ -196,7 +198,7 @@ Le route sono protette da componenti dedicati: `ProtectedRoute` (dipendente logg
 
 ### Pubbliche / Auth
 
-`/login`, `/register`, `/forgot-password`, `/reset-password`, `/auth/callback`, `/unsubscribe`
+`/login`, `/register`, `/forgot-password`, `/reset-password`, `/auth/callback`, `/unsubscribe`, `/suggerisci-ets/:token`
 
 ### Dipendente — `/app/*`
 
