@@ -371,6 +371,14 @@ export default function HRGalleryPage() {
                 />
               </div>
             )}
+
+            {hasMore && !isLoading && !noResultsForFilters && (
+              <div className="flex justify-center pt-2">
+                <Button variant="outline" size="sm" onClick={() => setVisibleCount((c) => c + GALLERY_PAGE_SIZE)}>
+                  Carica altro (mostrate {mainPhotos.length} di {photos.length})
+                </Button>
+              </div>
+            )}
           </>
         )}
       </div>
