@@ -1,74 +1,59 @@
-## Obiettivo
+# Aggiornamento documentazione — Calendario, Utenti, Galleria
 
-Permettere all'HR, nella pagina `/hr/galleria`, di selezionare più foto e poi:
-- scaricarle in un unico file `.zip`
-- eliminarle in blocco
+Tre sezioni HR sono state portate avanti fra ieri e stamattina. Vanno fissate nei documenti che tracciano lo stato reale dell'app (`log.md`), gli avanzamenti aperti e i debiti noti (`aperto.md`), e la mappa delle route/tabelle (`architettura.md`).
 
-Comportamento desktop e mobile coerente con l'attuale stile minimal Airbnb-like.
+## 1. `docs/log.md` — nuova entry datata 2026-05-19
 
-## UX
+Una sola entry "sessione di lavoro" che copre le tre sezioni, in cima al file (formato standard del template).
 
-1. **Attivazione "modalità selezione"**
-   - In alto a destra della griglia, accanto ai filtri, un pulsante "Seleziona".
-   - Cliccandolo, la griglia entra in modalità selezione: ogni foto mostra una checkbox in overlay (in alto a sinistra). Il click sulla foto in modalità selezione seleziona/deseleziona invece di aprire la lightbox.
-   - In modalità selezione la lightbox è disabilitata (per evitare conflitti col tap su mobile).
+**Titolo.** `2026-05-19 — HR: Calendario, Utenti, Galleria — prima ondata operativa`
 
-2. **Action bar di selezione**
-   - Appare una barra sticky in cima alla griglia (sotto i filtri) quando c'è almeno 1 selezione, con:
-     - Conteggio "N foto selezionate"
-     - Link "Seleziona tutto" / "Deseleziona tutto" (riferito ai risultati filtrati attualmente visibili)
-     - Pulsante "Scarica ZIP" (con spinner durante la generazione)
-     - Pulsante "Elimina" (destructive)
-     - Pulsante "Esci dalla selezione"
+**Contesto.** Tre voci che erano `HRPlaceholderPage` (Calendario, Galleria) o pagina embrionale (Utenti) passano a feature reali nel pannello HR. Avanzamento dell'Ondata 2 di `aperto.md`.
 
-3. **Conferme**
-   - Eliminazione: AlertDialog di conferma ("Eliminare N foto? Operazione irreversibile.").
-   - Download: feedback toast con progresso ("Sto preparando lo ZIP… N/M").
+**Cosa cambia.** Tre blocchi:
 
-4. **Mobile**
-   - L'action bar diventa una barra sticky in basso con i due CTA principali (Scarica, Elimina) e il conteggio + chiudi a sinistra.
+- **Calendario HR** (`/hr/calendario`): vista calendario aggregata sulle date di volontariato del programma attivato per l'azienda. Filtri laterali (`CalendarFiltersSidebar`), viste Month / Week / Day, popover di dettaglio giornata, RLS già coperta dalla `hr_view_experience_dates_v5` + funzione `hr_has_historical_booking_for_date`.
+- **Utenti HR** (`/hr/users`): rinominato da "Dipendenti" a "Utenti" (terminologia inclusiva, vedi memory). Metriche, segmenti (Attivi / Da coinvolgere / Nuovi), funnel partecipazione, drill-down dialog per le partecipazioni del singolo dipendente. Build sopra `BookingsTable`, `EmployeeMetricsCards`, `EmployeeParticipationsDialog`. Note: la pagina resta single-vertical (solo volontariato), già a debito in `aperto.md`.
+- **Galleria HR** (`/hr/galleria`): galleria company-wide con `react-photo-album` (rows layout), lightbox, filtri (esperienze, range date), coda di moderazione (`ModerationQueueDialog`), bulk actions (selezione, download ZIP via `jszip`, eliminazione di massa con conferma), e upload diretto HR (`HRPhotoUploadDialog`) che bypassa la moderazione (auto-approved dal trigger DB `populate_gallery_photo_metadata` per `hr_admin`). Storage bucket `gallery-photos`. Tabella `gallery_photos` con stati `pending`/`approved`/`rejected`/`hidden`. Re-fetch ottimistico via `invalidateQueries` per evitare il bug "cancello ma resta visibile" risolto stamattina con la migration 20260519093314.
 
-## Tecnico
+**Impatto.** `DB schema` · `RLS` · `UI` · `Storage` · `Docs`
 
-### Dipendenze
-- Aggiungere `jszip` per generare il file ZIP lato client (i bucket non sono pubblici, quindi serve fetchare i blob via signed URL e zipparli nel browser).
-- Nessuna libreria di salvataggio extra: usiamo un `<a download>` con `URL.createObjectURL(blob)`.
+**File / aree toccate.**
+- `src/pages/hr/HRCalendarPage.tsx`, `src/components/hr/calendar/CalendarFiltersSidebar.tsx`, `src/components/calendar/*`
+- `src/pages/hr/HREmployeesPage.tsx`, `src/components/hr/{EmployeeMetricsCards,EmployeeParticipationsDialog,BookingsTable}.tsx`
+- `src/pages/hr/HRGalleryPage.tsx`, `src/components/hr-gallery/*` (GalleryFilters, GallerySelectionBar, HRPhotoUploadDialog, ModerationQueueDialog, PhotoLightbox)
+- `src/hooks/queries/gallery/*` (useCompanyGallery, useBulk{Delete,Download}Photos, useHRUploadPhotos, useCompanyPastDates, useModeratePhotos, useUpdatePhotoStatus, useSignedPhotoUrls, ...)
+- Tabella `gallery_photos`, trigger `populate_gallery_photo_metadata`, bucket Storage `gallery-photos`, migration `20260519093314_*.sql`
+- `package.json` (+ `jszip`, `browser-image-compression`)
 
-### Stato in `HRGalleryPage.tsx`
-- `selectionMode: boolean`
-- `selectedIds: Set<string>`
-- Quando `selectionMode` cambia o cambiano i filtri, resettare `selectedIds`.
-- Helper `toggle(id)`, `selectAllVisible()`, `clearSelection()`, `exitSelectionMode()`.
+**Follow-up.** Tre voci concrete, replicate sotto in `aperto.md`:
+- Controparte super-admin della Galleria mancante.
+- Vista Galleria lato dipendente: oggi vede solo le proprie foto caricate, non l'intera galleria aziendale approvata.
+- Migliorie incrementali su upload e filtri della galleria HR.
 
-### Griglia
-- `RowsPhotoAlbum` non offre overlay UI di selezione → wrappiamo ogni immagine custom tramite `render.image` o `render.photo` (l'API di `react-photo-album` lo supporta). In alternativa, in modalità selezione passiamo `onClick` che invece di aprire la lightbox chiama `toggle(id)`, e renderizziamo un overlay checkbox come elemento posizionato assoluto sopra ogni cella (tramite `render.extras`).
-- Stile selezionato: ring `primary` + leggera opacità sul resto.
+## 2. `docs/aperto.md` — aggiornamenti puntuali
 
-### Bulk download (ZIP)
-- Nuovo hook `useBulkDownloadPhotos(companyId)`:
-  1. Riceve array di `photo` (id + storage_path + nome esperienza + data per il filename).
-  2. Per ogni foto, scarica il blob via `fetch(signedUrl)` (gli URL firmati per il bucket privato vengono già generati da `useSignedPhotoUrls`; per il download di tutte le selezionate, se manca, generiamo on-demand chiamando `supabase.storage.from("gallery-photos").createSignedUrls(paths, 3600)`).
-  3. Costruisce filename leggibili tipo `Esperienza_2025-05-12_001.jpg` (sanificati), con suffisso numerico in caso di collisione.
-  4. Aggiunge al `JSZip` e genera `blob` tipo `application/zip`.
-  5. Trigger download: `a.href = URL.createObjectURL(blob); a.download = "galleria-${companyName||'foto'}-${yyyymmdd}.zip"; a.click(); URL.revokeObjectURL`.
-  6. Limiti: max 200 foto per ZIP (mostra toast d'errore se sforato) per evitare OOM su mobile; mostriamo progresso con `toast.loading` aggiornato.
+**§2 Debito tecnico noto** — aggiungere tre voci nuove (ordinate per urgenza, in alto le più recenti):
 
-### Bulk delete
-- Nuovo hook `useBulkDeletePhotos(companyId)` basato sulla logica già presente in `useDeletePhoto`:
-  - Per ogni foto: chiamata `supabase.storage.from("gallery-photos").remove([...paths])` in un'unica call con max 1000 path.
-  - Poi `supabase.from("gallery_photos").delete().in("id", ids)`.
-  - Una sola `invalidateQueries(galleryKeys.companyAll(companyId))` alla fine.
-- Errori parziali: se la `remove` storage fallisce per alcuni file, registriamo warning ma procediamo col delete DB (il trigger legacy non c'è più, e l'orfano sullo storage è meno grave del file fantasma in galleria).
+- **Galleria: controparte super-admin assente.** La galleria HR è operativa (moderazione, bulk actions, upload diretto), ma non c'è ancora una vista super-admin per supervisionare cross-company (audit, moderazione cross-tenant, gestione storage). Da aprire prima di scalare a più di una manciata di aziende con foto attive.
+- **Galleria dipendente: visibilità parziale.** Oggi il dipendente in `/app/profile` (o pagina galleria personale) vede solo le foto che ha caricato lui. La galleria aziendale completa — le foto approvate dall'HR di tutta la company — non gli è ancora esposta. Da decidere ancora dove e come mostrarla (tab dedicato? pagina dedicata? sezione in `/app/impact`?).
+- **Galleria HR: upload e filtri da rifinire.** Upload diretto HR funzionante ma migliorabile (drag-and-drop avanzato, batch più grandi, retry parziali, naming intelligente, edit metadata in-line). Filtri attuali (esperienza, range date) limitati: mancano filtro per associazione, per uploader, per stato (`hidden` vs `approved`), per "featured", e ricerca testuale su caption.
 
-### File toccati / nuovi
-- `src/pages/hr/HRGalleryPage.tsx` — stato selezione, action bar, props alla griglia.
-- `src/components/hr-gallery/GallerySelectionBar.tsx` (nuovo) — UI della barra azioni.
-- `src/components/hr-gallery/PhotoGrid.tsx` — opzionale, estrarre la `RowsPhotoAlbum` se serve `render.extras` con overlay checkbox; altrimenti inline.
-- `src/hooks/queries/gallery/useBulkDeletePhotos.ts` (nuovo).
-- `src/hooks/queries/gallery/useBulkDownloadPhotos.ts` (nuovo).
-- `package.json` — aggiungere `jszip`.
+**§3 Prossimi sprint** — aggiornare la riga **Ondata 2 — HR operatività**. Oggi recita: "Calendario HR in homepage e pagina dedicata. … Galleria foto". Indicare in coda che Calendario e Galleria HR sono ✅ in prima versione, e che restano in pipeline le rifiniture e la controparte super-admin della Galleria.
 
-## Fuori scope
-- Selezione cross-pagina o cross-filtro: la selezione vive sui risultati attualmente filtrati e si azzera al cambio filtri.
-- Bulk approve/reject in galleria principale (già coperto dalla coda di moderazione).
-- Export ZIP server-side via edge function (valutabile in futuro se i volumi crescono).
+## 3. `docs/architettura.md` — allineamenti
+
+- **§6 / HR — `/hr/*`**: aggiungere righe in tabella per `/hr/calendario` e `/hr/galleria` (e rinominare/spiegare `/hr/users` come "Utenti registrati della propria company"). Rimuoverle dalla riga "Placeholder attivi" sotto la tabella, che resta solo per `/hr/formazione`, `/hr/negozio`, `/hr/convenzioni`, `/hr/comunicazione`.
+- **§2.3 Volontariato** (o nuova sotto-sezione 2.7 "Galleria"): aggiungere la tabella `gallery_photos` con una riga descrittiva ("Foto caricate da dipendenti/HR, con stati di moderazione, legate a `experience_dates`"). Citare il bucket Storage `gallery-photos`.
+- **§3 RLS — i pattern**: nessuna policy nuova fuori standard, ma menzionare il trigger `populate_gallery_photo_metadata` (auto-approva foto caricate da `hr_admin`, popola `company_id`).
+- **§4 RPC critiche**: nessuna RPC nuova rilevante (le operazioni passano da query dirette con RLS + bulk operations client-side). Lasciare invariato.
+
+## 4. `docs/volunteering.md` — micro-aggiornamento
+
+Riga 17 oggi dice "Non copre: calendario aggregato HR, galleria multimediale, …". Lasciare il principio (questo doc resta sul flusso volontariato), ma aggiungere subito dopo una nota: "Calendario HR e Galleria HR hanno ora una prima implementazione (vedi `log.md` 2026-05-19 e route in `architettura.md` §6); il loro modello dati operativo resta fuori da questo documento finché non si stabilizza".
+
+## Out of scope
+
+- Niente codice / migrations / nuovi componenti: solo documentazione.
+- La controparte super-admin della Galleria, la vista dipendente, e le migliorie upload/filtri vengono **annotate come follow-up**, non implementate qui.
+- Nessun aggiornamento a `design-system.md`, `data-fetching.md`, `principi.md`, `tb-flow.md`: le tre sezioni non introducono pattern nuovi rispetto a quanto già documentato.
