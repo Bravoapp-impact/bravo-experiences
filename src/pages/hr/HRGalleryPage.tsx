@@ -34,6 +34,7 @@ import {
   type GalleryFilterOption,
 } from "@/components/hr-gallery/GalleryFilters";
 import { GallerySelectionBar } from "@/components/hr-gallery/GallerySelectionBar";
+import { HRPhotoUploadDialog } from "@/components/hr-gallery/HRPhotoUploadDialog";
 import { ModerationQueueDialog } from "@/components/hr-gallery/ModerationQueueDialog";
 import { PhotoLightbox } from "@/components/hr-gallery/PhotoLightbox";
 import { cn } from "@/lib/utils";
