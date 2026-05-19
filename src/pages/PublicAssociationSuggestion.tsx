@@ -64,7 +64,7 @@ export default function PublicAssociationSuggestion() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!token) return;
-    if (!suggestedName.trim() || !suggesterName.trim() || !suggesterEmail.trim()) {
+    if (!suggestedName.trim() || !suggestedCity.trim() || !suggesterName.trim() || !suggesterEmail.trim()) {
       toast.error("Compila i campi obbligatori");
       return;
     }
@@ -149,17 +149,13 @@ export default function PublicAssociationSuggestion() {
           <Card>
             <CardContent className="p-6 sm:p-8 space-y-6">
               <div className="space-y-2">
-                <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-primary">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Suggerimento ETS
-                </div>
                 <h1 className="text-2xl font-semibold leading-tight">
                   Suggerisci un ente del terzo settore a{" "}
                   <span className="text-primary">{companyName}</span>
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Il tuo HR raccoglierà i suggerimenti e valuterà di attivare
-                  nuove collaborazioni con gli ETS più votati.
+                  La tua azienda raccoglierà i suggerimenti per supportare gli
+                  enti non-profit indicati.
                 </p>
               </div>
 
