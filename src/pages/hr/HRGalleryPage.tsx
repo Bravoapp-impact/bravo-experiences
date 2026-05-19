@@ -4,7 +4,7 @@ import {
   type Photo as AlbumPhoto,
 } from "react-photo-album";
 import "react-photo-album/rows.css";
-import { Image as ImageIcon, ImageOff, AlertCircle, CheckSquare, Check } from "lucide-react";
+import { Image as ImageIcon, ImageOff, AlertCircle, CheckSquare, Check, Upload } from "lucide-react";
 import { HRLayout } from "@/components/layout/HRLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
