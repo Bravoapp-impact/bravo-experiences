@@ -48,9 +48,7 @@ function buildIcs(params: {
   city: string | null;
   address: string | null;
 }): string {
-  const summaryParts = [params.title];
-  if (params.associationName) summaryParts.push(params.associationName);
-  const summary = escapeIcsText(summaryParts.join(" · "));
+  const summary = escapeIcsText(`Volontariato con Bravo! - ${params.title}`);
 
   const locationParts = [params.city, params.address].filter(
     (p): p is string => Boolean(p && p.trim()),
