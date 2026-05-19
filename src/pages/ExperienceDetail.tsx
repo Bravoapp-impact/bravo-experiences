@@ -14,6 +14,7 @@ import { devLog } from "@/lib/logger";
 import type { Experience, ExperienceDate, ExperienceReview } from "@/types/experiences";
 
 import { ExperienceDetailContent } from "@/components/experience-detail/ExperienceDetailContent";
+import { ExperiencePhotosSection } from "@/components/experience-detail/ExperiencePhotosSection";
 import { DatesSidebar } from "@/components/experience-detail/DatesSidebar";
 import { MobileDateDrawer } from "@/components/experience-detail/MobileDateDrawer";
 
