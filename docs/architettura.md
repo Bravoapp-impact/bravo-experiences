@@ -75,6 +75,7 @@ Pipeline a coda con retry e suppression. Dettagli in `transactional-emails.md`.
 | `email_settings` | Opt-out company-level configurabile dall'HR |
 | `email_unsubscribe_tokens` | Token one-click unsubscribe per email |
 | `suppressed_emails` | Email bloccate (unsubscribe, bounce, complaint) |
+| `association_suggestions` | Suggerimenti ETS raccolti dai dipendenti tramite link pubblico per-company (token su `companies.suggestion_token`) |
 | `pgmq.auth_emails`, `pgmq.transactional_emails` | Code di invio (più rispettivi dead-letter) |
 
 ### 2.6 Galleria
