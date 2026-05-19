@@ -52,6 +52,7 @@ export default function HRGalleryPage() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   const bulkDelete = useBulkDeletePhotos();
   const bulkDownload = useBulkDownloadPhotos();
