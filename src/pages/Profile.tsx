@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileAvatarUpload } from "@/components/profile/ProfileAvatarUpload";
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
+import { ManagerEmailCard } from "@/components/profile/ManagerEmailCard";
 import { EnrollMFA } from "@/components/auth/EnrollMFA";
 import { ChangePasswordCard } from "@/components/profile/ChangePasswordCard";
 import { useAuth } from "@/hooks/useAuth";
