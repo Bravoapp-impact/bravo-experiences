@@ -72,6 +72,7 @@ import AuthCallback from "./pages/AuthCallback";
 import HRPlaceholderPage from "./pages/hr/HRPlaceholderPage";
 import HRGalleryPage from "./pages/hr/HRGalleryPage";
 import Unsubscribe from "./pages/Unsubscribe";
+import PublicAssociationSuggestion from "./pages/PublicAssociationSuggestion";
 
 const queryClient = new QueryClient();
 
