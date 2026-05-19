@@ -219,6 +219,13 @@ const infoBlock = {
   border: '1px solid #CFCFCF',
 }
 const blockSpacing = { marginTop: '16px' }
+const calendarBlock = {
+  padding: '16px',
+  borderRadius: '8px',
+  margin: '16px 0',
+  border: '1px solid #CFCFCF',
+}
+const calendarLinkLine = { margin: '8px 0 0 0', fontSize: '14px', color: '#4F4F4F' }
 const descriptionBlock = {
   marginTop: '16px',
   paddingTop: '16px',
