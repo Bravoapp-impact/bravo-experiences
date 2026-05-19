@@ -1,65 +1,31 @@
-# Foto fantasma in galleria — diagnosi e fix
+# Paginazione "Carica altro" per Galleria
 
-## Cosa è successo
+Aggiungiamo un limite di 20 foto visualizzate per volta sia nella galleria HR (`/hr/galleria`) sia nella galleria dipendente (`/gallery`), con un bottone "Carica altro" per mostrarne altre 20 alla volta. I filtri esistenti continuano a funzionare e resettano la paginazione.
 
-Le due foto grigie ("Approvata" senza immagine) per *Giochi e attività manuali con minori fragili* del 13 maggio 2026 sono **righe orfane** in `gallery_photos`:
+## Approccio
 
-- DB: 2 righe ancora presenti (`status = 'approved'`), id `33ccf812-…407e` e `adae9e5d-…155fd`, `uploaded_by` = utente HR.
-- Storage bucket `gallery-photos`: **0 file** sotto il prefisso della data. I file binari sono stati rimossi in un bulk-delete precedente, ma le righe DB no.
+Paginazione **client-side** tramite slice dell'array già filtrato. Motivi:
+- `useCompanyGallery` (HR) applica già parte dei filtri lato JS (esperienza, associazione) dopo la query — una `.range()` lato DB porterebbe a pagine "bucate".
+- `useMyPhotos` (dipendente) restituisce solo le foto dell'utente: volumi contenuti, slice client-side adeguato.
+- Nessuna modifica a hook/query/RLS.
 
-Si vedono in `/app/gallery` perché l'utente è loggato come employee con lo stesso `uploaded_by` (la galleria dipendente oggi mostra solo le foto caricate da sé — vedi `aperto.md`).
+Costante condivisa: `GALLERY_PAGE_SIZE = 20` in `src/lib/gallery.ts` (nuovo file, una riga export).
 
-## Causa radice — RLS
+## Galleria HR — `src/pages/hr/HRGalleryPage.tsx`
 
-`gallery_photos` ha una **sola** policy DELETE:
+- Aggiungere stato `visibleCount` (default 20).
+- Derivare `visiblePhotos = mainPhotos.slice(0, visibleCount)` e usarlo per la griglia e per il lightbox (paths/index).
+- Reset `visibleCount = 20` quando cambiano i filtri rilevanti (tab attivo, ricerca, esperienze, associazioni, date range, onlyFeatured, includeHidden) — via `useEffect` con dipendenze sui filtri.
+- "Seleziona tutto" continua a operare solo sulle foto visibili (`visiblePhotos`), coerente con UI mostrata.
+- Sotto la griglia: bottone `Carica altro` (variant `outline`, centrato) visibile se `visibleCount < mainPhotos.length`. Testo: `Carica altro (mostrate {visibleCount} di {total})`. Click → `setVisibleCount(c => c + 20)`.
 
-```
-Employees delete own pending photos:
-  role = 'employee' AND uploaded_by = auth.uid() AND status = 'pending'
-```
+## Galleria dipendente — `src/pages/Gallery.tsx`
 
-**Nessuna policy DELETE per `hr_admin` o `super_admin`.** Il bulk delete HR (`useBulkDeletePhotos`) fa:
+- Stesso pattern: `visibleCount` state, slice di `photos`, bottone "Carica altro" se ci sono altre foto.
+- Se in futuro verranno aggiunti filtri/tabs lato employee, il reset andrà esteso (per ora la pagina mostra solo "le mie foto" senza filtri).
 
-1. `storage.remove([paths])` → riesce (i permessi storage ci sono) → i file binari scompaiono.
-2. `.from("gallery_photos").delete().in("id", ids)` → RLS nega silenziosamente, 0 righe affette, **nessun errore**.
+## Fuori scope
 
-Risultato: file via, riga DB resta, "Approvata" su placeholder grigio.
-
-## Fix
-
-### 1. Migration — aggiungere DELETE policies mancanti su `gallery_photos`
-
-- HR può cancellare foto della propria company (qualsiasi stato):
-  ```
-  USING (
-    get_user_role(auth.uid()) = 'hr_admin'
-    AND company_id = get_user_company_id(auth.uid())
-  )
-  ```
-- Super admin può cancellare tutto:
-  ```
-  USING (is_super_admin(auth.uid()))
-  ```
-
-Mantengo la policy esistente per employee (cancella solo proprie pending).
-
-### 2. Migration — pulire le 2 righe orfane
-
-`DELETE FROM gallery_photos WHERE id IN ('33ccf812-922e-44e2-8989-6d957859407e', 'adae9e5d-faaa-4c28-851a-2fdee1c155fd');`
-
-(Una scan generale ha confermato che sono **le uniche** righe orfane in tutto il bucket.)
-
-### 3. `useBulkDeletePhotos.ts` — diagnostica difensiva
-
-Aggiungere `.select("id")` alla DELETE e controllare che `data.length === ids.length`; se diverso, `throw` con messaggio chiaro ("Nessuna foto cancellata: permessi insufficienti"). Evita che lo stesso silent-fail si ripresenti in futuro.
-
-### 4. Aggiornare doc
-
-- `docs/log.md`: nuova entry "2026-05-19 — Fix: bulk delete galleria HR non rimuoveva righe DB (RLS mancante)". Estende l'entry odierna.
-- `docs/aperto.md`: chiudere implicitamente il sotto-punto rilevante della voce "Galleria HR: upload e filtri da rifinire" (non era esplicito ma è dello stesso filone).
-
-## Out of scope
-
-- Audit completo delle RLS sulle altre tabelle (è un debito separato in `aperto.md`).
-- Vista galleria aziendale completa per dipendenti (resta a follow-up).
-- Cambi al filtro `/app/gallery` lato employee.
+- Nessuna modifica a hook, RLS, edge function, o schema DB.
+- Nessuna paginazione server-side / infinite scroll automatico (richiesta esplicita: bottone).
+- Nessuna modifica ad aperto.md/log.md (questa è una piccola UX iteration; se vuoi tracciarla esplicitamente, dimmelo e la aggiungo).
