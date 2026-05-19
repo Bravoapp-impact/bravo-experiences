@@ -206,7 +206,9 @@ Le route sono protette da componenti dedicati: `ProtectedRoute` (dipendente logg
 | `/hr` | Home dashboard contestuale |
 | `/hr/volontariato` | Vista unica del programma volontariato attivato per l'azienda (HR read-only, curation lato super-admin) |
 | `/hr/experiences/:id` | Dettaglio esperienza in chiave HR |
-| `/hr/users` | Dipendenti registrati della propria company |
+| `/hr/calendario` | Calendario aggregato delle date di volontariato del programma aziendale (viste Month/Week/Day, filtri laterali) |
+| `/hr/galleria` | Galleria foto company-wide: moderazione, bulk actions (download ZIP, delete), upload diretto HR (auto-approvato) |
+| `/hr/users` | Utenti registrati della propria company (metriche, segmenti, funnel partecipazione) |
 | `/hr/report` | Dashboard report (esistente, evolverà) |
 | `/hr/team-building` | Case list richieste TB della propria company |
 | `/hr/team-building/nuova-richiesta` | Wizard brief |
@@ -214,7 +216,7 @@ Le route sono protette da componenti dedicati: `ProtectedRoute` (dipendente logg
 | `/hr/team-building/:id/proposte/:proposalId` | Dettaglio singola proposta |
 | `/hr/impostazioni/*` | Profilo, sicurezza, tema, generali, membri, volontariato |
 
-Placeholder attivi: `/hr/formazione`, `/hr/negozio`, `/hr/convenzioni`, `/hr/calendario`, `/hr/galleria`, `/hr/comunicazione` (componente `HRPlaceholderPage`, riempiremo in roadmap).
+Placeholder attivi: `/hr/formazione`, `/hr/negozio`, `/hr/convenzioni`, `/hr/comunicazione` (componente `HRPlaceholderPage`, riempiremo in roadmap).
 
 ### Super Admin — `/super-admin/*`
 
