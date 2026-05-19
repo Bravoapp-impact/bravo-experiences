@@ -162,7 +162,7 @@ const BookingConfirmationEmail = ({
 export const template = {
   component: BookingConfirmationEmail,
   subject: (data: Record<string, any>) =>
-    `Conferma prenotazione: ${data?.experienceTitle || 'la tua esperienza'}`,
+    `Volontariato con Bravo! - ${data?.experienceTitle || 'la tua esperienza'}`,
   displayName: 'Conferma prenotazione',
   previewData: {
     firstName: 'Marco',

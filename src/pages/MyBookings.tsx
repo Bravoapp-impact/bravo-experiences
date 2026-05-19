@@ -163,8 +163,9 @@ export default function MyBookings() {
       if (error) throw error;
 
       toast({
-        title: "Prenotazione annullata",
-        description: "La tua prenotazione è stata annullata con successo.",
+        title: "Prenotazione cancellata",
+        description:
+          "La tua prenotazione è stata cancellata con successo. Se avevi aggiunto l'evento al calendario, ricordati di liberare lo slot.",
       });
 
       setSelectedBooking(null);

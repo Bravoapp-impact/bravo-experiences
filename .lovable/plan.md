@@ -1,79 +1,54 @@
-# Foto esperienza nel dettaglio dipendente
+## Cosa cambia
 
-## Outcome
+Due ritocchi di copy. Nessuna modifica a schema DB, RLS, o infrastruttura email.
 
-Nel dettaglio esperienza dipendente (`/app/experiences/:id`), tra Recensioni e Esperienze correlate, appare una sezione "Foto dell'esperienza" con le foto approvate dei colleghi della stessa azienda relative a quella esperienza. Click → lightbox read-only con navigazione. Se zero foto, la sezione non viene renderizzata. HR/super-admin/associazione: nessun cambio.
+### 1. Titolo unificato "Volontariato con Bravo! - <nome esperienza>"
 
-## DB & Storage
+Si applica in tre punti che oggi mostrano varianti diverse del titolo:
 
-**Verifica storage**: la policy SELECT su `storage.objects` per bucket `gallery-photos` è già `(bucket_id = 'gallery-photos')` per ruolo `authenticated` → qualunque dipendente loggato può generare signed URL. **Nessuna modifica storage necessaria.**
+**a) Subject email di conferma prenotazione**
+`supabase/functions/_shared/transactional-email-templates/booking-confirmation.tsx` (riga 164-165)
 
-**Migration unica**:
+Da:
+```ts
+subject: (data) => `Conferma prenotazione: ${data?.experienceTitle || 'la tua esperienza'}`
+```
+A:
+```ts
+subject: (data) => `Volontariato con Bravo! - ${data?.experienceTitle || 'la tua esperienza'}`
+```
 
-1. Nuova RLS additiva su `public.gallery_photos`:
-  ```sql
-   CREATE POLICY "Employees view approved company photos for visible gallery"
-   ON public.gallery_photos
-   FOR SELECT TO authenticated
-   USING (
-     status = 'approved'
-     AND company_id = get_user_company_id(auth.uid())
-     AND EXISTS (
-       SELECT 1 FROM public.companies c
-       WHERE c.id = gallery_photos.company_id
-         AND c.gallery_visible_to_employees = true
-     )
-   );
-  ```
-   Nome nuovo, additiva: la policy esistente `Employees view own photos and approved gallery` resta intoccata (RLS in OR).
-2. Backfill una tantum:
-  ```sql
-   UPDATE public.companies SET gallery_visible_to_employees = true;
-  ```
+**b) Evento Google Calendar (deep-link)**
+`supabase/functions/send-booking-confirmation/index.ts`, funzione `buildGoogleCalendarUrl` (riga 54-56).
 
-## Nuovo hook
+Oggi compone il titolo come `"<title> · <associationName>"`. Lo sostituiamo con `"Volontariato con Bravo! - <title>"` (rimuoviamo il suffisso ETS dal titolo evento — l'associazione resta visibile nei dettagli/descrizione dell'esperienza nel corpo email).
 
-`src/hooks/queries/gallery/useExperiencePhotosForEmployee.ts`
+**c) Evento .ics (Outlook/Apple)**
+`supabase/functions/booking-ics/index.ts`, riga 51-53 (`SUMMARY`).
 
-- Input: `experienceId`
-- Disabilitato se `profile.company_id` mancante
-- Query: prende prima gli `experience_dates.id` per quell'experience, poi `gallery_photos` con `status='approved'` filtrate `.in('experience_date_id', dateIds)`. Il filtro company + `gallery_visible_to_employees` è garantito dalla RLS.
-- Cache standard React Query (staleTime ~5min coerente con altri hook gallery).
-- Aggiungere chiave in `gallery/keys.ts`: `experiencePhotos: (experienceId, companyId) => [...all, "experiencePhotos", experienceId, companyId]`.
+Stessa modifica: `SUMMARY:Volontariato con Bravo! - <title>`.
 
-## Nuovi componenti
+Manteniamo l'escaping `escapeIcsText` per il titolo dell'esperienza.
 
-`src/components/experience-detail/ExperiencePhotosSection.tsx`
+### 2. Messaggio di conferma cancellazione
 
-- Riceve `experienceId`.
-- Chiama `useExperiencePhotosForEmployee` + `useSignedPhotoUrls` + `useImageDimensions`.
-- Render: `RowsPhotoAlbum` (stesso pattern di `Gallery.tsx`/`HRGalleryPage.tsx`).
-- Se loading: skeleton compatto. Se `photos.length === 0` o errore: ritorna `null` (la sezione sparisce completamente).
-- Titolo "Foto delle esperienze passate" + sottotitolo soft.
-- Click foto → apre il nuovo lightbox.
+`src/pages/MyBookings.tsx`, `handleCancel` (riga 165-168).
 
-`src/components/experience-detail/ExperiencePhotosLightbox.tsx`
+Sostituiamo il toast attuale con:
+- title: `"Prenotazione cancellata"`
+- description: `"La tua prenotazione è stata cancellata con successo. Se avevi aggiunto l'evento al calendario, ricordati di liberare lo slot."`
 
-- Wrapper minimale di `yet-another-react-lightbox` con plugin `Captions` e `Zoom`.
-- Props: `slides`, `index`, `open`, `onClose`. Nessun delete/edit/download.
-- Non riusa `hr-gallery/PhotoLightbox.tsx`.
+Toast normale (non destructive), durata default. Unico punto di cancellazione employee in app.
 
-## Integrazione in `ExperienceDetailContent`
+## Deploy
 
-Aggiungere prop opzionale `experiencePhotosSlot?: ReactNode` (stesso pattern di `relatedExperiencesSlot`, `sidebarSlot`). Renderizzata tra `ReviewsSection` e `SdgSection`/`AssociationProfile`/`RelatedExperiences` — concretamente subito dopo il blocco reviews, prima di MeetingPlace? No: la consegna chiede DOPO Recensioni e PRIMA di Esperienze correlate. La struttura attuale è: Reviews → MeetingPlace → UpcomingDates → SDG → Association → Related. Inserire lo slot **subito prima** del blocco `RelatedExperiences` (rispetta letteralmente "dopo Reviews e prima di Related", e non spezza il flusso info-luogo).
+Vanno ridistribuite due edge function:
+- `send-booking-confirmation` (subject del template è bundlato in `send-transactional-email`, quindi va ridistribuita anche quella)
+- `booking-ics`
 
-Solo `src/pages/ExperienceDetail.tsx` (employee) passa lo slot con `<ExperiencePhotosSection experienceId={experience.id} />`. HR, super-admin, associazione lasciano lo slot `undefined`.
+## Cosa NON cambia
 
-## File toccati
-
-- `supabase/migrations/...` (RLS + backfill)
-- `src/hooks/queries/gallery/keys.ts` (nuova chiave)
-- `src/hooks/queries/gallery/useExperiencePhotosForEmployee.ts` (nuovo)
-- `src/components/experience-detail/ExperiencePhotosSection.tsx` (nuovo)
-- `src/components/experience-detail/ExperiencePhotosLightbox.tsx` (nuovo)
-- `src/components/experience-detail/ExperienceDetailContent.tsx` (nuovo slot + render)
-- `src/pages/ExperienceDetail.tsx` (passa lo slot)
-
-## Fuori scope
-
-Galleria HR e galleria dipendente personali, moderazione, upload, toggle granulare super-admin di `gallery_visible_to_employees`, download/delete dal lightbox, RLS esistenti.
+- Pipeline email, code pgmq, `email_send_log`, gate `email_settings`.
+- RLS, RPC, trigger DB.
+- Layout/copy del corpo email — solo subject e SUMMARY calendario.
+- Logica di cancellazione (resta `UPDATE bookings SET status='cancelled'`).

@@ -51,9 +51,7 @@ const buildGoogleCalendarUrl = (params: {
   city: string | null;
   address: string | null;
 }): string => {
-  const titleParts = [params.title];
-  if (params.associationName) titleParts.push(params.associationName);
-  const text = titleParts.join(" · ");
+  const text = `Volontariato con Bravo! - ${params.title}`;
 
   const dates = `${toUtcCompact(params.startDatetime)}/${toUtcCompact(params.endDatetime)}`;
 
