@@ -26,6 +26,8 @@ interface BookingConfirmationProps {
   participantInfo?: string | null
   introText?: string
   closingText?: string
+  googleCalendarUrl?: string
+  icsDownloadUrl?: string
 }
 
 const BookingConfirmationEmail = ({
@@ -42,6 +44,8 @@ const BookingConfirmationEmail = ({
   participantInfo,
   introText,
   closingText,
+  googleCalendarUrl,
+  icsDownloadUrl,
 }: BookingConfirmationProps) => (
   <Html lang="it" dir="ltr">
     <Head />
@@ -89,6 +93,29 @@ const BookingConfirmationEmail = ({
               ) : null}
             </Section>
           ) : null}
+
+          {googleCalendarUrl || icsDownloadUrl ? (
+            <Section style={calendarBlock}>
+              <Text style={metaLine}>
+                <strong>Aggiungi al tuo calendario</strong>
+              </Text>
+              {googleCalendarUrl ? (
+                <Text style={calendarLinkLine}>
+                  <a href={googleCalendarUrl} style={link}>
+                    📅 Aggiungi a Google Calendar
+                  </a>
+                </Text>
+              ) : null}
+              {icsDownloadUrl ? (
+                <Text style={calendarLinkLine}>
+                  <a href={icsDownloadUrl} style={link}>
+                    📥 Scarica per altri calendari (Outlook, Apple, ecc.)
+                  </a>
+                </Text>
+              ) : null}
+            </Section>
+          ) : null}
+
 
           {city || address ? (
             <Section style={blockSpacing}>
@@ -149,6 +176,10 @@ export const template = {
     address: 'Parco Sempione, ingresso Arco della Pace',
     description: 'Una mattinata di pulizia e cura del parco insieme al team.',
     participantInfo: 'Porta scarpe comode e una bottiglia d’acqua. Guanti forniti.',
+    googleCalendarUrl:
+      'https://calendar.google.com/calendar/render?action=TEMPLATE&text=Pulizia+parco+urbano+%C2%B7+Associazione+Verde&dates=20260615T070000Z%2F20260615T110000Z&location=Milano%2C+Parco+Sempione',
+    icsDownloadUrl:
+      'https://example.supabase.co/functions/v1/booking-ics?booking_id=00000000-0000-4000-8000-000000000000',
   },
 } satisfies TemplateEntry
 
@@ -188,6 +219,13 @@ const infoBlock = {
   border: '1px solid #CFCFCF',
 }
 const blockSpacing = { marginTop: '16px' }
+const calendarBlock = {
+  padding: '16px',
+  borderRadius: '8px',
+  margin: '16px 0',
+  border: '1px solid #CFCFCF',
+}
+const calendarLinkLine = { margin: '8px 0 0 0', fontSize: '14px', color: '#4F4F4F' }
 const descriptionBlock = {
   marginTop: '16px',
   paddingTop: '16px',

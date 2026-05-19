@@ -26,6 +26,48 @@ const formatTime = (dateStr: string): string => {
   return date.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
 };
 
+// YYYYMMDDTHHMMSSZ in UTC — used both for Google Calendar deep-link `dates` param
+// and as the canonical .ics datetime form.
+const toUtcCompact = (dateStr: string): string => {
+  const d = new Date(dateStr);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return (
+    d.getUTCFullYear().toString() +
+    pad(d.getUTCMonth() + 1) +
+    pad(d.getUTCDate()) +
+    "T" +
+    pad(d.getUTCHours()) +
+    pad(d.getUTCMinutes()) +
+    pad(d.getUTCSeconds()) +
+    "Z"
+  );
+};
+
+const buildGoogleCalendarUrl = (params: {
+  title: string;
+  associationName: string | null;
+  startDatetime: string;
+  endDatetime: string;
+  city: string | null;
+  address: string | null;
+}): string => {
+  const titleParts = [params.title];
+  if (params.associationName) titleParts.push(params.associationName);
+  const text = titleParts.join(" · ");
+
+  const dates = `${toUtcCompact(params.startDatetime)}/${toUtcCompact(params.endDatetime)}`;
+
+  const locationParts = [params.city, params.address].filter(
+    (p): p is string => Boolean(p && p.trim()),
+  );
+  const location = locationParts.join(", ");
+
+  const qs = new URLSearchParams({ action: "TEMPLATE", text, dates });
+  if (location) qs.set("location", location);
+
+  return `https://calendar.google.com/calendar/render?${qs.toString()}`;
+};
+
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -149,6 +191,20 @@ serve(async (req: Request): Promise<Response> => {
       }
     }
 
+    // Calendar links: Google Calendar deep-link (most common case, one-click)
+    // + .ics endpoint for Outlook/Apple/other clients.
+    // `sendLovableEmail` does not support binary attachments, so the .ics is
+    // served from a public edge function (`booking-ics`) and linked in the email.
+    const googleCalendarUrl = buildGoogleCalendarUrl({
+      title: experience.title,
+      associationName: experience.association_name,
+      startDatetime: experienceDate.start_datetime,
+      endDatetime: experienceDate.end_datetime,
+      city: experience.city,
+      address: experience.address,
+    });
+    const icsDownloadUrl = `${supabaseUrl}/functions/v1/booking-ics?booking_id=${booking_id}`;
+
     // Delegate sending to native transactional email pipeline.
     // Email copy comes from the hardcoded React Email template — no per-company overrides.
     const templateData = {
@@ -162,6 +218,8 @@ serve(async (req: Request): Promise<Response> => {
       city: experience.city,
       address: experience.address,
       description: experience.description,
+      googleCalendarUrl,
+      icsDownloadUrl,
     };
 
     const { error: invokeError } = await supabase.functions.invoke("send-transactional-email", {
