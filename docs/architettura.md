@@ -77,7 +77,15 @@ Pipeline a coda con retry e suppression. Dettagli in `transactional-emails.md`.
 | `suppressed_emails` | Email bloccate (unsubscribe, bounce, complaint) |
 | `pgmq.auth_emails`, `pgmq.transactional_emails` | Code di invio (più rispettivi dead-letter) |
 
-### 2.6 Analytics
+### 2.6 Galleria
+
+| Tabella | Cosa è |
+| --- | --- |
+| `gallery_photos` | Foto caricate da dipendenti o HR, legate a una `experience_dates`. Stati: `pending`/`approved`/`rejected`/`hidden`. Trigger `populate_gallery_photo_metadata` popola `company_id` e auto-approva gli upload `hr_admin` |
+
+Storage: bucket `gallery-photos` (file binari, accesso via signed URL).
+
+### 2.7 Analytics
 
 | Tabella | Cosa è |
 | --- | --- |
