@@ -167,7 +167,10 @@ export default function HRGalleryPage() {
                   targetRowHeight={(containerWidth) =>
                     containerWidth < 640 ? 200 : 250
                   }
-                  onClick={({ index }) => setLightboxIndex(index)}
+                  onClick={({ index }) => {
+                    const p = mainPhotos[index];
+                    if (p) setLightboxPhotoId(p.id);
+                  }}
                 />
               </div>
             )}
