@@ -43,6 +43,32 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-19 — Suggerimenti ETS — sezione HR
+
+**Contesto.** Completata la feature suggerimenti ETS lato HR: ora l'HR può copiare/rigenerare il link pubblico e gestire i suggerimenti ricevuti dai dipendenti.
+
+**Cosa cambia.**
+- Nuova voce sidebar HR "Suggerimenti" (icona `Lightbulb`, sezione "Gestione" tra Galleria e Comunicazione).
+- Nuova route `/hr/suggerimenti` → `HRSuggestionsPage`.
+- Sezione "Link da condividere": input read-only con URL pubblico, bottoni "Copia link" (clipboard + toast) e "Rigenera" (AlertDialog di conferma → RPC `regenerate_suggestion_token`).
+- Tabella suggerimenti ordinata `created_at DESC`, colonne: ETS (nome + città), suggeritore (nome + email `mailto:`), motivazione (troncata 80c con Tooltip), data, badge stato (`Nuovo`/`Visto`/`Archiviato`), azioni inline (Archive/ArchiveRestore).
+- Click sul nome ETS di una riga `new` → mutation ottimistica `status='seen'`. Archivia/ripristina senza conferma (azioni reversibili).
+- Hook query nuovi in `src/hooks/queries/suggestions/`: `useSuggestionsList`, `useCompanySuggestionToken`, `useUpdateSuggestionStatus` (con optimistic update), `useRegenerateSuggestionToken`.
+- Layout flat (no Card wrapper), pattern `PageSection` + tabella shadcn con `bg-muted/50` sull'header.
+
+**Impatto.** `UI` · `Docs` (nessuna nuova migration: schema, RLS e RPC già pronti dal prompt precedente).
+
+**File / aree toccate.**
+- `src/pages/hr/HRSuggestionsPage.tsx` (nuovo)
+- `src/hooks/queries/suggestions/*` (nuovo)
+- `src/components/layout/HRLayout.tsx`
+- `src/App.tsx`
+- `docs/architettura.md` (route `/hr/suggerimenti`)
+
+**Follow-up.** In base al volume osservato in produzione, valutare: notifica email all'HR su nuovo suggerimento (digest settimanale se >10/sett), filtri/segmenti se la lista cresce.
+
+---
+
 ### 2026-05-19 — Suggerimenti ETS dai dipendenti — endpoint pubblico
 
 **Contesto.** Le aziende cercano modi strutturati per coinvolgere i dipendenti nella scelta degli ETS partner. Bravo! offre l'infrastruttura: un link che l'HR distribuisce internamente, e una bacheca suggerimenti che alimenterà i discovery call con il referente Bravo!.
