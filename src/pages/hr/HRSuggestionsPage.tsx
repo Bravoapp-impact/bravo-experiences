@@ -135,10 +135,9 @@ export default function HRSuggestionsPage() {
 
   return (
     <HRLayout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
         <PageHeader
           title="Suggerimenti"
-          description="Raccogli e gestisci i suggerimenti di ETS dai tuoi dipendenti"
           icon={Lightbulb}
           iconColor="text-yellow-500"
         />
