@@ -56,15 +56,26 @@ export function ModerationQueueDialog({ companyId, open, onOpenChange }: Props) 
     }
   }, [open]);
 
+  const photoIdsKey = useMemo(
+    () => photos.map((p) => p.id).join(","),
+    [photos],
+  );
+
   useEffect(() => {
-    // prune selection if items disappear
+    // prune selection if items disappear (stable: depends on ids string, not array ref)
     setSelected((prev) => {
+      if (prev.size === 0) return prev;
       const valid = new Set(photos.map((p) => p.id));
+      let changed = false;
       const next = new Set<string>();
-      prev.forEach((id) => valid.has(id) && next.add(id));
-      return next;
+      prev.forEach((id) => {
+        if (valid.has(id)) next.add(id);
+        else changed = true;
+      });
+      return changed ? next : prev;
     });
-  }, [photos]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [photoIdsKey]);
 
   const allSelected = photos.length > 0 && selected.size === photos.length;
 
