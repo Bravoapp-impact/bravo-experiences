@@ -56,7 +56,10 @@ export default function HRGalleryPage() {
   const { data: signedUrls = {} } = useSignedPhotoUrls(paths);
   const dims = useImageDimensions(Object.values(signedUrls));
 
-  const mainPhotos = photos;
+  const mainPhotos = useMemo(
+    () => photos.filter((p) => !!signedUrls[p.storage_path]),
+    [photos, signedUrls],
+  );
 
   const experienceOptions: GalleryFilterOption[] = useMemo(() => {
     const map = new Map<string, string>();
