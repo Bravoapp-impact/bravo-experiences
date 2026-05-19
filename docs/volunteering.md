@@ -16,6 +16,8 @@ Questo documento descrive il flusso operativo del volontariato dal punto di vist
 
 Non copre: calendario aggregato HR, galleria multimediale, report d'impatto, comunicazioni broadcast, suggerimenti ETS trasversali, console super-admin. Sono trattati separatamente quando ognuno avrà la sua priorità.
 
+> Nota (2026-05-19): Calendario HR (`/hr/calendario`) e Galleria HR (`/hr/galleria`) hanno ora una prima implementazione operativa (vedi `log.md` 2026-05-19 e route in `architettura.md` §6). Il loro modello dati e i pattern dedicati restano fuori da questo documento finché non si stabilizzano.
+
 ---
 
 ## 2. I quattro attori nel volontariato
