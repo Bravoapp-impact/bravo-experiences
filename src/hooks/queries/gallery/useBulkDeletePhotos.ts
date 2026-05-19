@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { galleryKeys } from "./keys";
-import { devLog } from "@/lib/devLog";
+import { devLog } from "@/lib/logger";
 
 interface BulkDeleteInput {
   photos: { id: string; storage_path: string }[];
