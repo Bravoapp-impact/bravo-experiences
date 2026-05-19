@@ -30,7 +30,7 @@ export default function HRGalleryPage() {
 
   const [filters, setFilters] = useState<GalleryFiltersState>(EMPTY_FILTERS);
   const [moderationOpen, setModerationOpen] = useState(false);
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [lightboxPhotoId, setLightboxPhotoId] = useState<string | null>(null);
 
   const dateFromIso = filters.dateRange?.from
     ? filters.dateRange.from.toISOString()
@@ -56,7 +56,10 @@ export default function HRGalleryPage() {
   const { data: signedUrls = {} } = useSignedPhotoUrls(paths);
   const dims = useImageDimensions(Object.values(signedUrls));
 
-  const mainPhotos = photos;
+  const mainPhotos = useMemo(
+    () => photos.filter((p) => !!signedUrls[p.storage_path]),
+    [photos, signedUrls],
+  );
 
   const experienceOptions: GalleryFilterOption[] = useMemo(() => {
     const map = new Map<string, string>();
@@ -164,7 +167,10 @@ export default function HRGalleryPage() {
                   targetRowHeight={(containerWidth) =>
                     containerWidth < 640 ? 200 : 250
                   }
-                  onClick={({ index }) => setLightboxIndex(index)}
+                  onClick={({ index }) => {
+                    const p = mainPhotos[index];
+                    if (p) setLightboxPhotoId(p.id);
+                  }}
                 />
               </div>
             )}
@@ -180,17 +186,21 @@ export default function HRGalleryPage() {
         />
       )}
 
-      {companyId && lightboxIndex !== null && (
-        <PhotoLightbox
-          photos={mainPhotos}
-          signedUrls={signedUrls}
-          currentIndex={lightboxIndex}
-          onIndexChange={setLightboxIndex}
-          open={lightboxIndex !== null}
-          onOpenChange={(o) => !o && setLightboxIndex(null)}
-          companyId={companyId}
-        />
-      )}
+      {companyId && lightboxPhotoId !== null && (() => {
+        const idx = mainPhotos.findIndex((p) => p.id === lightboxPhotoId);
+        if (idx === -1) return null;
+        return (
+          <PhotoLightbox
+            photos={mainPhotos}
+            signedUrls={signedUrls}
+            currentIndex={idx}
+            onIndexChange={(i) => setLightboxPhotoId(mainPhotos[i]?.id ?? null)}
+            open={true}
+            onOpenChange={(o) => !o && setLightboxPhotoId(null)}
+            companyId={companyId}
+          />
+        );
+      })()}
     </HRLayout>
   );
 }

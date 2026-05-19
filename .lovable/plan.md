@@ -1,39 +1,43 @@
-## Problemi rilevati nella lightbox foto (HR Galleria)
+## Problema
 
-`src/components/hr-gallery/PhotoLightbox.tsx`
+Nella pagina `HRGalleryPage`, la griglia foto e il lightbox lavorano su due array diversi:
 
-1. **Tasto Elimina non funziona visivamente**: l'`AlertDialog` di conferma viene renderizzato con z-index inferiore alla Lightbox (`yet-another-react-lightbox` usa z-index molto alti, ~9999). Il dialog quindi si apre "sotto" la lightbox e diventa visibile solo quando l'utente la chiude — ma in quel momento si chiude da solo perché perde il focus o l'utente clicca fuori.
+- La griglia (`RowsPhotoAlbum`) riceve `mainAlbum`, che **scarta le foto per cui il signed URL non è ancora arrivato**.
+- Il lightbox riceve `mainPhotos`, la lista completa.
 
-2. **Tasto Download mal posizionato**: viene renderizzato come `<a>` invece che `<button>`, quindi non eredita correttamente gli stili `.yarl__button` (allineamento verticale, padding) della toolbar.
+Il click ritorna un indice relativo a `mainAlbum`, ma viene usato come indice in `mainPhotos`. Risultato:
 
-3. **Tasto Modifica didascalia**: inutile, da rimuovere insieme al relativo `Dialog` e stato `editingCaption`/`captionDraft`.
+- se anche una sola foto manca di signed URL, gli indici si sfasano e si apre una foto sbagliata;
+- dopo una cancellazione, la lista del lightbox cambia ma l'indice salvato resta uguale, quindi finisce su una foto diversa o fuori range (non apre nulla).
 
-## Modifiche
+## Soluzione
 
-**File**: `src/components/hr-gallery/PhotoLightbox.tsx`
+Tracciare la selezione **per id della foto, non per indice**, e far lavorare il lightbox sullo stesso identico array che vede la griglia.
 
-1. **Rimuovere il tasto Modifica**:
-   - Eliminare l'import `Pencil`, `Dialog*`, `Textarea`, `useUpdatePhotoCaption`
-   - Rimuovere `editingCaption`, `captionDraft`, `openCaptionEditor`, `saveCaption`
-   - Rimuovere il bottone `caption` dalla `toolbarButtons`
-   - Rimuovere il `<Dialog>` di modifica didascalia
+### Modifiche in `src/pages/hr/HRGalleryPage.tsx`
 
-2. **Fix tasto Download**:
-   - Wrappare l'icona in un `<button>` con `onClick` che apre `signedUrls[current.storage_path]` in nuova tab, OPPURE
-   - Mantenere `<a>` ma aggiungere classi di allineamento (`inline-flex items-center justify-center`) per matchare gli altri yarl button.
-   - Approccio scelto: mantenere `<a className="yarl__button">` aggiungendo `inline-flex items-center` per garantire centratura dell'icona.
+1. Sostituire lo stato `lightboxIndex: number | null` con `lightboxPhotoId: string | null`.
+2. Costruire una lista derivata `mainPhotosWithUrl` (le foto di `mainPhotos` che hanno un signed URL) — è 1:1 con `mainAlbum`, stesso ordine.
+3. `onClick` della griglia: leggere l'`index` ritornato e salvare `mainPhotosWithUrl[index].id` nello stato.
+4. Passare al lightbox:
+   - `photos={mainPhotosWithUrl}` (stesso array della griglia),
+   - `currentIndex={mainPhotosWithUrl.findIndex(p => p.id === lightboxPhotoId)}`,
+   - `onIndexChange={(i) => setLightboxPhotoId(mainPhotosWithUrl[i]?.id ?? null)}`,
+   - `open` true solo se l'id è ancora presente nella lista (gestisce il caso post-delete: se l'id sparisce, il lightbox si chiude da solo).
 
-3. **Fix tasto Elimina (AlertDialog sopra la Lightbox)**:
-   - Aggiungere `className="z-[10000]"` all'`AlertDialogContent` (e all'overlay tramite portal) per stare sopra la lightbox.
-   - Approccio più solido: usare `confirm()` nativo NO — meglio mantenere AlertDialog stilizzato ma forzare z-index alto via className su `AlertDialogContent`. Radix porta sia overlay sia content; lo styling z-index si applica via className che Radix passa al content, mentre per l'overlay possiamo aggiungere uno stile CSS inline o passare un wrapper con `style`.
-   - Soluzione pulita: aggiungere a `AlertDialogContent` e implicitamente all'overlay le classi `z-[10000]`. Radix usa `[data-state]` ma applichiamo via Tailwind arbitrary value sul content; l'overlay shadcn `AlertDialogOverlay` ha z-50 di default, quindi va sovrascritto. Modifichiamo il componente solo localmente passando `className` sull'`AlertDialogContent` con `z-[10000]` e, se necessario, importando `AlertDialogOverlay` separatamente per impostare anche il suo z-index.
+### Modifiche in `src/components/hr-gallery/PhotoLightbox.tsx`
 
-## Dettagli tecnici
+Nessuna modifica strutturale necessaria: il componente già funziona per indice. L'unica accortezza: se `photos.length === 0` o l'indice è `-1`, chiudere il lightbox (probabilmente già coperto dal guard `if (!current) return null`, ma vale la pena chiamare `onOpenChange(false)` quando l'id selezionato non esiste più, già gestito al punto 4 sopra dal parent).
 
-- `yet-another-react-lightbox` usa `--yarl__portal_zindex` (default 9999). Useremo `z-[10001]` per il content del dialog e `z-[10000]` per l'overlay.
-- Per controllare z-index dell'overlay shadcn, importiamo `AlertDialogOverlay` e lo renderizziamo esplicitamente prima di `AlertDialogContent` con className custom.
+## Cosa NON cambia
 
-## Fuori scope
+- Logica di cancellazione (già corretta nel turno precedente: rimozione via Storage API + delete riga DB).
+- RLS, hook query, `useCompanyGallery`, `useSignedPhotoUrls`.
+- Layout, spaziature, stili.
 
-- Logica di delete (`useDeletePhoto`) e refresh galleria: nessuna modifica.
-- Nessun cambio a `HRGalleryPage.tsx` o altri file.
+## Verifica
+
+1. Click su una foto qualsiasi → si apre **quella** foto nel lightbox, anche se altre foto non hanno ancora signed URL.
+2. Naviga avanti/indietro nel lightbox → l'id selezionato si aggiorna.
+3. Elimina la foto corrente → il lightbox si chiude automaticamente (id non più presente), la griglia si aggiorna.
+4. Riapri un'altra foto → si apre quella corretta.
