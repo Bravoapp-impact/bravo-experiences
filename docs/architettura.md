@@ -198,7 +198,7 @@ Le route sono protette da componenti dedicati: `ProtectedRoute` (dipendente logg
 
 ### Pubbliche / Auth
 
-`/login`, `/register`, `/forgot-password`, `/reset-password`, `/auth/callback`, `/unsubscribe`
+`/login`, `/register`, `/forgot-password`, `/reset-password`, `/auth/callback`, `/unsubscribe`, `/suggerisci-ets/:token`
 
 ### Dipendente — `/app/*`
 
