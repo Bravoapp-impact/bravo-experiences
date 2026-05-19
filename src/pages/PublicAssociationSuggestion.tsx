@@ -122,8 +122,7 @@ export default function PublicAssociationSuggestion() {
               <AlertCircle className="h-10 w-10 mx-auto text-muted-foreground" />
               <h1 className="text-xl font-semibold">Link non valido o scaduto</h1>
               <p className="text-muted-foreground text-sm">
-                Questo link non è valido o è scaduto. Contatta il tuo
-                referente HR per un nuovo link.
+                Questo link non è valido o è scaduto.
               </p>
             </CardContent>
           </Card>
