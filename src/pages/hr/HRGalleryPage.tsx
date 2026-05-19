@@ -372,12 +372,25 @@ export default function HRGalleryPage() {
               </div>
             )}
 
-            {hasMore && !isLoading && !noResultsForFilters && (
+            {!isLoading && !noResultsForFilters && hasMore && (
               <div className="flex justify-center pt-2">
-                <Button variant="outline" size="sm" onClick={() => setVisibleCount((c) => c + GALLERY_PAGE_SIZE)}>
-                  Carica altro (mostrate {mainPhotos.length} di {photos.length})
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const added = Math.min(GALLERY_PAGE_SIZE, photos.length - visibleCount);
+                    setVisibleCount((c) => c + GALLERY_PAGE_SIZE);
+                    toast.success(`+${added} ${added === 1 ? "foto caricata" : "foto caricate"}`);
+                  }}
+                >
+                  Carica altro · {mainPhotos.length}/{photos.length}
                 </Button>
               </div>
+            )}
+            {!isLoading && !noResultsForFilters && !hasMore && photos.length > GALLERY_PAGE_SIZE && (
+              <p className="text-center text-xs text-muted-foreground pt-2">
+                Hai visto tutte le foto ({photos.length})
+              </p>
             )}
           </>
         )}

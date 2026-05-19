@@ -164,11 +164,20 @@ export default function Gallery() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setVisibleCount((c) => c + GALLERY_PAGE_SIZE)}
+                onClick={() => {
+                  const added = Math.min(GALLERY_PAGE_SIZE, photos.length - visibleCount);
+                  setVisibleCount((c) => c + GALLERY_PAGE_SIZE);
+                  toast.success(`+${added} ${added === 1 ? "foto caricata" : "foto caricate"}`);
+                }}
               >
-                Carica altro (mostrate {visiblePhotos.length} di {photos.length})
+                Carica altro · {visiblePhotos.length}/{photos.length}
               </Button>
             </div>
+          )}
+          {!hasMore && photos.length > GALLERY_PAGE_SIZE && (
+            <p className="text-center text-xs text-muted-foreground pt-4">
+              Hai visto tutte le foto ({photos.length})
+            </p>
           )}
         </section>
       )}
