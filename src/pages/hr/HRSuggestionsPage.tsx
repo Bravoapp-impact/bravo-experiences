@@ -150,6 +150,7 @@ export default function HRSuggestionsPage() {
               title="Link da condividere"
               description="Condividi questo link con i tuoi dipendenti per ricevere suggerimenti di enti non-profit da supportare."
               divider
+              className="pt-0"
             >
               <div className="flex flex-col sm:flex-row gap-2">
                 <Input
