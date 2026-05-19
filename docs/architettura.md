@@ -20,8 +20,8 @@ Sei aree, ognuna con le sue tabelle. Le aree non sono cartelle: sono raggruppame
 
 | Tabella | Cosa è |
 | --- | --- |
-| `companies` | Le aziende clienti |
-| `profiles` | Persone, estende `auth.users`. Collegate a `company_id` o `association_id` in base al ruolo |
+| `companies` | Le aziende clienti. Include `manager_notification_advance_days` (preavviso email al responsabile, default 7 giorni) |
+| `profiles` | Persone, estende `auth.users`. Collegate a `company_id` o `association_id` in base al ruolo. Include `manager_email` opzionale per la notifica di assenza al responsabile |
 | `associations` | Gli ETS della rete Bravo! |
 | `association_cities` | Bridge N:N — un ETS opera in più città |
 | `cities` | Anagrafica città (riferimento per esperienze, ETS, format TB) |
