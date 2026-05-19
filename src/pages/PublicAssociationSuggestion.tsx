@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
+import { CheckCircle2, AlertCircle } from "lucide-react";
 
 type Status = "loading" | "invalid" | "form" | "thanks";
 

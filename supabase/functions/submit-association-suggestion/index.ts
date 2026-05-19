@@ -112,6 +112,9 @@ Deno.serve(async (req) => {
       return json({ error: "Il tuo nome è obbligatorio" }, 400);
     }
     const suggestedCity = validateString(body.suggested_city, 100);
+    if (!suggestedCity) {
+      return json({ error: "La città dell'ente è obbligatoria" }, 400);
+    }
     const suggesterEmail = validateString(body.suggester_email, 255);
     if (suggesterEmail && !EMAIL_REGEX.test(suggesterEmail)) {
       return json({ error: "Email non valida" }, 400);
