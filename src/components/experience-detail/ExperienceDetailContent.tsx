@@ -41,6 +41,12 @@ interface ExperienceDetailContentProps {
    */
   relatedExperiencesSlot?: ReactNode;
   /**
+   * Optional slot rendered just before the related-experiences block.
+   * Used by employee detail page to show approved company photos for
+   * past dates of this experience. Other roles leave it undefined.
+   */
+  experiencePhotosSlot?: ReactNode;
+  /**
    * If false, hides the related-experiences block entirely (HR informational view).
    * Defaults to true.
    */
