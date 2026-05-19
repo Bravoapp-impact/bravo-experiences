@@ -137,7 +137,7 @@ export default function HRSuggestionsPage() {
     <HRLayout>
       <div className="space-y-6">
         <PageHeader
-          title="Suggerimenti"
+          title="ETS Suggeriti"
           icon={Lightbulb}
           iconColor="text-yellow-500"
         />
@@ -175,7 +175,7 @@ export default function HRSuggestionsPage() {
               </div>
             </PageSection>
 
-            <PageSection title="Suggerimenti ricevuti">
+            <PageSection title="ETS suggeriti">
               {!suggestions || suggestions.length === 0 ? (
                 <EmptyState
                   icon={Lightbulb}

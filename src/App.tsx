@@ -186,7 +186,7 @@ const App = () => (
             />
             <Route path="/hr/calendario" element={<ProtectedHRRoute><HRCalendarPage /></ProtectedHRRoute>} />
             <Route path="/hr/galleria" element={<ProtectedHRRoute><HRGalleryPage /></ProtectedHRRoute>} />
-            <Route path="/hr/suggerimenti" element={<ProtectedHRRoute><HRSuggestionsPage /></ProtectedHRRoute>} />
+            <Route path="/hr/ets-suggeriti" element={<ProtectedHRRoute><HRSuggestionsPage /></ProtectedHRRoute>} />
             <Route path="/hr/comunicazione" element={<ProtectedHRRoute><HRPlaceholderPage title="Comunicazione" /></ProtectedHRRoute>} />
             <Route
               path="/hr/profile"
