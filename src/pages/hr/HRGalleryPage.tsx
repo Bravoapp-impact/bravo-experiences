@@ -30,7 +30,7 @@ export default function HRGalleryPage() {
 
   const [filters, setFilters] = useState<GalleryFiltersState>(EMPTY_FILTERS);
   const [moderationOpen, setModerationOpen] = useState(false);
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [lightboxPhotoId, setLightboxPhotoId] = useState<string | null>(null);
 
   const dateFromIso = filters.dateRange?.from
     ? filters.dateRange.from.toISOString()
