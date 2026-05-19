@@ -31,11 +31,18 @@ export function useBulkDeletePhotos() {
       }
 
       const ids = photos.map((p) => p.id);
-      const { error } = await (supabase as any)
+      const { data, error } = await (supabase as any)
         .from("gallery_photos")
         .delete()
-        .in("id", ids);
+        .in("id", ids)
+        .select("id");
       if (error) throw error;
+      const deletedCount = (data ?? []).length;
+      if (deletedCount < ids.length) {
+        throw new Error(
+          `Eliminazione parziale: ${deletedCount}/${ids.length} foto rimosse. Verifica i permessi o ricarica la pagina.`,
+        );
+      }
     },
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: galleryKeys.companyAll(vars.companyId) });
