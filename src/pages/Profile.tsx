@@ -155,6 +155,21 @@ export default function Profile() {
           )}
         </motion.div>
 
+        {/* Manager Email */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.22 }}
+        >
+          {profile?.id && (
+            <ManagerEmailCard
+              profileId={profile.id}
+              initialManagerEmail={profile.manager_email}
+              onSave={refreshProfile}
+            />
+          )}
+        </motion.div>
+
         {/* Info Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
