@@ -9,6 +9,7 @@ import {
   CalendarDays,
   Image,
   MessageSquare,
+  Lightbulb,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminLayout, SidebarItem } from "./AdminLayout";
@@ -28,8 +29,9 @@ const sidebarItems: SidebarItem[] = [
   { label: "Calendario", icon: CalendarDays, href: "/hr/calendario", iconColor: "text-cyan-500" },
   { label: "Utenti", icon: Users, href: "/hr/users", iconColor: "text-blue-500" },
   { label: "Galleria", icon: Image, href: "/hr/galleria", iconColor: "text-amber-500" },
+  { label: "Suggerimenti", icon: Lightbulb, href: "/hr/suggerimenti", iconColor: "text-yellow-500" },
   { label: "Comunicazione", icon: MessageSquare, href: "/hr/comunicazione", iconColor: "text-purple-500" },
-  // separator after index 7
+  // separator after index 8
   { label: "Report", icon: BarChart3, href: "/hr/report", iconColor: "text-rose-500" },
 ];
 
