@@ -1,43 +1,34 @@
-## Problema
+## Problema individuato
 
-Nella pagina `HRGalleryPage`, la griglia foto e il lightbox lavorano su due array diversi:
+La foto viene effettivamente rimossa dopo refresh perché il codice elimina prima il file dallo storage. Subito dopo, però, quando prova a eliminare la riga `gallery_photos`, parte ancora un trigger database legacy:
 
-- La griglia (`RowsPhotoAlbum`) riceve `mainAlbum`, che **scarta le foto per cui il signed URL non è ancora arrivato**.
-- Il lightbox riceve `mainPhotos`, la lista completa.
+`gallery_photos_storage_cleanup AFTER DELETE -> cleanup_gallery_photo_storage()`
 
-Il click ritorna un indice relativo a `mainAlbum`, ma viene usato come indice in `mainPhotos`. Risultato:
+Questa funzione tenta di cancellare direttamente da `storage.objects`, operazione non più consentita. Quindi il frontend mostra l’errore “Direct deletion from storage tables is not allowed”, anche se il file è già stato eliminato tramite Storage API.
 
-- se anche una sola foto manca di signed URL, gli indici si sfasano e si apre una foto sbagliata;
-- dopo una cancellazione, la lista del lightbox cambia ma l'indice salvato resta uguale, quindi finisce su una foto diversa o fuori range (non apre nulla).
+In più c’è un warning separato in console su `ModerationQueueDialog` causato da un `useEffect` che aggiorna lo stato a ogni cambio referenziale di `photos`; non è la causa diretta dell’errore di eliminazione, ma può rendere instabile la pagina galleria.
 
-## Soluzione
+## Piano di intervento
 
-Tracciare la selezione **per id della foto, non per indice**, e far lavorare il lightbox sullo stesso identico array che vede la griglia.
+1. **Rimuovere il trigger legacy di cleanup storage**
+   - Creare una migrazione che fa `DROP TRIGGER IF EXISTS gallery_photos_storage_cleanup ON public.gallery_photos`.
+   - Opzionale ma consigliato: rimuovere anche la funzione `public.cleanup_gallery_photo_storage()` se non è più referenziata.
+   - Da questo momento la cancellazione file resta responsabilità del frontend tramite Storage API, come già implementato.
 
-### Modifiche in `src/pages/hr/HRGalleryPage.tsx`
+2. **Rendere la cancellazione frontend coerente e immediata**
+   - Aggiornare il commento in `useUpdatePhotoStatus.ts`, perché oggi dice ancora che il trigger elimina lo storage.
+   - Mantenere il flusso corretto: fetch `storage_path` → `supabase.storage.from("gallery-photos").remove(...)` → delete riga `gallery_photos`.
+   - Dopo successo invalidare la query galleria così la foto sparisce subito senza refresh.
 
-1. Sostituire lo stato `lightboxIndex: number | null` con `lightboxPhotoId: string | null`.
-2. Costruire una lista derivata `mainPhotosWithUrl` (le foto di `mainPhotos` che hanno un signed URL) — è 1:1 con `mainAlbum`, stesso ordine.
-3. `onClick` della griglia: leggere l'`index` ritornato e salvare `mainPhotosWithUrl[index].id` nello stato.
-4. Passare al lightbox:
-   - `photos={mainPhotosWithUrl}` (stesso array della griglia),
-   - `currentIndex={mainPhotosWithUrl.findIndex(p => p.id === lightboxPhotoId)}`,
-   - `onIndexChange={(i) => setLightboxPhotoId(mainPhotosWithUrl[i]?.id ?? null)}`,
-   - `open` true solo se l'id è ancora presente nella lista (gestisce il caso post-delete: se l'id sparisce, il lightbox si chiude da solo).
+3. **Chiudere/aggiornare la lightbox dopo eliminazione**
+   - Dopo cancellazione riuscita, chiudere sempre la lightbox o passare alla foto valida successiva solo se necessario.
+   - Evitare che rimanga aperta su un elemento già eliminato durante l’invalidazione query.
 
-### Modifiche in `src/components/hr-gallery/PhotoLightbox.tsx`
+4. **Correggere il warning di render loop nella moderation queue**
+   - Stabilizzare l’effetto di pruning della selezione in `ModerationQueueDialog` usando una dipendenza derivata stabile dagli ID, non l’array `photos` intero.
+   - Evitare `setSelected` quando la selezione non cambia davvero.
 
-Nessuna modifica strutturale necessaria: il componente già funziona per indice. L'unica accortezza: se `photos.length === 0` o l'indice è `-1`, chiudere il lightbox (probabilmente già coperto dal guard `if (!current) return null`, ma vale la pena chiamare `onOpenChange(false)` quando l'id selezionato non esiste più, già gestito al punto 4 sopra dal parent).
-
-## Cosa NON cambia
-
-- Logica di cancellazione (già corretta nel turno precedente: rimozione via Storage API + delete riga DB).
-- RLS, hook query, `useCompanyGallery`, `useSignedPhotoUrls`.
-- Layout, spaziature, stili.
-
-## Verifica
-
-1. Click su una foto qualsiasi → si apre **quella** foto nel lightbox, anche se altre foto non hanno ancora signed URL.
-2. Naviga avanti/indietro nel lightbox → l'id selezionato si aggiorna.
-3. Elimina la foto corrente → il lightbox si chiude automaticamente (id non più presente), la griglia si aggiorna.
-4. Riapri un'altra foto → si apre quella corretta.
+5. **Verifica**
+   - Controllare via query che il trigger legacy non esista più.
+   - Verificare che il delete non mostri più l’errore e che la foto sparisca subito dalla UI.
+   - Controllare che il warning “Maximum update depth exceeded” non si ripresenti.
