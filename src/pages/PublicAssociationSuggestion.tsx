@@ -174,12 +174,15 @@ export default function PublicAssociationSuggestion() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="suggested_city">Città dell'ente</Label>
+                  <Label htmlFor="suggested_city">
+                    Città dell'ente <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="suggested_city"
                     value={suggestedCity}
                     onChange={(e) => setSuggestedCity(e.target.value)}
                     maxLength={100}
+                    required
                   />
                 </div>
 
