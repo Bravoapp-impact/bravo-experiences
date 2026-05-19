@@ -9,6 +9,7 @@ interface Profile {
   first_name: string | null;
   last_name: string | null;
   role: string;
+  manager_email: string | null;
   company_id: string | null;
   association_id: string | null;
   avatar_url: string | null;
