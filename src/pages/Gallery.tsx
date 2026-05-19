@@ -24,6 +24,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useMyPhotos, type MyPhoto } from "@/hooks/queries/gallery/useMyPhotos";
 import { useSignedPhotoUrls } from "@/hooks/queries/gallery/useSignedPhotoUrls";
 import { useDeleteMyPendingPhoto } from "@/hooks/queries/gallery/useDeleteMyPendingPhoto";
+import { GALLERY_PAGE_SIZE } from "@/lib/gallery";
 
 const STATUS_CONFIG = {
   pending: {
@@ -47,8 +48,12 @@ export default function Gallery() {
   const { user } = useAuth();
   const { data: photos = [], isLoading } = useMyPhotos(user?.id);
   const [lightboxPhoto, setLightboxPhoto] = useState<MyPhoto | null>(null);
+  const [visibleCount, setVisibleCount] = useState(GALLERY_PAGE_SIZE);
 
-  const paths = photos.map((p) => p.storage_path);
+  const visiblePhotos = photos.slice(0, visibleCount);
+  const hasMore = visibleCount < photos.length;
+
+  const paths = visiblePhotos.map((p) => p.storage_path);
   const { data: signedUrls = {} } = useSignedPhotoUrls(paths);
 
   const deleteMutation = useDeleteMyPendingPhoto();
@@ -104,7 +109,7 @@ export default function Gallery() {
         <section>
           <h2 className="text-base font-semibold mb-4">Le mie foto</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-            {photos.map((photo) => {
+            {visiblePhotos.map((photo) => {
               const cfg = STATUS_CONFIG[photo.status];
               const StatusIcon = cfg.icon;
               const url = signedUrls[photo.storage_path];
@@ -154,6 +159,17 @@ export default function Gallery() {
               );
             })}
           </div>
+          {hasMore && (
+            <div className="flex justify-center pt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setVisibleCount((c) => c + GALLERY_PAGE_SIZE)}
+              >
+                Carica altro (mostrate {visiblePhotos.length} di {photos.length})
+              </Button>
+            </div>
+          )}
         </section>
       )}
 
