@@ -186,17 +186,21 @@ export default function HRGalleryPage() {
         />
       )}
 
-      {companyId && lightboxIndex !== null && (
-        <PhotoLightbox
-          photos={mainPhotos}
-          signedUrls={signedUrls}
-          currentIndex={lightboxIndex}
-          onIndexChange={setLightboxIndex}
-          open={lightboxIndex !== null}
-          onOpenChange={(o) => !o && setLightboxIndex(null)}
-          companyId={companyId}
-        />
-      )}
+      {companyId && lightboxPhotoId !== null && (() => {
+        const idx = mainPhotos.findIndex((p) => p.id === lightboxPhotoId);
+        if (idx === -1) return null;
+        return (
+          <PhotoLightbox
+            photos={mainPhotos}
+            signedUrls={signedUrls}
+            currentIndex={idx}
+            onIndexChange={(i) => setLightboxPhotoId(mainPhotos[i]?.id ?? null)}
+            open={true}
+            onOpenChange={(o) => !o && setLightboxPhotoId(null)}
+            companyId={companyId}
+          />
+        );
+      })()}
     </HRLayout>
   );
 }
