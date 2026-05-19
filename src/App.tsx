@@ -94,6 +94,7 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
+            <Route path="/suggerisci-ets/:token" element={<PublicAssociationSuggestion />} />
             <Route
               path="/app/experiences"
               element={
