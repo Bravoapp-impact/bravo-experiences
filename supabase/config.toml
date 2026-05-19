@@ -23,3 +23,6 @@ project_id = "cyazgtnjtnyxscfzsasp"
     verify_jwt = false
   [functions.booking-ics]
     verify_jwt = false
+  [functions.submit-association-suggestion]
+    verify_jwt = false
+
