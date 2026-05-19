@@ -68,6 +68,7 @@ export function ExperienceDetailContent({
   mobileDrawerSlot,
   upcomingDates,
   relatedExperiencesSlot,
+  experiencePhotosSlot,
   showRelatedExperiences = true,
 }: ExperienceDetailContentProps) {
   return (
