@@ -38,6 +38,7 @@ import { HRPhotoUploadDialog } from "@/components/hr-gallery/HRPhotoUploadDialog
 import { ModerationQueueDialog } from "@/components/hr-gallery/ModerationQueueDialog";
 import { PhotoLightbox } from "@/components/hr-gallery/PhotoLightbox";
 import { cn } from "@/lib/utils";
+import { GALLERY_PAGE_SIZE } from "@/lib/gallery";
 
 type AlbumPhotoWithId = AlbumPhoto & { photoId: string };
 
@@ -77,14 +78,29 @@ export default function HRGalleryPage() {
 
   const { data: pending = [] } = usePendingPhotos(companyId);
 
-  const paths = useMemo(() => photos.map((p) => p.storage_path), [photos]);
+  const [visibleCount, setVisibleCount] = useState(GALLERY_PAGE_SIZE);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setVisibleCount(GALLERY_PAGE_SIZE);
+  }, [filters.experienceIds.join(","), dateFromIso, dateToIso]);
+
+  const paths = useMemo(
+    () => photos.slice(0, visibleCount).map((p) => p.storage_path),
+    [photos, visibleCount],
+  );
   const { data: signedUrls = {} } = useSignedPhotoUrls(paths);
   const dims = useImageDimensions(Object.values(signedUrls));
 
   const mainPhotos = useMemo(
-    () => photos.filter((p) => !!signedUrls[p.storage_path]),
-    [photos, signedUrls],
+    () =>
+      photos
+        .slice(0, visibleCount)
+        .filter((p) => !!signedUrls[p.storage_path]),
+    [photos, visibleCount, signedUrls],
   );
+
+  const hasMore = visibleCount < photos.length;
 
   // Reset selection when filters change or selection mode toggles off
   const filtersKey = `${filters.experienceIds.join(",")}|${dateFromIso}|${dateToIso}`;
