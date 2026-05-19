@@ -25,4 +25,6 @@ project_id = "cyazgtnjtnyxscfzsasp"
     verify_jwt = false
   [functions.submit-association-suggestion]
     verify_jwt = false
+  [functions.send-manager-absence-notifications]
+    verify_jwt = false
 
