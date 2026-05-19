@@ -20,8 +20,8 @@ Sei aree, ognuna con le sue tabelle. Le aree non sono cartelle: sono raggruppame
 
 | Tabella | Cosa è |
 | --- | --- |
-| `companies` | Le aziende clienti |
-| `profiles` | Persone, estende `auth.users`. Collegate a `company_id` o `association_id` in base al ruolo |
+| `companies` | Le aziende clienti. Include `manager_notification_advance_days` (preavviso email al responsabile, default 7 giorni) |
+| `profiles` | Persone, estende `auth.users`. Collegate a `company_id` o `association_id` in base al ruolo. Include `manager_email` opzionale per la notifica di assenza al responsabile |
 | `associations` | Gli ETS della rete Bravo! |
 | `association_cities` | Bridge N:N — un ETS opera in più città |
 | `cities` | Anagrafica città (riferimento per esperienze, ETS, format TB) |
@@ -180,6 +180,7 @@ Tutte in `supabase/functions/`. Convenzione: `verify_jwt = false` con autenticaz
 | `send-booking-confirmation` | Wrapper: conferma prenotazione (trigger client-side dopo INSERT su `bookings`) |
 | `send-booking-reminders` | Wrapper: reminder pre-evento, batch da `pg_cron` |
 | `send-feedback-request` | Wrapper: richiesta feedback post-evento |
+| `send-manager-absence-notifications` | Wrapper: notifica email al responsabile del dipendente N giorni prima dell'evento, batch giornaliero da `pg_cron` (08:00 UTC). N configurabile per company. |
 | `auth-email-hook` | Hook Supabase Auth per personalizzare email di sistema |
 | `submit-access-request` | Endpoint pubblico per la landing (lead in ingresso → `access_requests`) |
 | `handle-email-unsubscribe` | Gestione one-click unsubscribe (token → riga in `suppressed_emails`) |

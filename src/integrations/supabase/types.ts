@@ -372,6 +372,7 @@ export type Database = {
           gallery_visible_to_employees: boolean
           id: string
           logo_url: string | null
+          manager_notification_advance_days: number
           max_concurrent_absences: number | null
           name: string
           suggestion_token: string
@@ -381,6 +382,7 @@ export type Database = {
           gallery_visible_to_employees?: boolean
           id?: string
           logo_url?: string | null
+          manager_notification_advance_days?: number
           max_concurrent_absences?: number | null
           name: string
           suggestion_token?: string
@@ -390,6 +392,7 @@ export type Database = {
           gallery_visible_to_employees?: boolean
           id?: string
           logo_url?: string | null
+          manager_notification_advance_days?: number
           max_concurrent_absences?: number | null
           name?: string
           suggestion_token?: string
@@ -908,6 +911,7 @@ export type Database = {
           gender: string | null
           id: string
           last_name: string | null
+          manager_email: string | null
           manager_id: string | null
           role: string
         }
@@ -921,6 +925,7 @@ export type Database = {
           gender?: string | null
           id: string
           last_name?: string | null
+          manager_email?: string | null
           manager_id?: string | null
           role?: string
         }
@@ -934,6 +939,7 @@ export type Database = {
           gender?: string | null
           id?: string
           last_name?: string | null
+          manager_email?: string | null
           manager_id?: string | null
           role?: string
         }
@@ -2202,6 +2208,10 @@ export type Database = {
         }[]
       }
       regenerate_suggestion_token: { Args: never; Returns: string }
+      set_manager_notification_advance_days: {
+        Args: { p_days: number }
+        Returns: undefined
+      }
       validate_access_code: {
         Args: { p_code: string }
         Returns: {
