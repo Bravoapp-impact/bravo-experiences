@@ -32,6 +32,12 @@ L'ordine all'interno di ogni sezione è per urgenza decrescente: cosa sta sopra 
 
 Cose che sappiamo essere imperfette o incomplete, ma che non bloccano lo sprint corrente. Ordinate per urgenza: in alto quello che è già una frizione reale, in basso quello che diventerà un problema solo in futuro.
 
+**Galleria: controparte super-admin assente.** La galleria HR è operativa (moderazione, bulk actions, upload diretto), ma manca una vista super-admin per supervisionare cross-company (audit, moderazione cross-tenant, gestione storage). Da aprire prima di scalare oltre una manciata di aziende con foto attive.
+
+**Galleria dipendente: visibilità parziale.** Oggi il dipendente vede solo le foto che ha caricato lui. La galleria aziendale completa — foto approvate dall'HR di tutta la company — non gli è ancora esposta. Da decidere dove e come mostrarla (tab dedicato, pagina dedicata, sezione in `/app/impact`).
+
+**Galleria HR: upload e filtri da rifinire.** Upload diretto HR funzionante ma migliorabile (drag-and-drop avanzato, batch più grandi, retry parziali, naming intelligente, edit metadata in-line). Filtri attuali (esperienza, range date) limitati: mancano filtro per associazione, per uploader, per stato (`hidden` vs `approved`), per "featured", e ricerca testuale su caption.
+
 **Audit di sicurezza RLS/SECURITY DEFINER.** Lovable ha prodotto un inventario di punti deboli durante l'hardening dello sprint TB preventivi. Da rivedere e classificare per priorità in uno sprint dedicato.
 
 **Rimettere "Formazione", "Negozio solidale", "Convenzioni" nella sidebar HR.** Voci e relative sezioni Impostazioni rimosse temporaneamente dalla sidebar HR (e dal layout impostazioni) perché non ancora implementate. Le route placeholder e le pagine di settings vanno ripristinate quando i moduli verranno aperti. Riferimenti rimossi in `HRLayout.tsx`, `HRSettingsLayout.tsx`, `App.tsx` (route `/hr/formazione`, `/hr/negozio`, `/hr/convenzioni` e relative `impostazioni/*`).
@@ -84,7 +90,7 @@ Vista temporale, dall'immediato al medio termine. Ordine cronologico: in alto co
 
 **Ondata 1 — completamento foundations.** Scaffold layer impatto (sbloccabile quando si chiudono le decisioni SDG + dimensioni canoniche). Email aggiuntive del lifecycle prenotazione (notifiche associazione di nuova prenotazione e cancellazione). Ridisegno catalogo dipendente in stile Airbnb (indipendente, può partire anche prima).
 
-**Ondata 2 — HR operatività.** Calendario HR in homepage e pagina dedicata. Ridisegno tab Statistiche come anteprima report. Impact Report completo con export PDF. Homepage HR ridisegnata come dashboard contestuale. Galleria foto.
+**Ondata 2 — HR operatività.** Calendario HR in homepage e pagina dedicata ✅ (prima versione live). Ridisegno tab Statistiche come anteprima report. Impact Report completo con export PDF. Homepage HR ridisegnata come dashboard contestuale. Galleria foto ✅ (prima versione live: moderazione, bulk actions, upload diretto HR). Restano in pipeline le rifiniture upload/filtri e la controparte super-admin della Galleria.
 
 **Ondata 3 — Esperienza dipendente.** Pagina Impatto dipendente ridisegnata (dipende dal Capitolo 1). Flusso feedback attivo con email post-evento. Ridisegno "Le mie prenotazioni". Badge base. Comunicazione HR → dipendenti (broadcast email, infrastruttura `announcements` separata da quella transazionale).
 

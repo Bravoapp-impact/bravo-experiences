@@ -43,6 +43,32 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-19 — HR: Calendario, Utenti, Galleria — prima ondata operativa
+
+**Contesto.** Tre voci che erano `HRPlaceholderPage` (Calendario, Galleria) o pagina embrionale (Utenti) passano a feature reali nel pannello HR. Avanzamento dell'Ondata 2 di `aperto.md`.
+
+**Cosa cambia.**
+- **Calendario HR** (`/hr/calendario`): vista calendario aggregata sulle date di volontariato del programma attivato per l'azienda. Filtri laterali (`CalendarFiltersSidebar`), viste Month / Week / Day, popover di dettaglio giornata. RLS già coperta dalla `hr_view_experience_dates_v5` + funzione `hr_has_historical_booking_for_date`.
+- **Utenti HR** (`/hr/users`): rinominata da "Dipendenti" a "Utenti" (terminologia inclusiva). Metriche, segmenti (Attivi / Da coinvolgere / Nuovi), funnel partecipazione, drill-down dialog per le partecipazioni del singolo utente. Build sopra `BookingsTable`, `EmployeeMetricsCards`, `EmployeeParticipationsDialog`. Resta single-vertical (solo volontariato), debito già tracciato in `aperto.md` §2.
+- **Galleria HR** (`/hr/galleria`): galleria company-wide con `react-photo-album` (rows layout), lightbox, filtri (esperienze, range date), coda di moderazione (`ModerationQueueDialog`), bulk actions (selezione, download ZIP via `jszip`, eliminazione di massa con conferma), e upload diretto HR (`HRPhotoUploadDialog`) che bypassa la moderazione (auto-approved dal trigger DB `populate_gallery_photo_metadata` per `hr_admin`). Storage bucket `gallery-photos`. Tabella `gallery_photos` con stati `pending`/`approved`/`rejected`/`hidden`. Re-fetch via `invalidateQueries` per chiudere il bug "cancello ma resta visibile" (migration `20260519093314_*.sql`).
+
+**Impatto.** `DB schema` · `RLS` · `UI` · `Storage` · `Docs`
+
+**File / aree toccate.**
+- `src/pages/hr/HRCalendarPage.tsx`, `src/components/hr/calendar/CalendarFiltersSidebar.tsx`, `src/components/calendar/*`
+- `src/pages/hr/HREmployeesPage.tsx`, `src/components/hr/{EmployeeMetricsCards,EmployeeParticipationsDialog,BookingsTable}.tsx`
+- `src/pages/hr/HRGalleryPage.tsx`, `src/components/hr-gallery/*` (GalleryFilters, GallerySelectionBar, HRPhotoUploadDialog, ModerationQueueDialog, PhotoLightbox)
+- `src/hooks/queries/gallery/*` (useCompanyGallery, useBulk{Delete,Download}Photos, useHRUploadPhotos, useCompanyPastDates, useModeratePhotos, useUpdatePhotoStatus, useSignedPhotoUrls)
+- Tabella `gallery_photos`, trigger `populate_gallery_photo_metadata`, bucket Storage `gallery-photos`, migration `20260519093314_*.sql`
+- `package.json` (+ `jszip`, `browser-image-compression`)
+
+**Follow-up.**
+- Controparte super-admin della Galleria mancante (vedi `aperto.md` §2).
+- Vista Galleria lato dipendente: oggi vede solo le proprie foto caricate, non la galleria aziendale approvata.
+- Migliorie incrementali su upload e filtri della galleria HR.
+
+---
+
 ### 2026-05-16 — Volontariato: modello esclusività a 2 assi + cleanup RLS
 
 **Contesto.** Il modello di esclusività delle esperienze era ambiguo a livello DB: nessun vincolo impediva a un'esperienza `private` di avere più aziende nel bridge, le RLS HR/dipendente avevano bug (HR non vedeva date di esperienze private; dipendenti vedevano date riservate ad altre aziende), e HR aveva ancora INSERT/DELETE su `experience_companies` (residuo del modello in cui HR curava il catalogo). Lo `Switch "privata"` del `VisibilityDialog` non rifletteva nessuna delle decisioni reali.

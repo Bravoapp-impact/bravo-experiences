@@ -77,7 +77,15 @@ Pipeline a coda con retry e suppression. Dettagli in `transactional-emails.md`.
 | `suppressed_emails` | Email bloccate (unsubscribe, bounce, complaint) |
 | `pgmq.auth_emails`, `pgmq.transactional_emails` | Code di invio (più rispettivi dead-letter) |
 
-### 2.6 Analytics
+### 2.6 Galleria
+
+| Tabella | Cosa è |
+| --- | --- |
+| `gallery_photos` | Foto caricate da dipendenti o HR, legate a una `experience_dates`. Stati: `pending`/`approved`/`rejected`/`hidden`. Trigger `populate_gallery_photo_metadata` popola `company_id` e auto-approva gli upload `hr_admin` |
+
+Storage: bucket `gallery-photos` (file binari, accesso via signed URL).
+
+### 2.7 Analytics
 
 | Tabella | Cosa è |
 | --- | --- |
@@ -206,7 +214,9 @@ Le route sono protette da componenti dedicati: `ProtectedRoute` (dipendente logg
 | `/hr` | Home dashboard contestuale |
 | `/hr/volontariato` | Vista unica del programma volontariato attivato per l'azienda (HR read-only, curation lato super-admin) |
 | `/hr/experiences/:id` | Dettaglio esperienza in chiave HR |
-| `/hr/users` | Dipendenti registrati della propria company |
+| `/hr/calendario` | Calendario aggregato delle date di volontariato del programma aziendale (viste Month/Week/Day, filtri laterali) |
+| `/hr/galleria` | Galleria foto company-wide: moderazione, bulk actions (download ZIP, delete), upload diretto HR (auto-approvato) |
+| `/hr/users` | Utenti registrati della propria company (metriche, segmenti, funnel partecipazione) |
 | `/hr/report` | Dashboard report (esistente, evolverà) |
 | `/hr/team-building` | Case list richieste TB della propria company |
 | `/hr/team-building/nuova-richiesta` | Wizard brief |
@@ -214,7 +224,7 @@ Le route sono protette da componenti dedicati: `ProtectedRoute` (dipendente logg
 | `/hr/team-building/:id/proposte/:proposalId` | Dettaglio singola proposta |
 | `/hr/impostazioni/*` | Profilo, sicurezza, tema, generali, membri, volontariato |
 
-Placeholder attivi: `/hr/formazione`, `/hr/negozio`, `/hr/convenzioni`, `/hr/calendario`, `/hr/galleria`, `/hr/comunicazione` (componente `HRPlaceholderPage`, riempiremo in roadmap).
+Placeholder attivi: `/hr/formazione`, `/hr/negozio`, `/hr/convenzioni`, `/hr/comunicazione` (componente `HRPlaceholderPage`, riempiremo in roadmap).
 
 ### Super Admin — `/super-admin/*`
 
