@@ -43,6 +43,31 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-19 — Suggerimenti ETS dai dipendenti — endpoint pubblico
+
+**Contesto.** Le aziende cercano modi strutturati per coinvolgere i dipendenti nella scelta degli ETS partner. Bravo! offre l'infrastruttura: un link che l'HR distribuisce internamente, e una bacheca suggerimenti che alimenterà i discovery call con il referente Bravo!.
+
+**Cosa cambia.**
+- Nuova tabella `association_suggestions` (suggested_name/city, suggester_name/email, reason, status `new`/`seen`/`archived`) con indice `(company_id, status, created_at DESC)`. RLS: super-admin full; HR SELECT/UPDATE solo della propria company; INSERT solo via service-role (edge function); niente DELETE. Trigger `protect_association_suggestions_columns` blocca l'HR a modificare solo `status`/`reviewed_at`/`reviewed_by`.
+- `companies.suggestion_token uuid NOT NULL UNIQUE DEFAULT gen_random_uuid()`: backfill automatico delle righe esistenti via DEFAULT.
+- Nuova policy UPDATE su `companies` per HR + trigger `protect_companies_hr_update` che vieta all'HR cambi diretti su qualsiasi colonna (suggestion_token incluso); l'unica via è la RPC `regenerate_suggestion_token` (SECURITY DEFINER, bypassa il trigger). RPC creata ma non esposta in UI in questo step.
+- Nuova edge function `submit-association-suggestion` (`verify_jwt = false`, CORS aperto, rate limit 3/15min/IP). `GET ?token=` → `{ company_name }` o 404 neutro; `POST ?token=` con body validato (max length, regex email) → inserisce con service-role. Pattern copiato da `submit-access-request`.
+- Nuova pagina pubblica `/suggerisci-ets/:token` (`PublicAssociationSuggestion.tsx`), standalone (fuori `ProtectedRoute`), mobile-first. Stati: loading / token invalido (messaggio neutro, no indizi sul motivo) / form / thank-you con CTA "Invia un altro suggerimento".
+
+**Impatto.** `DB schema` · `RLS` · `RPC` · `Edge function` · `UI` · `Docs`
+
+**File / aree toccate.**
+- Migration: tabella `association_suggestions`, colonna `companies.suggestion_token`, policy `HR can update own company`, trigger `protect_*`, RPC `regenerate_suggestion_token`.
+- `supabase/functions/submit-association-suggestion/index.ts` (nuovo), `supabase/config.toml`.
+- `src/pages/PublicAssociationSuggestion.tsx` (nuovo), `src/App.tsx` (route pubblica).
+- `docs/architettura.md` §2.5/§5/§6.
+
+**Follow-up.**
+- Prompt successivo: UI HR per visualizzare/archiviare i suggerimenti + bottone "rigenera link" che invoca `regenerate_suggestion_token`.
+- Email/notifiche all'HR all'arrivo di un nuovo suggerimento: decidere dopo aver visto il volume reale.
+
+---
+
 ### 2026-05-19 — Calendario nella conferma prenotazione
 
 **Contesto.** L'email di conferma prenotazione non offriva nessun modo per portarsi l'evento sul calendario personale. Verificato che `sendLovableEmail` non accetta allegati binari (nessun campo `attachments` in `EmailSendRequest`, non in roadmap), quindi un `.ics` allegato è fuori discussione: serve servirlo da un endpoint pubblico e linkarlo.
