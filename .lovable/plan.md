@@ -1,9 +1,20 @@
-## Allineare layout di `HRSuggestionsPage` alle altre pagine HR
+## Rinomina "Suggerimenti" → "ETS Suggeriti"
 
-Due piccole modifiche a `src/pages/hr/HRSuggestionsPage.tsx`:
+Aggiornamento del nome user-facing e della route per la sezione HR dei suggerimenti ETS.
 
-1. **Padding/altezza.** Sostituire il wrapper `<div className="p-6 space-y-6">` con `<div className="space-y-6">`. Il padding orizzontale/verticale è già fornito da `AdminLayout` (come fanno `HREmployeesPage`, `HRGalleryPage`, ecc.). Questo elimina il doppio padding che fa apparire la pagina "più stretta e più bassa" delle altre.
+### Cambi route e label
+- `src/components/layout/HRLayout.tsx` — voce sidebar: label `"Suggerimenti"` → `"ETS Suggeriti"`, href `/hr/suggerimenti` → `/hr/ets-suggeriti`.
+- `src/App.tsx` — route `/hr/suggerimenti` → `/hr/ets-suggeriti`.
 
-2. **Sottotitolo.** Rimuovere `description="Raccogli e gestisci i suggerimenti di ETS dai tuoi dipendenti"` dal `PageHeader`. Resta solo title + icona, coerente con le altre pagine HR.
+### Cambi nella pagina
+- `src/pages/hr/HRSuggestionsPage.tsx`:
+  - `PageHeader` title: `"Suggerimenti"` → `"ETS Suggeriti"`.
+  - `PageSection` titolo tabella: `"Suggerimenti ricevuti"` → `"ETS suggeriti"`.
 
-Nessun'altra modifica: la struttura interna (link da condividere + tabella) resta invariata.
+### Docs
+- `docs/architettura.md` — riga route HR: aggiornare `/hr/suggerimenti` → `/hr/ets-suggeriti` e descrizione coerente.
+
+### Cosa non cambia
+- Nome file `HRSuggestionsPage.tsx`, nome componente `HRSuggestionsPage`, nome tabella DB `association_suggestions`, edge function `submit-association-suggestion`, route pubblica `/suggerisci-ets/:token`, hook in `src/hooks/queries/suggestions/`. Sono tutti identificatori tecnici interni, non user-facing.
+- Entry di `docs/log.md` storiche (cronologia, non si riscrive).
+- Copy interna alla pagina che parla genericamente di "suggerimenti" / "suggerimento" (parola comune italiana, non il nome della sezione) — resta naturale nel testo descrittivo, ad es. "ricevere suggerimenti di enti non-profit".

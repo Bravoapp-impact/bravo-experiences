@@ -219,7 +219,7 @@ Le route sono protette da componenti dedicati: `ProtectedRoute` (dipendente logg
 | `/hr/experiences/:id` | Dettaglio esperienza in chiave HR |
 | `/hr/calendario` | Calendario aggregato delle date di volontariato del programma aziendale (viste Month/Week/Day, filtri laterali) |
 | `/hr/galleria` | Galleria foto company-wide: moderazione, bulk actions (download ZIP, delete), upload diretto HR (auto-approvato) |
-| `/hr/suggerimenti` | Bacheca suggerimenti ETS ricevuti via link pubblico `/suggerisci-ets/:token`. Copia/rigenera link, archivia/ripristina suggerimenti, marca-come-visto al click |
+| `/hr/ets-suggeriti` | Bacheca ETS suggeriti ricevuti via link pubblico `/suggerisci-ets/:token`. Copia/rigenera link, archivia/ripristina suggerimenti, marca-come-visto al click |
 | `/hr/users` | Utenti registrati della propria company (metriche, segmenti, funnel partecipazione) |
 | `/hr/report` | Dashboard report (esistente, evolverà) |
 | `/hr/team-building` | Case list richieste TB della propria company |
