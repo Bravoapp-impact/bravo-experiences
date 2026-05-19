@@ -90,7 +90,7 @@ Vista temporale, dall'immediato al medio termine. Ordine cronologico: in alto co
 
 **Ondata 1 — completamento foundations.** Scaffold layer impatto (sbloccabile quando si chiudono le decisioni SDG + dimensioni canoniche). Email aggiuntive del lifecycle prenotazione (notifiche associazione di nuova prenotazione e cancellazione). Ridisegno catalogo dipendente in stile Airbnb (indipendente, può partire anche prima).
 
-**Ondata 2 — HR operatività.** Calendario HR in homepage e pagina dedicata. Ridisegno tab Statistiche come anteprima report. Impact Report completo con export PDF. Homepage HR ridisegnata come dashboard contestuale. Galleria foto.
+**Ondata 2 — HR operatività.** Calendario HR in homepage e pagina dedicata ✅ (prima versione live). Ridisegno tab Statistiche come anteprima report. Impact Report completo con export PDF. Homepage HR ridisegnata come dashboard contestuale. Galleria foto ✅ (prima versione live: moderazione, bulk actions, upload diretto HR). Restano in pipeline le rifiniture upload/filtri e la controparte super-admin della Galleria.
 
 **Ondata 3 — Esperienza dipendente.** Pagina Impatto dipendente ridisegnata (dipende dal Capitolo 1). Flusso feedback attivo con email post-evento. Ridisegno "Le mie prenotazioni". Badge base. Comunicazione HR → dipendenti (broadcast email, infrastruttura `announcements` separata da quella transazionale).
 
