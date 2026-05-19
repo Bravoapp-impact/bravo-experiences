@@ -43,6 +43,29 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-19 — Calendario nella conferma prenotazione
+
+**Contesto.** L'email di conferma prenotazione non offriva nessun modo per portarsi l'evento sul calendario personale. Verificato che `sendLovableEmail` non accetta allegati binari (nessun campo `attachments` in `EmailSendRequest`, non in roadmap), quindi un `.ics` allegato è fuori discussione: serve servirlo da un endpoint pubblico e linkarlo.
+
+**Cosa cambia.**
+- Nuova edge function `booking-ics` (`verify_jwt = false`): legge `?booking_id=<uuid>`, valida UUID v4, carica booking + date + experience con service-role, restituisce un `.ics` minimal RFC 5545 (`SUMMARY`, `LOCATION`, `DTSTART`/`DTEND` UTC; niente `DESCRIPTION` né `VALARM` per non duplicare i reminder gestiti da `send-booking-reminders`). 404 neutro se booking non esiste, non è `confirmed`, o è già passato. Non-enumerazione affidata all'UUID v4 random (stesso pattern dell'unsubscribe-token).
+- `send-booking-confirmation` aggiunge due campi al `templateData`: `googleCalendarUrl` (deep-link `calendar.google.com/calendar/render?action=TEMPLATE&...`) e `icsDownloadUrl` (`${SUPABASE_URL}/functions/v1/booking-ics?booking_id=...`).
+- Template `booking-confirmation.tsx` mostra un nuovo blocco "Aggiungi al tuo calendario" subito dopo data+orario con i due link; `previewData` aggiornata di conseguenza.
+
+**Impatto.** `Edge function` · `Email` · `Docs`
+
+**File / aree toccate.**
+- `supabase/functions/booking-ics/index.ts` (nuovo)
+- `supabase/functions/send-booking-confirmation/index.ts`
+- `supabase/functions/_shared/transactional-email-templates/booking-confirmation.tsx`
+- `supabase/config.toml` (entry `[functions.booking-ics] verify_jwt = false`)
+- `docs/transactional-emails.md` (paragrafo "Allegati e calendari"), `docs/architettura.md` §5
+
+**Follow-up.**
+- Se in futuro servirà servire documenti sensibili (fatture, export dati personali), sostituire l'UUID del booking con un token a scadenza dedicato.
+
+---
+
 ### 2026-05-19 — HR: Calendario, Utenti, Galleria — prima ondata operativa
 
 **Contesto.** Tre voci che erano `HRPlaceholderPage` (Calendario, Galleria) o pagina embrionale (Utenti) passano a feature reali nel pannello HR. Avanzamento dell'Ondata 2 di `aperto.md`.

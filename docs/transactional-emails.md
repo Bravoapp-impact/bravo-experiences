@@ -53,6 +53,21 @@ Se la stessa email non deve mai partire due volte per lo stesso evento (caso tip
 - **Niente HTML inline** nella wrapper. Il rendering del corpo email è responsabilità esclusiva del template React Email. La wrapper passa solo dati strutturati via `templateData`.
 - **Niente logica di invio duplicata.** Se servono nuovi canali (es. integrazione con un altro provider), si discute prima di scrivere codice. Oggi c'è un solo punto di uscita ed è giusto così.
 
+## Allegati e calendari
+
+`sendLovableEmail` (la library che fa da gateway verso il provider) **non supporta allegati binari** e non è in roadmap. Il payload `EmailSendRequest` accetta solo `html` + `text`, niente `attachments`/`files`. Anche la pipeline a valle (`pgmq`, `process-email-queue`, `email_send_log`) è progettata per JSON puro.
+
+Quando un'email deve "consegnare" un file (es. un `.ics` da aggiungere al calendario, una ricevuta PDF, un export CSV), il pattern è:
+
+1. Generare il file server-side (inline nel body di una edge function, oppure salvarlo su Storage in un bucket dedicato).
+2. Esporlo via **edge function pubblica** (`verify_jwt = false`) parametrizzata con un identificatore non-enumerabile (UUID v4 random del record, oppure token dedicato — stesso ragionamento dell'unsubscribe).
+3. Linkarlo nell'email come bottone/link normale. La edge function risponde con `Content-Type` corretto e `Content-Disposition: attachment` quando serve scaricare.
+
+Esempio in produzione: `booking-ics` serve il `.ics` della prenotazione conferma. La wrapper `send-booking-confirmation` costruisce sia il deep-link Google Calendar (`https://calendar.google.com/calendar/render?action=TEMPLATE&...`, gratis e copre il caso più frequente con un click), sia l'URL `${SUPABASE_URL}/functions/v1/booking-ics?booking_id=<uuid>` per Outlook/Apple/altri client; entrambi gli URL viaggiano nel template via `templateData`.
+
+Per documenti sensibili (fatture, dati personali estesi) sostituire l'UUID con un token a scadenza salvato in DB e validato dalla function: stessa forma, soglia di sicurezza più alta.
+
+
 ## Nota sulla tabella `email_templates`
 
 La tabella `email_templates` **è stata rimossa** insieme alla pagina `/super-admin/email-templates` durante la migrazione a Lovable native. Permetteva la personalizzazione per-azienda dei testi `intro_text`, `closing_text` e `subject`: nessun cliente la usava attivamente e non era una promessa commerciale, quindi è stata droppata per semplificare l'infrastruttura.

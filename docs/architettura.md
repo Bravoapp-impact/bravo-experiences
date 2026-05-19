@@ -184,6 +184,7 @@ Tutte in `supabase/functions/`. Convenzione: `verify_jwt = false` con autenticaz
 | `handle-email-unsubscribe` | Gestione one-click unsubscribe (token → riga in `suppressed_emails`) |
 | `handle-email-suppression` | Webhook bounce/complaint dal provider |
 | `preview-transactional-email` | Utility super admin per anteprima template |
+| `booking-ics` | Endpoint pubblico (`?booking_id=<uuid>`) che restituisce il `.ics` della prenotazione confermata. Linkato nell'email di conferma per Outlook/Apple/altri client. Pattern documentato in `transactional-emails.md` §"Allegati e calendari" |
 
 Pattern e regole per aggiungere una nuova email: `transactional-emails.md`.
 
