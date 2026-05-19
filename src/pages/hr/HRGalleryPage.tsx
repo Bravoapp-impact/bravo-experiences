@@ -4,7 +4,7 @@ import {
   type Photo as AlbumPhoto,
 } from "react-photo-album";
 import "react-photo-album/rows.css";
-import { Image as ImageIcon, ImageOff, AlertCircle, CheckSquare, Check } from "lucide-react";
+import { Image as ImageIcon, ImageOff, AlertCircle, CheckSquare, Check, Upload } from "lucide-react";
 import { HRLayout } from "@/components/layout/HRLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ import {
   type GalleryFilterOption,
 } from "@/components/hr-gallery/GalleryFilters";
 import { GallerySelectionBar } from "@/components/hr-gallery/GallerySelectionBar";
+import { HRPhotoUploadDialog } from "@/components/hr-gallery/HRPhotoUploadDialog";
 import { ModerationQueueDialog } from "@/components/hr-gallery/ModerationQueueDialog";
 import { PhotoLightbox } from "@/components/hr-gallery/PhotoLightbox";
 import { cn } from "@/lib/utils";
@@ -51,6 +52,7 @@ export default function HRGalleryPage() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   const bulkDelete = useBulkDeletePhotos();
   const bulkDownload = useBulkDownloadPhotos();
@@ -234,10 +236,14 @@ export default function HRGalleryPage() {
           <div className="text-center py-16 bg-muted/30 rounded-2xl border border-border/50">
             <ImageOff className="h-14 w-14 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-base font-semibold mb-1">Nessuna foto ancora</h3>
-            <p className="text-[13px] text-muted-foreground max-w-md mx-auto">
+            <p className="text-[13px] text-muted-foreground max-w-md mx-auto mb-4">
               Le foto caricate dai dipendenti appariranno qui dopo la tua
-              approvazione.
+              approvazione. Puoi anche caricarle tu direttamente.
             </p>
+            <Button size="sm" onClick={() => setUploadOpen(true)}>
+              <Upload className="h-3.5 w-3.5 mr-1.5" />
+              Carica foto
+            </Button>
           </div>
         ) : (
           <>
@@ -262,16 +268,24 @@ export default function HRGalleryPage() {
                     experienceOptions={experienceOptions}
                   />
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={enterSelection}
-                  disabled={mainPhotos.length === 0}
-                  className="shrink-0"
-                >
-                  <CheckSquare className="h-3.5 w-3.5 mr-1.5" />
-                  Seleziona
-                </Button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={enterSelection}
+                    disabled={mainPhotos.length === 0}
+                  >
+                    <CheckSquare className="h-3.5 w-3.5 mr-1.5" />
+                    Seleziona
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => setUploadOpen(true)}
+                  >
+                    <Upload className="h-3.5 w-3.5 mr-1.5" />
+                    Carica
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -350,6 +364,14 @@ export default function HRGalleryPage() {
           companyId={companyId}
           open={moderationOpen}
           onOpenChange={setModerationOpen}
+        />
+      )}
+
+      {companyId && (
+        <HRPhotoUploadDialog
+          companyId={companyId}
+          open={uploadOpen}
+          onOpenChange={setUploadOpen}
         />
       )}
 
