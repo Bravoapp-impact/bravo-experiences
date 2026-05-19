@@ -43,6 +43,29 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-19 — Notifica responsabile via email — backend
+
+**Contesto.** Le aziende chiedono di ridurre la frizione "il dipendente prenota volontariato ma il suo team non lo sa". Il dipendente può indicare un'email del responsabile nel proprio profilo; N giorni prima dell'evento (default 7, configurabile per company) parte una notifica neutra e minimal.
+
+**Cosa cambia.**
+- DB: `profiles.manager_email` (TEXT NULL, validazione formato solo lato app). `companies.manager_notification_advance_days` (INTEGER, default 7, CHECK 1–30). Esteso check su `email_logs.email_type` per accettare `manager_absence_notification`. Aggiornato trigger `protect_companies_hr_update` per proteggere il nuovo campo company (HR aggiorna solo via RPC).
+- RPC: `set_manager_notification_advance_days(p_days)` SECURITY DEFINER, solo `hr_admin`, range 1–30.
+- Template email: `manager-absence-notification.tsx` registrato nel registry. Copy neutra: chi, quando, in che orario, perché tipo di attività. Niente nome esperienza, niente ETS, niente luogo.
+- Edge function: `send-manager-absence-notifications` (verify_jwt = false, auth dual-mode service-role/super_admin). Carica i booking confermati dei prossimi 30 giorni con una query sola e filtra client-side per finestra di advance days specifica della company. Gate: `manager_email` valorizzato, `status='confirmed'`, anti-duplicazione su `email_logs`, suppression pre-check.
+- Cron: `send-manager-absence-notifications-daily` ogni giorno alle 08:00 UTC, stesso pattern degli altri job (auth via `email_queue_service_role_key` da vault).
+
+**Impatto.** `DB schema` · `RPC` · `Edge function` · `Email` · `Docs`
+
+**File / aree toccate.**
+- `supabase/functions/_shared/transactional-email-templates/manager-absence-notification.tsx`
+- `supabase/functions/_shared/transactional-email-templates/registry.ts`
+- `supabase/functions/send-manager-absence-notifications/index.ts`
+- `supabase/config.toml`
+- `docs/architettura.md` §2.1 e §5
+- `docs/transactional-emails.md`
+
+**Follow-up.** UI per popolare `manager_email` nel profilo dipendente e `manager_notification_advance_days` nelle impostazioni HR — prossimo prompt.
+
 ### 2026-05-19 — Suggerimenti ETS — sezione HR
 
 **Contesto.** Completata la feature suggerimenti ETS lato HR: ora l'HR può copiare/rigenerare il link pubblico e gestire i suggerimenti ricevuti dai dipendenti.
