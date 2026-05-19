@@ -264,16 +264,24 @@ export default function HRGalleryPage() {
                     experienceOptions={experienceOptions}
                   />
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={enterSelection}
-                  disabled={mainPhotos.length === 0}
-                  className="shrink-0"
-                >
-                  <CheckSquare className="h-3.5 w-3.5 mr-1.5" />
-                  Seleziona
-                </Button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={enterSelection}
+                    disabled={mainPhotos.length === 0}
+                  >
+                    <CheckSquare className="h-3.5 w-3.5 mr-1.5" />
+                    Seleziona
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => setUploadOpen(true)}
+                  >
+                    <Upload className="h-3.5 w-3.5 mr-1.5" />
+                    Carica
+                  </Button>
+                </div>
               </div>
             )}
 
