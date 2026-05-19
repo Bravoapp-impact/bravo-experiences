@@ -37,6 +37,21 @@ export function useDeletePhoto() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ photoId }: DeleteInput) => {
+      // Fetch storage_path first so we can remove the object via Storage API
+      const { data: row, error: fetchErr } = await (supabase as any)
+        .from("gallery_photos")
+        .select("storage_path")
+        .eq("id", photoId)
+        .maybeSingle();
+      if (fetchErr) throw fetchErr;
+
+      if (row?.storage_path) {
+        const { error: storageErr } = await supabase.storage
+          .from("gallery-photos")
+          .remove([row.storage_path]);
+        if (storageErr) throw storageErr;
+      }
+
       const { error } = await (supabase as any)
         .from("gallery_photos")
         .delete()
