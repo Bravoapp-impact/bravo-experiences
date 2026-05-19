@@ -33,4 +33,8 @@ export const galleryKeys = {
     [...galleryKeys.companyAll(companyId), "pending"] as const,
   featuredPhotos: (companyId: string) =>
     [...galleryKeys.companyAll(companyId), "featured"] as const,
+
+  // Employee — approved photos for a specific experience within company
+  experiencePhotos: (experienceId: string, companyId: string) =>
+    [...galleryKeys.all, "experiencePhotos", experienceId, companyId] as const,
 };

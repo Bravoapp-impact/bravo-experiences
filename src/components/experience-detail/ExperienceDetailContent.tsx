@@ -41,6 +41,12 @@ interface ExperienceDetailContentProps {
    */
   relatedExperiencesSlot?: ReactNode;
   /**
+   * Optional slot rendered just before the related-experiences block.
+   * Used by employee detail page to show approved company photos for
+   * past dates of this experience. Other roles leave it undefined.
+   */
+  experiencePhotosSlot?: ReactNode;
+  /**
    * If false, hides the related-experiences block entirely (HR informational view).
    * Defaults to true.
    */
@@ -62,6 +68,7 @@ export function ExperienceDetailContent({
   mobileDrawerSlot,
   upcomingDates,
   relatedExperiencesSlot,
+  experiencePhotosSlot,
   showRelatedExperiences = true,
 }: ExperienceDetailContentProps) {
   return (
@@ -176,6 +183,17 @@ export function ExperienceDetailContent({
                 logoUrl={experience.association_logo_url ?? null}
                 description={experience.association_description ?? null}
               />
+            </motion.div>
+          )}
+
+          {experiencePhotosSlot && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.48 }}
+            >
+              <Separator className="my-8" />
+              {experiencePhotosSlot}
             </motion.div>
           )}
 
