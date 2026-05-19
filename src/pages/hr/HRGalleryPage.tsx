@@ -367,6 +367,14 @@ export default function HRGalleryPage() {
         />
       )}
 
+      {companyId && (
+        <HRPhotoUploadDialog
+          companyId={companyId}
+          open={uploadOpen}
+          onOpenChange={setUploadOpen}
+        />
+      )}
+
       {companyId && !selectionMode && lightboxPhotoId !== null && (() => {
         const idx = mainPhotos.findIndex((p) => p.id === lightboxPhotoId);
         if (idx === -1) return null;
