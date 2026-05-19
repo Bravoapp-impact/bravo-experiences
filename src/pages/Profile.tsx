@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileAvatarUpload } from "@/components/profile/ProfileAvatarUpload";
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
+import { ManagerEmailCard } from "@/components/profile/ManagerEmailCard";
 import { EnrollMFA } from "@/components/auth/EnrollMFA";
 import { ChangePasswordCard } from "@/components/profile/ChangePasswordCard";
 import { useAuth } from "@/hooks/useAuth";
@@ -149,6 +150,21 @@ export default function Profile() {
               profileId={profile.id}
               initialFirstName={profile.first_name}
               initialLastName={profile.last_name}
+              onSave={refreshProfile}
+            />
+          )}
+        </motion.div>
+
+        {/* Manager Email */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.22 }}
+        >
+          {profile?.id && (
+            <ManagerEmailCard
+              profileId={profile.id}
+              initialManagerEmail={profile.manager_email}
               onSave={refreshProfile}
             />
           )}
