@@ -73,6 +73,7 @@ import HRPlaceholderPage from "./pages/hr/HRPlaceholderPage";
 import HRGalleryPage from "./pages/hr/HRGalleryPage";
 import Unsubscribe from "./pages/Unsubscribe";
 import PublicAssociationSuggestion from "./pages/PublicAssociationSuggestion";
+import HRSuggestionsPage from "./pages/hr/HRSuggestionsPage";
 
 const queryClient = new QueryClient();
 
@@ -185,6 +186,7 @@ const App = () => (
             />
             <Route path="/hr/calendario" element={<ProtectedHRRoute><HRCalendarPage /></ProtectedHRRoute>} />
             <Route path="/hr/galleria" element={<ProtectedHRRoute><HRGalleryPage /></ProtectedHRRoute>} />
+            <Route path="/hr/suggerimenti" element={<ProtectedHRRoute><HRSuggestionsPage /></ProtectedHRRoute>} />
             <Route path="/hr/comunicazione" element={<ProtectedHRRoute><HRPlaceholderPage title="Comunicazione" /></ProtectedHRRoute>} />
             <Route
               path="/hr/profile"
