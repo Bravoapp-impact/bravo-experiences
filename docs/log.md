@@ -43,6 +43,29 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-19 — Notifica responsabile via email — UI
+
+**Contesto.** Completata la feature backend del prompt precedente con i due punti di interazione UI: il dipendente popola `manager_email` nel proprio profilo, l'HR configura `manager_notification_advance_days` per tutta l'azienda dalle impostazioni di volontariato.
+
+**Cosa cambia.**
+- Nuovo componente `src/components/profile/ManagerEmailCard.tsx`: Card autonoma su `/app/profile` con campo email facoltativo, validazione zod (email valida o stringa vuota = NULL), bottone Salva visibile solo quando c'è una modifica. Aggiorna `profiles.manager_email` direttamente (RLS già permette al dipendente di modificare le proprie colonne non-sensibili).
+- `src/pages/Profile.tsx`: aggiunta la card tra `ProfileEditForm` e `ChangePasswordCard`.
+- `src/hooks/useAuth.tsx`: aggiunto `manager_email` all'interfaccia `Profile`.
+- `src/pages/hr/settings/SettingsVolunteering.tsx`: nuova `SettingsSection` finale "Notifiche ai responsabili dei dipendenti" con input numerico 1–30 che salva via RPC `set_manager_notification_advance_days`. Spostato `separator={false}` dalla sezione "Configurazione" a quella nuova.
+
+**Impatto.** `UI` · `Profilo dipendente` · `Impostazioni HR`
+
+**File / aree toccate.**
+- `src/components/profile/ManagerEmailCard.tsx`
+- `src/pages/Profile.tsx`
+- `src/hooks/useAuth.tsx`
+- `src/pages/hr/settings/SettingsVolunteering.tsx`
+
+**Follow-up.** Estensione opzionale del campo `manager_email` anche ai profili HR/super-admin/association_admin (oggi solo profilo dipendente).
+
+---
+
+
 ### 2026-05-19 — Notifica responsabile via email — backend
 
 **Contesto.** Le aziende chiedono di ridurre la frizione "il dipendente prenota volontariato ma il suo team non lo sa". Il dipendente può indicare un'email del responsabile nel proprio profilo; N giorni prima dell'evento (default 7, configurabile per company) parte una notifica neutra e minimal.
