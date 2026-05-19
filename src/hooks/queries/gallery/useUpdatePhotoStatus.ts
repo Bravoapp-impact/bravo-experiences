@@ -30,8 +30,8 @@ export function useUpdatePhotoStatus() {
 }
 
 /**
- * Hard delete a photo. The `gallery_photos_storage_cleanup` AFTER DELETE
- * trigger removes the matching object from the storage bucket.
+ * Hard delete a photo. The storage object is removed first via the Storage API,
+ * then the DB row is deleted. There is no longer a DB trigger doing storage cleanup.
  */
 export function useDeletePhoto() {
   const qc = useQueryClient();
