@@ -159,6 +159,17 @@ export default function Gallery() {
               );
             })}
           </div>
+          {hasMore && (
+            <div className="flex justify-center pt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setVisibleCount((c) => c + GALLERY_PAGE_SIZE)}
+              >
+                Carica altro (mostrate {visiblePhotos.length} di {photos.length})
+              </Button>
+            </div>
+          )}
         </section>
       )}
 
