@@ -6,7 +6,7 @@ import Captions from "yet-another-react-lightbox/plugins/captions";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import "yet-another-react-lightbox/styles.css";
 import "yet-another-react-lightbox/plugins/captions.css";
-import { Trash2, Pencil, Download } from "lucide-react";
+import { Trash2, Download } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -16,20 +16,12 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogOverlay,
+  AlertDialogPortal,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import type { CompanyGalleryPhoto } from "@/hooks/queries/gallery/useCompanyGallery";
 import { useDeletePhoto } from "@/hooks/queries/gallery/useUpdatePhotoStatus";
-import { useUpdatePhotoCaption } from "@/hooks/queries/gallery/useUpdatePhotoCaption";
 
 interface Props {
   photos: CompanyGalleryPhoto[];
@@ -53,11 +45,8 @@ export function PhotoLightbox({
   companyId,
 }: Props) {
   const deletePhoto = useDeletePhoto();
-  const updateCaption = useUpdatePhotoCaption();
 
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [editingCaption, setEditingCaption] = useState(false);
-  const [captionDraft, setCaptionDraft] = useState("");
 
   const safeIndex = Math.min(Math.max(0, currentIndex), photos.length - 1);
   const current = photos[safeIndex];
@@ -105,38 +94,10 @@ export function PhotoLightbox({
     }
   };
 
-  const openCaptionEditor = () => {
-    setCaptionDraft(current.caption ?? "");
-    setEditingCaption(true);
-  };
-
-  const saveCaption = async () => {
-    try {
-      await updateCaption.mutateAsync({
-        photoId: current.id,
-        caption: captionDraft,
-        companyId,
-      });
-      toast.success("Didascalia aggiornata.");
-      setEditingCaption(false);
-    } catch (e: any) {
-      toast.error(e?.message || "Errore.");
-    }
-  };
-
   const toolbarButtons = [
-    <button
-      key="caption"
-      type="button"
-      className="yarl__button"
-      title="Modifica didascalia"
-      onClick={openCaptionEditor}
-    >
-      <Pencil className="h-5 w-5" />
-    </button>,
     <a
       key="download"
-      className="yarl__button"
+      className="yarl__button inline-flex items-center justify-center"
       title="Scarica"
       href={signedUrls[current.storage_path] ?? "#"}
       download
@@ -173,47 +134,28 @@ export function PhotoLightbox({
       />
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Eliminare questa foto?</AlertDialogTitle>
-            <AlertDialogDescription>
-              L'azione non è reversibile. La foto sarà rimossa dalla galleria
-              e dallo storage.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Elimina
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
+        <AlertDialogPortal>
+          <AlertDialogOverlay className="z-[10000]" />
+          <AlertDialogContent className="z-[10001]">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Eliminare questa foto?</AlertDialogTitle>
+              <AlertDialogDescription>
+                L'azione non è reversibile. La foto sarà rimossa dalla galleria
+                e dallo storage.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Elimina
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogPortal>
       </AlertDialog>
-
-      <Dialog open={editingCaption} onOpenChange={setEditingCaption}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Modifica didascalia</DialogTitle>
-          </DialogHeader>
-          <Textarea
-            value={captionDraft}
-            onChange={(e) => setCaptionDraft(e.target.value)}
-            rows={3}
-            placeholder="Aggiungi una didascalia..."
-          />
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setEditingCaption(false)}>
-              Annulla
-            </Button>
-            <Button onClick={saveCaption} disabled={updateCaption.isPending}>
-              Salva
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
