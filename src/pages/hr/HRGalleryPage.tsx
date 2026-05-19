@@ -236,10 +236,14 @@ export default function HRGalleryPage() {
           <div className="text-center py-16 bg-muted/30 rounded-2xl border border-border/50">
             <ImageOff className="h-14 w-14 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-base font-semibold mb-1">Nessuna foto ancora</h3>
-            <p className="text-[13px] text-muted-foreground max-w-md mx-auto">
+            <p className="text-[13px] text-muted-foreground max-w-md mx-auto mb-4">
               Le foto caricate dai dipendenti appariranno qui dopo la tua
-              approvazione.
+              approvazione. Puoi anche caricarle tu direttamente.
             </p>
+            <Button size="sm" onClick={() => setUploadOpen(true)}>
+              <Upload className="h-3.5 w-3.5 mr-1.5" />
+              Carica foto
+            </Button>
           </div>
         ) : (
           <>
