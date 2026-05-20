@@ -111,7 +111,7 @@ export default function AssociationExperienceDetail() {
         default_hours: data.default_hours,
         secondary_tags: data.secondary_tags ?? null,
         location_type: data.location_type ?? null,
-        max_participants: data.max_participants ?? null,
+        short_description: (data as any).short_description ?? null,
         status: data.status,
       });
     } catch (err) {
