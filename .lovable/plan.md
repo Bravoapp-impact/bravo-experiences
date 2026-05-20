@@ -1,65 +1,89 @@
-# Fix: ricorsione RLS su `profiles` blocca tutti gli update self-service
+## Cosa registrare
 
-## Diagnosi
+Verificato il `log.md`: le entry 2026-05-19 coprono già **ICS in conferma**, **Suggerimenti ETS** (pubblico + sezione HR) e **Notifica responsabile** (backend + UI). L'unica feature non loggata è la #1 (foto esperienze passate lato dipendente). Il `Debito tecnico noto` in `aperto.md` ha già una voce "Galleria dipendente: visibilità parziale" parzialmente superata da questa feature, e una "Galleria HR: upload e filtri da rifinire" che va arricchita.
 
-I log Postgres mostrano 7 errori consecutivi `infinite recursion detected in policy for relation "profiles"` coincidenti con il tentativo di salvare `manager_email`. La causa è la policy `Users can update own profile (no role/tenancy)`: la sua `WITH CHECK` contiene tre subquery `SELECT ... FROM profiles WHERE id = auth.uid()` per verificare che `role`/`company_id`/`association_id` non cambino. Ogni subquery riattiva la stessa policy → ricorsione.
+## Modifiche proposte
 
-## Altri update path impattati (risposta esplicita)
+### 1. `docs/log.md` — nuova entry in cima a "Entries"
 
-Il problema **non è limitato a `manager_email`**. Ogni UPDATE su `profiles` fatto come utente stesso passa per quella policy e fallisce. Path attualmente rotti, individuati nel codice:
+Inserire **prima** dell'entry `2026-05-20` (l'unica più recente), con data `2026-05-19`:
 
-- `src/components/profile/ProfileEditForm.tsx` — modifica `first_name` / `last_name` (employee)
-- `src/components/profile/ProfileAvatarUpload.tsx` — upload e rimozione avatar (employee)
-- `src/components/profile/ManagerEmailCard.tsx` — `manager_email` (employee, caso segnalato)
-- `src/components/settings/ProfileSettingsContent.tsx` — nome e avatar (HR, association admin)
-- `src/pages/hr/settings/SettingsProfile.tsx` — nome e avatar (HR)
+```markdown
+### 2026-05-19 — Foto esperienze passate nel dettaglio esperienza dipendente
 
-Funziona invece l'update fatto dal super admin su profili altrui, perché coperto dalla policy separata `Super admins can update any profile`.
+**Contesto.** Le foto della galleria aziendale (caricate/approvate dall'HR) non
+erano esposte al dipendente in nessuna parte dell'app: visibilità parziale nota
+in `aperto.md`. Mostrarle dentro la scheda esperienza è il punto naturale —
+crea social proof prima della prenotazione e usa infrastruttura già pronta
+(`gallery_photos`, signed URLs, lightbox, image dimensions hook).
 
-Una volta applicato il fix tutti questi flussi tornano operativi senza modifiche al client.
+**Cosa cambia.**
+- Nuovo componente `ExperiencePhotosSection` nel dettaglio esperienza employee:
+  album in righe (`react-photo-album`) + lightbox condivisa con la galleria HR.
+- Nuovo hook `useExperiencePhotosForEmployee(experienceId, companyId)` che
+  carica solo foto `status=approved` della company corrente per l'esperienza.
+- Sezione che si auto-nasconde quando non ci sono foto approvate (esperienze
+  attivate per la prima volta non mostrano stato vuoto).
+- Riuso di `useSignedPhotoUrls` e `useImageDimensions` già esistenti.
 
-## Soluzione (3 step ordinati, una sola migration)
+**Impatto.** `UI` · `Dettaglio esperienza employee`
 
-### Step 1 — trigger BEFORE UPDATE con funzione SECURITY DEFINER
+**File / aree toccate.**
+- `src/components/experience-detail/ExperiencePhotosSection.tsx` (nuovo)
+- `src/hooks/queries/gallery/useExperiencePhotosForEmployee.ts` (nuovo)
+- `src/components/experience-detail/ExperienceDetailContent.tsx` (inserimento sezione)
 
-Funzione `public.prevent_profile_self_tenancy_change()`:
-- `SECURITY DEFINER`, `SET search_path = public, pg_temp`.
-- Logica: se `auth.uid() = NEW.id` **e** l'utente NON è super_admin, e uno tra `role`, `company_id`, `association_id` è `IS DISTINCT FROM` il valore in `OLD` → `RAISE EXCEPTION 'Cannot change role/company_id/association_id on own profile'`.
-- Super admin passa sempre, anche quando aggiorna se stesso (coerente con `admin_set_user_role`).
-- `REVOKE EXECUTE ... FROM PUBLIC` (la funzione gira solo come trigger, nessun GRANT esplicito serve).
-
-Trigger `prevent_profile_self_tenancy_change_trg` `BEFORE UPDATE ON public.profiles FOR EACH ROW`.
-
-### Step 2 — nuova policy con nome diverso
-
-```sql
-CREATE POLICY "Users can update own profile v2"
-  ON public.profiles
-  FOR UPDATE TO authenticated
-  USING (auth.uid() = id)
-  WITH CHECK (auth.uid() = id);
+**Follow-up.** Resta aperta la vista galleria aziendale completa (tutte le
+esperienze in un'unica pagina) — vedi `aperto.md`.
 ```
 
-Nome volutamente diverso per coesistere con la vecchia (RLS in OR): da questo momento gli update self-service iniziano a funzionare e il trigger garantisce l'invariante su `role`/`company_id`/`association_id`.
+### 2. `docs/aperto.md` — sezione "Debito tecnico noto"
 
-### Step 3 — drop policy vecchia
+**a)** Aggiornare la voce esistente **"Galleria dipendente: visibilità parziale"** per riflettere che le foto nel dettaglio esperienza sono ora coperte e resta aperta solo la vista aggregata:
 
-```sql
-DROP POLICY "Users can update own profile (no role/tenancy)" ON public.profiles;
+```markdown
+**Galleria dipendente: vista aggregata mancante.** Le foto della galleria
+aziendale sono ora visibili al dipendente nel dettaglio della singola
+esperienza (sezione "Foto delle esperienze passate"). Resta da decidere se e
+dove esporre una vista aggregata cross-esperienza della galleria aziendale
+(tab dedicato, pagina dedicata, sezione in `/app/impact`).
 ```
 
-Eseguito per ultimo, rispettando la regola "aggiungi prima, rimuovi dopo" di `docs/CLAUDE.md`.
+**b)** Aggiungere **tre nuove voci** in cima alla sezione (sono frizioni attuali, alta urgenza):
 
-## Verifica post-fix
+```markdown
+**Galleria HR: caricamento pagina lento/instabile.** La pagina `/hr/galleria`
+si carica male — tempi lunghi e/o stato intermedio confuso. Da profilare
+(probabili N+1 su signed URL e/o moderazione, immagini non lazy-loaded,
+fetch non paginato). Frizione reale percepita dall'HR.
 
-1. Dipendente salva `manager_email` → toast successo, nessun errore nei log Postgres.
-2. Dipendente modifica nome o avatar → ok.
-3. HR/association admin modificano il proprio profilo → ok.
-4. Tentativo client di UPDATE `role` o `company_id` su se stessi → exception bloccante dal trigger.
-5. Super admin cambia ruolo di un altro profilo via `admin_set_user_role` → ok (path già coperto, non toccato).
+**Galleria HR: upload e filtri da rifinire.** Upload diretto HR funzionante
+ma migliorabile (drag-and-drop avanzato, batch più grandi, retry parziali,
+naming intelligente, edit metadata in-line). Il **filtro per esperienza** è
+oggi poco usabile e va ripensato (selezione multipla, ricerca rapida,
+raggruppamento per associazione). Mancano filtro per associazione,
+per uploader, per stato (`hidden` vs `approved`), per "featured", e ricerca
+testuale su caption. *Sostituisce la voce precedente con stesso titolo.*
 
-## Documentazione
+**Pagina "ETS suggeriti" HR: tabella e storico da rifinire.** La tabella
+attuale (`HRSuggestionsPage`) funziona ma è da migliorare: gestione
+dello **storico/archiviati** poco evidente (oggi gli archiviati restano
+mescolati nella stessa tabella), manca un tab/segmento dedicato, manca
+ordinamento per colonna e densità configurabile. Frizione reale appena
+arriveranno più di una manciata di suggerimenti per company.
+```
 
-Update minimi a fine sessione:
-- `docs/log.md`: entry "Fix ricorsione RLS profiles, sblocco update self-service".
-- `docs/architettura.md`: §3 "RLS — i pattern", aggiungere riga sul trigger `prevent_profile_self_tenancy_change` come esempio di invariante non esprimibile in RLS senza ricorsione.
+(La vecchia voce "Galleria HR: upload e filtri da rifinire" viene sostituita dalla nuova, più specifica.)
+
+### 3. Nessuna modifica a `architettura.md`
+
+La feature dipendente non introduce nuove tabelle, RLS, RPC o edge function — riusa l'infrastruttura `gallery_photos` già documentata. Nessun update necessario.
+
+## Cosa NON cambia
+
+- Nessuna modifica al codice applicativo
+- Nessuna modifica a schema DB, RLS, edge function
+- Le altre entry del log restano invariate
+- Le altre voci di `aperto.md` restano invariate
+
+Confermi e procedo con le scritture?
