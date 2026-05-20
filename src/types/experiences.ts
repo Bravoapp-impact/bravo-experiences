@@ -16,6 +16,7 @@ export interface Experience {
   id: string;
   title: string;
   description: string | null;
+  short_description?: string | null;
   image_url: string | null;
   association_name: string | null;
   association_logo_url?: string | null;
