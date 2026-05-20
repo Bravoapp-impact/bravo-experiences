@@ -1,23 +1,46 @@
-## Cosa cambia
+## Problema
 
-Aggiungere la colonna `short_description TEXT` alla tabella `public.experiences`. Entrambi i form (ETS e super-admin) già la inviano nel payload, ma la colonna non esiste a DB → Supabase rifiuta l'insert/update con "Could not find the 'short_description' column".
+1. **`short_description` non viene mostrata** nel dettaglio esperienza. Il campo viene salvato in DB ed è fetchato dalla pagina ETS, ma `ExperienceHeader` ignora il campo e mostra invece i primi 180 caratteri di `description`. La pagina dipendente e quella HR non lo fetchano nemmeno.
 
-## Perché
+2. **Sezione "Altre esperienze a {città}"** ancora visibile nel dettaglio dipendente (`/app/experiences/:id`). Va rimossa.
 
-Negli Step 2 e 3 del refactor abbiamo introdotto `short_description` nello schema Zod unificato e nei payload dei due wrapper, ma abbiamo dimenticato la migration corrispondente (era già annotata come debito in `docs/aperto.md`). Questo prompt chiude il debito.
+## Modifiche
 
-## Cosa NON deve cambiare
+### 1. Type + Header (sorgente unico)
 
-- Nessuna modifica a RLS, policy, trigger o altre colonne di `experiences`.
-- Nessuna modifica al frontend: il codice già legge/scrive `short_description`.
-- Nessuna modifica a `max_participants` (debito separato, da chiudere dopo).
+- `src/types/experiences.ts`: aggiungere `short_description?: string | null` su `Experience`.
+- `src/components/experience-detail/ExperienceHeader.tsx`:
+  - Aggiungere prop `shortDescription?: string | null`.
+  - Mostrare `shortDescription` se presente; altrimenti fallback al truncate di `description` (logica attuale). Stesso styling.
+- `src/components/experience-detail/ExperienceDetailContent.tsx`: passare `shortDescription={experience.short_description ?? null}` a `ExperienceHeader`.
 
-## Passi
+### 2. Fetch nelle 3 pagine di dettaglio
 
-1. Migration: `ALTER TABLE public.experiences ADD COLUMN IF NOT EXISTS short_description TEXT;` (nullable, nessun default — coerente con campo opzionale a max 150 char lato Zod).
-2. Aggiornare `docs/log.md` con entry datata 2026-05-20 ("aggiunta colonna `experiences.short_description` per chiudere Step 2/3 del refactor form").
-3. Aggiornare `docs/aperto.md` rimuovendo la voce di debito su `short_description` (lasciando intatto il debito su `max_participants`).
+- `src/pages/ExperienceDetail.tsx` (dipendente): aggiungere `short_description: data.short_description ?? null` nel setExperience.
+- `src/pages/hr/HRExperienceDetail.tsx`: stesso campo nel mapping.
+- `src/pages/association/AssociationExperienceDetail.tsx`: già fetchato, ma controllare che venga inoltrato all'oggetto passato a `ExperienceDetailContent` (riga ~359 lo fa già — verificare e basta).
+
+### 3. Rimuovere "Altre esperienze" dal dettaglio dipendente
+
+Due opzioni equivalenti:
+- A) In `src/pages/ExperienceDetail.tsx` passare `showRelatedExperiences={false}` a `ExperienceDetailContent` (prop già esistente, già usata da HR).
+- B) Rimuovere del tutto la prop default-true e cancellare `RelatedExperiences.tsx` + hook `useRelatedExperiencesForEmployee` se non più usati altrove.
+
+Andrei con **A** per minimizzare il blast radius: lascia il componente disponibile ma spento sul dipendente. Se confermi che non lo userai mai più, faccio cleanup completo (B) in un secondo passo.
+
+### 4. Docs
+
+- `docs/log.md`: entry datata 2026-05-20 — "short_description ora visibile nell'header del dettaglio (3 pagine) + sezione Altre esperienze rimossa dal dettaglio employee".
+
+## Fuori scope
+
+- Nessuna modifica DB (colonna già esistente).
+- Nessuna modifica ai form di creazione/edit.
+- Nessun cleanup dei file `RelatedExperiences*` (rinviato a step successivo se confermato).
 
 ## Verifica
 
-Dopo la migration, riprovare il salvataggio dal dialog super-admin: l'errore "Could not find the 'short_description' column" deve sparire. Verificare anche dal form ETS che il valore venga persistito (rileggendo l'esperienza modificata).
+- Aprire un'esperienza esistente con `short_description` valorizzata → testo mostrato sotto il titolo.
+- Aprire un'esperienza senza `short_description` → fallback alla descrizione troncata (comportamento attuale).
+- Stessa verifica nelle viste HR ed ETS.
+- Sul dettaglio dipendente la sezione "Altre esperienze a Milano" non compare più.

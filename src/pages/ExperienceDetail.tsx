@@ -80,6 +80,7 @@ export default function ExperienceDetail() {
           id: data.id,
           title: data.title,
           description: data.description,
+          short_description: (data as any).short_description ?? null,
           image_url: data.image_url,
           association_name: assoc?.name ?? data.association_name,
           association_logo_url: assoc?.logo_url ?? null,
@@ -387,6 +388,7 @@ export default function ExperienceDetail() {
           avgRating={avgRating}
           reviewCount={reviewCount}
           relatedCompanyId={profile?.company_id ?? null}
+          showRelatedExperiences={false}
           experiencePhotosSlot={
             <ExperiencePhotosSection experienceId={experience.id} />
           }
