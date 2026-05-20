@@ -232,127 +232,8 @@ export default function ExperiencesPage() {
   };
 
   const handleOpenDialog = (experience?: Experience) => {
-    if (experience) {
-      setSelectedExperience(experience);
-      setFormData({
-        title: experience.title,
-        description: experience.description || "",
-        image_url: experience.image_url || "",
-        association_id: experience.association_id || "",
-        city_id: experience.city_id || "",
-        category_id: experience.category_id || "",
-        address: experience.address || "",
-        status: experience.status,
-        sdgs: experience.sdgs || [],
-        participant_info: experience.participant_info || "",
-        secondary_tags: experience.secondary_tags || [],
-        location_type: (experience as any).location_type || "both",
-      });
-      setSuggestedSdgs([]);
-    } else {
-      setSelectedExperience(null);
-      setFormData({
-        title: "",
-        description: "",
-        image_url: "",
-        association_id: "",
-        city_id: "",
-        category_id: "",
-        address: "",
-        status: "draft",
-        sdgs: [],
-        participant_info: "",
-        secondary_tags: [],
-        location_type: "both",
-      });
-      setSuggestedSdgs([]);
-    }
+    setSelectedExperience(experience ?? null);
     setDialogOpen(true);
-  };
-
-  const handleCategoryChange = (categoryId: string) => {
-    setFormData((prev) => ({ ...prev, category_id: categoryId }));
-    
-    // Find category and show suggested SDGs
-    const category = categories.find((c) => c.id === categoryId);
-    if (category?.default_sdgs && category.default_sdgs.length > 0) {
-      setSuggestedSdgs(category.default_sdgs);
-    } else {
-      setSuggestedSdgs([]);
-    }
-  };
-
-  const handleSave = async () => {
-    const trimmedTitle = formData.title.trim();
-    if (!trimmedTitle) {
-      toast({
-        variant: "destructive",
-        title: "Errore",
-        description: "Il titolo è obbligatorio",
-      });
-      return;
-    }
-    if (trimmedTitle.length < 20 || trimmedTitle.length > 80) {
-      toast({
-        variant: "destructive",
-        title: "Errore",
-        description: "Il titolo deve avere tra 20 e 80 caratteri",
-      });
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const payload = {
-        title: formData.title,
-        description: formData.description || null,
-        image_url: formData.image_url || null,
-        association_id: formData.association_id || null,
-        city_id: formData.city_id || null,
-        category_id: formData.category_id || null,
-        address: formData.address || null,
-        status: formData.status,
-        sdgs: formData.sdgs.length > 0 ? formData.sdgs : null,
-        participant_info: formData.participant_info.trim() || null,
-        secondary_tags: formData.secondary_tags.length > 0 ? formData.secondary_tags : null,
-        location_type: formData.location_type,
-      };
-
-      if (selectedExperience) {
-        const { error } = await supabase
-          .from("experiences")
-          .update(payload)
-          .eq("id", selectedExperience.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Successo",
-          description: "Esperienza aggiornata",
-        });
-      } else {
-        const { error } = await supabase.from("experiences").insert(payload);
-
-        if (error) throw error;
-
-        toast({
-          title: "Successo",
-          description: "Esperienza creata",
-        });
-      }
-
-      setDialogOpen(false);
-      fetchData();
-    } catch (error: any) {
-      devLog.error("Error saving experience:", error);
-      toast({
-        variant: "destructive",
-        title: "Errore",
-        description: error.message || "Impossibile salvare l'esperienza",
-      });
-    } finally {
-      setSaving(false);
-    }
   };
 
   const handleDelete = async () => {
@@ -385,23 +266,6 @@ export default function ExperiencesPage() {
     }
   };
 
-  const handleSDGToggle = (sdgCode: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      sdgs: prev.sdgs.includes(sdgCode)
-        ? prev.sdgs.filter((s) => s !== sdgCode)
-        : [...prev.sdgs, sdgCode],
-    }));
-  };
-
-  const handleTagToggle = (tag: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      secondary_tags: prev.secondary_tags.includes(tag)
-        ? prev.secondary_tags.filter((t) => t !== tag)
-        : [...prev.secondary_tags, tag],
-    }));
-  };
 
   const handleDateSaved = () => {
     fetchData();
