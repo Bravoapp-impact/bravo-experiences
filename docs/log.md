@@ -43,6 +43,29 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-20 — Migrazione dialog super-admin al componente `ExperienceFormFields` unificato — Passo 3 di 3
+
+**Contesto.** Chiusura del refactor in 3 passi: Step 1 ha creato il componente unificato, Step 2 ha migrato il form ETS, questo step migra il dialog inline del super-admin. Risultato: i campi di un'esperienza vivono **in un solo posto** (`ExperienceFormFields`), con due wrapper sottili (ETS / super-admin). Niente più drift fra i due form.
+
+**Cosa cambia.**
+- `src/pages/super-admin/ExperiencesPage.tsx`: rimosso tutto il dialog inline (state `formData`, `suggestedSdgs`, handler `handleSDGToggle`/`handleTagToggle`/`handleCategoryChange`/vecchio `handleSave`, ~270 righe di JSX duplicato). Sostituito con `<SuperAdminExperienceFormBody>`, sub-component locale che istanzia `useForm` con `superAdminExperienceSchema` (estensione di `experienceSchema` con `association_id` e `location_type` obbligatori) e delega i campi a `<ExperienceFormFields mode="super_admin" form={form} />`.
+- Lo `status` resta gestito in state locale del wrapper (è metadata di pubblicazione, non un campo descrittivo dell'esperienza).
+- Il payload super-admin ora include anche `default_hours` (1–24, intero) e `short_description`, prima assenti dal dialog super-admin.
+- **Upload immagine ora coerente.** Il dialog super-admin prima passava `entityId={selectedExperience?.id}` a `LogoUpload`: in fase di creazione (id ancora `undefined`) l'upload era di fatto rotto. Il nuovo componente unificato chiama `LogoUpload` senza `entityId` (bucket `experience-images`), allineando il comportamento a quello dell'ETS e sbloccando l'upload anche da super-admin in creazione.
+- Rimosso il riquadro "SDGs suggeriti per questa categoria" (basato su `categories.default_sdgs`): non era previsto nel componente unificato. Se decideremo che è una feature da preservare, andrà aggiunta in `ExperienceFormFields` e quindi disponibile anche per l'ETS.
+
+**Esplicitamente fuori scope.** Nessuna modifica a `ExperienceFormFields.tsx`, nessuna modifica al form ETS, nessuna modifica DB. Resta in piedi il debito noto già tracciato in `docs/aperto.md`: la colonna `experiences.max_participants` va droppata con una migration dedicata ora che entrambi i form non la scrivono più.
+
+**Nota su `short_description`.** Il payload include `short_description` come fa già il form ETS dallo Step 2. La colonna corrispondente in `public.experiences` non è ancora presente in DB: è un'incoerenza nota che impatta entrambi i form allo stesso modo e va risolta con una migration `ALTER TABLE experiences ADD COLUMN short_description TEXT;` (voce da aggiungere in `docs/aperto.md` se non già presente). Questo step si limita a non aumentare il drift.
+
+**File toccati.**
+- `src/pages/super-admin/ExperiencesPage.tsx`
+- `docs/log.md`
+
+**Verifica.** `tsc --noEmit` pulito. Smoke test manuale super-admin: creare nuova esperienza con tutti i campi (inclusi SDG/secondary_tags/location_type), modificarne una esistente, verificare upload immagine in creazione.
+
+---
+
 ### 2026-05-20 — Migrazione form ETS al componente `ExperienceFormFields` unificato — Passo 2 di 3
 
 **Contesto.** Step 1 ha creato il componente unificato `ExperienceFormFields` (vedi entry sotto). Questo step migra il form ETS reale (`src/components/association/ExperienceForm.tsx`) a wrappare quel componente, e pulisce tutti i lettori frontend di `experiences.max_participants` (che ora vive solo su `experience_dates`).
