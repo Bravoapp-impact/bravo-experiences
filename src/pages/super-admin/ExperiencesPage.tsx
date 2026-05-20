@@ -775,3 +775,128 @@ export default function ExperiencesPage() {
     </SuperAdminLayout>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Sub-component: form body del dialog super-admin
+// ---------------------------------------------------------------------------
+
+interface SuperAdminExperienceFormBodyProps {
+  experience: Experience | null;
+  onCancel: () => void;
+  onSaved: () => void;
+}
+
+function SuperAdminExperienceFormBody({
+  experience,
+  onCancel,
+  onSaved,
+}: SuperAdminExperienceFormBodyProps) {
+  const { toast } = useToast();
+  const [saving, setSaving] = useState(false);
+  // Status non vive nel form: è metadata di pubblicazione, lo gestiamo
+  // in state locale del wrapper.
+  const [status, setStatus] = useState<string>(experience?.status ?? "draft");
+
+  const form = useForm<SuperAdminExperienceValues>({
+    resolver: zodResolver(superAdminExperienceSchema),
+    defaultValues: {
+      title: experience?.title ?? "",
+      short_description: experience?.short_description ?? "",
+      description: experience?.description ?? "",
+      category_id: experience?.category_id ?? "",
+      city_id: experience?.city_id ?? "",
+      address: experience?.address ?? "",
+      default_hours: experience?.default_hours ?? 3,
+      participant_info: experience?.participant_info ?? "",
+      image_url: experience?.image_url ?? "",
+      association_id: experience?.association_id ?? "",
+      sdgs: experience?.sdgs ?? [],
+      secondary_tags: experience?.secondary_tags ?? [],
+      location_type:
+        (experience?.location_type as "indoor" | "outdoor" | "both" | undefined) ??
+        "both",
+    },
+    mode: "onBlur",
+  });
+
+  const handleSubmit = form.handleSubmit(async (values) => {
+    setSaving(true);
+    try {
+      const payload = {
+        title: values.title.trim(),
+        short_description: values.short_description?.trim() || null,
+        description: values.description.trim() || null,
+        image_url: values.image_url || null,
+        association_id: values.association_id || null,
+        city_id: values.city_id || null,
+        category_id: values.category_id || null,
+        address: values.address?.trim() || null,
+        status,
+        sdgs: values.sdgs && values.sdgs.length > 0 ? values.sdgs : null,
+        participant_info: values.participant_info?.trim() || null,
+        secondary_tags:
+          values.secondary_tags && values.secondary_tags.length > 0
+            ? values.secondary_tags
+            : null,
+        location_type: values.location_type,
+        default_hours: values.default_hours,
+      };
+
+      if (experience) {
+        const { error } = await supabase
+          .from("experiences")
+          .update(payload)
+          .eq("id", experience.id);
+        if (error) throw error;
+        toast({ title: "Successo", description: "Esperienza aggiornata" });
+      } else {
+        const { error } = await supabase.from("experiences").insert(payload);
+        if (error) throw error;
+        toast({ title: "Successo", description: "Esperienza creata" });
+      }
+
+      onSaved();
+    } catch (error: any) {
+      devLog.error("Error saving experience:", error);
+      toast({
+        variant: "destructive",
+        title: "Errore",
+        description: error.message || "Impossibile salvare l'esperienza",
+      });
+    } finally {
+      setSaving(false);
+    }
+  });
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <ExperienceFormFields mode="super_admin" form={form} />
+
+      {/* Status (metadata di pubblicazione) */}
+      <div className="space-y-1.5">
+        <Label>Stato</Label>
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="bg-background">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-popover z-[200]">
+            {STATUS_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
+          Annulla
+        </Button>
+        <Button type="submit" disabled={saving}>
+          {saving ? "Salvataggio..." : "Salva"}
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+}
