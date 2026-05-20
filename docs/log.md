@@ -43,6 +43,28 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-20 — Fix ricorsione RLS su profiles, sblocco update self-service
+
+**Contesto.** Salvataggio `manager_email` dal profilo dipendente falliva con "Errore durante il salvataggio". I log Postgres mostravano `infinite recursion detected in policy for relation "profiles"`. Causa: la policy `Users can update own profile (no role/tenancy)` aveva tre subquery `SELECT ... FROM profiles WHERE id = auth.uid()` nella `WITH CHECK` per impedire al dipendente di modificare il proprio `role`/`company_id`/`association_id`. Ogni subquery riattivava la stessa policy. Tutti gli update self-service su `profiles` erano rotti dall'introduzione di quella policy, non solo `manager_email`: anche modifica nome (`ProfileEditForm`, `ProfileSettingsContent`, `SettingsProfile`) e avatar (`ProfileAvatarUpload`, idem) fallivano in silenzio per employee/HR/association_admin. Funzionavano solo gli update fatti dal super admin tramite la policy parallela `Super admins can update any profile`.
+
+**Cosa cambia.**
+- Nuova funzione `prevent_profile_self_tenancy_change()` SECURITY DEFINER, `SET search_path = public, pg_temp`, `REVOKE EXECUTE ... FROM PUBLIC`. Logica: se `auth.uid() = NEW.id` e l'utente non è super_admin, blocca con exception qualunque variazione di `role`, `company_id`, `association_id` (confronto `IS DISTINCT FROM`).
+- Nuovo trigger `prevent_profile_self_tenancy_change_trg` BEFORE UPDATE ON `profiles` FOR EACH ROW.
+- Nuova policy `Users can update own profile v2` con `USING (auth.uid() = id)` e `WITH CHECK (auth.uid() = id)` — niente subquery, niente ricorsione. L'invariante sui campi sensibili è garantita dal trigger.
+- Rimossa la policy ricorsiva `Users can update own profile (no role/tenancy)`. Sequenza rispettata: trigger → nuova policy → drop vecchia.
+
+**Impatto.** `DB` · `RLS` · `Profilo dipendente` · `Impostazioni HR/Association`
+
+**File / aree toccate.**
+- Migration: nuova funzione `prevent_profile_self_tenancy_change`, trigger `prevent_profile_self_tenancy_change_trg`, policy `Users can update own profile v2`, drop policy ricorsiva
+- `docs/architettura.md` (riferimento al pattern trigger-per-invariante)
+
+**Follow-up.** —
+
+---
+
+
+
 ### 2026-05-19 — Notifica responsabile via email — UI
 
 **Contesto.** Completata la feature backend del prompt precedente con i due punti di interazione UI: il dipendente popola `manager_email` nel proprio profilo, l'HR configura `manager_notification_advance_days` per tutta l'azienda dalle impostazioni di volontariato.
