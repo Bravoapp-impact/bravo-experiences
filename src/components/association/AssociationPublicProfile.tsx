@@ -56,7 +56,6 @@ interface ExperienceData {
   address: string | null;
   category: string | null;
   next_date: string | null;
-  max_participants: number | null;
 }
 
 // --- Star Rating ---
