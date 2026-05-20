@@ -388,6 +388,7 @@ export default function ExperienceDetail() {
           avgRating={avgRating}
           reviewCount={reviewCount}
           relatedCompanyId={profile?.company_id ?? null}
+          showRelatedExperiences={false}
           experiencePhotosSlot={
             <ExperiencePhotosSection experienceId={experience.id} />
           }
