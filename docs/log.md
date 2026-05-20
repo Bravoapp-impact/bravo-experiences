@@ -43,7 +43,24 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
-### 2026-05-20 — Aggiunta colonna `experiences.short_description`
+### 2026-05-20 — `short_description` visibile nell'header + rimozione "Altre esperienze" dal dettaglio dipendente
+
+**Cosa è cambiato**
+- `Experience` (type) ora include `short_description?: string | null`.
+- `ExperienceHeader` accetta `shortDescription`; se valorizzato lo mostra, altrimenti fallback al troncamento di `description` (comportamento precedente).
+- `ExperienceDetailContent` forwarda `experience.short_description` all'header.
+- Le pagine `ExperienceDetail` (dipendente) e `HRExperienceDetail` ora fetchano `short_description` dalla tabella `experiences`. La pagina ETS già lo faceva.
+- Dettaglio dipendente: passato `showRelatedExperiences={false}` a `ExperienceDetailContent` per nascondere la sezione "Altre esperienze a {città}".
+
+**Perché**
+La colonna era già scritta dai form e presente in DB, ma nessun consumer del dettaglio la mostrava: l'header sintetizzava sempre `description`. La sezione "Altre esperienze" sul catalogo dipendente è stata richiesta come rimossa (HR era già spenta).
+
+**Fuori scope**
+Non rimuovo i file `RelatedExperiences*` né l'hook `useRelatedExperiencesForEmployee`: restano disponibili ma non istanziati. Cleanup eventuale in un passo successivo.
+
+---
+
+
 
 **Contesto.** Negli Step 2 e 3 del refactor `ExperienceFormFields` entrambi i wrapper (ETS e super-admin) hanno iniziato a scrivere `short_description` nel payload, ma la colonna non esisteva in DB. Risultato: save dal dialog super-admin falliva con `Could not find the 'short_description' column of 'experiences' in the schema cache`.
 
