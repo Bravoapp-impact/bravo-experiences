@@ -43,6 +43,25 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-20 — Componente unificato `ExperienceFormFields` (step 1/3)
+
+**Contesto.** Oggi i campi di un'esperienza di volontariato vivono duplicati in due form divergenti: `src/components/association/ExperienceForm.tsx` (ETS, ha `max_participants` e upload immagine fai-da-te) e il dialog inline in `src/pages/super-admin/ExperiencesPage.tsx` (super-admin, ha `sdgs`, `secondary_tags`, `location_type`, `association_id`). Inoltre la colonna `experiences.short_description` esiste in DB ma nessuno dei due form la espone. Ogni volta che si aggiunge un campo c'è il rischio di toccare un form e dimenticare l'altro.
+
+**Cosa cambia.** Creato `src/components/experiences/ExperienceFormFields.tsx`: componente "controllato dall'esterno" che rappresenta il **superset** dei campi esperienza. Usa `react-hook-form` + `zod` (schema unico esportato come `experienceSchema`) e una prop `mode: "association" | "super_admin"` per filtrare i campi solo super-admin (`association_id`, `sdgs`, `secondary_tags`, `location_type`). I campi comuni includono finalmente `short_description` (max 150) e `default_hours` (1–24, intero). Carica autonomamente categorie/città/associazioni via `useQuery` con key `[entity, "list"]` e `staleTime` 10min. Per l'upload immagine riusa `LogoUpload` con bucket `experience-images`. Per i toggle SDG/tag riusa il pattern badge già adottato in `TBFormatEditDialog`. **Non è integrato in nessuna pagina**: in questo step ci limitiamo a far compilare il file e a tenere il componente come "API stabile" per gli step successivi.
+
+**Esplicitamente fuori scope.** Nessuna modifica a `ExperienceForm.tsx`, nessuna modifica al dialog super-admin, nessuna modifica DB. Il campo `max_participants` è volutamente **assente** dal nuovo componente: nel nuovo modello vive solo su `experience_dates.max_participants`. La colonna `experiences.max_participants` resta in vita finché entrambi i form non sono migrati.
+
+**Piano di migrazione in 3 step.**
+- **Step 1 (fatto):** creato `ExperienceFormFields` isolato.
+- **Step 2 (prossimo):** migrare `ExperienceForm.tsx` (ETS) a wrappare `ExperienceFormFields` con `mode="association"`. Il wrapper conserva submit/upload/refresh lista.
+- **Step 3 (successivo):** migrare il dialog inline in `ExperiencesPage.tsx` (super-admin) con `mode="super_admin"`. Dopo lo step 3 si può droppare `experiences.max_participants`.
+
+**Verifica.** Build/typecheck sul nuovo file, nessuna integrazione runtime in questo step.
+
+**File toccati.** `src/components/experiences/ExperienceFormFields.tsx` (nuovo).
+
+---
+
 ### 2026-05-20 — Fix ricorsione RLS su profiles, sblocco update self-service
 
 **Contesto.** Salvataggio `manager_email` dal profilo dipendente falliva con "Errore durante il salvataggio". I log Postgres mostravano `infinite recursion detected in policy for relation "profiles"`. Causa: la policy `Users can update own profile (no role/tenancy)` aveva tre subquery `SELECT ... FROM profiles WHERE id = auth.uid()` nella `WITH CHECK` per impedire al dipendente di modificare il proprio `role`/`company_id`/`association_id`. Ogni subquery riattivava la stessa policy. Tutti gli update self-service su `profiles` erano rotti dall'introduzione di quella policy, non solo `manager_email`: anche modifica nome (`ProfileEditForm`, `ProfileSettingsContent`, `SettingsProfile`) e avatar (`ProfileAvatarUpload`, idem) fallivano in silenzio per employee/HR/association_admin. Funzionavano solo gli update fatti dal super admin tramite la policy parallela `Super admins can update any profile`.
