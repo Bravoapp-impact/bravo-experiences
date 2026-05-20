@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Plus,
   Search,
@@ -11,10 +13,6 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
-  Lightbulb,
-  Tag,
-  X,
-  Eye,
   Lock,
   Globe,
 } from "lucide-react";
@@ -55,18 +53,20 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { SuperAdminLayout } from "@/components/layout/SuperAdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { getAllSDGs } from "@/lib/sdg-data";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ExperienceDateDialog } from "@/components/super-admin/ExperienceDateDialog";
 import { VisibilityDialog } from "@/components/super-admin/VisibilityDialog";
 import { devLog } from "@/lib/logger";
-import { LogoUpload } from "@/components/super-admin/LogoUpload";
+import {
+  ExperienceFormFields,
+  experienceSchema,
+  type ExperienceFormValues,
+} from "@/components/experiences/ExperienceFormFields";
+import { z } from "zod";
 
 interface Association {
   id: string;
