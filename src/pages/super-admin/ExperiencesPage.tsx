@@ -87,6 +87,7 @@ interface Category {
 interface Experience {
   id: string;
   title: string;
+  short_description?: string | null;
   description: string | null;
   image_url: string | null;
   association_id: string | null;
@@ -98,6 +99,8 @@ interface Experience {
   sdgs: string[] | null;
   participant_info: string | null;
   secondary_tags: string[] | null;
+  default_hours: number | null;
+  location_type: string | null;
   created_at: string;
   experience_dates?: ExperienceDate[];
   // Legacy fields (kept for display during migration)
@@ -105,9 +108,6 @@ interface Experience {
   city?: string | null;
   category?: string | null;
 }
-
-// Unified secondary tags — shared across experiences and tb_formats
-import { AVAILABLE_TAGS } from "@/lib/tags";
 
 interface Company {
   id: string;
@@ -132,6 +132,21 @@ const STATUS_OPTIONS = [
   { value: "archived", label: "Archiviata" },
 ];
 
+/**
+ * Schema super-admin: estende `experienceSchema` rendendo obbligatori
+ * i campi che il super-admin deve sempre specificare (association_id,
+ * location_type). Lo `status` non vive nel form ma in state locale del
+ * wrapper perché è metadata di pubblicazione, non un campo descrittivo.
+ */
+const superAdminExperienceSchema = experienceSchema.extend({
+  association_id: z.string().uuid("Seleziona un'associazione"),
+  location_type: z.enum(["indoor", "outdoor", "both"], {
+    required_error: "Seleziona il tipo di location",
+  }),
+});
+
+type SuperAdminExperienceValues = z.infer<typeof superAdminExperienceSchema>;
+
 export default function ExperiencesPage() {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [associations, setAssociations] = useState<Association[]>([]);
@@ -150,24 +165,7 @@ export default function ExperiencesPage() {
   const [selectedDate, setSelectedDate] = useState<ExperienceDate | null>(null);
   const [previewExperience, setPreviewExperience] = useState<Experience | null>(null);
   const [visibilityDialogExp, setVisibilityDialogExp] = useState<Experience | null>(null);
-  const [suggestedSdgs, setSuggestedSdgs] = useState<string[]>([]);
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    image_url: "",
-    association_id: "",
-    city_id: "",
-    category_id: "",
-    address: "",
-    status: "draft",
-    sdgs: [] as string[],
-    participant_info: "",
-    secondary_tags: [] as string[],
-    location_type: "both",
-  });
-  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
-  const allSDGs = getAllSDGs();
 
   useEffect(() => {
     fetchData();
