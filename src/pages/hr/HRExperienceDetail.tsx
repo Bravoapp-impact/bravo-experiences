@@ -68,6 +68,7 @@ export default function HRExperienceDetail() {
           id: data.id,
           title: data.title,
           description: data.description,
+          short_description: (data as any).short_description ?? null,
           image_url: data.image_url,
           association_name: assoc?.name ?? data.association_name,
           association_logo_url: assoc?.logo_url ?? null,
