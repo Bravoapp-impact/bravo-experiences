@@ -13,12 +13,12 @@ import {
 interface ExperienceData {
   id: string;
   title: string;
+  short_description?: string | null;
   description: string | null;
   category_id?: string | null;
   city_id?: string | null;
   address: string | null;
   default_hours?: number | null;
-  max_participants?: number | null;
   participant_info?: string | null;
   image_url: string | null;
 }
@@ -48,21 +48,30 @@ export function CreateExperienceDialog({
 
     setSaving(true);
     try {
+      // Risolvi i nomi legacy (colonne text `category` / `city`) lookup-by-id.
+      const [{ data: cat }, { data: city }] = await Promise.all([
+        supabase.from("categories").select("name").eq("id", data.category_id).maybeSingle(),
+        supabase.from("cities").select("name").eq("id", data.city_id).maybeSingle(),
+      ]);
+
+      const basePayload = {
+        title: data.title,
+        short_description: data.short_description,
+        description: data.description,
+        category_id: data.category_id,
+        category: cat?.name ?? null,
+        city_id: data.city_id,
+        city: city?.name ?? null,
+        address: data.address || null,
+        default_hours: data.default_hours,
+        participant_info: data.participant_info,
+        image_url: data.image_url,
+      };
+
       if (isEdit) {
         const { error } = await supabase
           .from("experiences")
-          .update({
-            title: data.title,
-            description: data.description,
-            category_id: data.categoryId,
-            category: data.categoryName,
-            city_id: data.cityId,
-            city: data.cityName,
-            address: data.address || null,
-            max_participants: data.maxParticipants,
-            participant_info: data.participantInfo || null,
-            image_url: data.imageUrl,
-          })
+          .update(basePayload)
           .eq("id", experience!.id);
 
         if (error) {
@@ -74,16 +83,7 @@ export function CreateExperienceDialog({
         toast.success("Modifiche salvate");
       } else {
         const { error } = await supabase.from("experiences").insert({
-          title: data.title,
-          description: data.description,
-          category_id: data.categoryId,
-          category: data.categoryName,
-          city_id: data.cityId,
-          city: data.cityName,
-          address: data.address || null,
-          max_participants: data.maxParticipants,
-          participant_info: data.participantInfo || null,
-          image_url: data.imageUrl,
+          ...basePayload,
           status: "draft",
           visibility: "public",
           type: "volunteering",
