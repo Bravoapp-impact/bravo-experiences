@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Plus,
   Search,
@@ -11,10 +13,6 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
-  Lightbulb,
-  Tag,
-  X,
-  Eye,
   Lock,
   Globe,
 } from "lucide-react";
@@ -55,18 +53,20 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { SuperAdminLayout } from "@/components/layout/SuperAdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { getAllSDGs } from "@/lib/sdg-data";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ExperienceDateDialog } from "@/components/super-admin/ExperienceDateDialog";
 import { VisibilityDialog } from "@/components/super-admin/VisibilityDialog";
 import { devLog } from "@/lib/logger";
-import { LogoUpload } from "@/components/super-admin/LogoUpload";
+import {
+  ExperienceFormFields,
+  experienceSchema,
+  type ExperienceFormValues,
+} from "@/components/experiences/ExperienceFormFields";
+import { z } from "zod";
 
 interface Association {
   id: string;
@@ -87,6 +87,7 @@ interface Category {
 interface Experience {
   id: string;
   title: string;
+  short_description?: string | null;
   description: string | null;
   image_url: string | null;
   association_id: string | null;
@@ -98,6 +99,8 @@ interface Experience {
   sdgs: string[] | null;
   participant_info: string | null;
   secondary_tags: string[] | null;
+  default_hours: number | null;
+  location_type: string | null;
   created_at: string;
   experience_dates?: ExperienceDate[];
   // Legacy fields (kept for display during migration)
@@ -105,9 +108,6 @@ interface Experience {
   city?: string | null;
   category?: string | null;
 }
-
-// Unified secondary tags — shared across experiences and tb_formats
-import { AVAILABLE_TAGS } from "@/lib/tags";
 
 interface Company {
   id: string;
@@ -132,6 +132,21 @@ const STATUS_OPTIONS = [
   { value: "archived", label: "Archiviata" },
 ];
 
+/**
+ * Schema super-admin: estende `experienceSchema` rendendo obbligatori
+ * i campi che il super-admin deve sempre specificare (association_id,
+ * location_type). Lo `status` non vive nel form ma in state locale del
+ * wrapper perché è metadata di pubblicazione, non un campo descrittivo.
+ */
+const superAdminExperienceSchema = experienceSchema.extend({
+  association_id: z.string().uuid("Seleziona un'associazione"),
+  location_type: z.enum(["indoor", "outdoor", "both"], {
+    required_error: "Seleziona il tipo di location",
+  }),
+});
+
+type SuperAdminExperienceValues = z.infer<typeof superAdminExperienceSchema>;
+
 export default function ExperiencesPage() {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [associations, setAssociations] = useState<Association[]>([]);
@@ -150,24 +165,7 @@ export default function ExperiencesPage() {
   const [selectedDate, setSelectedDate] = useState<ExperienceDate | null>(null);
   const [previewExperience, setPreviewExperience] = useState<Experience | null>(null);
   const [visibilityDialogExp, setVisibilityDialogExp] = useState<Experience | null>(null);
-  const [suggestedSdgs, setSuggestedSdgs] = useState<string[]>([]);
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    image_url: "",
-    association_id: "",
-    city_id: "",
-    category_id: "",
-    address: "",
-    status: "draft",
-    sdgs: [] as string[],
-    participant_info: "",
-    secondary_tags: [] as string[],
-    location_type: "both",
-  });
-  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
-  const allSDGs = getAllSDGs();
 
   useEffect(() => {
     fetchData();
@@ -234,127 +232,8 @@ export default function ExperiencesPage() {
   };
 
   const handleOpenDialog = (experience?: Experience) => {
-    if (experience) {
-      setSelectedExperience(experience);
-      setFormData({
-        title: experience.title,
-        description: experience.description || "",
-        image_url: experience.image_url || "",
-        association_id: experience.association_id || "",
-        city_id: experience.city_id || "",
-        category_id: experience.category_id || "",
-        address: experience.address || "",
-        status: experience.status,
-        sdgs: experience.sdgs || [],
-        participant_info: experience.participant_info || "",
-        secondary_tags: experience.secondary_tags || [],
-        location_type: (experience as any).location_type || "both",
-      });
-      setSuggestedSdgs([]);
-    } else {
-      setSelectedExperience(null);
-      setFormData({
-        title: "",
-        description: "",
-        image_url: "",
-        association_id: "",
-        city_id: "",
-        category_id: "",
-        address: "",
-        status: "draft",
-        sdgs: [],
-        participant_info: "",
-        secondary_tags: [],
-        location_type: "both",
-      });
-      setSuggestedSdgs([]);
-    }
+    setSelectedExperience(experience ?? null);
     setDialogOpen(true);
-  };
-
-  const handleCategoryChange = (categoryId: string) => {
-    setFormData((prev) => ({ ...prev, category_id: categoryId }));
-    
-    // Find category and show suggested SDGs
-    const category = categories.find((c) => c.id === categoryId);
-    if (category?.default_sdgs && category.default_sdgs.length > 0) {
-      setSuggestedSdgs(category.default_sdgs);
-    } else {
-      setSuggestedSdgs([]);
-    }
-  };
-
-  const handleSave = async () => {
-    const trimmedTitle = formData.title.trim();
-    if (!trimmedTitle) {
-      toast({
-        variant: "destructive",
-        title: "Errore",
-        description: "Il titolo è obbligatorio",
-      });
-      return;
-    }
-    if (trimmedTitle.length < 20 || trimmedTitle.length > 80) {
-      toast({
-        variant: "destructive",
-        title: "Errore",
-        description: "Il titolo deve avere tra 20 e 80 caratteri",
-      });
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const payload = {
-        title: formData.title,
-        description: formData.description || null,
-        image_url: formData.image_url || null,
-        association_id: formData.association_id || null,
-        city_id: formData.city_id || null,
-        category_id: formData.category_id || null,
-        address: formData.address || null,
-        status: formData.status,
-        sdgs: formData.sdgs.length > 0 ? formData.sdgs : null,
-        participant_info: formData.participant_info.trim() || null,
-        secondary_tags: formData.secondary_tags.length > 0 ? formData.secondary_tags : null,
-        location_type: formData.location_type,
-      };
-
-      if (selectedExperience) {
-        const { error } = await supabase
-          .from("experiences")
-          .update(payload)
-          .eq("id", selectedExperience.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Successo",
-          description: "Esperienza aggiornata",
-        });
-      } else {
-        const { error } = await supabase.from("experiences").insert(payload);
-
-        if (error) throw error;
-
-        toast({
-          title: "Successo",
-          description: "Esperienza creata",
-        });
-      }
-
-      setDialogOpen(false);
-      fetchData();
-    } catch (error: any) {
-      devLog.error("Error saving experience:", error);
-      toast({
-        variant: "destructive",
-        title: "Errore",
-        description: error.message || "Impossibile salvare l'esperienza",
-      });
-    } finally {
-      setSaving(false);
-    }
   };
 
   const handleDelete = async () => {
@@ -387,23 +266,6 @@ export default function ExperiencesPage() {
     }
   };
 
-  const handleSDGToggle = (sdgCode: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      sdgs: prev.sdgs.includes(sdgCode)
-        ? prev.sdgs.filter((s) => s !== sdgCode)
-        : [...prev.sdgs, sdgCode],
-    }));
-  };
-
-  const handleTagToggle = (tag: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      secondary_tags: prev.secondary_tags.includes(tag)
-        ? prev.secondary_tags.filter((t) => t !== tag)
-        : [...prev.secondary_tags, tag],
-    }));
-  };
 
   const handleDateSaved = () => {
     fetchData();
@@ -803,268 +665,20 @@ export default function ExperiencesPage() {
               {selectedExperience ? "Modifica Esperienza" : "Nuova Esperienza"}
             </DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Titolo *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
-                }
-                placeholder="Titolo esperienza"
-                maxLength={80}
-              />
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">Tra 20 e 80 caratteri</p>
-                <p
-                  className={`text-xs ${
-                    formData.title.trim().length > 0 &&
-                    (formData.title.trim().length < 20 || formData.title.trim().length > 80)
-                      ? "text-destructive"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {formData.title.trim().length}/80
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrizione</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                placeholder="Descrizione dettagliata..."
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="participant_info">Informazioni per i partecipanti</Label>
-              <Textarea
-                id="participant_info"
-                value={formData.participant_info}
-                onChange={(e) =>
-                  setFormData({ ...formData, participant_info: e.target.value })
-                }
-                placeholder="Cosa portare, come vestirsi, dove trovarsi, indicazioni pratiche..."
-                rows={3}
-              />
-              <p className="text-xs text-muted-foreground">
-                Queste informazioni saranno visibili ai partecipanti e incluse nell'email di promemoria
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="association_id">Associazione</Label>
-                <Select
-                  value={formData.association_id}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, association_id: value })
-                  }
-                >
-                  <SelectTrigger className="bg-background">
-                    <SelectValue placeholder="Seleziona..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover">
-                    {associations.map((assoc) => (
-                      <SelectItem key={assoc.id} value={assoc.id}>
-                        {assoc.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="category_id">Categoria</Label>
-                <Select
-                  value={formData.category_id}
-                  onValueChange={handleCategoryChange}
-                >
-                  <SelectTrigger className="bg-background">
-                    <SelectValue placeholder="Seleziona..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover">
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id} className="capitalize">
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="city_id">Città</Label>
-                <Select
-                  value={formData.city_id}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, city_id: value })
-                  }
-                >
-                  <SelectTrigger className="bg-background">
-                    <SelectValue placeholder="Seleziona..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover">
-                    {cities.map((city) => (
-                      <SelectItem key={city.id} value={city.id}>
-                        {city.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="address">Indirizzo</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) =>
-                    setFormData({ ...formData, address: e.target.value })
-                  }
-                  placeholder="Via..."
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Immagine di Copertina</Label>
-              <LogoUpload
-                currentLogoUrl={formData.image_url}
-                onLogoChange={(url) => setFormData({ ...formData, image_url: url || "" })}
-                entityId={selectedExperience?.id}
-                bucket="experience-images"
-                label="Carica immagine"
-                aspectRatio="wide"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Stato</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, status: value })
-                }
-              >
-                <SelectTrigger className="bg-background">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-popover">
-                  {STATUS_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="location_type">Tipo location</Label>
-              <Select
-                value={formData.location_type}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, location_type: value })
-                }
-              >
-                <SelectTrigger className="bg-background">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-popover">
-                  <SelectItem value="indoor">Indoor</SelectItem>
-                  <SelectItem value="outdoor">Outdoor</SelectItem>
-                  <SelectItem value="both">Entrambi</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Tag Secondari (opzionali)</Label>
-              <p className="text-xs text-muted-foreground mb-2">
-                Aggiungi tag per migliorare la ricerca delle esperienze
-              </p>
-              <div className="flex flex-wrap gap-2 p-3 border border-border rounded-lg">
-                {AVAILABLE_TAGS.map((tag) => {
-                  const isSelected = formData.secondary_tags.includes(tag);
-                  return (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => handleTagToggle(tag)}
-                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                        isSelected
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted hover:bg-muted/80 text-foreground"
-                      }`}
-                    >
-                      {isSelected && <X className="h-3 w-3" />}
-                      {!isSelected && <Tag className="h-3 w-3" />}
-                      {tag}
-                    </button>
-                  );
-                })}
-              </div>
-              {formData.secondary_tags.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {formData.secondary_tags.length} tag selezionati
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>SDGs (Obiettivi di Sviluppo Sostenibile)</Label>
-              {suggestedSdgs.length > 0 && (
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 border border-border mb-2">
-                  <Lightbulb className="h-4 w-4 text-primary shrink-0" />
-                  <p className="text-xs text-muted-foreground">
-                    Suggeriti per questa categoria:{" "}
-                    {suggestedSdgs.map((code) => {
-                      const sdg = allSDGs.find((s) => s.code === code);
-                      return sdg ? `${sdg.icon} ${sdg.name}` : code;
-                    }).join(", ")}
-                  </p>
-                </div>
-              )}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 border border-border rounded-lg max-h-48 overflow-y-auto">
-                {allSDGs.map((sdg) => (
-                  <div key={sdg.code} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={sdg.code}
-                      checked={formData.sdgs.includes(sdg.code)}
-                      onCheckedChange={() => handleSDGToggle(sdg.code)}
-                    />
-                    <label
-                      htmlFor={sdg.code}
-                      className={`text-xs cursor-pointer flex items-center gap-1 ${
-                        suggestedSdgs.includes(sdg.code) ? "text-primary font-medium" : ""
-                      }`}
-                    >
-                      <span>{sdg.icon}</span>
-                      <span className="truncate">{sdg.name}</span>
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Annulla
-            </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Salvataggio..." : "Salva"}
-            </Button>
-          </DialogFooter>
+          {dialogOpen && (
+            <SuperAdminExperienceFormBody
+              key={selectedExperience?.id ?? "new"}
+              experience={selectedExperience}
+              onCancel={() => setDialogOpen(false)}
+              onSaved={() => {
+                setDialogOpen(false);
+                fetchData();
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
+
 
       {/* Delete Confirmation */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -1159,5 +773,130 @@ export default function ExperiencesPage() {
         </DialogContent>
       </Dialog>
     </SuperAdminLayout>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sub-component: form body del dialog super-admin
+// ---------------------------------------------------------------------------
+
+interface SuperAdminExperienceFormBodyProps {
+  experience: Experience | null;
+  onCancel: () => void;
+  onSaved: () => void;
+}
+
+function SuperAdminExperienceFormBody({
+  experience,
+  onCancel,
+  onSaved,
+}: SuperAdminExperienceFormBodyProps) {
+  const { toast } = useToast();
+  const [saving, setSaving] = useState(false);
+  // Status non vive nel form: è metadata di pubblicazione, lo gestiamo
+  // in state locale del wrapper.
+  const [status, setStatus] = useState<string>(experience?.status ?? "draft");
+
+  const form = useForm<SuperAdminExperienceValues>({
+    resolver: zodResolver(superAdminExperienceSchema),
+    defaultValues: {
+      title: experience?.title ?? "",
+      short_description: experience?.short_description ?? "",
+      description: experience?.description ?? "",
+      category_id: experience?.category_id ?? "",
+      city_id: experience?.city_id ?? "",
+      address: experience?.address ?? "",
+      default_hours: experience?.default_hours ?? 3,
+      participant_info: experience?.participant_info ?? "",
+      image_url: experience?.image_url ?? "",
+      association_id: experience?.association_id ?? "",
+      sdgs: experience?.sdgs ?? [],
+      secondary_tags: experience?.secondary_tags ?? [],
+      location_type:
+        (experience?.location_type as "indoor" | "outdoor" | "both" | undefined) ??
+        "both",
+    },
+    mode: "onBlur",
+  });
+
+  const handleSubmit = form.handleSubmit(async (values) => {
+    setSaving(true);
+    try {
+      const payload = {
+        title: values.title.trim(),
+        short_description: values.short_description?.trim() || null,
+        description: values.description.trim() || null,
+        image_url: values.image_url || null,
+        association_id: values.association_id || null,
+        city_id: values.city_id || null,
+        category_id: values.category_id || null,
+        address: values.address?.trim() || null,
+        status,
+        sdgs: values.sdgs && values.sdgs.length > 0 ? values.sdgs : null,
+        participant_info: values.participant_info?.trim() || null,
+        secondary_tags:
+          values.secondary_tags && values.secondary_tags.length > 0
+            ? values.secondary_tags
+            : null,
+        location_type: values.location_type,
+        default_hours: values.default_hours,
+      };
+
+      if (experience) {
+        const { error } = await supabase
+          .from("experiences")
+          .update(payload)
+          .eq("id", experience.id);
+        if (error) throw error;
+        toast({ title: "Successo", description: "Esperienza aggiornata" });
+      } else {
+        const { error } = await supabase.from("experiences").insert(payload);
+        if (error) throw error;
+        toast({ title: "Successo", description: "Esperienza creata" });
+      }
+
+      onSaved();
+    } catch (error: any) {
+      devLog.error("Error saving experience:", error);
+      toast({
+        variant: "destructive",
+        title: "Errore",
+        description: error.message || "Impossibile salvare l'esperienza",
+      });
+    } finally {
+      setSaving(false);
+    }
+  });
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <ExperienceFormFields mode="super_admin" form={form} />
+
+      {/* Status (metadata di pubblicazione) */}
+      <div className="space-y-1.5">
+        <Label>Stato</Label>
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="bg-background">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-popover z-[200]">
+            {STATUS_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
+          Annulla
+        </Button>
+        <Button type="submit" disabled={saving}>
+          {saving ? "Salvataggio..." : "Salva"}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }
