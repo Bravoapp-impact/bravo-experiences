@@ -688,15 +688,6 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
                             {format(new Date(exp.next_date), "d MMM", { locale: it })}
                           </span>
                         )}
-                        {exp.max_participants && (
-                          <>
-                            {exp.next_date && <span className="text-border">·</span>}
-                            <span className="flex items-center gap-0.5">
-                              <Users className="h-2.5 w-2.5" />
-                              {exp.max_participants}
-                            </span>
-                          </>
-                        )}
                       </div>
                     </div>
                   </div>
