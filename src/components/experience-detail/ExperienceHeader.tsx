@@ -15,6 +15,7 @@ interface ExperienceHeaderProps {
   avgRating: number | null;
   reviewCount: number;
   description?: string | null;
+  shortDescription?: string | null;
   locationType?: string | null;
 }
 
@@ -26,18 +27,21 @@ export function ExperienceHeader({
   avgRating,
   reviewCount,
   description,
+  shortDescription,
   locationType,
 }: ExperienceHeaderProps) {
   const metaItems: string[] = [];
   if (categoryName) metaItems.push(categoryName);
   if (cityName) metaItems.push(cityName);
 
-  // Truncate description to ~2-3 lines
-  const shortDescription = description
-    ? description.length > 180
-      ? description.slice(0, 180).trimEnd() + "…"
-      : description
-    : null;
+  // Prefer explicit short_description; fallback to truncated description.
+  const displayDescription = shortDescription?.trim()
+    ? shortDescription
+    : description
+      ? description.length > 180
+        ? description.slice(0, 180).trimEnd() + "…"
+        : description
+      : null;
 
   return (
     <div className="space-y-3 lg:flex lg:flex-col lg:justify-center">
@@ -45,9 +49,9 @@ export function ExperienceHeader({
         {title}
       </h1>
 
-      {shortDescription && (
+      {displayDescription && (
         <p className="text-sm lg:text-base text-muted-foreground leading-relaxed">
-          {shortDescription}
+          {displayDescription}
         </p>
       )}
 
