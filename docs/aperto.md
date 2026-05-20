@@ -32,11 +32,15 @@ L'ordine all'interno di ogni sezione è per urgenza decrescente: cosa sta sopra 
 
 Cose che sappiamo essere imperfette o incomplete, ma che non bloccano lo sprint corrente. Ordinate per urgenza: in alto quello che è già una frizione reale, in basso quello che diventerà un problema solo in futuro.
 
+**Galleria HR: caricamento pagina lento/instabile.** La pagina `/hr/galleria` si carica male — tempi lunghi e/o stato intermedio confuso. Da profilare (probabili N+1 su signed URL e/o moderazione, immagini non lazy-loaded, fetch non paginato). Frizione reale percepita dall'HR.
+
+**Galleria HR: upload e filtri da rifinire.** Upload diretto HR funzionante ma migliorabile (drag-and-drop avanzato, batch più grandi, retry parziali, naming intelligente, edit metadata in-line). Il **filtro per esperienza** è oggi poco usabile e va ripensato (selezione multipla, ricerca rapida, raggruppamento per associazione). Mancano filtro per associazione, per uploader, per stato (`hidden` vs `approved`), per "featured", e ricerca testuale su caption.
+
+**Pagina "ETS suggeriti" HR: tabella e storico da rifinire.** La tabella attuale (`HRSuggestionsPage`) funziona ma è da migliorare: gestione dello **storico/archiviati** poco evidente (oggi gli archiviati restano mescolati nella stessa tabella), manca un tab/segmento dedicato, manca ordinamento per colonna e densità configurabile. Frizione reale appena arriveranno più di una manciata di suggerimenti per company.
+
 **Galleria: controparte super-admin assente.** La galleria HR è operativa (moderazione, bulk actions, upload diretto), ma manca una vista super-admin per supervisionare cross-company (audit, moderazione cross-tenant, gestione storage). Da aprire prima di scalare oltre una manciata di aziende con foto attive.
 
-**Galleria dipendente: visibilità parziale.** Oggi il dipendente vede solo le foto che ha caricato lui. La galleria aziendale completa — foto approvate dall'HR di tutta la company — non gli è ancora esposta. Da decidere dove e come mostrarla (tab dedicato, pagina dedicata, sezione in `/app/impact`).
-
-**Galleria HR: upload e filtri da rifinire.** Upload diretto HR funzionante ma migliorabile (drag-and-drop avanzato, batch più grandi, retry parziali, naming intelligente, edit metadata in-line). Filtri attuali (esperienza, range date) limitati: mancano filtro per associazione, per uploader, per stato (`hidden` vs `approved`), per "featured", e ricerca testuale su caption.
+**Galleria dipendente: vista aggregata mancante.** Le foto della galleria aziendale sono ora visibili al dipendente nel dettaglio della singola esperienza (sezione "Foto delle esperienze passate"). Resta da decidere se e dove esporre una vista aggregata cross-esperienza della galleria aziendale (tab dedicato, pagina dedicata, sezione in `/app/impact`).
 
 **Audit di sicurezza RLS/SECURITY DEFINER.** Lovable ha prodotto un inventario di punti deboli durante l'hardening dello sprint TB preventivi. Da rivedere e classificare per priorità in uno sprint dedicato.
 
