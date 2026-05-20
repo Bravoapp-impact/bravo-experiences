@@ -269,7 +269,6 @@ export default function AssociationExperiencesPage() {
         category_id: exp.category_id,
         sdgs: exp.sdgs,
         participant_info: exp.participant_info,
-        max_participants: exp.max_participants,
         association_id: profile.association_id,
         association_name: exp.association_name,
         type: exp.type || "volunteering",
