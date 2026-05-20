@@ -262,7 +262,7 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
   const fetchExperiences = async () => {
     const { data, error } = await supabase
       .from("experiences")
-      .select("id, title, description, image_url, city, address, category, max_participants, experience_dates(id, start_datetime)")
+      .select("id, title, description, image_url, city, address, category, experience_dates(id, start_datetime)")
       .eq("association_id", associationId)
       .eq("status", "published")
       .order("created_at", { ascending: false });
@@ -283,7 +283,6 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
         address: e.address,
         category: e.category,
         next_date: futureDates[0]?.start_datetime || null,
-        max_participants: e.max_participants,
       };
     });
     mapped.sort((a, b) => {
