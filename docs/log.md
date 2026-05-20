@@ -43,6 +43,36 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-20 — Migrazione form ETS al componente `ExperienceFormFields` unificato — Passo 2 di 3
+
+**Contesto.** Step 1 ha creato il componente unificato `ExperienceFormFields` (vedi entry sotto). Questo step migra il form ETS reale (`src/components/association/ExperienceForm.tsx`) a wrappare quel componente, e pulisce tutti i lettori frontend di `experiences.max_participants` (che ora vive solo su `experience_dates`).
+
+**Cosa cambia.**
+- `ExperienceForm.tsx` riscritto da zero come wrapper sottile: istanzia `useForm` con `experienceSchema` + `zodResolver`, delega i campi a `<ExperienceFormFields mode="association" form={form} />`, gestisce solo submit + reset + bottone footer. Rimosso tutto il vecchio `useState` per singoli campi, validation custom, gestione upload immagine fai-da-te.
+- `CreateExperienceDialog.tsx` aggiornato per ricevere il nuovo shape `ExperienceFormData` (snake_case), risolve i nomi legacy `category`/`city` con lookup-by-id su categories/cities, **non scrive più `max_participants`** né in insert né in update, scrive ora `short_description` e `default_hours`.
+- `AssociationExperiencesPage.tsx`: `handleDuplicate` non copia più `max_participants`; rimosso campo dall'interfaccia `Experience` locale.
+- `AssociationExperienceDetail.tsx`: rimosso `max_participants` da `ExperienceWithStatus` e dal payload passato a `CreateExperienceDialog`; aggiunto `short_description`. A `ManageDatesDialog` ora viene passato `defaultMaxParticipants={null}` (il dialog usa `|| 10` come fallback).
+- `AssociationPublicProfile.tsx`: rimosso `max_participants` da query, mapping, interfaccia `ExperienceData` e card; rimosso l'icona `Users` (non più usata).
+
+**Nuovi campi esposti all'ETS.** `short_description` (max 150) e `default_hours` (1–24, intero), entrambi mancanti nel vecchio form.
+
+**Decisione su `experiences.max_participants`.** Lo schema DB resta invariato. La colonna verrà droppata con una migration dedicata **dopo** lo Step 3 (migrazione del dialog super-admin), una volta verificato in produzione che nessuno la legga né la scriva più. Voce aggiunta in `docs/aperto.md` → "Debito tecnico noto".
+
+**Esplicitamente fuori scope.** Non toccato il dialog inline super-admin (`ExperiencesPage.tsx`) — è lo Step 3. Non toccato `experience_dates.max_participants` né i suoi lettori (`ManageDatesDialog`, `HRCalendarPage`, `ExperienceCardRich`, calendari): è un altro campo, su altra tabella, e resta.
+
+**File toccati.**
+- `src/components/association/ExperienceForm.tsx` (riscritto)
+- `src/components/association/CreateExperienceDialog.tsx`
+- `src/pages/association/AssociationExperiencesPage.tsx`
+- `src/pages/association/AssociationExperienceDetail.tsx`
+- `src/components/association/AssociationPublicProfile.tsx`
+- `docs/log.md`, `docs/aperto.md`
+
+**Verifica.** Build TypeScript pulita. Smoke test manuale ETS: creare nuova esperienza, modificarne una esistente, verificare salvataggio di `short_description` e `default_hours`, verificare che la card del profilo pubblico ETS non mostri più il numero max partecipanti.
+
+---
+
+
 ### 2026-05-20 — Componente unificato `ExperienceFormFields` (step 1/3)
 
 **Contesto.** Oggi i campi di un'esperienza di volontariato vivono duplicati in due form divergenti: `src/components/association/ExperienceForm.tsx` (ETS, ha `max_participants` e upload immagine fai-da-te) e il dialog inline in `src/pages/super-admin/ExperiencesPage.tsx` (super-admin, ha `sdgs`, `secondary_tags`, `location_type`, `association_id`). Inoltre la colonna `experiences.short_description` esiste in DB ma nessuno dei due form la espone. Ogni volta che si aggiunge un campo c'è il rischio di toccare un form e dimenticare l'altro.

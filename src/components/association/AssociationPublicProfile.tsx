@@ -6,7 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow, format } from "date-fns";
 import { it } from "date-fns/locale";
 import {
-  MapPin, Globe, Mail, Phone, User, Users, Pencil, Star,
+  MapPin, Globe, Mail, Phone, User, Pencil, Star,
   CheckCircle, Camera, X, Check, ArrowRight,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -56,7 +56,6 @@ interface ExperienceData {
   address: string | null;
   category: string | null;
   next_date: string | null;
-  max_participants: number | null;
 }
 
 // --- Star Rating ---
@@ -263,7 +262,7 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
   const fetchExperiences = async () => {
     const { data, error } = await supabase
       .from("experiences")
-      .select("id, title, description, image_url, city, address, category, max_participants, experience_dates(id, start_datetime)")
+      .select("id, title, description, image_url, city, address, category, experience_dates(id, start_datetime)")
       .eq("association_id", associationId)
       .eq("status", "published")
       .order("created_at", { ascending: false });
@@ -284,7 +283,6 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
         address: e.address,
         category: e.category,
         next_date: futureDates[0]?.start_datetime || null,
-        max_participants: e.max_participants,
       };
     });
     mapped.sort((a, b) => {
@@ -689,15 +687,6 @@ export default function AssociationPublicProfile({ associationId, canEdit }: Ass
                           <span>
                             {format(new Date(exp.next_date), "d MMM", { locale: it })}
                           </span>
-                        )}
-                        {exp.max_participants && (
-                          <>
-                            {exp.next_date && <span className="text-border">·</span>}
-                            <span className="flex items-center gap-0.5">
-                              <Users className="h-2.5 w-2.5" />
-                              {exp.max_participants}
-                            </span>
-                          </>
                         )}
                       </div>
                     </div>

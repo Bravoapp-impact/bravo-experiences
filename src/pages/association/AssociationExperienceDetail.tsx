@@ -23,7 +23,7 @@ import { ManageDatesDialog } from "@/components/association/ManageDatesDialog";
 interface ExperienceWithStatus extends Experience {
   status: string;
   category_id?: string | null;
-  max_participants?: number | null;
+  short_description?: string | null;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -111,7 +111,7 @@ export default function AssociationExperienceDetail() {
         default_hours: data.default_hours,
         secondary_tags: data.secondary_tags ?? null,
         location_type: data.location_type ?? null,
-        max_participants: data.max_participants ?? null,
+        short_description: (data as any).short_description ?? null,
         status: data.status,
       });
     } catch (err) {
@@ -356,12 +356,12 @@ export default function AssociationExperienceDetail() {
             ? {
                 id: experience.id,
                 title: experience.title,
+                short_description: experience.short_description ?? null,
                 description: experience.description,
                 category_id: experience.category_id ?? null,
                 city_id: experience.city_id ?? null,
                 address: experience.address,
                 default_hours: experience.default_hours ?? null,
-                max_participants: experience.max_participants ?? null,
                 participant_info: experience.participant_info ?? null,
                 image_url: experience.image_url,
               }
@@ -380,7 +380,7 @@ export default function AssociationExperienceDetail() {
           }}
           experienceId={experience.id}
           experienceTitle={experience.title}
-          defaultMaxParticipants={experience.max_participants ?? null}
+          defaultMaxParticipants={null}
         />
       )}
     </AssociationLayout>
