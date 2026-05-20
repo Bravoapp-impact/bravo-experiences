@@ -43,6 +43,20 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-20 — Aggiunta colonna `experiences.short_description`
+
+**Contesto.** Negli Step 2 e 3 del refactor `ExperienceFormFields` entrambi i wrapper (ETS e super-admin) hanno iniziato a scrivere `short_description` nel payload, ma la colonna non esisteva in DB. Risultato: save dal dialog super-admin falliva con `Could not find the 'short_description' column of 'experiences' in the schema cache`.
+
+**Cosa cambia.** Migration `ALTER TABLE public.experiences ADD COLUMN IF NOT EXISTS short_description TEXT;`. Colonna nullable, nessun default, coerente con il campo opzionale (max 150 char) dello schema Zod. Nessuna modifica frontend: il codice già legge/scrive il campo.
+
+**Esplicitamente fuori scope.** Nessuna modifica a RLS, policy, trigger, altre colonne. Il debito su `max_participants` resta aperto in `docs/aperto.md`.
+
+**File toccati.** Migration DB + `docs/log.md`, `docs/aperto.md`.
+
+**Verifica.** Save da dialog super-admin e da form ETS torna a funzionare, valore persistito correttamente.
+
+---
+
 ### 2026-05-20 — Migrazione dialog super-admin al componente `ExperienceFormFields` unificato — Passo 3 di 3
 
 **Contesto.** Chiusura del refactor in 3 passi: Step 1 ha creato il componente unificato, Step 2 ha migrato il form ETS, questo step migra il dialog inline del super-admin. Risultato: i campi di un'esperienza vivono **in un solo posto** (`ExperienceFormFields`), con due wrapper sottili (ETS / super-admin). Niente più drift fra i due form.
