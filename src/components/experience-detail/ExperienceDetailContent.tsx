@@ -91,6 +91,7 @@ export function ExperienceDetailContent({
             avgRating={avgRating}
             reviewCount={reviewCount}
             description={experience.description}
+            shortDescription={experience.short_description ?? null}
             locationType={experience.location_type ?? null}
           />
         </div>
