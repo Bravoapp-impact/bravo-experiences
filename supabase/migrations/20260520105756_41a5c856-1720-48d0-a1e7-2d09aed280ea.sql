@@ -1,0 +1,1 @@
+ALTER TABLE public.experiences ADD COLUMN IF NOT EXISTS short_description TEXT;
