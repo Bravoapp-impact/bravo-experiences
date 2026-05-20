@@ -42,7 +42,6 @@ interface Experience {
   category_id: string | null;
   city_id: string | null;
   participant_info: string | null;
-  max_participants: number | null;
   association_id: string | null;
   association_name: string | null;
   type: string;
