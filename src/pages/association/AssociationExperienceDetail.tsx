@@ -23,7 +23,7 @@ import { ManageDatesDialog } from "@/components/association/ManageDatesDialog";
 interface ExperienceWithStatus extends Experience {
   status: string;
   category_id?: string | null;
-  max_participants?: number | null;
+  short_description?: string | null;
 }
 
 const STATUS_LABEL: Record<string, string> = {
