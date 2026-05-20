@@ -32,6 +32,8 @@ L'ordine all'interno di ogni sezione è per urgenza decrescente: cosa sta sopra 
 
 Cose che sappiamo essere imperfette o incomplete, ma che non bloccano lo sprint corrente. Ordinate per urgenza: in alto quello che è già una frizione reale, in basso quello che diventerà un problema solo in futuro.
 
+**Drop `experiences.max_participants`.** Il campo è rimasto in DB ma non è più letto né scritto da nessun frontend dopo la migrazione del form ETS (passo 2) e — quando arriverà — del dialog super-admin (passo 3). Da droppare con migration dedicata una volta completato anche lo step 3 e verificato in produzione che nulla la legga più.
+
 **Galleria HR: caricamento pagina lento/instabile.** La pagina `/hr/galleria` si carica male — tempi lunghi e/o stato intermedio confuso. Da profilare (probabili N+1 su signed URL e/o moderazione, immagini non lazy-loaded, fetch non paginato). Frizione reale percepita dall'HR.
 
 **Galleria HR: upload e filtri da rifinire.** Upload diretto HR funzionante ma migliorabile (drag-and-drop avanzato, batch più grandi, retry parziali, naming intelligente, edit metadata in-line). Il **filtro per esperienza** è oggi poco usabile e va ripensato (selezione multipla, ricerca rapida, raggruppamento per associazione). Mancano filtro per associazione, per uploader, per stato (`hidden` vs `approved`), per "featured", e ricerca testuale su caption.
