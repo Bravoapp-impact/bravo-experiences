@@ -696,6 +696,7 @@ export type Database = {
           price_per_participant: number | null
           sdgs: string[] | null
           secondary_tags: string[] | null
+          short_description: string | null
           status: string
           title: string
           type: string
@@ -721,6 +722,7 @@ export type Database = {
           price_per_participant?: number | null
           sdgs?: string[] | null
           secondary_tags?: string[] | null
+          short_description?: string | null
           status?: string
           title: string
           type?: string
@@ -746,6 +748,7 @@ export type Database = {
           price_per_participant?: number | null
           sdgs?: string[] | null
           secondary_tags?: string[] | null
+          short_description?: string | null
           status?: string
           title?: string
           type?: string

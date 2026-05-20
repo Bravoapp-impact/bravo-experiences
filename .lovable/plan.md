@@ -1,89 +1,23 @@
-## Cosa registrare
+## Cosa cambia
 
-Verificato il `log.md`: le entry 2026-05-19 coprono già **ICS in conferma**, **Suggerimenti ETS** (pubblico + sezione HR) e **Notifica responsabile** (backend + UI). L'unica feature non loggata è la #1 (foto esperienze passate lato dipendente). Il `Debito tecnico noto` in `aperto.md` ha già una voce "Galleria dipendente: visibilità parziale" parzialmente superata da questa feature, e una "Galleria HR: upload e filtri da rifinire" che va arricchita.
+Aggiungere la colonna `short_description TEXT` alla tabella `public.experiences`. Entrambi i form (ETS e super-admin) già la inviano nel payload, ma la colonna non esiste a DB → Supabase rifiuta l'insert/update con "Could not find the 'short_description' column".
 
-## Modifiche proposte
+## Perché
 
-### 1. `docs/log.md` — nuova entry in cima a "Entries"
+Negli Step 2 e 3 del refactor abbiamo introdotto `short_description` nello schema Zod unificato e nei payload dei due wrapper, ma abbiamo dimenticato la migration corrispondente (era già annotata come debito in `docs/aperto.md`). Questo prompt chiude il debito.
 
-Inserire **prima** dell'entry `2026-05-20` (l'unica più recente), con data `2026-05-19`:
+## Cosa NON deve cambiare
 
-```markdown
-### 2026-05-19 — Foto esperienze passate nel dettaglio esperienza dipendente
+- Nessuna modifica a RLS, policy, trigger o altre colonne di `experiences`.
+- Nessuna modifica al frontend: il codice già legge/scrive `short_description`.
+- Nessuna modifica a `max_participants` (debito separato, da chiudere dopo).
 
-**Contesto.** Le foto della galleria aziendale (caricate/approvate dall'HR) non
-erano esposte al dipendente in nessuna parte dell'app: visibilità parziale nota
-in `aperto.md`. Mostrarle dentro la scheda esperienza è il punto naturale —
-crea social proof prima della prenotazione e usa infrastruttura già pronta
-(`gallery_photos`, signed URLs, lightbox, image dimensions hook).
+## Passi
 
-**Cosa cambia.**
-- Nuovo componente `ExperiencePhotosSection` nel dettaglio esperienza employee:
-  album in righe (`react-photo-album`) + lightbox condivisa con la galleria HR.
-- Nuovo hook `useExperiencePhotosForEmployee(experienceId, companyId)` che
-  carica solo foto `status=approved` della company corrente per l'esperienza.
-- Sezione che si auto-nasconde quando non ci sono foto approvate (esperienze
-  attivate per la prima volta non mostrano stato vuoto).
-- Riuso di `useSignedPhotoUrls` e `useImageDimensions` già esistenti.
+1. Migration: `ALTER TABLE public.experiences ADD COLUMN IF NOT EXISTS short_description TEXT;` (nullable, nessun default — coerente con campo opzionale a max 150 char lato Zod).
+2. Aggiornare `docs/log.md` con entry datata 2026-05-20 ("aggiunta colonna `experiences.short_description` per chiudere Step 2/3 del refactor form").
+3. Aggiornare `docs/aperto.md` rimuovendo la voce di debito su `short_description` (lasciando intatto il debito su `max_participants`).
 
-**Impatto.** `UI` · `Dettaglio esperienza employee`
+## Verifica
 
-**File / aree toccate.**
-- `src/components/experience-detail/ExperiencePhotosSection.tsx` (nuovo)
-- `src/hooks/queries/gallery/useExperiencePhotosForEmployee.ts` (nuovo)
-- `src/components/experience-detail/ExperienceDetailContent.tsx` (inserimento sezione)
-
-**Follow-up.** Resta aperta la vista galleria aziendale completa (tutte le
-esperienze in un'unica pagina) — vedi `aperto.md`.
-```
-
-### 2. `docs/aperto.md` — sezione "Debito tecnico noto"
-
-**a)** Aggiornare la voce esistente **"Galleria dipendente: visibilità parziale"** per riflettere che le foto nel dettaglio esperienza sono ora coperte e resta aperta solo la vista aggregata:
-
-```markdown
-**Galleria dipendente: vista aggregata mancante.** Le foto della galleria
-aziendale sono ora visibili al dipendente nel dettaglio della singola
-esperienza (sezione "Foto delle esperienze passate"). Resta da decidere se e
-dove esporre una vista aggregata cross-esperienza della galleria aziendale
-(tab dedicato, pagina dedicata, sezione in `/app/impact`).
-```
-
-**b)** Aggiungere **tre nuove voci** in cima alla sezione (sono frizioni attuali, alta urgenza):
-
-```markdown
-**Galleria HR: caricamento pagina lento/instabile.** La pagina `/hr/galleria`
-si carica male — tempi lunghi e/o stato intermedio confuso. Da profilare
-(probabili N+1 su signed URL e/o moderazione, immagini non lazy-loaded,
-fetch non paginato). Frizione reale percepita dall'HR.
-
-**Galleria HR: upload e filtri da rifinire.** Upload diretto HR funzionante
-ma migliorabile (drag-and-drop avanzato, batch più grandi, retry parziali,
-naming intelligente, edit metadata in-line). Il **filtro per esperienza** è
-oggi poco usabile e va ripensato (selezione multipla, ricerca rapida,
-raggruppamento per associazione). Mancano filtro per associazione,
-per uploader, per stato (`hidden` vs `approved`), per "featured", e ricerca
-testuale su caption. *Sostituisce la voce precedente con stesso titolo.*
-
-**Pagina "ETS suggeriti" HR: tabella e storico da rifinire.** La tabella
-attuale (`HRSuggestionsPage`) funziona ma è da migliorare: gestione
-dello **storico/archiviati** poco evidente (oggi gli archiviati restano
-mescolati nella stessa tabella), manca un tab/segmento dedicato, manca
-ordinamento per colonna e densità configurabile. Frizione reale appena
-arriveranno più di una manciata di suggerimenti per company.
-```
-
-(La vecchia voce "Galleria HR: upload e filtri da rifinire" viene sostituita dalla nuova, più specifica.)
-
-### 3. Nessuna modifica a `architettura.md`
-
-La feature dipendente non introduce nuove tabelle, RLS, RPC o edge function — riusa l'infrastruttura `gallery_photos` già documentata. Nessun update necessario.
-
-## Cosa NON cambia
-
-- Nessuna modifica al codice applicativo
-- Nessuna modifica a schema DB, RLS, edge function
-- Le altre entry del log restano invariate
-- Le altre voci di `aperto.md` restano invariate
-
-Confermi e procedo con le scritture?
+Dopo la migration, riprovare il salvataggio dal dialog super-admin: l'errore "Could not find the 'short_description' column" deve sparire. Verificare anche dal form ETS che il valore venga persistito (rileggendo l'esperienza modificata).
