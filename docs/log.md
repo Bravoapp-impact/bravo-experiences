@@ -65,6 +65,27 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 
 
+### 2026-05-19 — Foto esperienze passate nel dettaglio esperienza dipendente
+
+**Contesto.** Le foto della galleria aziendale (caricate/approvate dall'HR) non erano esposte al dipendente in nessuna parte dell'app: visibilità parziale nota in `aperto.md`. Mostrarle dentro la scheda esperienza è il punto naturale — crea social proof prima della prenotazione e usa infrastruttura già pronta (`gallery_photos`, signed URLs, lightbox, image dimensions hook).
+
+**Cosa cambia.**
+- Nuovo componente `ExperiencePhotosSection` nel dettaglio esperienza employee: album in righe (`react-photo-album`) + lightbox condivisa con la galleria HR.
+- Nuovo hook `useExperiencePhotosForEmployee(experienceId, companyId)` che carica solo foto `status=approved` della company corrente per l'esperienza.
+- Sezione che si auto-nasconde quando non ci sono foto approvate (esperienze attivate per la prima volta non mostrano stato vuoto).
+- Riuso di `useSignedPhotoUrls` e `useImageDimensions` già esistenti.
+
+**Impatto.** `UI` · `Dettaglio esperienza employee`
+
+**File / aree toccate.**
+- `src/components/experience-detail/ExperiencePhotosSection.tsx` (nuovo)
+- `src/hooks/queries/gallery/useExperiencePhotosForEmployee.ts` (nuovo)
+- `src/components/experience-detail/ExperienceDetailContent.tsx` (inserimento sezione)
+
+**Follow-up.** Resta aperta la vista galleria aziendale completa cross-esperienza — vedi `aperto.md`.
+
+---
+
 ### 2026-05-19 — Notifica responsabile via email — UI
 
 **Contesto.** Completata la feature backend del prompt precedente con i due punti di interazione UI: il dipendente popola `manager_email` nel proprio profilo, l'HR configura `manager_notification_advance_days` per tutta l'azienda dalle impostazioni di volontariato.
