@@ -43,6 +43,21 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-20 — Dettaglio volontariato: rimossa sezione "Caratteristiche" + mini-mappa embed in MeetingPlace
+
+**Cosa è cambiato**
+- `ExperienceDetailContent`: rimosso il blocco che renderizzava `<TagsSection tags={experience.secondary_tags} />` (con relativo `<Separator>`) e l'import di `TagsSection`. La sezione "Caratteristiche" non compare più nel dettaglio di un'esperienza di volontariato (dipendente / HR / ETS condividono lo stesso componente).
+- `MeetingPlace`: sotto al link "Apri in Google Maps" è stato aggiunto un `<iframe>` con `src=https://www.google.com/maps?q={indirizzo}&output=embed`, `loading="lazy"`, `title` accessibile, altezza fissa 260px, `rounded-xl` + `border`. L'iframe è renderizzato solo se `address` è presente.
+
+**Perché**
+I secondary_tags nel contesto volontariato sono decorativi e ridondanti rispetto alla descrizione. La mappa embeddata invece riduce frizione: il volontario vede immediatamente dove si svolge l'esperienza senza uscire dall'app. L'embed via URL non richiede API key.
+
+**Fuori scope**
+`TagsSection.tsx` NON è stato eliminato: resta usato da `TBFormatDetailContent.tsx`, dove i secondary_tags hanno funzione diversa (matching col brief del cliente B2B). `TBFormatDetailContent` non è stato toccato.
+
+---
+
+
 ### 2026-05-20 — `short_description` visibile nell'header + rimozione "Altre esperienze" dal dettaglio dipendente
 
 **Cosa è cambiato**
