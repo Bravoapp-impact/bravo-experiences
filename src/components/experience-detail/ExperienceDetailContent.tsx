@@ -6,7 +6,7 @@ import { HeroImage } from "./HeroImage";
 import { ExperienceHeader } from "./ExperienceHeader";
 import { WhatYouWillDo } from "./WhatYouWillDo";
 import { ParticipantInfo } from "./ParticipantInfo";
-import { TagsSection } from "./TagsSection";
+
 import { ReviewsSection } from "./ReviewsSection";
 import { MeetingPlace } from "./MeetingPlace";
 import { SdgSection } from "./SdgSection";
@@ -111,16 +111,6 @@ export function ExperienceDetailContent({
             </motion.div>
           )}
 
-          {experience.secondary_tags && experience.secondary_tags.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25 }}
-            >
-              <Separator className="my-8" />
-              <TagsSection tags={experience.secondary_tags} />
-            </motion.div>
-          )}
 
           {reviews.length > 0 && avgRating !== null && (
             <motion.div

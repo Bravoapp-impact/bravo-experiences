@@ -10,6 +10,7 @@ export function MeetingPlace({ address, cityName }: MeetingPlaceProps) {
   if (!fullAddress) return null;
 
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
+  const embedUrl = `https://www.google.com/maps?q=${encodeURIComponent(fullAddress)}&output=embed`;
 
   return (
     <section>
@@ -29,6 +30,17 @@ export function MeetingPlace({ address, cityName }: MeetingPlaceProps) {
           </a>
         </div>
       </div>
+      {address && (
+        <div className="mt-4 overflow-hidden rounded-xl border border-border">
+          <iframe
+            src={embedUrl}
+            title="Mappa del luogo di incontro"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            className="w-full h-[260px] block border-0"
+          />
+        </div>
+      )}
     </section>
   );
 }
