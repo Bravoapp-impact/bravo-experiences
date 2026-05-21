@@ -43,7 +43,7 @@ export default function Experiences() {
       ) : (
         <div className="space-y-8">
           <ExperienceSection
-            title="Esperienze disponibili"
+            title="Attività di volontariato vicino a te"
             experiences={experiences}
           />
         </div>
