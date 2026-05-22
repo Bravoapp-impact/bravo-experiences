@@ -10,9 +10,10 @@ import { PasswordStrengthInput } from "@/components/auth/PasswordStrengthInput";
 
 interface ChangePasswordFormProps {
   email: string;
+  onSuccess?: () => void;
 }
 
-export function ChangePasswordForm({ email }: ChangePasswordFormProps) {
+export function ChangePasswordForm({ email, onSuccess }: ChangePasswordFormProps) {
   const { toast } = useToast();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -75,6 +76,7 @@ export function ChangePasswordForm({ email }: ChangePasswordFormProps) {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      onSuccess?.();
     } catch {
       toast({
         variant: "destructive",
