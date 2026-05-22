@@ -23,19 +23,23 @@ export default function EmployeeSettingsIndex() {
             title="Informazioni personali"
             description="Nome, email, azienda"
             to="/app/impostazioni/personali"
+            iconColor="text-blue-500"
           />
           <SettingsListItem
             icon={Shield}
             title="Accesso e sicurezza"
             description="Password, autenticazione a due fattori"
             to="/app/impostazioni/sicurezza"
+            iconColor="text-green-500"
           />
           <SettingsListItem
             icon={Bell}
             title="Notifiche"
             description="Email del responsabile"
             to="/app/impostazioni/notifiche"
+            iconColor="text-orange-500"
           />
+
         </div>
       </div>
     </AppLayout>
