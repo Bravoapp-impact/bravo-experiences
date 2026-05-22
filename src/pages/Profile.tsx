@@ -1,19 +1,14 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LogOut, Building2, Mail, Clock } from "lucide-react";
+import { LogOut, Clock, Settings, ChevronRight } from "lucide-react";
 import { AppBootSkeleton } from "@/components/common/skeletons/AppBootSkeleton";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileAvatarUpload } from "@/components/profile/ProfileAvatarUpload";
-import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
-import { ManagerEmailCard } from "@/components/profile/ManagerEmailCard";
-import { EnrollMFA } from "@/components/auth/EnrollMFA";
-import { ChangePasswordCard } from "@/components/profile/ChangePasswordCard";
 import { useAuth } from "@/hooks/useAuth";
 import { useHourBudget } from "@/hooks/useHourBudget";
 
@@ -37,7 +32,6 @@ export default function Profile() {
     }
   }, [profile, loading, navigate]);
 
-  // Show loading while checking role or redirecting
   if (loading || (profile?.role && profile.role !== "employee")) {
     return <AppBootSkeleton role="employee" />;
   }
@@ -139,87 +133,26 @@ export default function Profile() {
           </motion.div>
         )}
 
-        {/* Edit Form */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          {profile?.id && (
-            <ProfileEditForm
-              profileId={profile.id}
-              initialFirstName={profile.first_name}
-              initialLastName={profile.last_name}
-              onSave={refreshProfile}
-            />
-          )}
-        </motion.div>
-
-        {/* Manager Email */}
+        {/* Settings link */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.22 }}
         >
-          {profile?.id && (
-            <ManagerEmailCard
-              profileId={profile.id}
-              initialManagerEmail={profile.manager_email}
-              onSave={refreshProfile}
-            />
-          )}
-        </motion.div>
-
-        {/* Info Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Informazioni account</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Mail className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-[13px] font-medium text-foreground">Email</p>
-                  <p className="text-[13px] text-muted-foreground">{profile?.email}</p>
+          <Link to="/app/impostazioni" className="block">
+            <Card className="hover:bg-muted/30 transition-colors">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted shrink-0">
+                  <Settings className="h-5 w-5 text-foreground" />
                 </div>
-              </div>
-              <Separator />
-              <div className="flex items-center gap-3">
-                <Building2 className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-[13px] font-medium text-foreground">Azienda</p>
-                  <p className="text-[13px] text-muted-foreground">
-                    {profile?.companies?.name || "Non associata"}
-                  </p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">Impostazioni</p>
+                  <p className="text-xs text-muted-foreground">Profilo, sicurezza, notifiche</p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Change Password */}
-        {profile?.email && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.27 }}
-          >
-            <ChangePasswordCard email={profile.email} />
-          </motion.div>
-        )}
-
-        {/* MFA Security */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <EnrollMFA />
+                <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+              </CardContent>
+            </Card>
+          </Link>
         </motion.div>
 
         {/* Logout */}

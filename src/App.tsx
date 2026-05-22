@@ -21,6 +21,10 @@ import MyBookings from "./pages/MyBookings";
 import Impact from "./pages/Impact";
 import Gallery from "./pages/Gallery";
 import Profile from "./pages/Profile";
+import EmployeeSettingsIndex from "./pages/EmployeeSettingsIndex";
+import EmployeeSettingsPersonali from "./pages/settings/EmployeeSettingsPersonali";
+import EmployeeSettingsSicurezza from "./pages/settings/EmployeeSettingsSicurezza";
+import EmployeeSettingsNotifiche from "./pages/settings/EmployeeSettingsNotifiche";
 import HRDashboard from "./pages/HRDashboard";
 import HRHomePage from "./pages/hr/HRHomePage";
 import HRExperiencesPage from "./pages/hr/HRExperiencesPage";
@@ -141,6 +145,38 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/app/impostazioni"
+              element={
+                <ProtectedRoute>
+                  <EmployeeSettingsIndex />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/app/impostazioni/personali"
+              element={
+                <ProtectedRoute>
+                  <EmployeeSettingsPersonali />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/app/impostazioni/sicurezza"
+              element={
+                <ProtectedRoute>
+                  <EmployeeSettingsSicurezza />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/app/impostazioni/notifiche"
+              element={
+                <ProtectedRoute>
+                  <EmployeeSettingsNotifiche />
                 </ProtectedRoute>
               }
             />

@@ -44,7 +44,7 @@ export default function EmployeeSettingsSicurezza() {
   return (
     <SettingsSubPageLayout title="Accesso e sicurezza">
       <SettingsField label="Password" value="••••••••">
-        {() => profile.email ? <ChangePasswordForm email={profile.email} /> : null}
+        {(close) => profile.email ? <ChangePasswordForm email={profile.email} onSuccess={close} /> : null}
       </SettingsField>
       <SettingsField label="Autenticazione a due fattori" value={mfaValue}>
         {() => <EnrollMFA />}
