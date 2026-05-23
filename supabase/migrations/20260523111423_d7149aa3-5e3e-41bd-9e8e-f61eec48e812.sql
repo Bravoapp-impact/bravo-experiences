@@ -1,0 +1,1 @@
+UPDATE companies SET manager_notification_advance_days=7 WHERE id='5a6cc444-8740-4964-b668-9c490c09c3e9';
