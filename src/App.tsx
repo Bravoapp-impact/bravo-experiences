@@ -18,6 +18,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Experiences from "./pages/Experiences";
 import ExperienceDetail from "./pages/ExperienceDetail";
 import MyBookings from "./pages/MyBookings";
+import CompletedExperiences from "./pages/CompletedExperiences";
 import Impact from "./pages/Impact";
 import Gallery from "./pages/Gallery";
 import Profile from "./pages/Profile";
@@ -124,6 +125,15 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/app/esperienze-completate"
+              element={
+                <ProtectedRoute>
+                  <CompletedExperiences />
+                </ProtectedRoute>
+              }
+            />
+
             <Route
               path="/app/impact"
               element={
