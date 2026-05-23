@@ -215,6 +215,7 @@ export default function CompletedExperiences() {
               index={i}
               onOpen={setSelectedBooking}
               onLeaveFeedback={setFeedbackBooking}
+              onUploadPhotos={setUploadDialogBooking}
             />
           ))}
         </div>
@@ -233,6 +234,16 @@ export default function CompletedExperiences() {
         onSubmitted={handleFeedbackSubmitted}
         booking={feedbackBooking as any}
       />
+
+      {uploadDialogBooking && (
+        <PhotoUploadDialog
+          open={!!uploadDialogBooking}
+          onOpenChange={(o) => !o && setUploadDialogBooking(null)}
+          experienceDateId={uploadDialogBooking.experience_dates.id}
+          experienceTitle={uploadDialogBooking.experience_dates.experiences.title}
+          eventDate={uploadDialogBooking.experience_dates.start_datetime}
+        />
+      )}
     </AppLayout>
   );
 }
