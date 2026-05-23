@@ -126,6 +126,15 @@ const App = () => (
               }
             />
             <Route
+              path="/app/esperienze-completate"
+              element={
+                <ProtectedRoute>
+                  <CompletedExperiences />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/app/impact"
               element={
                 <ProtectedRoute>
