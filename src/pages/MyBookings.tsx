@@ -1,17 +1,14 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, ChevronDown } from "lucide-react";
+import { motion } from "framer-motion";
+import { Calendar } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { BookingCard } from "@/components/bookings/BookingCard";
 import { BookingDetailModal } from "@/components/bookings/BookingDetailModal";
-import { FeedbackModal } from "@/components/bookings/FeedbackModal";
-import { PhotoUploadDialog } from "@/components/gallery/PhotoUploadDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isPast } from "date-fns";
-import { cn } from "@/lib/utils";
 
 interface Booking {
   id: string;
@@ -43,10 +40,6 @@ export default function MyBookings() {
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [historyExpanded, setHistoryExpanded] = useState(false);
-  const [reviewedBookingIds, setReviewedBookingIds] = useState<Set<string>>(new Set());
-  const [feedbackBooking, setFeedbackBooking] = useState<Booking | null>(null);
-  const [uploadDialogBooking, setUploadDialogBooking] = useState<Booking | null>(null);
 
   const fetchBookings = async () => {
     if (!user) return;
@@ -133,22 +126,8 @@ export default function MyBookings() {
     }
   };
 
-  const fetchReviews = async () => {
-    if (!user) return;
-    
-    const { data } = await supabase
-      .from("experience_reviews" as any)
-      .select("booking_id")
-      .returns<{ booking_id: string }[]>();
-
-    if (data) {
-      setReviewedBookingIds(new Set(data.map((r) => r.booking_id)));
-    }
-  };
-
   useEffect(() => {
     fetchBookings();
-    fetchReviews();
   }, [user]);
 
   const handleCancel = async (bookingId: string) => {
@@ -181,23 +160,10 @@ export default function MyBookings() {
     }
   };
 
-  const handleFeedbackSubmitted = () => {
-    setFeedbackBooking(null);
-    fetchReviews();
-  };
-
-  // Split bookings into future and past
+  // Only show future confirmed bookings
   const futureBookings = bookings.filter(
     (b) => !isPast(new Date(b.experience_dates.start_datetime)) && b.status === "confirmed"
   );
-  const pastBookings = bookings.filter(
-    (b) => isPast(new Date(b.experience_dates.start_datetime)) || ["cancelled", "completed", "no_show"].includes(b.status)
-  );
-
-  // Count past done bookings without reviews
-  const pendingFeedbackCount = pastBookings.filter(
-    (b) => ["confirmed", "completed"].includes(b.status) && !reviewedBookingIds.has(b.id)
-  ).length;
 
   return (
     <AppLayout>
@@ -208,10 +174,10 @@ export default function MyBookings() {
         className="mb-6"
       >
         <h1 className="text-xl font-bold text-foreground mb-0.5">
-          Le mie prenotazioni
+          Le mie esperienze
         </h1>
         <p className="text-[13px] text-muted-foreground">
-          Gestisci le tue esperienze di volontariato
+          Le tue prossime esperienze di volontariato confermate
         </p>
       </motion.div>
 
@@ -228,110 +194,44 @@ export default function MyBookings() {
             </div>
           ))}
         </div>
-      ) : bookings.length === 0 ? (
+      ) : futureBookings.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center py-12 bg-muted/30 rounded-2xl border border-border/50"
         >
           <Calendar className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-          <h3 className="text-base font-semibold mb-1">Nessuna prenotazione</h3>
+          <h3 className="text-base font-semibold mb-1">Nessuna prenotazione futura</h3>
           <p className="text-[13px] text-muted-foreground max-w-md mx-auto">
-            Non hai ancora prenotato nessuna esperienza. Esplora il catalogo!
+            Non hai esperienze confermate in programma. Esplora il catalogo e prenota la tua prossima attività!
           </p>
         </motion.div>
       ) : (
-        <div className="space-y-12">
-          {/* Future bookings */}
-          {futureBookings.length > 0 && (
-            <section>
-              <motion.h2
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="text-base font-semibold mb-4 flex items-center gap-2"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                Prossime esperienze
-                <span className="text-[13px] font-normal text-muted-foreground ml-1">
-                  ({futureBookings.length})
-                </span>
-              </motion.h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                {futureBookings.map((booking, index) => (
-                  <BookingCard
-                    key={booking.id}
-                    booking={booking}
-                    index={index}
-                    onCancel={handleCancel}
-                    onView={setSelectedBooking}
-                    isCancelling={cancellingId === booking.id}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Past bookings - Collapsible */}
-          {pastBookings.length > 0 && (
-            <section>
-              <button
-                onClick={() => setHistoryExpanded(!historyExpanded)}
-                className="flex items-center gap-2 py-2 group"
-              >
-                <motion.h2
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-[15px] font-medium text-muted-foreground"
-                >
-                  Storico
-                </motion.h2>
-                <ChevronDown 
-                  className={cn(
-                    "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                    historyExpanded && "rotate-180"
-                  )} 
-                />
-                <span className="text-sm text-muted-foreground">
-                  ({pastBookings.length})
-                </span>
-                {pendingFeedbackCount > 0 && (
-                  <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
-                    {pendingFeedbackCount}
-                  </span>
-                )}
-              </button>
-              
-              <AnimatePresence initial={false}>
-                {historyExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="space-y-3 pt-4">
-                      {pastBookings.map((booking, index) => (
-                        <BookingCard
-                          key={booking.id}
-                          booking={booking}
-                          index={index}
-                          isPast
-                          hasReview={reviewedBookingIds.has(booking.id)}
-                          onCancel={handleCancel}
-                          onView={setSelectedBooking}
-                          onFeedback={["confirmed", "completed"].includes(booking.status) ? setFeedbackBooking : undefined}
-                          onUploadPhoto={["confirmed", "completed"].includes(booking.status) ? setUploadDialogBooking : undefined}
-                        />
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </section>
-          )}
-        </div>
+        <section>
+          <motion.h2
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 1 }}
+            className="text-base font-semibold mb-4 flex items-center gap-2"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+            Prossime esperienze
+            <span className="text-[13px] font-normal text-muted-foreground ml-1">
+              ({futureBookings.length})
+            </span>
+          </motion.h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            {futureBookings.map((booking, index) => (
+              <BookingCard
+                key={booking.id}
+                booking={booking}
+                index={index}
+                onCancel={handleCancel}
+                onView={setSelectedBooking}
+                isCancelling={cancellingId === booking.id}
+              />
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Detail Modal */}
@@ -341,25 +241,6 @@ export default function MyBookings() {
         onCancel={handleCancel}
         isCancelling={!!cancellingId}
       />
-
-      {/* Feedback Modal */}
-      <FeedbackModal
-        open={!!feedbackBooking}
-        onClose={() => setFeedbackBooking(null)}
-        onSubmitted={handleFeedbackSubmitted}
-        booking={feedbackBooking}
-      />
-
-      {/* Photo Upload Dialog */}
-      {uploadDialogBooking && (
-        <PhotoUploadDialog
-          open={!!uploadDialogBooking}
-          onOpenChange={(o) => !o && setUploadDialogBooking(null)}
-          experienceDateId={uploadDialogBooking.experience_dates.id}
-          experienceTitle={uploadDialogBooking.experience_dates.experiences.title}
-          eventDate={uploadDialogBooking.experience_dates.start_datetime}
-        />
-      )}
     </AppLayout>
   );
 }
