@@ -43,6 +43,31 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-23 — Ristrutturazione Profilo dipendente + trasloco storico fuori da MyBookings
+
+**Contesto.** Il Profilo dipendente era una raccolta di card scollegate (identità + form profilo + password + manager email + anteprima esperienze inline). La pagina `/app/bookings` duplicava lo storico in un accordion "Storico" che si allungava nel tempo. Le foto delle esperienze passate si caricavano da lì. Obiettivo della sessione: trasformare il Profilo in un hub di identità + percorso, spostare lo storico nella pagina dedicata `/app/esperienze-completate`, e ridurre `/app/bookings` a pura vista operativa delle esperienze future.
+
+**Cosa cambia.**
+- **`src/pages/Profile.tsx` ristrutturato in 3 fasce.** Fascia 1: unica Card hero con avatar editabile (`ProfileAvatarUpload`), nome, azienda — niente più form profilo/password/manager email inline (vivono in Impostazioni). Fascia 2: due tile stile Airbnb affiancate ("Esperienze completate" → `/app/esperienze-completate`, "Ore donate" → `/app/impact`) con icone colorate senza sfondo (Award amber, Clock emerald) e numero a fianco. Fascia 3: flat row budget ore con `Progress`, flat row Impostazioni con `ChevronRight`, bottone logout. Sottotitolo della pagina coerente col nuovo scope ("Il tuo percorso di volontariato"). Logica di redirect dei ruoli non-employee invariata in cima al file.
+- **Rimossi da `Profile.tsx`** gli import e l'uso di `CompletedExperienceCard`, `BookingDetailModal`, `FeedbackModal`, `ProfileEditForm`, `ChangePasswordCard`, `ManagerEmailCard`, e i relativi stati (`reviews`, `selectedBooking`, `feedbackBooking`).
+- **`src/components/experiences/CompletedExperienceCard.tsx`**: aggiunta azione "Aggiungi le tue foto" (icona `Camera`) sempre visibile sotto la card, indipendentemente dallo stato recensione. Nuova prop `onUploadPhotos`.
+- **`src/pages/CompletedExperiences.tsx`**: ospita ora `PhotoUploadDialog` e lo apre quando l'azione foto viene attivata su una card (stato `uploadDialogBooking`). Riuso di `PhotoUploadDialog` senza modifiche al componente.
+- **`src/pages/MyBookings.tsx` ridotta a vista operativa.** Rimossa interamente la sezione "Storico" (bottone con accordion collassabile, `AnimatePresence`, rendering past bookings, `FeedbackModal`, `PhotoUploadDialog`, stati `historyExpanded`/`pastBookings`/`pendingFeedbackCount`/`reviewedBookingIds`, `fetchReviews`). La pagina mostra solo `futureBookings` (`status === "confirmed"` e data non passata). Empty state aggiornato ("Nessuna prenotazione futura"). Header aggiornato ("Le tue prossime esperienze di volontariato confermate"). `BookingDetailModal` e `handleCancel` restano invariati.
+
+**Impatto.** `UI` · `Profilo dipendente` · `MyBookings` · `Esperienze completate`
+
+**File / aree toccate.**
+- `src/pages/Profile.tsx`
+- `src/components/experiences/CompletedExperienceCard.tsx`
+- `src/pages/CompletedExperiences.tsx`
+- `src/pages/MyBookings.tsx`
+
+**Esplicitamente fuori scope.** Nessuna modifica a DB, RLS, RPC, edge function. Nessuna modifica a `/app/impact`, bottom navigation, pagine HR/super-admin/association, logica di redirect dei ruoli non-employee.
+
+**Follow-up.** —
+
+---
+
 ### 2026-05-20 — Dettaglio volontariato: rimossa sezione "Caratteristiche" + mini-mappa embed in MeetingPlace
 
 **Cosa è cambiato**
