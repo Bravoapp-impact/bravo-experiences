@@ -28,6 +28,8 @@ export default function CompletedExperiences() {
     useState<CompletedExperienceBooking | null>(null);
   const [feedbackBooking, setFeedbackBooking] =
     useState<CompletedExperienceBooking | null>(null);
+  const [uploadDialogBooking, setUploadDialogBooking] =
+    useState<CompletedExperienceBooking | null>(null);
 
   const fetchBookings = async () => {
     if (!user) return;
