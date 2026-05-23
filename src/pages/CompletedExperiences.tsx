@@ -12,6 +12,7 @@ import {
 } from "@/components/experiences/CompletedExperienceCard";
 import { BookingDetailModal } from "@/components/bookings/BookingDetailModal";
 import { FeedbackModal } from "@/components/bookings/FeedbackModal";
+import { PhotoUploadDialog } from "@/components/gallery/PhotoUploadDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { isPast } from "date-fns";
@@ -26,6 +27,8 @@ export default function CompletedExperiences() {
   const [selectedBooking, setSelectedBooking] =
     useState<CompletedExperienceBooking | null>(null);
   const [feedbackBooking, setFeedbackBooking] =
+    useState<CompletedExperienceBooking | null>(null);
+  const [uploadDialogBooking, setUploadDialogBooking] =
     useState<CompletedExperienceBooking | null>(null);
 
   const fetchBookings = async () => {
@@ -212,6 +215,7 @@ export default function CompletedExperiences() {
               index={i}
               onOpen={setSelectedBooking}
               onLeaveFeedback={setFeedbackBooking}
+              onUploadPhotos={setUploadDialogBooking}
             />
           ))}
         </div>
@@ -230,6 +234,16 @@ export default function CompletedExperiences() {
         onSubmitted={handleFeedbackSubmitted}
         booking={feedbackBooking as any}
       />
+
+      {uploadDialogBooking && (
+        <PhotoUploadDialog
+          open={!!uploadDialogBooking}
+          onOpenChange={(o) => !o && setUploadDialogBooking(null)}
+          experienceDateId={uploadDialogBooking.experience_dates.id}
+          experienceTitle={uploadDialogBooking.experience_dates.experiences.title}
+          eventDate={uploadDialogBooking.experience_dates.start_datetime}
+        />
+      )}
     </AppLayout>
   );
 }

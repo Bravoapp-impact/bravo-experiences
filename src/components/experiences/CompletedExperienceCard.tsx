@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Star, ChevronRight } from "lucide-react";
+import { Star, ChevronRight, Camera } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -34,6 +34,7 @@ interface CompletedExperienceCardProps {
   index?: number;
   onOpen: (booking: CompletedExperienceBooking) => void;
   onLeaveFeedback: (booking: CompletedExperienceBooking) => void;
+  onUploadPhotos: (booking: CompletedExperienceBooking) => void;
 }
 
 export function CompletedExperienceCard({
@@ -42,6 +43,7 @@ export function CompletedExperienceCard({
   index = 0,
   onOpen,
   onLeaveFeedback,
+  onUploadPhotos,
 }: CompletedExperienceCardProps) {
   const exp = booking.experience_dates.experiences;
   const startDate = new Date(booking.experience_dates.start_datetime);
@@ -88,8 +90,7 @@ export function CompletedExperienceCard({
         <ChevronRight className="h-4 w-4 text-muted-foreground self-center flex-shrink-0" />
       </div>
 
-      {/* Review state */}
-      <div className="px-3 pb-3 pt-0">
+      <div className="px-3 pb-3 pt-0 space-y-2">
         {!review ? (
           <button
             type="button"
@@ -106,7 +107,6 @@ export function CompletedExperienceCard({
             className="flex flex-col gap-2 rounded-lg bg-muted/40 px-3 py-2.5"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Stars */}
             <div className="flex items-center gap-0.5">
               {[1, 2, 3, 4, 5].map((s) => (
                 <Star
@@ -120,7 +120,6 @@ export function CompletedExperienceCard({
                 />
               ))}
             </div>
-            {/* Chips */}
             {review.feedback_positive_tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {review.feedback_positive_tags.map((slug) => (
@@ -135,6 +134,18 @@ export function CompletedExperienceCard({
             )}
           </div>
         )}
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onUploadPhotos(booking);
+          }}
+          className="w-full inline-flex items-center justify-center gap-1.5 text-[12px] font-medium px-3 py-2 rounded-lg bg-muted/40 text-foreground/80 border border-border/60 hover:bg-muted transition-colors"
+        >
+          <Camera className="h-3.5 w-3.5" />
+          Aggiungi le tue foto
+        </button>
       </div>
     </motion.div>
   );
