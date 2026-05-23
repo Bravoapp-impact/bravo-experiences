@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Star, ChevronRight } from "lucide-react";
+import { Star, ChevronRight, Camera } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { cn } from "@/lib/utils";
