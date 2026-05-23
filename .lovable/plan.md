@@ -1,119 +1,42 @@
-## Obiettivo
+# Diagnosi: perché l'email al responsabile non parte
 
-Sostituire i form di modifica oggi in bella vista sul Profilo con un'area Impostazioni stile Airbnb: indice → categoria → riga con "Edit" inline che si espande in form.
+## Come dovrebbe funzionare
 
-## Architettura route
+1. La funzione SQL `send-manager-absence-notifications-daily` gira ogni giorno alle **08:00 UTC** via `pg_cron`.
+2. Fa una `net.http_post` verso l'edge function `send-manager-absence-notifications`, autenticandosi con un secret nel vault chiamato `email_queue_service_role_key`.
+3. L'edge function scansiona le `bookings` confirmed nei prossimi 30 giorni; per ogni utente con `manager_email` valorizzata, verifica se l'evento cade **esattamente nella finestra `[oggi + advance_days, oggi + advance_days + 1)**` (per Bravo! `advance_days = 7`).
+4. Se sì, controlla anti-duplicazione su `email_logs` + suppression list, poi accoda l'email via `send-transactional-email` (template `manager-absence-notification`).
 
-```
-/app/profile                        (invariata, alleggerita)
-/app/impostazioni                   indice categorie
-/app/impostazioni/personali         Informazioni personali
-/app/impostazioni/sicurezza         Accesso e sicurezza
-/app/impostazioni/notifiche         Notifiche
-```
+Il tuo test: booking `8aa09e0c…` per il 27/05 14:00 UTC, manager `team@bravoapp.it`, creata il 20/05 alle 07:57 UTC. L'evento è a 7 giorni → finestra centrata sul **20/05 alle 08:00 UTC**, quindi il cron di quel giorno avrebbe dovuto mandarla.
 
-Tutte sotto `ProtectedRoute`, dentro `AppLayout` (bottom nav visibile, mobile-first).
+## Cosa sta succedendo davvero
 
-## Nuovi componenti condivisi
+Il cron parte regolarmente ogni giorno (`cron.job_run_details` = `succeeded`), MA tutte le `net.http_post` ritornano **401 "Invalid authentication"** (verificato su `net._http_response`, ultime ~20 chiamate tutte 401). L'edge function non viene mai eseguita: zero log lato edge runtime, zero righe in `email_logs`.
 
-`**src/components/settings/SettingsListItem.tsx**` — riga categoria dell'indice. Props: `icon`, `title`, `to`. Render: icona a sinistra, titolo, chevron a destra, divider sottile sotto. Tap-friendly (min-h ~64px).
+Causa: il secret `email_queue_service_role_key` salvato in `vault.decrypted_secrets` è **disallineato** rispetto all'attuale `SUPABASE_SERVICE_ROLE_KEY` del progetto (tipico dopo una rotazione della chiave). Lo stesso secret è usato da praticamente tutti i cron email — quindi sono giù anche `process-email-queue`, e i due cron nuovi schedulati l'altro giorno (`process-completed-events-hourly`, `send-feedback-request-hourly`) stanno fallendo per lo stesso motivo.
 
-`**src/components/settings/SettingsField.tsx**` — riga modificabile in stile Airbnb. Props: `label`, `value` (stringa già formattata da mostrare in grigio sotto la label), `placeholder` (es. "Non impostato"), `editable` (default true), `actionLabel` (default "Modifica"), `children` (il form da mostrare quando espanso), `onCancel` opzionale. 
+Questo spiega anche perché il test non ha mai prodotto nulla: non è arrivata in spam, proprio non è mai uscita dall'edge function — non è mai stata invocata.
 
-Comportamento: stato `isEditing` interno. Quando chiuso mostra label + valore + link "Modifica" a destra. Tap su Modifica → espande sotto i `children` (il form), nasconde label/valore "old", mostra in alto la label + "Cancel" a destra che fa collassare. Quando il form salva con successo, deve chiamare `onSaved()` (esposto via render-prop o context) per chiudere automaticamente. Pattern semplice: il componente passa una callback `close` ai children tramite render-prop:
+## Fix proposto
 
-```tsx
-<SettingsField label="Nome legale" value={`${firstName} ${lastName}`}>
-  {(close) => <NameForm onSaved={close} />}
-</SettingsField>
-```
+Un solo intervento, idempotente e gestito da Lovable Cloud: **rifare il setup dell'infrastruttura email**, che rigenera il vault secret `email_queue_service_role_key` con il service role key corrente e ri-aggancia tutti i cron job. Non tocca template, edge function, tabelle o policy — è la procedura ufficiale di recovery dopo una rotazione.
 
-Se `editable=false`, niente Modifica a destra (per Email e Azienda).
+Dopo il fix, per validare che funzioni davvero senza aspettare il cron delle 08:00 di domani:
 
-`**src/components/settings/SettingsSubPageLayout.tsx**` — wrapper per le 3 sotto-pagine. Header con back-arrow circolare (icona `ArrowLeft` dentro un cerchio `bg-muted`), titolo H1 grande in stile Airbnb (testo grosso, font-semibold). Dentro `AppLayout`. Back va a `/app/impostazioni`.
+1. **Forzo manualmente una run** della funzione SQL `send-manager-absence-notifications` lato edge (o invoco direttamente l'edge function `send-manager-absence-notifications`) e controllo che ritorni 200.
+2. Verifico su `net._http_response` che le prossime chiamate cron tornino 200, non più 401.
+3. Per testare end-to-end l'invio al responsabile servirebbe un booking con evento esattamente a 7 giorni da oggi. Le opzioni:
+  - **(a)** Crei tu un nuovo booking su un'esperienza che cade il 30/05 (= oggi + 7), con manager_email impostata, e aspetti il cron delle 08:00 UTC di domani.
+  - **(b)** Per testare subito senza aspettare, posso temporaneamente abbassare `manager_notification_advance_days` di Bravo! da 7 a 4, far girare la funzione a mano (il tuo booking del 27/05 cadrà nella finestra `[oggi+4, oggi+5)`), e poi riportarla a 7.
 
-## Pagine
+## Cosa NON cambio
 
-`**src/pages/EmployeeSettingsIndex.tsx**` (`/app/impostazioni`)
+- Niente modifiche all'edge function `send-manager-absence-notifications` (la logica è corretta).
+- Niente modifiche al cron `send-manager-absence-notifications-daily` né agli altri cron schedulati.
+- Niente modifiche al template `manager-absence-notification`.
 
-- Header con back-arrow → `/app/profile`, titolo "Impostazioni".
-- Lista di 3 `SettingsListItem`:
-  - icona `User` → "Informazioni personali" → `/app/impostazioni/personali`
-  - icona `Shield` → "Accesso e sicurezza" → `/app/impostazioni/sicurezza`
-  - icona `Bell` → "Notifiche" → `/app/impostazioni/notifiche`
+## Domanda per te
 
-`**src/pages/settings/EmployeeSettingsPersonali.tsx**` (`/app/impostazioni/personali`)
-Titolo "Informazioni personali". Lista di `SettingsField`:
-
-- **Nome e cognome** — value: `"Mario Rossi"`, editable. Form: due input (nome, cognome) con stessa zod validation di `ProfileSettingsContent`, bottone "Salva e continua" stile Airbnb (full-width-ish, scuro). Su successo chiude.
-- **Email** — value: `profile.email`, `editable=false`.
-- **Azienda** — value: `profile.companies?.name || "Non associata"`, `editable=false`.
-
-`**src/pages/settings/EmployeeSettingsSicurezza.tsx**` (`/app/impostazioni/sicurezza`)
-Titolo "Accesso e sicurezza". Due `SettingsField`:
-
-- **Password** — value: `"••••••••"`, editable. Form: riusa `ChangePasswordForm` esistente (passando `profile.email`). Sul successo deve chiudere il field — aggiungo prop opzionale `onSuccess?: () => void` a `ChangePasswordForm` (la chiamo dopo il toast di successo), zero altre modifiche.
-- **Autenticazione a due fattori** — value dinamico: "Attiva" o "Non attiva" in base allo stato MFA (leggo `supabase.auth.mfa.listFactors()` al mount; loading → "Caricamento…"). Form: riusa `EnrollMFA` esistente, senza wrapper. Niente `onSuccess` qui perché `EnrollMFA` ha un flusso a step suo; il field resta espanso finché l'utente non tap su Cancel.
-
-`**src/pages/settings/EmployeeSettingsNotifiche.tsx**` (`/app/impostazioni/notifiche`)
-Titolo "Notifiche". Un solo `SettingsField`:
-
-- **Email al responsabile** — value: `profile.manager_email || ""` (mostra "Non impostata" come placeholder, action "Modifica" sia se vuoto che se valorizzato). Form: input email + bottone Salva con la stessa logica di `ManagerEmailCard` (stesso zod, stesso update su `profiles.manager_email`, stesso toast). Sotto al form, la frase esplicativa già usata oggi nella card ("Se imposti l'email del tuo responsabile, riceverà un avviso qualche giorno prima di ogni tua attività di volontariato. Lascia vuoto per non attivare l'avviso.").
-
-Per evitare drift, sposto la logica del form di `ManagerEmailCard` in un sotto-componente locale `ManagerEmailForm` (stesso file `ManagerEmailCard.tsx`) e lo riuso. La `ManagerEmailCard` originale viene rimossa dal Profilo ma resta esportata.
-
-## Modifiche a `src/pages/Profile.tsx`
-
-Rimuovo:
-
-- `ProfileEditForm` (import e blocco)
-- `ManagerEmailCard` (import e blocco)
-- `ChangePasswordCard` (import e blocco)
-- `EnrollMFA` (import e blocco)
-- l'intera "Card Informazioni account"
-- import diventati inutili (`Mail`, `Building2`, `Separator`, `CardHeader`, `CardTitle` se non più usati)
-
-Mantengo: header "Profilo", card avatar+nome (con upload tap-on-image come oggi), card budget ore, bottone logout.
-
-Aggiungo, tra la card budget ore e il bottone logout, una `Card` cliccabile (`Link` a `/app/impostazioni`) con icona `Settings`, titolo "Impostazioni", sottotitolo "Profilo, sicurezza, notifiche" e chevron destro. Coerente visivamente col resto del Profilo.
-
-## Routing — `src/App.tsx`
-
-Aggiungo 4 route sotto `ProtectedRoute`:
-
-```tsx
-<Route path="/app/impostazioni" element={<ProtectedRoute><EmployeeSettingsIndex /></ProtectedRoute>} />
-<Route path="/app/impostazioni/personali" element={<ProtectedRoute><EmployeeSettingsPersonali /></ProtectedRoute>} />
-<Route path="/app/impostazioni/sicurezza" element={<ProtectedRoute><EmployeeSettingsSicurezza /></ProtectedRoute>} />
-<Route path="/app/impostazioni/notifiche" element={<ProtectedRoute><EmployeeSettingsNotifiche /></ProtectedRoute>} />
-```
-
-## Stile
-
-Inspired Airbnb (reference 1-3) ma fedele ai token del progetto:
-
-- niente `Card` wrapper attorno alle liste/righe (linea sottile `border-b border-border` tra righe)
-- titoli H1 pagine: `text-2xl font-semibold` (no "huge display" stile Airbnb puro, restiamo coerenti con il resto dell'app)
-- "Modifica" come bottone testuale underline a destra, colore `text-foreground`, font-medium
-- valore sotto label in `text-sm text-muted-foreground`
-- form espansi: padding verticale `py-4`, bottoni Salva stile shadcn `Button` default
-- back-arrow: cerchio `h-10 w-10 rounded-full bg-muted` con `ArrowLeft`, in alto a sinistra
-
-## Fuori scope
-
-- Bottom navigation: nessuna nuova voce, accesso solo dal Profilo.
-- Card avatar+nome e card budget ore restano sul Profilo invariate (upload avatar via tap sull'immagine come oggi).
-- Pagine HR / super-admin / association: invariate (continuano a usare `ProfileSettingsContent` e `SecuritySettingsContent`).
-- `ProfileEditForm`, `EnrollMFA`: invariati come componenti, restano disponibili per gli admin.
-- `ChangePasswordForm`: aggiunta solo la prop opzionale `onSuccess`, zero altri cambi.
-
-## Verifica
-
-- Login come dipendente → Profilo: solo header, card avatar+nome, card budget, riga "Impostazioni", logout.
-- Tap "Impostazioni" → indice con 3 voci.
-- Tap "Informazioni personali" → 3 righe; tap "Modifica" su Nome → form si espande con due input e Save; su Email e Azienda nessun Modifica.
-- Tap "Accesso e sicurezza" → 2 righe; Password → form 3-campi che si chiude da solo dopo save; MFA → mostra stato corretto, espande EnrollMFA.
-- Tap "Notifiche" → 1 riga; "Add" se vuoto, "Edit" se valorizzato; salvataggio e rimozione funzionano.
-- Tutte le sotto-pagine: back-arrow torna a `/app/impostazioni`. Bottom nav sempre visibile.
-- Login come HR / super-admin / association: nessuna regressione.
-- Mobile 390px: tutto leggibile, niente overflow.
+Procedo con il fix + opzione **(b)** per validare subito end-to-end (e ti dico l'esito), oppure preferisci opzione **(a)** e aspetti il cron di domani?  
+  
+Procediamo con l'opzione b
