@@ -153,7 +153,7 @@ export default function Profile() {
           </Card>
         </motion.div>
 
-        {/* Tiles Airbnb-style */}
+        {/* Tiles */}
         <div className="grid grid-cols-2 gap-3">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -162,18 +162,18 @@ export default function Profile() {
           >
             <Link to="/app/esperienze-completate" className="block group">
               <Card className="h-full transition-shadow group-hover:shadow-md group-active:scale-[0.98]">
-                <CardContent className="p-4 flex flex-col gap-3">
-                  <div className="flex items-center justify-center w-9 h-9 rounded-full bg-primary/10">
-                    <Award className="h-5 w-5 text-primary" />
+                <CardContent className="p-4 flex flex-col gap-2">
+                  <div className="flex items-center gap-3">
+                    <Award className="h-5 w-5 text-amber-500 shrink-0" />
+                    {completedLoading ? (
+                      <Skeleton className="h-7 w-10" />
+                    ) : (
+                      <p className="text-2xl font-bold text-foreground leading-none">
+                        {completedCount}
+                      </p>
+                    )}
                   </div>
-                  {completedLoading ? (
-                    <Skeleton className="h-7 w-10" />
-                  ) : (
-                    <p className="text-2xl font-bold text-foreground leading-none">
-                      {completedCount}
-                    </p>
-                  )}
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">
+                  <p className="text-sm font-semibold text-foreground leading-tight">
                     Esperienze completate
                   </p>
                 </CardContent>
@@ -188,18 +188,18 @@ export default function Profile() {
           >
             <Link to="/app/impact" className="block group">
               <Card className="h-full transition-shadow group-hover:shadow-md group-active:scale-[0.98]">
-                <CardContent className="p-4 flex flex-col gap-3">
-                  <div className="flex items-center justify-center w-9 h-9 rounded-full bg-primary/10">
-                    <Clock className="h-5 w-5 text-primary" />
+                <CardContent className="p-4 flex flex-col gap-2">
+                  <div className="flex items-center gap-3">
+                    <Clock className="h-5 w-5 text-emerald-500 shrink-0" />
+                    {completedLoading ? (
+                      <Skeleton className="h-7 w-10" />
+                    ) : (
+                      <p className="text-2xl font-bold text-foreground leading-none">
+                        {totalHoursLabel}
+                      </p>
+                    )}
                   </div>
-                  {completedLoading ? (
-                    <Skeleton className="h-7 w-10" />
-                  ) : (
-                    <p className="text-2xl font-bold text-foreground leading-none">
-                      {totalHoursLabel}
-                    </p>
-                  )}
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">
+                  <p className="text-sm font-semibold text-foreground leading-tight">
                     Ore donate
                   </p>
                 </CardContent>
