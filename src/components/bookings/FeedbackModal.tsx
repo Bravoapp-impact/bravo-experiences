@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { BaseModal } from "@/components/common/BaseModal";
 import { cn } from "@/lib/utils";
+import { POSITIVE_TAGS, MAX_POSITIVE_TAGS as MAX_TAGS } from "@/lib/feedback-tags";
 
 interface FeedbackModalProps {
   open: boolean;
@@ -23,19 +24,6 @@ interface FeedbackModalProps {
     };
   } | null;
 }
-
-const POSITIVE_TAGS: { slug: string; label: string }[] = [
-  { slug: "legato_colleghi", label: "Ho legato con i colleghi" },
-  { slug: "contributo_concreto", label: "Ho dato un contributo concreto" },
-  { slug: "realta_territorio", label: "Ho conosciuto una realtà del territorio" },
-  { slug: "ben_organizzata", label: "Era organizzata bene" },
-  { slug: "ets_accogliente", label: "L'associazione ci ha accolto benissimo" },
-  { slug: "imparato_qualcosa", label: "Ho imparato qualcosa di nuovo" },
-  { slug: "pausa_diversa", label: "Una pausa diversa dal solito" },
-  { slug: "energia_buonumore", label: "Mi ha lasciato energia e buonumore" },
-];
-
-const MAX_TAGS = 3;
 
 export function FeedbackModal({ open, onClose, onSubmitted, booking }: FeedbackModalProps) {
   const { toast } = useToast();
