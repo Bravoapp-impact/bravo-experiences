@@ -14,24 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      _tmp_secret_inspect: {
-        Row: {
-          checked_at: string | null
-          id: number
-          info: string | null
-        }
-        Insert: {
-          checked_at?: string | null
-          id?: number
-          info?: string | null
-        }
-        Update: {
-          checked_at?: string | null
-          id?: number
-          info?: string | null
-        }
-        Relationships: []
-      }
       access_codes: {
         Row: {
           assigned_role: string
