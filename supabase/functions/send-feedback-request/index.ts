@@ -19,7 +19,21 @@ serve(async (req: Request): Promise<Response> => {
     // Auth: this function is meant to run via scheduled cron with the
     // service-role key. Reject any unauthenticated public call.
     const authHeader = req.headers.get("Authorization") ?? "";
-    if (!supabaseServiceKey || authHeader !== `Bearer ${supabaseServiceKey}`) {
+    if (!authHeader.startsWith("Bearer ") || !supabaseServiceKey) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const token = authHeader.slice("Bearer ".length);
+    let isServiceRole = token === supabaseServiceKey;
+    if (!isServiceRole) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        if (payload?.role === "service_role") isServiceRole = true;
+      } catch { /* ignore */ }
+    }
+    if (!isServiceRole) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
