@@ -45,7 +45,14 @@ serve(async (req: Request): Promise<Response> => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const isServiceRole = authHeader === `Bearer ${supabaseServiceKey}`;
+    const token = authHeader.slice("Bearer ".length);
+    let isServiceRole = token === supabaseServiceKey;
+    if (!isServiceRole) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        if (payload?.role === "service_role") isServiceRole = true;
+      } catch { /* not a JWT */ }
+    }
     if (!isServiceRole) {
       const authSupabase = createClient(supabaseUrl, supabaseAnonKey, {
         global: { headers: { Authorization: authHeader } },
