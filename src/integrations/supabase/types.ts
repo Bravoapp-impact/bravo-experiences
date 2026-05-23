@@ -643,6 +643,7 @@ export type Database = {
           created_at: string
           feedback_improvement: string | null
           feedback_positive: string | null
+          feedback_positive_tags: string[]
           id: string
           rating: number
           would_recommend: boolean
@@ -652,6 +653,7 @@ export type Database = {
           created_at?: string
           feedback_improvement?: string | null
           feedback_positive?: string | null
+          feedback_positive_tags?: string[]
           id?: string
           rating: number
           would_recommend: boolean
@@ -661,6 +663,7 @@ export type Database = {
           created_at?: string
           feedback_improvement?: string | null
           feedback_positive?: string | null
+          feedback_positive_tags?: string[]
           id?: string
           rating?: number
           would_recommend?: boolean
