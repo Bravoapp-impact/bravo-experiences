@@ -34,6 +34,7 @@ interface CompletedExperienceCardProps {
   index?: number;
   onOpen: (booking: CompletedExperienceBooking) => void;
   onLeaveFeedback: (booking: CompletedExperienceBooking) => void;
+  onUploadPhotos: (booking: CompletedExperienceBooking) => void;
 }
 
 export function CompletedExperienceCard({
