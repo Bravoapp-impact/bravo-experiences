@@ -43,6 +43,7 @@ export function CompletedExperienceCard({
   index = 0,
   onOpen,
   onLeaveFeedback,
+  onUploadPhotos,
 }: CompletedExperienceCardProps) {
   const exp = booking.experience_dates.experiences;
   const startDate = new Date(booking.experience_dates.start_datetime);
