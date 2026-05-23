@@ -12,6 +12,7 @@ import {
 } from "@/components/experiences/CompletedExperienceCard";
 import { BookingDetailModal } from "@/components/bookings/BookingDetailModal";
 import { FeedbackModal } from "@/components/bookings/FeedbackModal";
+import { PhotoUploadDialog } from "@/components/gallery/PhotoUploadDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { isPast } from "date-fns";
