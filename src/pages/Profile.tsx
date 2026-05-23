@@ -164,7 +164,7 @@ export default function Profile() {
               <Card className="h-full transition-shadow group-hover:shadow-md group-active:scale-[0.98]">
                 <CardContent className="p-4 flex flex-col gap-3">
                   <div className="flex items-center justify-center w-9 h-9 rounded-full bg-primary/10">
-                    <Award className="h-4.5 w-4.5 text-primary" />
+                    <Award className="h-5 w-5 text-primary" />
                   </div>
                   {completedLoading ? (
                     <Skeleton className="h-7 w-10" />
@@ -190,7 +190,7 @@ export default function Profile() {
               <Card className="h-full transition-shadow group-hover:shadow-md group-active:scale-[0.98]">
                 <CardContent className="p-4 flex flex-col gap-3">
                   <div className="flex items-center justify-center w-9 h-9 rounded-full bg-primary/10">
-                    <Clock className="h-4.5 w-4.5 text-primary" />
+                    <Clock className="h-5 w-5 text-primary" />
                   </div>
                   {completedLoading ? (
                     <Skeleton className="h-7 w-10" />
