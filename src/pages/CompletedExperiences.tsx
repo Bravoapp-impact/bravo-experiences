@@ -161,18 +161,18 @@ export default function CompletedExperiences() {
 
   return (
     <AppLayout>
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-6"
-      >
-        <h1 className="text-xl font-bold text-foreground mb-0.5">
-          Esperienze completate
-        </h1>
-        <p className="text-[13px] text-muted-foreground">
-          Il tuo percorso di volontariato
-        </p>
-      </motion.div>
+      <div className="flex items-center gap-3 mb-6">
+        <Link
+          to="/app/profile"
+          aria-label="Indietro"
+          className="flex items-center justify-center h-10 w-10 rounded-full bg-muted hover:bg-muted/70 transition-colors"
+        >
+          <ArrowLeft className="h-5 w-5 text-foreground" />
+        </Link>
+      </div>
+      <h1 className="text-2xl font-semibold text-foreground mb-6">
+        Esperienze completate
+      </h1>
 
       {loading ? (
         <div className="space-y-3">
