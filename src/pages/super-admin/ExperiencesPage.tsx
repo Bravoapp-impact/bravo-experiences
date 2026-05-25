@@ -870,7 +870,7 @@ function SuperAdminExperienceFormBody({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <ExperienceFormFields mode="super_admin" form={form} />
+      <ExperienceFormFields mode="super_admin" form={form} experienceId={experience?.id} />
 
       {/* Status (metadata di pubblicazione) */}
       <div className="space-y-1.5">
