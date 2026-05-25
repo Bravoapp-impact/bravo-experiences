@@ -168,6 +168,14 @@ export function BookingDetailModal({ booking, onClose, onCancel, isCancelling, o
               </section>
             )}
 
+            {/* MY PHOTOS — only for past events */}
+            {isPastEvent && (
+              <MyEventPhotosSection
+                experienceDateId={(booking as any).experience_date_id ?? (booking.experience_dates as any).id}
+                onUploadClick={onUploadPhotos ? () => onUploadPhotos(booking) : undefined}
+              />
+            )}
+
             {/* IN CASO DI IMPREVISTO */}
             {isConfirmedFuture && (
               <div className="p-4 rounded-xl bg-muted/30 border border-border">
