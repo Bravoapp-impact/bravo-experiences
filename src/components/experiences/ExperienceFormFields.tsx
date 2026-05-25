@@ -12,16 +12,20 @@
  *  - carica autonomamente categorie/città/associazioni via TanStack Query.
  */
 
+import { useState, useEffect } from "react";
 import { useFormContext, type UseFormReturn } from "react-hook-form";
 import { z } from "zod";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Controller } from "react-hook-form";
+import { Plus, Trash2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -34,6 +38,7 @@ import {
 import { LogoUpload } from "@/components/super-admin/LogoUpload";
 import { AVAILABLE_TAGS } from "@/lib/tags";
 import { getAllSDGs } from "@/lib/sdg-data";
+import { devLog } from "@/lib/logger";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -149,9 +154,14 @@ export interface ExperienceFormFieldsProps {
    * wrapper controlla submit, defaults, reset e integrazione con Supabase.
    */
   form: UseFormReturn<ExperienceFormValues>;
+  /**
+   * Solo super_admin: ID dell'esperienza in modifica. Necessario per gestire i
+   * KPI di impatto (devono agganciarsi a un'esperienza esistente).
+   */
+  experienceId?: string;
 }
 
-export function ExperienceFormFields({ mode, form }: ExperienceFormFieldsProps) {
+export function ExperienceFormFields({ mode, form, experienceId }: ExperienceFormFieldsProps) {
   const {
     register,
     control,
@@ -463,8 +473,200 @@ export function ExperienceFormFields({ mode, form }: ExperienceFormFieldsProps) 
               ))}
             </div>
           </div>
+
+          {/* KPI di impatto */}
+          <ImpactKpisSection experienceId={experienceId} />
         </>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Impact KPIs section (super-admin only)
+// ---------------------------------------------------------------------------
+
+const MAX_KPIS = 3;
+
+interface ImpactKpi {
+  id: string;
+  label: string;
+  sort_order: number;
+}
+
+const impactKpisKey = (experienceId: string) => ["experience-impact-kpis", experienceId] as const;
+
+function ImpactKpisSection({ experienceId }: { experienceId?: string }) {
+  const qc = useQueryClient();
+  const enabled = Boolean(experienceId);
+
+  const { data: kpis = [], isLoading } = useQuery({
+    queryKey: experienceId ? impactKpisKey(experienceId) : ["experience-impact-kpis", "none"],
+    queryFn: async (): Promise<ImpactKpi[]> => {
+      if (!experienceId) return [];
+      const { data, error } = await supabase
+        .from("experience_impact_kpis")
+        .select("id, label, sort_order")
+        .eq("experience_id", experienceId)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled,
+    staleTime: 1000 * 30,
+  });
+
+  const invalidate = () => {
+    if (experienceId) qc.invalidateQueries({ queryKey: impactKpisKey(experienceId) });
+  };
+
+  const addMutation = useMutation({
+    mutationFn: async () => {
+      if (!experienceId) throw new Error("missing experience");
+      const nextSort = kpis.length > 0 ? Math.max(...kpis.map((k) => k.sort_order)) + 1 : 0;
+      const { error } = await supabase
+        .from("experience_impact_kpis")
+        .insert({ experience_id: experienceId, label: "Nuovo KPI", sort_order: nextSort });
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+    onError: (e: unknown) => {
+      devLog.error("Add KPI error:", e);
+      toast.error("Impossibile aggiungere il KPI");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, label }: { id: string; label: string }) => {
+      const { error } = await supabase
+        .from("experience_impact_kpis")
+        .update({ label })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+    onError: (e: unknown) => {
+      devLog.error("Update KPI error:", e);
+      toast.error("Impossibile salvare l'etichetta");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("experience_impact_kpis").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+    onError: (e: unknown) => {
+      devLog.error("Delete KPI error:", e);
+      toast.error("Impossibile rimuovere il KPI");
+    },
+  });
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label>KPI di impatto</Label>
+        {enabled && (
+          <span className="text-xs text-muted-foreground">
+            {kpis.length}/{MAX_KPIS}
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Definisci da 1 a {MAX_KPIS} etichette di ciò che l'esperienza misura (es. "Pasti
+        distribuiti"). Su ogni data registrerai poi i valori raggiunti.
+      </p>
+
+      {!enabled ? (
+        <div className="rounded-md border border-dashed border-border bg-muted/30 px-3 py-4 text-sm text-muted-foreground">
+          Salva prima l'esperienza per poter definire i KPI di impatto.
+        </div>
+      ) : isLoading ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Caricamento KPI…
+        </div>
+      ) : (
+        <>
+          <div className="space-y-2">
+            {kpis.map((k) => (
+              <KpiRow
+                key={k.id}
+                kpi={k}
+                onSave={(label) => updateMutation.mutate({ id: k.id, label })}
+                onDelete={() => deleteMutation.mutate(k.id)}
+                deleting={deleteMutation.isPending}
+              />
+            ))}
+            {kpis.length === 0 && (
+              <p className="text-xs text-muted-foreground italic">Nessun KPI definito.</p>
+            )}
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => addMutation.mutate()}
+            disabled={kpis.length >= MAX_KPIS || addMutation.isPending}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            Aggiungi KPI
+          </Button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function KpiRow({
+  kpi,
+  onSave,
+  onDelete,
+  deleting,
+}: {
+  kpi: ImpactKpi;
+  onSave: (label: string) => void;
+  onDelete: () => void;
+  deleting: boolean;
+}) {
+  const [value, setValue] = useState(kpi.label);
+  useEffect(() => setValue(kpi.label), [kpi.label]);
+
+  const commit = () => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      setValue(kpi.label);
+      return;
+    }
+    if (trimmed !== kpi.label) onSave(trimmed);
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <Input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+        maxLength={80}
+        placeholder="Es. Pasti distribuiti"
+      />
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={onDelete}
+        disabled={deleting}
+        aria-label="Rimuovi KPI"
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
     </div>
   );
 }

@@ -623,6 +623,20 @@ export type Database = {
             referencedRelation: "experience_impact_kpis"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "experience_date_kpi_values_kpi_id_fkey"
+            columns: ["kpi_id"]
+            isOneToOne: false
+            referencedRelation: "v_volunteering_company_kpi_breakdown"
+            referencedColumns: ["kpi_id"]
+          },
+          {
+            foreignKeyName: "experience_date_kpi_values_kpi_id_fkey"
+            columns: ["kpi_id"]
+            isOneToOne: false
+            referencedRelation: "v_volunteering_employee_kpi_contributions"
+            referencedColumns: ["kpi_id"]
+          },
         ]
       }
       experience_dates: {
@@ -2036,6 +2050,118 @@ export type Database = {
             columns: ["preferred_city_id"]
             isOneToOne: false
             referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_volunteering_company_impact: {
+        Row: {
+          avg_hours_per_participant: number | null
+          avg_rating: number | null
+          cities_count: number | null
+          company_id: string | null
+          distinct_experiences: number | null
+          ets_count: number | null
+          participation_rate: number | null
+          registered_users: number | null
+          reviews_count: number | null
+          sdgs_touched: string[] | null
+          total_hours: number | null
+          total_participations: number | null
+          unique_participants: number | null
+          would_recommend_rate: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_volunteering_company_kpi_breakdown: {
+        Row: {
+          company_id: string | null
+          experience_id: string | null
+          kpi_id: string | null
+          kpi_label: string | null
+          total_value: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experience_dates_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_volunteering_employee_impact: {
+        Row: {
+          company_id: string | null
+          distinct_experiences: number | null
+          last_participation_at: string | null
+          sdgs_touched: string[] | null
+          total_hours: number | null
+          total_participations: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_volunteering_employee_kpi_contributions: {
+        Row: {
+          company_id: string | null
+          experience_id: string | null
+          kpi_id: string | null
+          kpi_label: string | null
+          total_value: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "experience_dates_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
