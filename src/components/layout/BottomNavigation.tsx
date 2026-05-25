@@ -13,8 +13,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { path: "/app/experiences", label: "Esplora", icon: Search },
-  { path: "/app/bookings", label: "Prenotazioni", icon: Calendar },
-  { path: "/app/gallery", label: "Galleria", icon: ImageIcon },
+  { path: "/app/bookings", label: "Attività", icon: Calendar },
   { path: "/app/impact", label: "Impatto", icon: Sprout },
   { path: "/app/profile", label: "Profilo", icon: User, useAvatar: true },
 ];
