@@ -143,14 +143,6 @@ const App = () => (
               }
             />
             <Route
-              path="/app/gallery"
-              element={
-                <ProtectedRoute>
-                  <Gallery />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/app/profile"
               element={
                 <ProtectedRoute>
