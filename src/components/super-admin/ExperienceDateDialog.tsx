@@ -250,6 +250,8 @@ export function ExperienceDateDialog({
         company_id: availabilityMode === "single" ? selectedCompanyId : null,
       };
 
+      let savedDateId: string;
+
       if (experienceDate) {
         const { error } = await supabase
           .from("experience_dates")
@@ -257,23 +259,63 @@ export function ExperienceDateDialog({
           .eq("id", experienceDate.id);
 
         if (error) throw error;
-
-        toast({
-          title: "Successo",
-          description: "Data aggiornata",
-        });
+        savedDateId = experienceDate.id;
       } else {
-        const { error } = await supabase.from("experience_dates").insert(payload);
+        const { data: inserted, error } = await supabase
+          .from("experience_dates")
+          .insert(payload)
+          .select("id")
+          .single();
 
         if (error) throw error;
-
-        toast({
-          title: "Successo",
-          description: "Data creata",
-        });
+        savedDateId = inserted.id;
       }
 
+      // Persist KPI values: diff against existing rows
+      const existingMap = new Map<string, number>(
+        existingKpiValues.map((r: any) => [r.kpi_id as string, Number(r.value)]),
+      );
+
+      const toUpsert: Array<{ experience_date_id: string; kpi_id: string; value: number }> = [];
+      const toDelete: string[] = [];
+
+      for (const kpi of kpis) {
+        const raw = (kpiValues[kpi.id] ?? "").trim();
+        if (raw === "") {
+          if (existingMap.has(kpi.id)) toDelete.push(kpi.id);
+          continue;
+        }
+        const num = Number(raw);
+        if (!Number.isFinite(num)) continue;
+        const prev = existingMap.get(kpi.id);
+        if (prev === undefined || prev !== num) {
+          toUpsert.push({ experience_date_id: savedDateId, kpi_id: kpi.id, value: num });
+        }
+      }
+
+      if (toDelete.length > 0) {
+        const { error: delErr } = await supabase
+          .from("experience_date_kpi_values")
+          .delete()
+          .eq("experience_date_id", savedDateId)
+          .in("kpi_id", toDelete);
+        if (delErr) throw delErr;
+      }
+
+      if (toUpsert.length > 0) {
+        const { error: upErr } = await supabase
+          .from("experience_date_kpi_values")
+          .upsert(toUpsert, { onConflict: "experience_date_id,kpi_id" });
+        if (upErr) throw upErr;
+      }
+
+      toast({
+        title: "Successo",
+        description: experienceDate ? "Data aggiornata" : "Data creata",
+      });
+
       onSaved();
+
     } catch (error: any) {
       devLog.error("Error saving experience date:", error);
       toast({
