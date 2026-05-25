@@ -21,6 +21,9 @@ export const galleryKeys = {
   countForEvent: (userId: string, experienceDateId: string) =>
     [...galleryKeys.all, "count", userId, experienceDateId] as const,
 
+  myPhotosForEvent: (userId: string, experienceDateId: string) =>
+    [...galleryKeys.all, "myForEvent", userId, experienceDateId] as const,
+
   signedUrls: (paths: string[]) =>
     [...galleryKeys.all, "signed", paths] as const,
 
