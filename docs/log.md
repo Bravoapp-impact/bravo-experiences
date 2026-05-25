@@ -43,7 +43,35 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-25 — Armonizzazione back-arrow e CTA mobile sulle pagine di dettaglio
+
+**Contesto.** Le pagine di dettaglio esperienza usavano back-button in stili diversi (testo "Torna a …" su employee/HR/association, freccia tonda solo in Settings). La CTA mobile sul dettaglio employee era una barra bianca fissa con `border-t` che spezzava visivamente lo scroll. Obiettivo: un solo pattern visivo per tutti i wrapper di dettaglio.
+
+**Cosa cambia.**
+- **`src/pages/CompletedExperiences.tsx`**: allineata a `SettingsSubPageLayout` (freccia tonda icon-only, titolo uniforme, rimosso sottotitolo).
+- **`src/pages/ExperienceDetail.tsx`** (employee): ridotto padding laterale per allinearlo alle altre pagine; back-button convertito da testo "Torna al catalogo" a pulsante tondo icon-only; CTA mobile "Vedi date disponibili" trasformata da barra fissa con `bg-background/95 backdrop-blur-sm border-t` a **bottone largo sospeso** (`fixed bottom-20 px-4 pointer-events-none` + button `pointer-events-auto shadow-lg shadow-primary/25`).
+- **`src/pages/hr/HRExperienceDetail.tsx`**: back-button armonizzato allo stesso pulsante tondo.
+- **`src/pages/association/AssociationExperienceDetail.tsx`**: back-button armonizzato; CTA mobile "Modifica esperienza" convertita allo stesso pattern di bottone sospeso.
+- **`ExperienceDetailContent`** non toccato: i pattern vivono nei wrapper, non nel componente condiviso.
+
+**Impatto.** `UI` · `Docs`
+
+**File / aree toccate.**
+- `src/pages/CompletedExperiences.tsx`
+- `src/pages/ExperienceDetail.tsx`
+- `src/pages/hr/HRExperienceDetail.tsx`
+- `src/pages/association/AssociationExperienceDetail.tsx`
+- `docs/design-system.md` (nuova sezione "Pattern pagine di dettaglio")
+- `mem://style/detail-page-patterns` (nuova memoria) + `mem://index.md`
+
+**Esplicitamente fuori scope.** Nessuna modifica logica/dati, nessun cambio a `ExperienceDetailContent` o ai drawer mobile sottostanti.
+
+**Follow-up.** —
+
+---
+
 ### 2026-05-25 — Rimozione tab Galleria dipendente + rinominata voce "Prenotazioni" in "Attività"
+
 
 **Contesto.** La sezione "Le tue foto" nel dettaglio dell'esperienza completata (BookingDetailModal) ha reso ridondante la pagina Galleria del dipendente. Le foto caricate sono ora accessibili nel contesto dell'evento a cui appartengono. Contemporaneamente, la pagina `/app/bookings` è stata ridotta a pura vista operativa delle esperienze future e la label "Prenotazioni" non riflette più il contenuto della pagina.
 
