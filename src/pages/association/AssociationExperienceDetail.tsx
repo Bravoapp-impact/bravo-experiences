@@ -282,13 +282,13 @@ export default function AssociationExperienceDetail() {
     <AssociationLayout>
       <div className="max-w-6xl mx-auto px-4 lg:px-8 pb-28 lg:pb-12">
         {/* Header: back + status badge */}
-        <div className="flex items-center justify-between gap-3 mb-4">
+        <div className="flex items-center justify-between gap-3 mb-6">
           <button
             onClick={goBack}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+            aria-label="Indietro"
+            className="flex items-center justify-center h-10 w-10 rounded-full bg-muted hover:bg-muted/70 transition-colors"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Torna alle esperienze
+            <ArrowLeft className="h-5 w-5 text-foreground" />
           </button>
           {experience.status && (
             <Badge variant={STATUS_VARIANT[experience.status] ?? "outline"}>
@@ -324,10 +324,10 @@ export default function AssociationExperienceDetail() {
       {/* Mobile sticky CTA — hidden when archived */}
       {isMobile && !isArchived && (
         <>
-          <div className="fixed bottom-16 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border z-40">
+          <div className="fixed bottom-20 left-0 right-0 px-4 z-40 pointer-events-none">
             <Button
               onClick={() => setDrawerOpen(true)}
-              className="w-full h-12 text-base font-medium rounded-xl"
+              className="pointer-events-auto w-full h-12 text-base font-medium rounded-xl shadow-lg shadow-primary/25"
             >
               <Pencil className="h-4 w-4 mr-2" />
               Modifica esperienza
