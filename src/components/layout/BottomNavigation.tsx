@@ -15,7 +15,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { path: "/app/experiences", label: "Esplora", icon: Search },
-  { path: "/app/bookings", label: "Attività", icon: BravoSymbolIcon, iconScale: "h-5 w-5" },
+  { path: "/app/bookings", label: "Attività", icon: BravoSymbolIcon, iconScale: "h-[22px] w-[22px]" },
   { path: "/app/impact", label: "Impatto", icon: Sprout },
   { path: "/app/profile", label: "Profilo", icon: User, useAvatar: true },
 ];
@@ -59,7 +59,7 @@ export function BottomNavigation() {
                   ) : (
                     <div className="h-6 w-6 flex items-center justify-center">
                       <Icon
-                        className={`${item.iconScale ?? "h-6 w-6"} transition-colors ${
+                        className={`${item.iconScale ?? "h-[22px] w-[22px]"} transition-colors ${
                           active ? "text-primary" : "text-muted-foreground"
                         }`}
                       />
