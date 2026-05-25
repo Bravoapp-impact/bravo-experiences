@@ -1,7 +1,8 @@
 import { ReactNode } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LogOut, Search, Calendar, Sprout, User } from "lucide-react";
+import { LogOut, Search, Sprout, User } from "lucide-react";
+import { BravoSymbolIcon } from "@/components/icons/BravoSymbolIcon";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
@@ -93,7 +94,9 @@ export function AppLayout({ children }: AppLayoutProps) {
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
-                <Calendar className="h-4 w-4" />
+                <span className="h-4 w-4 flex items-center justify-center">
+                  <BravoSymbolIcon className="h-[13px] w-[13px]" />
+                </span>
                 <span className="hidden lg:inline">Attività</span>
               </Link>
 
