@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,12 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { devLog } from "@/lib/logger";
+
+interface ImpactKpi {
+  id: string;
+  label: string;
+  sort_order: number;
+}
 
 interface ExperienceDate {
   id: string;
