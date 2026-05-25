@@ -139,15 +139,14 @@ Il tagging dell'impatto si divide in due momenti.
 
 ## 7. Sequenza di implementazione
 
-1. **Fix del cron.** Correggere e schedulare `process_completed_events`. Prerequisito della definizione di "completata".
 2. **Modello dati.** Tabelle `experience_impact_kpis` e `experience_date_kpi_values`. La colonna `sdgs` resta invariata. `beneficiaries_count` resta come legacy.
 3. **View SQL canoniche.** `v_volunteering_employee_impact`, `v_volunteering_company_impact`, `v_volunteering_platform_impact`. Più avanti `v_volunteering_association_impact`.
 4. **Hook frontend.** `useEmployeeImpact`, `useCompanyImpact` in pattern TanStack Query.
 5. **Publishing flow.** Sezione SDG qualitativa + definizione KPI nella scheda esperienza super-admin; inserimento valori KPI per data.
-6. **Superficie dipendente.** Ridisegno `Impact.tsx`. *(Per HAVAS.)*
-7. **Superficie HR.** Dashboard a quattro famiglie + Report PDF. *(Dashboard per HAVAS.)*
-8. **Superficie super-admin.** KPI sistemici. *(Dopo HAVAS.)*
-9. **Superficie ETS.** `v_volunteering_association_impact` + vista associazione. *(Dopo HAVAS.)*
+6. **Superficie dipendente.** Ridisegno `Impact.tsx`. _(Per HAVAS.)_
+7. **Superficie HR.** Dashboard a quattro famiglie + Report PDF. _(Dashboard per HAVAS.)_
+8. **Superficie super-admin.** KPI sistemici. _(Dopo HAVAS.)_
+9. **Superficie ETS.** `v_volunteering_association_impact` + vista associazione. _(Dopo HAVAS.)_
 
 I passi 1-5 sono il fondamento; i passi 6-9 sono le superfici sequenziate.
 
