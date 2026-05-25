@@ -1,11 +1,17 @@
 ## Obiettivo
-La riga orizzontale delle esperienze in `Esplora` arriva a filo del bordo destro. Aggiungere spazio finale dopo l'ultima card, come fa Airbnb.
+Semplificare la pagina `Profile.tsx` del dipendente.
 
-## Causa
-In `src/components/experiences/ExperienceSection.tsx`, lo scroller usa `-mx-8` con `px-8`: il padding destro (32px) viene "mangiato" perché il contenitore esterno della pagina (container Tailwind) ha un padding inferiore, quindi visivamente le card finiscono a filo schermo.
+## Modifiche
 
-## Fix (un solo file)
-`src/components/experiences/ExperienceSection.tsx` — sul div interno con `flex items-start gap-2.5 px-8`, sostituire `px-8` con `pl-8 pr-16` (mobile) e mantenere proporzioni su desktop con `md:pr-20`. Risultato: ~64px di spazio dopo l'ultima card su mobile, ~80px su desktop, coerente con il pattern Airbnb.
+**1. Rimuovere tile "Ore donate"** — eliminare il blocco motion.div (linee 184-208) e rimuovere la grid wrapper `grid-cols-2` (linee 157-209) dato che resta un solo elemento. Rimuovere anche calcolo `totalHours` / `totalHoursLabel` ora inutilizzato e l'import `Clock` se non più usato altrove (resta usato nell'hour budget row, quindi tengo l'import).
+
+**2. Trasformare "Esperienze completate" in riga flat** — stile identico a Impostazioni (linee 257-271):
+- Link a `/app/esperienze-completate`
+- Wrapper icona `w-10 h-10 rounded-full bg-amber-500/10` (tinta colorata coerente con l'icona)
+- `Award` con `text-amber-500 h-5 w-5`
+- Titolo: "Esperienze completate"
+- Sottotitolo: count dinamico, es. `"{n} esperienze"` (o "Nessuna esperienza" / "1 esperienza"); Skeleton durante loading
+- `ChevronRight` a destra
 
 ## Fuori scope
-Tutto il resto (altre liste, RelatedExperiencesList, layout pagina, navigazione).
+Identity card, hour budget row, Impostazioni, logout.
