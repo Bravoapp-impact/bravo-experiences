@@ -214,7 +214,7 @@ export default function MyBookings() {
             className="text-base font-semibold mb-4 flex items-center gap-2"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-            Prossime esperienze
+            Prossime attività
             <span className="text-[13px] font-normal text-muted-foreground ml-1">
               ({futureBookings.length})
             </span>
