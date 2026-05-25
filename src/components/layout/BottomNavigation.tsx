@@ -57,11 +57,13 @@ export function BottomNavigation() {
                       </AvatarFallback>
                     </Avatar>
                   ) : (
-                    <Icon
-                      className={`h-6 w-6 transition-colors ${
-                        active ? "text-primary" : "text-muted-foreground"
-                      }`}
-                    />
+                    <div className="h-6 w-6 flex items-center justify-center">
+                      <Icon
+                        className={`${item.iconScale ?? "h-6 w-6"} transition-colors ${
+                          active ? "text-primary" : "text-muted-foreground"
+                        }`}
+                      />
+                    </div>
                   )}
                 </div>
                 <span
