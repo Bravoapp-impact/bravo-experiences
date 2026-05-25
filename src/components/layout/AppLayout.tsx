@@ -94,7 +94,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 }`}
               >
                 <Calendar className="h-4 w-4" />
-                <span className="hidden lg:inline">Prenotazioni</span>
+                <span className="hidden lg:inline">Attività</span>
               </Link>
 
               <Link
