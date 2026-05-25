@@ -155,60 +155,31 @@ export default function Profile() {
           </Card>
         </motion.div>
 
-        {/* Tiles */}
-        <div className="grid grid-cols-2 gap-3">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.18 }}
+        {/* Esperienze completate — flat row */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
+        >
+          <Link
+            to="/app/esperienze-completate"
+            className="flex items-center gap-3 px-1 py-3 rounded-lg hover:bg-muted/40 transition-colors"
           >
-            <Link to="/app/esperienze-completate" className="block group">
-              <Card className="h-full transition-shadow group-hover:shadow-md group-active:scale-[0.98]">
-                <CardContent className="p-4 flex flex-col gap-2">
-                  <div className="flex items-center gap-3">
-                    <Award className="h-5 w-5 text-amber-500 shrink-0" />
-                    {completedLoading ? (
-                      <Skeleton className="h-7 w-10" />
-                    ) : (
-                      <p className="text-2xl font-bold text-foreground leading-none">
-                        {completedCount}
-                      </p>
-                    )}
-                  </div>
-                  <p className="text-sm font-semibold text-foreground leading-tight">
-                    Esperienze completate
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
-          </motion.div>
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-500/10 shrink-0">
+              <Award className="h-5 w-5 text-amber-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">Esperienze completate</p>
+              {completedLoading ? (
+                <Skeleton className="h-3 w-24 mt-1" />
+              ) : (
+                <p className="text-xs text-muted-foreground">{completedLabel}</p>
+              )}
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+          </Link>
+        </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.21 }}
-          >
-            <Link to="/app/impact" className="block group">
-              <Card className="h-full transition-shadow group-hover:shadow-md group-active:scale-[0.98]">
-                <CardContent className="p-4 flex flex-col gap-2">
-                  <div className="flex items-center gap-3">
-                    <Clock className="h-5 w-5 text-emerald-500 shrink-0" />
-                    {completedLoading ? (
-                      <Skeleton className="h-7 w-10" />
-                    ) : (
-                      <p className="text-2xl font-bold text-foreground leading-none">
-                        {totalHoursLabel}
-                      </p>
-                    )}
-                  </div>
-                  <p className="text-sm font-semibold text-foreground leading-tight">
-                    Ore donate
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
-          </motion.div>
-        </div>
 
         {/* Hour budget — flat row */}
         {(budgetLoading || !isUnlimited) && (
