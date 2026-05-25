@@ -98,18 +98,6 @@ export function AppLayout({ children }: AppLayoutProps) {
               </Link>
 
               <Link
-                to="/app/gallery"
-                className={`text-sm font-medium transition-colors flex items-center gap-2 px-3 py-2 rounded-lg ${
-                  isActive("/app/gallery")
-                    ? "text-primary bg-primary/10"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                <ImageIcon className="h-4 w-4" />
-                <span className="hidden lg:inline">Galleria</span>
-              </Link>
-
-              <Link
                 to="/app/impact"
                 className={`text-sm font-medium transition-colors flex items-center gap-2 px-3 py-2 rounded-lg ${
                   isActive("/app/impact")
