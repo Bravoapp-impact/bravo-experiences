@@ -174,10 +174,10 @@ export default function MyBookings() {
         className="mb-6"
       >
         <h1 className="text-xl font-bold text-foreground mb-0.5">
-          Le mie esperienze
+          Le mie attività
         </h1>
         <p className="text-[13px] text-muted-foreground">
-          Le tue prossime esperienze di volontariato confermate
+          Le tue prossime attività confermate
         </p>
       </motion.div>
 
