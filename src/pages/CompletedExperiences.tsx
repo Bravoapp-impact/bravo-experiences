@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Sparkles } from "lucide-react";
+import { Sparkles, ArrowLeft } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/common/EmptyState";
