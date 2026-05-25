@@ -43,6 +43,40 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-25 — Sistema impatto: registrazione KPI per data + superfici dipendente e HR
+
+**Contesto.** Le view canoniche del sistema impatto (`v_volunteering_employee_impact`, `v_volunteering_employee_kpi_contributions`, `v_volunteering_company_impact`, `v_volunteering_company_kpi_breakdown`) e le tabelle `experience_impact_kpis` / `experience_date_kpi_values` esistevano già a livello DB (passi 1-3 in `impatto.md`), ma nessuna superficie le consumava: la registrazione dei valori KPI sulla singola data non aveva UI, e `Impact.tsx` (dipendente) + `HRDashboard.tsx` (Report HR) ricalcolavano tutto lato client con query N+1. Sessione di chiusura dei passi 4 (hook), 6 (superficie dipendente) e 7 (superficie HR) della sequenza di implementazione.
+
+**Cosa cambia.**
+- **`src/components/super-admin/ExperienceDateDialog.tsx`**: aggiunta sezione "Risultati KPI di questa data" che fetcha i KPI definiti sull'esperienza (`experience_impact_kpis` via TanStack Query) e mostra un input numerico per ciascuno. In modifica precarica i valori esistenti da `experience_date_kpi_values`; al submit fa upsert dei valori associati al `experience_date_id`. Vuoto/0 non genera riga. Contestualmente **rimosso dalla vista il campo `beneficiaries_count`** (la colonna resta in DB come legacy, da droppare in seguito). Ore Volontariato, data/ora/posti, logica visibilità company invariati.
+- **Nuovi hook TanStack Query in `src/hooks/queries/impact/`** che leggono dalle view canoniche:
+  - `useUserImpact` → `v_volunteering_employee_impact` (riga corrente)
+  - `useUserKpiContributions` → `v_volunteering_employee_kpi_contributions`
+  - `useCompanyImpact` → `v_volunteering_company_impact`
+  - `useCompanyKpiBreakdown` → `v_volunteering_company_kpi_breakdown`
+  - `keys.ts` per le query keys condivise.
+- **`src/pages/Impact.tsx`** (dipendente) riscritta in lettura: legge da `useUserImpact` + `useUserKpiContributions`, niente più aggregazioni client. Tono narrativo: ore donate / partecipazioni / esperienze distinte come numeri individuali, KPI mostrati come risultato collettivo delle date a cui ha partecipato ("le attività a cui hai preso parte hanno distribuito 240 pasti", **mai diviso per partecipanti** — vedi `impatto.md` §4.2), SDG come badge qualitativi con icona/etichetta italiana. Stati loading + empty state incoraggiante per chi non ha ancora partecipato.
+- **`src/pages/HRDashboard.tsx`** (route `/hr/report`) riscritta come Report HR strutturato sulle quattro famiglie di `impatto.md` §5.2 (Coinvolgimento, Impatto sul territorio, Aree di intervento, Soddisfazione). Legge da `useCompanyImpact` + `useCompanyKpiBreakdown`. Niente più ricalcolo client. Empty state esplicito quando il programma è attivo ma non ha ancora date completate.
+- **Fix `formatPercent` in `HRDashboard.tsx`**: le percentuali (`participation_rate`, `would_recommend_rate`) arrivano dalla view come frazione 0-1, non come intero 0-100. `formatPercent` ora moltiplica per 100 prima di arrotondare — prima un tasso reale di 0,5 si mostrava come "1%".
+
+**Impatto.** `UI` · `Hook` · `Docs`
+
+**File / aree toccate.**
+- `src/components/super-admin/ExperienceDateDialog.tsx`
+- `src/hooks/queries/impact/keys.ts` (nuovo)
+- `src/hooks/queries/impact/useUserImpact.ts` (nuovo)
+- `src/hooks/queries/impact/useUserKpiContributions.ts` (nuovo)
+- `src/hooks/queries/impact/useCompanyImpact.ts` (nuovo)
+- `src/hooks/queries/impact/useCompanyKpiBreakdown.ts` (nuovo)
+- `src/pages/Impact.tsx`
+- `src/pages/HRDashboard.tsx`
+
+**Esplicitamente fuori scope.** Nessuna modifica a DB / view / RLS / RPC / edge function. Nessun tocco a `SuperAdminDashboard` (superficie super-admin sistemica — passo 8, post-HAVAS), né alla vista ETS (passo 9). `HREmployeesPage` non migrato in questa sessione (resta N+1 finché non si tocca). `beneficiaries_count` non droppato dal DB.
+
+**Follow-up.** Drop della colonna `experience_dates.beneficiaries_count` con migration dedicata, una volta verificato in produzione che nessuna superficie la legga più. Migrazione di `HREmployeesPage` (tab statistiche) alla view `v_volunteering_employee_impact` filtrata per company. Passi 8 (super-admin) e 9 (ETS) della sequenza di `impatto.md`.
+
+---
+
 ### 2026-05-25 — Armonizzazione back-arrow e CTA mobile sulle pagine di dettaglio
 
 **Contesto.** Le pagine di dettaglio esperienza usavano back-button in stili diversi (testo "Torna a …" su employee/HR/association, freccia tonda solo in Settings). La CTA mobile sul dettaglio employee era una barra bianca fissa con `border-t` che spezzava visivamente lo scroll. Obiettivo: un solo pattern visivo per tutti i wrapper di dettaglio.
