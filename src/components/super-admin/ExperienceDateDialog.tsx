@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,12 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { devLog } from "@/lib/logger";
+
+interface ImpactKpi {
+  id: string;
+  label: string;
+  sort_order: number;
+}
 
 interface ExperienceDate {
   id: string;
@@ -69,7 +76,50 @@ export function ExperienceDateDialog({
   const [visibility, setVisibility] = useState<"public" | "private">("public");
   const [activatedCompanies, setActivatedCompanies] = useState<CompanyOption[]>([]);
   const [loadingScope, setLoadingScope] = useState(false);
+  const [kpiValues, setKpiValues] = useState<Record<string, string>>({});
   const { toast } = useToast();
+
+  // Load impact KPIs defined for this experience
+  const { data: kpis = [], isLoading: kpisLoading } = useQuery({
+    queryKey: ["experience_impact_kpis", "list", experienceId],
+    queryFn: async (): Promise<ImpactKpi[]> => {
+      const { data, error } = await supabase
+        .from("experience_impact_kpis")
+        .select("id, label, sort_order")
+        .eq("experience_id", experienceId)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: open && !!experienceId,
+    staleTime: 1000 * 30,
+  });
+
+  // Load existing KPI values for the date being edited
+  const { data: existingKpiValues = [] } = useQuery({
+    queryKey: ["experience_date_kpi_values", "list", experienceDate?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("experience_date_kpi_values")
+        .select("kpi_id, value")
+        .eq("experience_date_id", experienceDate!.id);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: open && !!experienceDate?.id,
+    staleTime: 0,
+  });
+
+  // Sync KPI values into local state when dialog opens / data loads
+  useEffect(() => {
+    if (!open) return;
+    const map: Record<string, string> = {};
+    for (const row of existingKpiValues) {
+      map[row.kpi_id as string] = String(row.value);
+    }
+    setKpiValues(map);
+  }, [open, experienceDate?.id, existingKpiValues]);
+
 
   useEffect(() => {
     if (experienceDate) {
@@ -200,6 +250,8 @@ export function ExperienceDateDialog({
         company_id: availabilityMode === "single" ? selectedCompanyId : null,
       };
 
+      let savedDateId: string;
+
       if (experienceDate) {
         const { error } = await supabase
           .from("experience_dates")
@@ -207,23 +259,51 @@ export function ExperienceDateDialog({
           .eq("id", experienceDate.id);
 
         if (error) throw error;
-
-        toast({
-          title: "Successo",
-          description: "Data aggiornata",
-        });
+        savedDateId = experienceDate.id;
       } else {
-        const { error } = await supabase.from("experience_dates").insert(payload);
+        const { data: inserted, error } = await supabase
+          .from("experience_dates")
+          .insert(payload)
+          .select("id")
+          .single();
 
         if (error) throw error;
-
-        toast({
-          title: "Successo",
-          description: "Data creata",
-        });
+        savedDateId = inserted.id;
       }
 
+      // Persist KPI values: replace strategy (delete all, insert non-empty)
+      const toInsert: Array<{ experience_date_id: string; kpi_id: string; value: number }> = [];
+      for (const kpi of kpis) {
+        const raw = (kpiValues[kpi.id] ?? "").trim();
+        if (raw === "") continue;
+        const num = Number(raw);
+        if (!Number.isFinite(num)) continue;
+        toInsert.push({ experience_date_id: savedDateId, kpi_id: kpi.id, value: num });
+      }
+
+      if (kpis.length > 0) {
+        const { error: delErr } = await supabase
+          .from("experience_date_kpi_values")
+          .delete()
+          .eq("experience_date_id", savedDateId);
+        if (delErr) throw delErr;
+      }
+
+      if (toInsert.length > 0) {
+        const { error: insErr } = await supabase
+          .from("experience_date_kpi_values")
+          .insert(toInsert);
+        if (insErr) throw insErr;
+      }
+
+
+      toast({
+        title: "Successo",
+        description: experienceDate ? "Data aggiornata" : "Data creata",
+      });
+
       onSaved();
+
     } catch (error: any) {
       devLog.error("Error saving experience date:", error);
       toast({
@@ -379,40 +459,65 @@ export function ExperienceDateDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="volunteer_hours">Ore Volontariato</Label>
-              <Input
-                id="volunteer_hours"
-                type="number"
-                min={0}
-                step={0.5}
-                value={formData.volunteer_hours}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    volunteer_hours: parseFloat(e.target.value) || 0,
-                  })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="beneficiaries_count">Beneficiari</Label>
-              <Input
-                id="beneficiaries_count"
-                type="number"
-                min={0}
-                value={formData.beneficiaries_count}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    beneficiaries_count: parseInt(e.target.value) || 0,
-                  })
-                }
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="volunteer_hours">Ore Volontariato</Label>
+            <Input
+              id="volunteer_hours"
+              type="number"
+              min={0}
+              step={0.5}
+              value={formData.volunteer_hours}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  volunteer_hours: parseFloat(e.target.value) || 0,
+                })
+              }
+            />
+          </div>
+
+          <div className="space-y-2 pt-2 border-t">
+            <Label>KPI di impatto</Label>
+            {kpisLoading ? (
+              <p className="text-xs text-muted-foreground">Caricamento KPI…</p>
+            ) : kpis.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Nessun KPI di impatto definito per questa esperienza
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {kpis.map((kpi) => (
+                  <div
+                    key={kpi.id}
+                    className="grid grid-cols-[1fr_120px] items-center gap-3"
+                  >
+                    <Label
+                      htmlFor={`kpi-${kpi.id}`}
+                      className="font-normal text-sm"
+                    >
+                      {kpi.label}
+                    </Label>
+                    <Input
+                      id={`kpi-${kpi.id}`}
+                      type="number"
+                      min={0}
+                      step="any"
+                      placeholder="—"
+                      value={kpiValues[kpi.id] ?? ""}
+                      onChange={(e) =>
+                        setKpiValues((prev) => ({
+                          ...prev,
+                          [kpi.id]: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annulla
