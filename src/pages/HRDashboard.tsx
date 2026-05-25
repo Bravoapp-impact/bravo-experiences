@@ -22,7 +22,7 @@ function formatNumber(value: number): string {
 }
 
 function formatPercent(value: number): string {
-  return `${Math.round(value)}%`;
+  return `${Math.round(value * 100)}%`;
 }
 
 interface StatProps {
