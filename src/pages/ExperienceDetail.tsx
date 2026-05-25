@@ -376,10 +376,10 @@ export default function ExperienceDetail() {
         {/* Back button */}
         <button
           onClick={goBack}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4 py-2"
+          aria-label="Indietro"
+          className="flex items-center justify-center h-10 w-10 rounded-full bg-muted hover:bg-muted/70 transition-colors mb-6"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Torna al catalogo
+          <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
 
         <ExperienceDetailContent
