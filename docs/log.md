@@ -43,6 +43,32 @@ Se la sessione tocca DB, RLS, RPC o edge function, ricordarsi di aggiornare anch
 
 ## Entries
 
+### 2026-05-25 — Rimozione tab Galleria dipendente + rinominata voce "Prenotazioni" in "Attività"
+
+**Contesto.** La sezione "Le tue foto" nel dettaglio dell'esperienza completata (BookingDetailModal) ha reso ridondante la pagina Galleria del dipendente. Le foto caricate sono ora accessibili nel contesto dell'evento a cui appartengono. Contemporaneamente, la pagina `/app/bookings` è stata ridotta a pura vista operativa delle esperienze future e la label "Prenotazioni" non riflette più il contenuto della pagina.
+
+**Cosa cambia.**
+- **`src/components/layout/BottomNavigation.tsx`**: rimossa voce `Galleria` (icona + label). Rinominata voce `Prenotazioni` → `Attività` (route `/app/bookings` invariata).
+- **`src/components/layout/AppLayout.tsx`**: rimossa voce `Galleria` dalla nav desktop. Rinominata voce `Prenotazioni` → `Attività`. Rimosso import `ImageIcon` (ora inutilizzato).
+- **`src/App.tsx`**: rimossa route `/app/gallery` e import della pagina `Gallery`.
+- **`src/pages/Gallery.tsx`**: file pagina eliminato.
+- **`src/pages/MyBookings.tsx`**: header rinominato "Le mie attività" / "Le tue prossime attività confermate". Sezione "Prossime esperienze" → "Prossime attività". Empty state "Nessuna attività futura".
+
+**Impatto.** `UI` · `Navigazione dipendente` · `MyBookings`
+
+**File / aree toccate.**
+- `src/components/layout/BottomNavigation.tsx`
+- `src/components/layout/AppLayout.tsx`
+- `src/App.tsx`
+- `src/pages/Gallery.tsx` (eliminato)
+- `src/pages/MyBookings.tsx`
+
+**Esplicitamente fuori scope.** Nessuna modifica a HR Gallery (`/hr/galleria`), al meccanismo di upload/moderazione foto, al dettaglio esperienza completata (BookingDetailModal, MyEventPhotosSection), a pagine HR/super-admin/association.
+
+**Follow-up.** —
+
+---
+
 ### 2026-05-23 — Ristrutturazione Profilo dipendente + trasloco storico fuori da MyBookings
 
 **Contesto.** Il Profilo dipendente era una raccolta di card scollegate (identità + form profilo + password + manager email + anteprima esperienze inline). La pagina `/app/bookings` duplicava lo storico in un accordion "Storico" che si allungava nel tempo. Le foto delle esperienze passate si caricavano da lì. Obiettivo della sessione: trasformare il Profilo in un hub di identità + percorso, spostare lo storico nella pagina dedicata `/app/esperienze-completate`, e ridurre `/app/bookings` a pura vista operativa delle esperienze future.
