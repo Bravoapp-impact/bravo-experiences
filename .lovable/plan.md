@@ -1,17 +1,14 @@
 ## Obiettivo
-Semplificare la pagina `Profile.tsx` del dipendente.
+Trasformare la CTA mobile "Vedi date disponibili" nel dettaglio esperienza da barra fissa con sfondo bianco e bordo, in un bottone "sospeso" galleggiante sopra il contenuto.
+
+## File da modificare
+`src/pages/ExperienceDetail.tsx` (righe 408–418)
 
 ## Modifiche
+- Rimuovere il contenitore `fixed` con `bg-background/95 backdrop-blur-sm border-t border-border` che crea la barra bianca.
+- Sostituirlo con un wrapper trasparente `fixed bottom-16 left-0 right-0 px-4 z-40 pointer-events-none` (così non blocca lo scroll del contenuto sotto).
+- Il `Button` interno avrà `pointer-events-auto`, ombra elegante (`shadow-lg`), e manterrà larghezza piena entro il padding (`w-full h-12 rounded-xl`).
+- Mantenere `bottom-16` per stare sopra la BottomNavigation.
+- Aggiungere un po' di margine inferiore al contenuto già garantito da `pb-28` esistente (ok così).
 
-**1. Rimuovere tile "Ore donate"** — eliminare il blocco motion.div (linee 184-208) e rimuovere la grid wrapper `grid-cols-2` (linee 157-209) dato che resta un solo elemento. Rimuovere anche calcolo `totalHours` / `totalHoursLabel` ora inutilizzato e l'import `Clock` se non più usato altrove (resta usato nell'hour budget row, quindi tengo l'import).
-
-**2. Trasformare "Esperienze completate" in riga flat** — stile identico a Impostazioni (linee 257-271):
-- Link a `/app/esperienze-completate`
-- Wrapper icona `w-10 h-10 rounded-full bg-amber-500/10` (tinta colorata coerente con l'icona)
-- `Award` con `text-amber-500 h-5 w-5`
-- Titolo: "Esperienze completate"
-- Sottotitolo: count dinamico, es. `"{n} esperienze"` (o "Nessuna esperienza" / "1 esperienza"); Skeleton durante loading
-- `ChevronRight` a destra
-
-## Fuori scope
-Identity card, hour budget row, Impostazioni, logout.
+Risultato: il bottone galleggia sopra il contenuto senza barra di sfondo, con ombra che lo stacca visivamente.
