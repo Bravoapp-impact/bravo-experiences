@@ -16,6 +16,7 @@ interface BookingDetailModalProps {
     id: string;
     status: string;
     experience_dates: {
+      id?: string;
       start_datetime: string;
       end_datetime: string;
       experiences: {
