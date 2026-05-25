@@ -56,7 +56,9 @@ Cose che sappiamo essere imperfette o incomplete, ma che non bloccano lo sprint 
 
 **`company_service_config` nelle catene RLS.** La tabella resta in vista del freemium, ma è ancora referenziata da policy di visibilità che andavano costruite per retrocompatibilità. Le policy vanno semplificate togliendo `company_service_config` dalla catena, lasciando solo la tabella per l'uso futuro.
 
-**Query N+1 in pagine HR pesanti.** `HRExperiencesPage` (tab statistiche) e `HRDashboard` fanno query inefficienti. Vanno migrate alle view SQL del layer impatto — ma quel layer non esiste finché non si chiudono le decisioni su SDG e dimensioni d'impatto.
+**Query N+1 residue in `HREmployeesPage`.** `HRDashboard` (Report HR) e `Impact.tsx` (dipendente) leggono ora dalle view canoniche `v_volunteering_company_impact` / `v_volunteering_company_kpi_breakdown` / `v_volunteering_employee_impact` / `v_volunteering_employee_kpi_contributions` (sessione 2026-05-25). Resta da migrare il **tab statistiche di `HREmployeesPage`** alla `v_volunteering_employee_impact` filtrata per company, oggi ancora N+1.
+
+**Drop `experience_dates.beneficiaries_count`.** Campo legacy: rimosso dalla vista del `ExperienceDateDialog` super-admin il 2026-05-25, sostituito dai KPI specifici nominati (sezione 4.2 di `impatto.md`). La colonna resta in DB. Prima del drop verificare che nessuna superficie la legga più, poi migration dedicata.
 
 **Hook legacy non ancora migrati a TanStack Query.** Lo scaffold è chiuso, gli hook nuovi seguono il pattern. I vecchi vengono migrati "in corsa" quando si tocca la pagina che li consuma — non in blocco. Pattern di riferimento: `useRelatedExperiences`, `useEmployeeCatalog`. Convenzioni in `data-fetching.md`.
 
