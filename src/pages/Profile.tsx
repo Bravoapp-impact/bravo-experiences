@@ -93,12 +93,14 @@ export default function Profile() {
   };
 
   const completedCount = completed.length;
-  const totalHours = completed.reduce(
-    (sum, b) => sum + Number(b.experience_dates.volunteer_hours || 0),
-    0
-  );
-  const totalHoursLabel = Number.isInteger(totalHours) ? totalHours : totalHours.toFixed(1);
+  const completedLabel =
+    completedCount === 0
+      ? "Nessuna esperienza"
+      : completedCount === 1
+      ? "1 esperienza"
+      : `${completedCount} esperienze`;
   const companyName = profile?.companies?.name;
+
 
   return (
     <AppLayout>
