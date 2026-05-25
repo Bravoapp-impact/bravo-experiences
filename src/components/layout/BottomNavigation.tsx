@@ -1,19 +1,21 @@
 import { Link, useLocation } from "react-router-dom";
-import { Search, Calendar, Sprout, User } from "lucide-react";
+import { Search, Sprout, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
+import { BravoSymbolIcon } from "@/components/icons/BravoSymbolIcon";
 
 interface NavItem {
   path: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   useAvatar?: boolean;
+  iconScale?: string;
 }
 
 const navItems: NavItem[] = [
   { path: "/app/experiences", label: "Esplora", icon: Search },
-  { path: "/app/bookings", label: "Attività", icon: Calendar },
+  { path: "/app/bookings", label: "Attività", icon: BravoSymbolIcon, iconScale: "h-5 w-5" },
   { path: "/app/impact", label: "Impatto", icon: Sprout },
   { path: "/app/profile", label: "Profilo", icon: User, useAvatar: true },
 ];
