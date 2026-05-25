@@ -586,6 +586,45 @@ export type Database = {
           },
         ]
       }
+      experience_date_kpi_values: {
+        Row: {
+          created_at: string
+          experience_date_id: string
+          id: string
+          kpi_id: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          experience_date_id: string
+          id?: string
+          kpi_id: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          experience_date_id?: string
+          id?: string
+          kpi_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experience_date_kpi_values_experience_date_id_fkey"
+            columns: ["experience_date_id"]
+            isOneToOne: false
+            referencedRelation: "experience_dates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "experience_date_kpi_values_kpi_id_fkey"
+            columns: ["kpi_id"]
+            isOneToOne: false
+            referencedRelation: "experience_impact_kpis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       experience_dates: {
         Row: {
           beneficiaries_count: number | null
@@ -630,6 +669,38 @@ export type Database = {
           },
           {
             foreignKeyName: "experience_dates_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      experience_impact_kpis: {
+        Row: {
+          created_at: string
+          experience_id: string
+          id: string
+          label: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          experience_id: string
+          id?: string
+          label: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          experience_id?: string
+          id?: string
+          label?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experience_impact_kpis_experience_id_fkey"
             columns: ["experience_id"]
             isOneToOne: false
             referencedRelation: "experiences"
