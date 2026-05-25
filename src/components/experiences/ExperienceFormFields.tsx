@@ -154,9 +154,14 @@ export interface ExperienceFormFieldsProps {
    * wrapper controlla submit, defaults, reset e integrazione con Supabase.
    */
   form: UseFormReturn<ExperienceFormValues>;
+  /**
+   * Solo super_admin: ID dell'esperienza in modifica. Necessario per gestire i
+   * KPI di impatto (devono agganciarsi a un'esperienza esistente).
+   */
+  experienceId?: string;
 }
 
-export function ExperienceFormFields({ mode, form }: ExperienceFormFieldsProps) {
+export function ExperienceFormFields({ mode, form, experienceId }: ExperienceFormFieldsProps) {
   const {
     register,
     control,
