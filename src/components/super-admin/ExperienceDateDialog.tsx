@@ -76,7 +76,50 @@ export function ExperienceDateDialog({
   const [visibility, setVisibility] = useState<"public" | "private">("public");
   const [activatedCompanies, setActivatedCompanies] = useState<CompanyOption[]>([]);
   const [loadingScope, setLoadingScope] = useState(false);
+  const [kpiValues, setKpiValues] = useState<Record<string, string>>({});
   const { toast } = useToast();
+
+  // Load impact KPIs defined for this experience
+  const { data: kpis = [], isLoading: kpisLoading } = useQuery({
+    queryKey: ["experience_impact_kpis", "list", experienceId],
+    queryFn: async (): Promise<ImpactKpi[]> => {
+      const { data, error } = await supabase
+        .from("experience_impact_kpis")
+        .select("id, label, sort_order")
+        .eq("experience_id", experienceId)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: open && !!experienceId,
+    staleTime: 1000 * 30,
+  });
+
+  // Load existing KPI values for the date being edited
+  const { data: existingKpiValues = [] } = useQuery({
+    queryKey: ["experience_date_kpi_values", "list", experienceDate?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("experience_date_kpi_values")
+        .select("kpi_id, value")
+        .eq("experience_date_id", experienceDate!.id);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: open && !!experienceDate?.id,
+    staleTime: 0,
+  });
+
+  // Sync KPI values into local state when dialog opens / data loads
+  useEffect(() => {
+    if (!open) return;
+    const map: Record<string, string> = {};
+    for (const row of existingKpiValues) {
+      map[row.kpi_id as string] = String(row.value);
+    }
+    setKpiValues(map);
+  }, [open, experienceDate?.id, existingKpiValues]);
+
 
   useEffect(() => {
     if (experienceDate) {
