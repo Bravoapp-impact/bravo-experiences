@@ -226,6 +226,10 @@ export default function CompletedExperiences() {
         onClose={() => setSelectedBooking(null)}
         onCancel={() => {}}
         isCancelling={false}
+        onUploadPhotos={(b) => {
+          setSelectedBooking(null);
+          setUploadDialogBooking(b as any);
+        }}
       />
 
       <FeedbackModal
