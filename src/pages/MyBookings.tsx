@@ -174,10 +174,10 @@ export default function MyBookings() {
         className="mb-6"
       >
         <h1 className="text-xl font-bold text-foreground mb-0.5">
-          Le mie esperienze
+          Le mie attività
         </h1>
         <p className="text-[13px] text-muted-foreground">
-          Le tue prossime esperienze di volontariato confermate
+          Le tue prossime attività confermate
         </p>
       </motion.div>
 
@@ -201,9 +201,9 @@ export default function MyBookings() {
           className="text-center py-12 bg-muted/30 rounded-2xl border border-border/50"
         >
           <Calendar className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-          <h3 className="text-base font-semibold mb-1">Nessuna prenotazione futura</h3>
+          <h3 className="text-base font-semibold mb-1">Nessuna attività futura</h3>
           <p className="text-[13px] text-muted-foreground max-w-md mx-auto">
-            Non hai esperienze confermate in programma. Esplora il catalogo e prenota la tua prossima attività!
+            Non hai attività confermate in programma. Esplora il catalogo e prenota la tua prossima esperienza!
           </p>
         </motion.div>
       ) : (
@@ -214,7 +214,7 @@ export default function MyBookings() {
             className="text-base font-semibold mb-4 flex items-center gap-2"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-            Prossime esperienze
+            Prossime attività
             <span className="text-[13px] font-normal text-muted-foreground ml-1">
               ({futureBookings.length})
             </span>
