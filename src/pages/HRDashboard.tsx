@@ -1,213 +1,74 @@
-import { useEffect, useState } from "react";
-import { Home } from "lucide-react";
+import { BarChart3, Users, TrendingUp, Clock, Activity, Calendar, Building2, MapPin, Star, ThumbsUp, Sprout } from "lucide-react";
+import { motion } from "framer-motion";
 import { HRLayout } from "@/components/layout/HRLayout";
-import { MetricsCards } from "@/components/hr/MetricsCards";
-import { SDGImpactGrid } from "@/components/hr/SDGImpactGrid";
-import { UpcomingEvents } from "@/components/hr/UpcomingEvents";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { devLog } from "@/lib/logger";
 import { PageHeader } from "@/components/common/PageHeader";
 import { PageSkeleton } from "@/components/common/skeletons/PageSkeleton";
+import PageSection from "@/components/common/PageSection";
+import { Card, CardContent } from "@/components/ui/card";
+import { getSDGInfo } from "@/lib/sdg-data";
+import { useCompanyImpact } from "@/hooks/queries/impact/useCompanyImpact";
+import {
+  useCompanyKpiBreakdown,
+  type CompanyKpiRow,
+} from "@/hooks/queries/impact/useCompanyKpiBreakdown";
 
-interface DashboardData {
-  employeesCount: number;
-  participationRate: number;
-  totalVolunteerHours: number;
-  totalBeneficiaries: number;
-  totalParticipations: number;
-  budgetHoursPerEmployee: number | null;
-  sdgImpacts: { code: string; hours: number }[];
-  upcomingEvents: {
-    id: string;
-    experience_title: string;
-    city: string | null;
-    start_datetime: string;
-    company_participants: number;
-    max_participants: number;
-  }[];
+function formatNumber(value: number): string {
+  if (Number.isInteger(value)) return value.toLocaleString("it-IT");
+  return value.toLocaleString("it-IT", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+  });
+}
+
+function formatPercent(value: number): string {
+  return `${Math.round(value)}%`;
+}
+
+interface StatProps {
+  label: string;
+  value: string;
+  hint?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  iconColor: string;
+  iconBg: string;
+  delay?: number;
+}
+
+function StatCard({ label, value, hint, icon: Icon, iconColor, iconBg, delay = 0 }: StatProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+    >
+      <Card className="border-border/50 h-full">
+        <CardContent className="p-5">
+          <div className={`inline-flex p-2.5 rounded-xl ${iconBg} mb-3`}>
+            <Icon className={`h-5 w-5 ${iconColor}`} />
+          </div>
+          <p className="text-2xl font-bold text-foreground leading-tight">
+            {value}
+          </p>
+          <p className="text-[12px] text-muted-foreground mt-1">{label}</p>
+          {hint && (
+            <p className="text-[11px] text-muted-foreground/80 mt-0.5">{hint}</p>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
 }
 
 export default function HRDashboard() {
   const { profile } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<DashboardData>({
-    employeesCount: 0,
-    participationRate: 0,
-    totalVolunteerHours: 0,
-    totalBeneficiaries: 0,
-    totalParticipations: 0,
-    budgetHoursPerEmployee: null,
-    sdgImpacts: [],
-    upcomingEvents: [],
-  });
+  const companyId = profile?.company_id ?? undefined;
 
-  useEffect(() => {
-    if (profile?.company_id) {
-      fetchDashboardData();
-    }
-  }, [profile?.company_id]);
+  const { data: impact, isLoading: impactLoading } = useCompanyImpact(companyId);
+  const { data: kpiRows = [], isLoading: kpiLoading } =
+    useCompanyKpiBreakdown(companyId);
 
-  const fetchDashboardData = async () => {
-    if (!profile?.company_id) return;
-
-    try {
-      setLoading(true);
-
-      // Fetch employees count and profiles
-      const { data: companyProfiles } = await supabase
-        .from("profiles")
-        .select("id, first_name, last_name, email")
-        .eq("company_id", profile.company_id);
-
-      const employeesCount = companyProfiles?.length || 0;
-      const companyUserIds = new Set(companyProfiles?.map((p) => p.id) || []);
-
-      // Fetch hour budget for company
-      const { data: budgetData } = await supabase
-        .from("hour_budgets")
-        .select("hours_per_employee_year")
-        .eq("company_id", profile.company_id!)
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      const budgetHoursPerEmployee = budgetData?.[0]?.hours_per_employee_year
-        ? Number(budgetData[0].hours_per_employee_year)
-        : null;
-
-      // Fetch all bookings with related data for this company
-      const { data: bookingsData } = await supabase
-        .from("bookings")
-        .select(`
-          id,
-          status,
-          created_at,
-          user_id,
-          experience_dates (
-            id,
-            start_datetime,
-            end_datetime,
-            volunteer_hours,
-            beneficiaries_count,
-            max_participants,
-            experiences (
-              id,
-              title,
-              city,
-              sdgs
-            )
-          )
-        `)
-        .order("created_at", { ascending: false })
-        .limit(1000);
-
-      // Filter bookings by company employees
-      const companyBookings = bookingsData?.filter((b) => companyUserIds.has(b.user_id)) || [];
-
-      // Calculate completed bookings (status completed OR confirmed+past)
-      const now = new Date();
-      const completedBookings = companyBookings.filter(
-        (b) =>
-          (b.status === "completed" || (b.status === "confirmed" &&
-          b.experience_dates &&
-          new Date(b.experience_dates.end_datetime) < now))
-      );
-
-      // Calculate unique employees who participated
-      const participatingEmployees = new Set(completedBookings.map((b) => b.user_id));
-      const participationRate = employeesCount > 0 
-        ? Math.round((participatingEmployees.size / employeesCount) * 100) 
-        : 0;
-
-      // Calculate metrics
-      let totalVolunteerHours = 0;
-      let totalBeneficiaries = 0;
-      const sdgHoursMap: Record<string, number> = {};
-
-      completedBookings.forEach((booking) => {
-        const hours = Number(booking.experience_dates?.volunteer_hours) || 0;
-        const beneficiaries = booking.experience_dates?.beneficiaries_count || 0;
-        const sdgs = booking.experience_dates?.experiences?.sdgs || [];
-
-        totalVolunteerHours += hours;
-        totalBeneficiaries += beneficiaries;
-
-        // Aggregate SDG hours
-        sdgs.forEach((sdg: string) => {
-          sdgHoursMap[sdg] = (sdgHoursMap[sdg] || 0) + hours;
-        });
-      });
-
-      const sdgImpacts = Object.entries(sdgHoursMap)
-        .map(([code, hours]) => ({ code, hours }))
-        .sort((a, b) => b.hours - a.hours);
-
-      // Fetch upcoming events with company participants count
-      const { data: upcomingDates } = await supabase
-        .from("experience_dates")
-        .select(`
-          id,
-          start_datetime,
-          max_participants,
-          experiences (
-            id,
-            title,
-            city
-          )
-        `)
-        .gt("start_datetime", now.toISOString())
-        .order("start_datetime", { ascending: true })
-        .limit(10);
-
-      // Batch: fetch all company participant counts for upcoming events in a single query
-      const upcomingDateIds = (upcomingDates || []).map((d) => d.id);
-      const companyUserIdsArray = Array.from(companyUserIds);
-      const participantsMap = new Map<string, number>();
-
-      if (upcomingDateIds.length > 0 && companyUserIdsArray.length > 0) {
-        const { data: upcomingBookings } = await supabase
-          .from("bookings")
-          .select("experience_date_id")
-          .in("experience_date_id", upcomingDateIds)
-          .eq("status", "confirmed")
-          .in("user_id", companyUserIdsArray);
-
-        (upcomingBookings || []).forEach((b) => {
-          const prev = participantsMap.get(b.experience_date_id) || 0;
-          participantsMap.set(b.experience_date_id, prev + 1);
-        });
-      }
-
-      const upcomingEvents = (upcomingDates || []).map((date) => ({
-        id: date.id,
-        experience_title: date.experiences?.title || "",
-        city: date.experiences?.city || null,
-        start_datetime: date.start_datetime,
-        company_participants: participantsMap.get(date.id) || 0,
-        max_participants: date.max_participants,
-      }));
-
-      // Filter to only show events with at least one company participant, limit to 4
-      const eventsWithParticipants = upcomingEvents
-        .filter((e) => e.company_participants > 0)
-        .slice(0, 4);
-
-      setData({
-        employeesCount,
-        participationRate,
-        totalVolunteerHours,
-        totalBeneficiaries,
-        totalParticipations: completedBookings.length,
-        budgetHoursPerEmployee,
-        sdgImpacts,
-        upcomingEvents: eventsWithParticipants,
-      });
-    } catch (error) {
-      devLog.error("Error fetching dashboard data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = impactLoading || kpiLoading;
 
   if (loading) {
     return (
@@ -217,35 +78,260 @@ export default function HRDashboard() {
     );
   }
 
+  const hasData = !!impact && impact.total_participations > 0;
+
+  // Group KPI rows by experience
+  const kpisByExperience = new Map<
+    string,
+    { title: string; rows: CompanyKpiRow[] }
+  >();
+  for (const row of kpiRows) {
+    const bucket = kpisByExperience.get(row.experience_id);
+    if (bucket) bucket.rows.push(row);
+    else
+      kpisByExperience.set(row.experience_id, {
+        title: row.experience_title,
+        rows: [row],
+      });
+  }
+  const kpiGroups = Array.from(kpisByExperience.values());
+
   return (
     <HRLayout>
-      <div className="space-y-6">
+      <div className="space-y-2">
         <PageHeader
-          title="Dashboard"
-          description="Panoramica dell'impatto sociale della tua azienda"
-          icon={Home}
-          iconColor="text-violet-500"
+          title="Report"
+          description="L'impatto del volontariato della tua azienda"
+          icon={BarChart3}
+          iconColor="text-rose-500"
         />
 
-        {/* Metrics Cards - 5 cards */}
-        <MetricsCards
-          employeesCount={data.employeesCount}
-          participationRate={data.participationRate}
-          totalVolunteerHours={data.totalVolunteerHours}
-          totalBeneficiaries={data.totalBeneficiaries}
-          totalParticipations={data.totalParticipations}
-          budgetHoursPerEmployee={data.budgetHoursPerEmployee}
-        />
+        {!hasData ? (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Card>
+              <CardContent className="p-10 text-center">
+                <div className="mx-auto mb-4 inline-flex p-3 rounded-full bg-primary/10">
+                  <Sprout className="h-8 w-8 text-primary" />
+                </div>
+                <h2 className="text-base font-semibold text-foreground mb-1">
+                  Il programma è attivo
+                </h2>
+                <p className="text-[13px] text-muted-foreground max-w-md mx-auto">
+                  L'impatto comparirà qui dopo le prime esperienze completate
+                  dai partecipanti della tua azienda.
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ) : (
+          <>
+            {/* Coinvolgimento */}
+            <PageSection
+              title="Coinvolgimento"
+              description="Quante persone della tua azienda hanno partecipato e quanto tempo hanno donato"
+            >
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+                <StatCard
+                  label="Persone uniche coinvolte"
+                  value={formatNumber(impact!.unique_participants)}
+                  hint={`su ${formatNumber(impact!.registered_users)} utenti registrati`}
+                  icon={Users}
+                  iconColor="text-bravo-purple"
+                  iconBg="bg-bravo-purple/10"
+                  delay={0.05}
+                />
+                <StatCard
+                  label="Tasso di partecipazione"
+                  value={formatPercent(impact!.participation_rate)}
+                  icon={TrendingUp}
+                  iconColor="text-success"
+                  iconBg="bg-success/10"
+                  delay={0.1}
+                />
+                <StatCard
+                  label="Ore totali di volontariato"
+                  value={formatNumber(impact!.total_hours)}
+                  icon={Clock}
+                  iconColor="text-bravo-orange"
+                  iconBg="bg-bravo-orange/10"
+                  delay={0.15}
+                />
+                <StatCard
+                  label="Ore medie per partecipante"
+                  value={formatNumber(impact!.avg_hours_per_participant)}
+                  icon={Activity}
+                  iconColor="text-cyan-600"
+                  iconBg="bg-cyan-500/10"
+                  delay={0.2}
+                />
+                <StatCard
+                  label="Partecipazioni totali"
+                  value={formatNumber(impact!.total_participations)}
+                  hint={`${formatNumber(impact!.distinct_experiences)} esperienze diverse`}
+                  icon={Calendar}
+                  iconColor="text-bravo-pink"
+                  iconBg="bg-bravo-pink/10"
+                  delay={0.25}
+                />
+              </div>
+            </PageSection>
 
-        {/* Two column layout: SDG Impact + Upcoming Events */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-2">
-            <SDGImpactGrid sdgImpacts={data.sdgImpacts} />
-          </div>
-          <div>
-            <UpcomingEvents events={data.upcomingEvents} />
-          </div>
-        </div>
+            {/* Impatto sul territorio */}
+            <PageSection
+              title="Impatto sul territorio"
+              description="ETS coinvolti, territori toccati e risultati concreti generati"
+            >
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
+                <StatCard
+                  label="ETS coinvolti"
+                  value={formatNumber(impact!.ets_count)}
+                  icon={Building2}
+                  iconColor="text-emerald-600"
+                  iconBg="bg-emerald-500/10"
+                />
+                <StatCard
+                  label="Città coperte"
+                  value={formatNumber(impact!.cities_count)}
+                  icon={MapPin}
+                  iconColor="text-blue-600"
+                  iconBg="bg-blue-500/10"
+                />
+              </div>
+
+              {kpiGroups.length > 0 ? (
+                <Card>
+                  <CardContent className="p-5 space-y-5">
+                    <p className="text-[13px] text-muted-foreground">
+                      Risultati concreti raggiunti, per esperienza:
+                    </p>
+                    {kpiGroups.map((group, idx) => (
+                      <motion.div
+                        key={group.title + idx}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.05 * idx }}
+                        className="border-l-2 border-primary/30 pl-4"
+                      >
+                        <p className="text-[12px] font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                          {group.title}
+                        </p>
+                        <ul className="space-y-2">
+                          {group.rows.map((row) => (
+                            <li
+                              key={row.kpi_label}
+                              className="flex items-baseline gap-3"
+                            >
+                              <span className="text-xl font-bold text-primary tabular-nums">
+                                {formatNumber(row.total_value)}
+                              </span>
+                              <span className="text-sm text-foreground">
+                                {row.kpi_label.toLowerCase()}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </motion.div>
+                    ))}
+                  </CardContent>
+                </Card>
+              ) : (
+                <p className="text-[13px] text-muted-foreground italic">
+                  Nessun risultato specifico ancora registrato per le esperienze
+                  completate.
+                </p>
+              )}
+            </PageSection>
+
+            {/* Aree di intervento */}
+            <PageSection
+              title="Aree di intervento"
+              description="I temi dell'Agenda 2030 su cui la tua azienda ha agito"
+            >
+              {impact!.sdgs_touched.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {impact!.sdgs_touched.map((code, index) => {
+                    const info = getSDGInfo(code);
+                    if (!info) return null;
+                    return (
+                      <motion.div
+                        key={code}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.03 * index }}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border"
+                        style={{
+                          backgroundColor: `${info.color}15`,
+                          borderColor: `${info.color}30`,
+                        }}
+                      >
+                        <span className="text-base leading-none">
+                          {info.icon}
+                        </span>
+                        <span
+                          className="text-xs font-medium"
+                          style={{ color: info.color }}
+                        >
+                          {info.name}
+                        </span>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-[13px] text-muted-foreground italic">
+                  Le aree di intervento appariranno qui dopo le prime
+                  partecipazioni.
+                </p>
+              )}
+            </PageSection>
+
+            {/* Soddisfazione */}
+            <PageSection
+              title="Soddisfazione"
+              description="Come i partecipanti valutano le esperienze"
+            >
+              {impact!.reviews_count > 0 ? (
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <StatCard
+                    label="Rating medio"
+                    value={
+                      impact!.avg_rating != null
+                        ? `${impact!.avg_rating.toFixed(1)} / 5`
+                        : "—"
+                    }
+                    hint={`${formatNumber(impact!.reviews_count)} ${impact!.reviews_count === 1 ? "recensione" : "recensioni"}`}
+                    icon={Star}
+                    iconColor="text-amber-500"
+                    iconBg="bg-amber-500/10"
+                  />
+                  <StatCard
+                    label="Consiglierebbero l'esperienza"
+                    value={
+                      impact!.would_recommend_rate != null
+                        ? formatPercent(impact!.would_recommend_rate)
+                        : "—"
+                    }
+                    icon={ThumbsUp}
+                    iconColor="text-green-600"
+                    iconBg="bg-green-500/10"
+                  />
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <p className="text-[13px] text-muted-foreground">
+                      Nessuna recensione ancora raccolta. I feedback dei
+                      partecipanti compariranno qui dopo le prime valutazioni.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </PageSection>
+          </>
+        )}
       </div>
     </HRLayout>
   );
