@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LogOut, Search, Calendar, Sprout, User, Image as ImageIcon } from "lucide-react";
+import { LogOut, Search, Calendar, Sprout, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
