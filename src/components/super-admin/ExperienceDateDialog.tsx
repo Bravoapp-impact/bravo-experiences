@@ -459,40 +459,65 @@ export function ExperienceDateDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="volunteer_hours">Ore Volontariato</Label>
-              <Input
-                id="volunteer_hours"
-                type="number"
-                min={0}
-                step={0.5}
-                value={formData.volunteer_hours}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    volunteer_hours: parseFloat(e.target.value) || 0,
-                  })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="beneficiaries_count">Beneficiari</Label>
-              <Input
-                id="beneficiaries_count"
-                type="number"
-                min={0}
-                value={formData.beneficiaries_count}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    beneficiaries_count: parseInt(e.target.value) || 0,
-                  })
-                }
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="volunteer_hours">Ore Volontariato</Label>
+            <Input
+              id="volunteer_hours"
+              type="number"
+              min={0}
+              step={0.5}
+              value={formData.volunteer_hours}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  volunteer_hours: parseFloat(e.target.value) || 0,
+                })
+              }
+            />
+          </div>
+
+          <div className="space-y-2 pt-2 border-t">
+            <Label>KPI di impatto</Label>
+            {kpisLoading ? (
+              <p className="text-xs text-muted-foreground">Caricamento KPI…</p>
+            ) : kpis.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Nessun KPI di impatto definito per questa esperienza
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {kpis.map((kpi) => (
+                  <div
+                    key={kpi.id}
+                    className="grid grid-cols-[1fr_120px] items-center gap-3"
+                  >
+                    <Label
+                      htmlFor={`kpi-${kpi.id}`}
+                      className="font-normal text-sm"
+                    >
+                      {kpi.label}
+                    </Label>
+                    <Input
+                      id={`kpi-${kpi.id}`}
+                      type="number"
+                      min={0}
+                      step="any"
+                      placeholder="—"
+                      value={kpiValues[kpi.id] ?? ""}
+                      onChange={(e) =>
+                        setKpiValues((prev) => ({
+                          ...prev,
+                          [kpi.id]: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annulla
