@@ -408,10 +408,10 @@ export default function ExperienceDetail() {
       {/* Mobile sticky CTA */}
       {isMobile && (
         <>
-          <div className="fixed bottom-16 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border z-40">
+          <div className="fixed bottom-20 left-0 right-0 px-4 z-40 pointer-events-none">
             <Button
               onClick={() => setDrawerOpen(true)}
-              className="w-full h-12 text-base font-medium rounded-xl"
+              className="pointer-events-auto w-full h-12 text-base font-medium rounded-xl shadow-lg shadow-primary/25"
             >
               Vedi date disponibili
             </Button>
