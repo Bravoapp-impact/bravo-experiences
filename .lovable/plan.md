@@ -1,42 +1,27 @@
 ## Obiettivo
-Aggiungere una sezione "Le tue foto" nel `BookingDetailModal` per le esperienze passate/completate, che mostri tutte le foto caricate dal dipendente per quell'evento, con stato di moderazione visibile.
+Sostituire l'icona della voce "Attività" nella nav dipendente con il simbolo Bravo!, mantenendo lo stesso comportamento delle altre icone lucide (currentColor + colori active/inactive).
 
-## Modifiche
+## Step
 
-### 1. Nuovo hook `useMyPhotosForEvent` (`src/hooks/queries/gallery/useMyPhotos.ts`)
-Aggiungere accanto a `useMyPhotosCountForEvent` un hook che ritorna la lista completa delle foto dell'utente per uno specifico `experience_date_id`:
-- Select: `id, storage_path, status, caption, created_at`
-- Filtri: `uploaded_by = userId`, `experience_date_id = ...`
-- Tutti gli stati (pending, approved, rejected) — il dipendente vede tutto ciò che ha caricato.
-- Ordine: `created_at desc`.
-- Riusa una nuova key in `galleryKeys` (es. `myPhotosForEvent`).
+1. **Copia asset**
+   - `code--copy user-uploads://bravo-symbol.svg src/assets/bravo-symbol.svg`
 
-### 2. Nuovo componente `MyEventPhotosSection` (`src/components/bookings/MyEventPhotosSection.tsx`)
-Componente "presentational" usato dentro `BookingDetailModal`. Props: `experienceDateId`, `onUploadClick?`.
-- Usa `useMyPhotosForEvent` + `useSignedPhotoUrls` per ottenere thumbnail.
-- Header: titolo "Le tue foto" coerente con gli altri h3 del modal.
-- Stati:
-  - Loading: piccola skeleton grid.
-  - Vuoto: mini empty state con copy invitante ("Non hai ancora caricato foto per questa esperienza") + (se fornito `onUploadClick`) bottone "Carica foto".
-  - Con foto: griglia 3–4 colonne di thumbnail quadrate (object-cover, `rounded-lg`). Sopra ogni thumbnail con status diverso da `approved`, badge in overlay:
-    - `pending` → "In revisione" (badge `secondary`).
-    - `rejected` → "Non approvata" (badge `destructive`).
-- Tap su thumbnail: apre `ExperiencePhotosLightbox` (read-only già esistente) — passando le foto dell'utente e gli URL firmati. Non aggiungere delete/edit.
+2. **Crea componente icona wrapper** `src/components/icons/BravoSymbolIcon.tsx`
+   - Importa l'SVG come componente React con `?react` (vite-plugin-svgr) — se non disponibile nel progetto, fallback: definire inline il path SVG dentro un componente React che accetta `className` e usa `fill="currentColor"`, `viewBox="0 0 14446.39 12862.08"`, `preserveAspectRatio="xMidYMid meet"`.
+   - Verifico prima la disponibilità di svgr; in caso negativo uso fallback inline (path copiati da `src/assets/bravo-symbol.svg`).
+   - Il componente accetta `className` e applica `fill="currentColor"` così eredita il colore del testo.
 
-### 3. `BookingDetailModal` (`src/components/bookings/BookingDetailModal.tsx`)
-- Renderizzare `<MyEventPhotosSection />` SOLO quando `isPastEvent === true` (la variabile esiste già), posizionata dopo la sezione descrizione e prima del blocco "In caso di imprevisto".
-- Aggiungere prop opzionale `onUploadPhotos?: (booking) => void` da passare a `MyEventPhotosSection` come `onUploadClick`, per riusare il `PhotoUploadDialog` già ospitato dalla pagina contenitore.
+3. **BottomNavigation.tsx** (mobile)
+   - Sostituire `Calendar` con `BravoSymbolIcon` solo per la voce "Attività".
+   - Le altre icone (Search, Sprout, User) restano invariate.
+   - Per bilanciamento ottico: icona più piccola delle lucide `h-6 w-6` → usare `h-5 w-5` per il simbolo, centrato nello stesso box `h-6 w-6` (wrapper flex). In pratica: wrap in `<div className="h-6 w-6 flex items-center justify-center">` con `<BravoSymbolIcon className="h-5 w-5 ..." />`.
+   - Mantiene le stesse classi colore `text-primary` / `text-muted-foreground` per active/inactive.
 
-### 4. `CompletedExperiences.tsx`
-- Passare `onUploadPhotos={setUploadDialogBooking}` al `BookingDetailModal` così la sezione vuota può aprire lo stesso `PhotoUploadDialog` esistente (nessun nuovo dialog).
-- Nessun'altra modifica.
-
-## Out of scope (non toccare)
-- `PhotoUploadDialog` e tutto il flusso di upload/moderazione.
-- Pagina Galleria dipendente e bottom nav.
-- Pagina Profilo, `MyBookings`, `CompletedExperienceCard`, pagine HR/super-admin/association.
-- Schema DB, RLS, edge functions.
+4. **AppLayout.tsx** (desktop)
+   - Sostituire `Calendar className="h-4 w-4"` nel Link `/app/bookings` con `BravoSymbolIcon` dentro un wrapper `h-4 w-4 flex items-center justify-center` con icona `h-[13px] w-[13px]` (leggermente ridotta per pareggiare il peso visivo).
+   - Rimuovere import `Calendar` se non usato altrove nei due file.
 
 ## Note tecniche
-- Le RLS esistenti su `gallery_photos` ("Employees view own photos and approved gallery") già permettono al dipendente di leggere le proprie foto in qualsiasi stato — nessun cambiamento DB necessario.
-- Gli URL firmati vengono generati con `useSignedPhotoUrls` già in uso, bucket `gallery-photos`.
+- `fill="currentColor"` nel SVG implica che basta applicare classi tailwind di testo (`text-primary`, `text-muted-foreground`) sul componente per ottenere il color-shift identico alle icone lucide.
+- Proporzioni mantenute via `viewBox` + nessun `width`/`height` fissi sull'SVG (solo classi tailwind).
+- Scope strettamente limitato alla voce "Attività" in entrambi i file.
