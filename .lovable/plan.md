@@ -1,28 +1,42 @@
 ## Obiettivo
-Aggiornare `docs/log.md` con le entry delle modifiche UI implementate oggi.
+Aggiungere una sezione "Le tue foto" nel `BookingDetailModal` per le esperienze passate/completate, che mostri tutte le foto caricate dal dipendente per quell'evento, con stato di moderazione visibile.
 
-## Modifiche da documentare
+## Modifiche
 
-### Entry 1 — Ristrutturazione pagina Profilo dipendente
-- Card identità hero con avatar editabile, nome e azienda (unica vera Card della pagina).
-- Due tile affiancate stile Airbnb sotto la card: "Esperienze completate" (→ `/app/esperienze-completate`) e "Ore donate" (→ `/app/impact`), con icone colorate senza sfondo e numero di fianco.
-- Flat row budget ore con Progress.
-- Flat row Impostazioni + bottone logout.
-- Rimozione anteprima inline esperienze completate, rimozione CompletedExperienceCard/FeedbackModal/BookingDetailModal da Profile.tsx.
-- Titolo e sottotitolo della pagina resi coerenti.
+### 1. Nuovo hook `useMyPhotosForEvent` (`src/hooks/queries/gallery/useMyPhotos.ts`)
+Aggiungere accanto a `useMyPhotosCountForEvent` un hook che ritorna la lista completa delle foto dell'utente per uno specifico `experience_date_id`:
+- Select: `id, storage_path, status, caption, created_at`
+- Filtri: `uploaded_by = userId`, `experience_date_id = ...`
+- Tutti gli stati (pending, approved, rejected) — il dipendente vede tutto ciò che ha caricato.
+- Ordine: `created_at desc`.
+- Riusa una nuova key in `galleryKeys` (es. `myPhotosForEvent`).
 
-**File toccati:** `src/pages/Profile.tsx`
+### 2. Nuovo componente `MyEventPhotosSection` (`src/components/bookings/MyEventPhotosSection.tsx`)
+Componente "presentational" usato dentro `BookingDetailModal`. Props: `experienceDateId`, `onUploadClick?`.
+- Usa `useMyPhotosForEvent` + `useSignedPhotoUrls` per ottenere thumbnail.
+- Header: titolo "Le tue foto" coerente con gli altri h3 del modal.
+- Stati:
+  - Loading: piccola skeleton grid.
+  - Vuoto: mini empty state con copy invitante ("Non hai ancora caricato foto per questa esperienza") + (se fornito `onUploadClick`) bottone "Carica foto".
+  - Con foto: griglia 3–4 colonne di thumbnail quadrate (object-cover, `rounded-lg`). Sopra ogni thumbnail con status diverso da `approved`, badge in overlay:
+    - `pending` → "In revisione" (badge `secondary`).
+    - `rejected` → "Non approvata" (badge `destructive`).
+- Tap su thumbnail: apre `ExperiencePhotosLightbox` (read-only già esistente) — passando le foto dell'utente e gli URL firmati. Non aggiungere delete/edit.
 
-### Entry 2 — Trasloco storico: foto upload e riduzione MyBookings
-- Aggiunta azione "Aggiungi le tue foto" su `CompletedExperienceCard` (sempre visibile, indipendente dallo stato recensione).
-- `CompletedExperiences.tsx` ora ospita `PhotoUploadDialog` e lo gestisce al tap sull'azione foto.
-- `MyBookings.tsx` ridotta a pura vista operativa delle esperienze future: rimossa interamente la sezione "Storico" (accordion, AnimatePresence, past bookings, FeedbackModal, PhotoUploadDialog), rimossi stati e import correlati. Ora mostra solo `futureBookings` (`confirmed` e non passate). Empty state aggiornato.
+### 3. `BookingDetailModal` (`src/components/bookings/BookingDetailModal.tsx`)
+- Renderizzare `<MyEventPhotosSection />` SOLO quando `isPastEvent === true` (la variabile esiste già), posizionata dopo la sezione descrizione e prima del blocco "In caso di imprevisto".
+- Aggiungere prop opzionale `onUploadPhotos?: (booking) => void` da passare a `MyEventPhotosSection` come `onUploadClick`, per riusare il `PhotoUploadDialog` già ospitato dalla pagina contenitore.
 
-**File toccati:** `src/components/experiences/CompletedExperienceCard.tsx`, `src/pages/CompletedExperiences.tsx`, `src/pages/MyBookings.tsx`
+### 4. `CompletedExperiences.tsx`
+- Passare `onUploadPhotos={setUploadDialogBooking}` al `BookingDetailModal` così la sezione vuota può aprire lo stesso `PhotoUploadDialog` esistente (nessun nuovo dialog).
+- Nessun'altra modifica.
 
-## Cosa NON cambia
-- Nessuna modifica a DB, RLS, RPC, edge function.
-- Nessuna modifica a `/app/esperienze-completate` (salvo ospitare il dialog), `/app/impact`, bottom nav, pagine admin, logica redirect ruoli.
+## Out of scope (non toccare)
+- `PhotoUploadDialog` e tutto il flusso di upload/moderazione.
+- Pagina Galleria dipendente e bottom nav.
+- Pagina Profilo, `MyBookings`, `CompletedExperienceCard`, pagine HR/super-admin/association.
+- Schema DB, RLS, edge functions.
 
-## Azione
-Compilare il template entry in cima a `docs/log.md` (sezione Entries) con i due gruppi di modifiche — possono stare in un'unica entry "sessione di lavoro" oppure in due entry separate se la granularità lo richiede.
+## Note tecniche
+- Le RLS esistenti su `gallery_photos` ("Employees view own photos and approved gallery") già permettono al dipendente di leggere le proprie foto in qualsiasi stato — nessun cambiamento DB necessario.
+- Gli URL firmati vengono generati con `useSignedPhotoUrls` già in uso, bucket `gallery-photos`.

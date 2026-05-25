@@ -9,12 +9,14 @@ import { BaseCardImage } from "@/components/common/BaseCardImage";
 import { MeetingPlace } from "@/components/experience-detail/MeetingPlace";
 import { ParticipantInfo } from "@/components/experience-detail/ParticipantInfo";
 import { getBookingStatusLabel } from "@/lib/booking-utils";
+import { MyEventPhotosSection } from "./MyEventPhotosSection";
 
 interface BookingDetailModalProps {
   booking: {
     id: string;
     status: string;
     experience_dates: {
+      id?: string;
       start_datetime: string;
       end_datetime: string;
       experiences: {
@@ -34,6 +36,7 @@ interface BookingDetailModalProps {
   onClose: () => void;
   onCancel?: (bookingId: string) => void;
   isCancelling?: boolean;
+  onUploadPhotos?: (booking: NonNullable<BookingDetailModalProps["booking"]>) => void;
 }
 
 const STATUS_BADGE_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -44,7 +47,7 @@ const STATUS_BADGE_VARIANT: Record<string, "default" | "secondary" | "destructiv
   no_show: "destructive",
 };
 
-export function BookingDetailModal({ booking, onClose, onCancel, isCancelling }: BookingDetailModalProps) {
+export function BookingDetailModal({ booking, onClose, onCancel, isCancelling, onUploadPhotos }: BookingDetailModalProps) {
   const navigate = useNavigate();
   if (!booking) return null;
 
@@ -164,6 +167,14 @@ export function BookingDetailModal({ booking, onClose, onCancel, isCancelling }:
                   </button>
                 )}
               </section>
+            )}
+
+            {/* MY PHOTOS — only for past events */}
+            {isPastEvent && (
+              <MyEventPhotosSection
+                experienceDateId={(booking as any).experience_date_id ?? (booking.experience_dates as any).id}
+                onUploadClick={onUploadPhotos ? () => onUploadPhotos(booking) : undefined}
+              />
             )}
 
             {/* IN CASO DI IMPREVISTO */}

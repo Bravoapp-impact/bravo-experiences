@@ -58,3 +58,32 @@ export function useMyPhotosCountForEvent(
     staleTime: 0,
   });
 }
+
+export interface MyEventPhoto {
+  id: string;
+  storage_path: string;
+  status: "pending" | "approved" | "rejected";
+  caption: string | null;
+  created_at: string;
+}
+
+export function useMyPhotosForEvent(
+  userId: string | undefined,
+  experienceDateId: string | undefined,
+) {
+  return useQuery({
+    queryKey: galleryKeys.myPhotosForEvent(userId ?? "", experienceDateId ?? ""),
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("gallery_photos")
+        .select("id, storage_path, status, caption, created_at")
+        .eq("uploaded_by", userId)
+        .eq("experience_date_id", experienceDateId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as MyEventPhoto[];
+    },
+    enabled: !!userId && !!experienceDateId,
+    staleTime: 30 * 1000,
+  });
+}
