@@ -18,6 +18,7 @@ Lo scopo di questo file è uno solo: dirti **cosa leggere**, **in che ordine**, 
 | [`data-fetching.md`](./data-fetching.md) | Convenzione TanStack Query, `queryKey`, `useMutation`, invalidation | Quando scrivi un hook nuovo o tocchi un hook esistente |
 | [`design-system.md`](./design-system.md) | Token di colore, tipografia, componenti shadcn customizzati | Quando tocchi UI o aggiungi una primitive |
 | [`tb-flow.md`](./tb-flow.md) | Verticale Team Building end-to-end | Quando tocchi qualcosa nell'area TB |
+| [`impatto.md`](./impatto.md) | Sistema di impatto: modello dati, view canoniche, KPI per i 4 attori | Quando tocchi metriche, dashboard, report o aggregazioni di volontariato |
 | [`transactional-emails.md`](./transactional-emails.md) | Pipeline email, wrapper edge function, come aggiungerne una | Quando aggiungi o modifichi un'email |
 
 ---
