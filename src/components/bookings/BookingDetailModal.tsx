@@ -9,6 +9,7 @@ import { BaseCardImage } from "@/components/common/BaseCardImage";
 import { MeetingPlace } from "@/components/experience-detail/MeetingPlace";
 import { ParticipantInfo } from "@/components/experience-detail/ParticipantInfo";
 import { getBookingStatusLabel } from "@/lib/booking-utils";
+import { MyEventPhotosSection } from "./MyEventPhotosSection";
 
 interface BookingDetailModalProps {
   booking: {
@@ -34,6 +35,7 @@ interface BookingDetailModalProps {
   onClose: () => void;
   onCancel?: (bookingId: string) => void;
   isCancelling?: boolean;
+  onUploadPhotos?: (booking: NonNullable<BookingDetailModalProps["booking"]>) => void;
 }
 
 const STATUS_BADGE_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -44,7 +46,7 @@ const STATUS_BADGE_VARIANT: Record<string, "default" | "secondary" | "destructiv
   no_show: "destructive",
 };
 
-export function BookingDetailModal({ booking, onClose, onCancel, isCancelling }: BookingDetailModalProps) {
+export function BookingDetailModal({ booking, onClose, onCancel, isCancelling, onUploadPhotos }: BookingDetailModalProps) {
   const navigate = useNavigate();
   if (!booking) return null;
 
