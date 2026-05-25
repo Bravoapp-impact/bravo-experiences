@@ -54,7 +54,7 @@ export function ExperienceSection({ title, experiences }: ExperienceSectionProps
       <div className="overflow-x-auto scrollbar-hide -mx-8">
         <div
           ref={scrollRef}
-          className="flex items-start gap-2.5 pl-8 pr-16 md:pr-20"
+          className="flex items-start gap-2.5 pl-8"
           style={{ scrollSnapType: "x mandatory" }}
         >
           {experiences.map((experience, index) => (
@@ -65,6 +65,7 @@ export function ExperienceSection({ title, experiences }: ExperienceSectionProps
               />
             </div>
           ))}
+          <div aria-hidden className="shrink-0 w-8 md:w-12" />
         </div>
       </div>
     </section>
