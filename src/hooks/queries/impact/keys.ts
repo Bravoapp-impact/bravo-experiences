@@ -13,4 +13,12 @@ export const impactKeys = {
   kpiContributions: () => [...impactKeys.all, "kpi-contributions"] as const,
   kpiContributionsFor: (userId: string) =>
     [...impactKeys.kpiContributions(), userId] as const,
+
+  company: () => [...impactKeys.all, "company"] as const,
+  companyFor: (companyId: string) => [...impactKeys.company(), companyId] as const,
+
+  companyKpiBreakdown: () =>
+    [...impactKeys.all, "company-kpi-breakdown"] as const,
+  companyKpiBreakdownFor: (companyId: string) =>
+    [...impactKeys.companyKpiBreakdown(), companyId] as const,
 };
