@@ -14,6 +14,8 @@ La regola del sistema: **l'impatto si calcola in un posto, le superfici diverse 
 
 Il principio che regge tutto: si registra **solo ciò che viene effettivamente raggiunto**. L'impatto non è una stima derivata da un'ontologia, è la somma di cose concrete e certe accadute in una data precisa. L'esperienza è l'unità che certifica l'azione; tutto il quantitativo si registra sulla singola data dell'esperienza.
 
+**Le due grane di aggregazione.** Non tutte le metriche si sommano allo stesso modo, e confonderle è la stessa malattia del doppio conteggio. Le **ore** sono una quantità per-persona: `experience_dates.volunteer_hours` è quante ore dona chi partecipa a quella data, quindi le ore di un'azienda sono la somma su tutte le prenotazioni completate (8 persone su una data da 4 ore = 32 ore-persona). I **KPI specifici** sono una quantità collettiva della data: "240 pasti distribuiti" è il risultato della data intera, prodotto da tutti insieme. Un KPI si somma sulle **date distinte**, ciascuna contata una volta sola, mai per prenotazione — altrimenti 8 partecipanti trasformerebbero 240 pasti in 1.920. Non è un'incoerenza: è la natura diversa dei due dati. Ore → aggregate sulle prenotazioni; KPI → aggregati sulle date distinte.
+
 ---
 
 ## 2. Lo stato attuale
@@ -70,25 +72,35 @@ Due tabelle.
 
 La presentazione unisce valore ed etichetta: `value` + `label` → "240 pasti distribuiti". L'aggregazione è pulita per costruzione: si somma `value` tra le date della stessa esperienza (stesso `kpi_id`), non tra esperienze diverse (etichette diverse, somma priva di significato).
 
+**Il valore del KPI non si divide mai per i partecipanti.** Il valore registrato su una data è un risultato collettivo: "240 pasti" è ciò che il gruppo ha prodotto insieme, non la somma di quote individuali. Non si calcola, né si mostra, un "contributo per persona" dividendo il valore per il numero di partecipanti. Una quota individuale sarebbe un numero inventato — nessuno ha misurato 60 pasti attribuibili a una singola persona — presentato accanto a dati reali come le ore. Inoltre dipenderebbe dagli altri: aggiungere un partecipante a una data farebbe scendere la "quota" di tutti, esponendo che il numero non è mai stato individuale. Il dipendente vede il valore collettivo intero delle date a cui ha partecipato, inquadrato come partecipazione ("le attività a cui hai preso parte hanno distribuito 240 pasti"), mai come merito diviso. Se un domani servisse un KPI realmente individuale, la strada è misurarlo per persona alla fonte — registrandolo sulla prenotazione, non sulla data — non dividere un totale collettivo.
+
 ### 4.3 La definizione di "partecipazione completata"
 
 Una partecipazione conta come completata quando il booking è in stato `completed`.
 
-Questo richiede che la funzione `process_completed_events` (che transiziona `confirmed → completed`) venga corretta e schedulata: oggi esiste ma non gira. È un prerequisito del sistema impatto, non un lavoro parallelo. Una volta schedulata, la vecchia condizione di ripiego "`confirmed` con data nel passato" diventa inutile e va eliminata da ogni superficie.
+Questo richiede che la funzione `process_completed_events` — che transiziona `confirmed → completed` le prenotazioni il cui evento è concluso da più di due ore — sia schedulata e funzionante. La schedulazione esiste dal 22 maggio 2026: il job `process-completed-events-hourly` gira ogni ora al minuto 5. Resta da verificare in produzione che il job venga eseguito senza errori. Con il cron attivo, la vecchia condizione di ripiego "`confirmed` con data nel passato" diventa inutile e va eliminata da ogni superficie.
 
 ### 4.4 Le view SQL canoniche
 
 Le view sono nominate con il prefisso del verticale, perché TB e formazione avranno le proprie e i nomi non devono entrare in collisione. Tutte filtrano sulle partecipazioni completate secondo 4.3.
 
-**`v_volunteering_employee_impact`** — chiave `user_id`. Espone: ore totali donate, numero di esperienze completate, KPI specifici raggiunti per esperienza, SDG toccati (elenco qualitativo), data dell'ultima partecipazione. Alimenta la pagina Impatto del dipendente.
+Sono **`SECURITY DEFINER`** (in Postgres: `security_invoker = false`, il default). La ragione è di correttezza, non di comodità. Le RLS che un dipendente e un HR hanno su `experiences` e `experience_dates` filtrano sulle esperienze `published`: una view con `security_invoker = true` erediterebbe quel filtro, e un'esperienza passata ad `archived` — stato che esiste per conservare lo storico — sparirebbe dai totali di impatto, facendoli rimpicciolire. Le RLS del catalogo rispondono a "cosa posso sfogliare e prenotare"; il sistema di impatto risponde a "cosa ho fatto". Sono domande diverse e la seconda non deve ereditare le regole della prima. Le view `SECURITY DEFINER` non ereditano il filtro del catalogo e fanno lo **scoping per ruolo da sé**, nella clausola `WHERE`, con `auth.uid()` e gli helper esistenti (`is_super_admin`, `is_admin`, `get_user_company_id`): un dipendente vede la propria riga, un HR la propria azienda, un super-admin tutto. Il linter di Supabase segnala le view `SECURITY DEFINER` con un warning: qui la deroga è voluta e va documentata nel commento della view, perché non venga "corretta" riaprendo il problema.
 
-**`v_volunteering_company_impact`** — chiave `company_id`. Espone: persone uniche coinvolte, percentuale sul totale dipendenti, ore totali, ore medie per partecipante, partecipazioni totali, ETS coinvolti, città coperte, KPI specifici raggiunti per esperienza, SDG toccati (elenco qualitativo), rating medio, percentuale di `would_recommend`. Alimenta dashboard e report HR.
+Quattro view per le superfici di HAVAS — dipendente e azienda. Due letture logiche, ciascuna divisa in scalari e dettaglio KPI perché hanno grane diverse:
 
-**`v_volunteering_platform_impact`** — vista globale e per singola company. Espone i KPI sistemici: nuove collaborazioni attivate (coppie azienda×ETS che collaborano per la prima volta), ETS qualificati attivi, ore totali erogate, partecipazioni. Il valore economico trasferito non è in questa view: resta dato derivato esterno. Alimenta il pannello super-admin.
+**`v_volunteering_employee_impact`** — una riga per `user_id`. Espone: ore totali donate, partecipazioni completate, esperienze distinte completate, SDG toccati (elenco qualitativo), data dell'ultima partecipazione. Interrogata da un HR restituisce una riga per ogni dipendente della sua azienda — quindi sostituisce anche le query N+1 di `HREmployeesPage`. Alimenta la pagina Impatto del dipendente.
 
-Il dettaglio dei KPI specifici, essendo una struttura per-esperienza e non un numero piatto per azienda, può vivere in una view dedicata (`v_volunteering_company_kpi_breakdown`) o essere una seconda query dell'hook — scelta di implementazione, non di design.
+**`v_volunteering_employee_kpi_contributions`** — una riga per `user_id` × esperienza × KPI: il valore collettivo delle date a cui il dipendente ha partecipato. Mai diviso per partecipanti (vedi 4.2).
 
-Le view sostituiscono le query N+1 oggi presenti in `HRDashboard` e `SuperAdminDashboard`. Gli hook frontend (`useEmployeeImpact`, `useCompanyImpact`, `usePlatformImpact`) in pattern TanStack Query leggono dalle view e nient'altro.
+**`v_volunteering_company_impact`** — una riga per `company_id`. Espone: persone uniche coinvolte, percentuale sugli utenti registrati della company, ore totali, ore medie per partecipante, partecipazioni totali, ETS coinvolti, città coperte, SDG toccati (elenco qualitativo), rating medio, percentuale di `would_recommend`. Alimenta dashboard e report HR.
+
+**`v_volunteering_company_kpi_breakdown`** — una riga per `company_id` × esperienza × KPI: il risultato concreto per esperienza, aggregato sulle date distinte.
+
+La "percentuale sul totale dipendenti" ha come denominatore gli **utenti registrati** della company, non l'organico aziendale: l'organico non è un dato affidabile in piattaforma, gli utenti registrati sì.
+
+**`v_volunteering_platform_impact`** non si costruisce in questa fase. Espone i KPI sistemici (nuove collaborazioni attivate, ETS qualificati attivi, ore erogate, partecipazioni) e alimenta il pannello super-admin, che è post-HAVAS: si costruisce insieme alla sua superficie, per non lasciarla inutilizzata mentre lo schema evolve. Il valore economico trasferito non è in questa view: resta dato derivato esterno.
+
+Le view sostituiscono le query N+1 oggi presenti in `HRDashboard` e `HREmployeesPage`. Gli hook frontend (`useEmployeeImpact`, `useCompanyImpact`) in pattern TanStack Query leggono dalle view e nient'altro.
 
 ---
 
@@ -98,7 +110,7 @@ Lo stesso dato, letto da quattro prospettive. Cambia il taglio e il tono, non la
 
 ### 5.1 Livello 1 — Il dipendente
 
-Pagina `/app/impact`. La domanda è "cosa ho fatto io". Non un cruscotto: un racconto. Ore donate, esperienze completate, KPI concreti a cui ha contribuito espressi nella loro forma reale ("hai contribuito a distribuire 240 pasti"), SDG toccati dalle sue esperienze mostrati come aree in italiano con icona. Tono narrativo e motivante.
+Pagina `/app/impact`. La domanda è "cosa ho fatto io". Non un cruscotto: un racconto. Ore donate, partecipazioni ed esperienze distinte, KPI concreti a cui ha contribuito espressi nella loro forma reale e collettiva ("le attività a cui hai preso parte hanno distribuito 240 pasti"), SDG toccati dalle sue esperienze mostrati come aree in italiano con icona. Tono narrativo e motivante. Le ore e le partecipazioni sono i numeri davvero individuali e misurati; i KPI sono il risultato collettivo a cui ha contribuito.
 
 `Impact.tsx` oggi mostra una grid "Contributi SDG" con ore per SDG: la parte quantitativa va rimossa, l'SDG resta solo come inquadramento qualitativo. Legge da `v_volunteering_employee_impact`.
 
@@ -139,13 +151,14 @@ Il tagging dell'impatto si divide in due momenti.
 
 ## 7. Sequenza di implementazione
 
-2. **Modello dati.** Tabelle `experience_impact_kpis` e `experience_date_kpi_values`. La colonna `sdgs` resta invariata. `beneficiaries_count` resta come legacy.
-3. **View SQL canoniche.** `v_volunteering_employee_impact`, `v_volunteering_company_impact`, `v_volunteering_platform_impact`. Più avanti `v_volunteering_association_impact`.
+1. **Fix del cron.** _(Fatto.)_ `process_completed_events` è schedulato dal 22 maggio 2026 e verificato funzionante in produzione. Prerequisito della definizione di "completata".
+2. **Modello dati.** _(Fatto.)_ Tabelle `experience_impact_kpis` e `experience_date_kpi_values`, con trigger di coerenza e RLS. La colonna `sdgs` resta invariata, `beneficiaries_count` resta come legacy.
+3. **View SQL canoniche.** `v_volunteering_employee_impact`, `v_volunteering_employee_kpi_contributions`, `v_volunteering_company_impact`, `v_volunteering_company_kpi_breakdown` — tutte `SECURITY DEFINER` con scoping per ruolo nella `WHERE`.
 4. **Hook frontend.** `useEmployeeImpact`, `useCompanyImpact` in pattern TanStack Query.
 5. **Publishing flow.** Sezione SDG qualitativa + definizione KPI nella scheda esperienza super-admin; inserimento valori KPI per data.
 6. **Superficie dipendente.** Ridisegno `Impact.tsx`. _(Per HAVAS.)_
 7. **Superficie HR.** Dashboard a quattro famiglie + Report PDF. _(Dashboard per HAVAS.)_
-8. **Superficie super-admin.** KPI sistemici. _(Dopo HAVAS.)_
+8. **Superficie super-admin.** `v_volunteering_platform_impact` + KPI sistemici. _(Dopo HAVAS.)_
 9. **Superficie ETS.** `v_volunteering_association_impact` + vista associazione. _(Dopo HAVAS.)_
 
 I passi 1-5 sono il fondamento; i passi 6-9 sono le superfici sequenziate.
