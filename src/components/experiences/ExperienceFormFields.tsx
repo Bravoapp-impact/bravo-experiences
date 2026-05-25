@@ -12,16 +12,20 @@
  *  - carica autonomamente categorie/città/associazioni via TanStack Query.
  */
 
+import { useState, useEffect } from "react";
 import { useFormContext, type UseFormReturn } from "react-hook-form";
 import { z } from "zod";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Controller } from "react-hook-form";
+import { Plus, Trash2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -34,6 +38,7 @@ import {
 import { LogoUpload } from "@/components/super-admin/LogoUpload";
 import { AVAILABLE_TAGS } from "@/lib/tags";
 import { getAllSDGs } from "@/lib/sdg-data";
+import { devLog } from "@/lib/logger";
 
 // ---------------------------------------------------------------------------
 // Schema
