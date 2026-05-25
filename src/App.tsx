@@ -20,7 +20,7 @@ import ExperienceDetail from "./pages/ExperienceDetail";
 import MyBookings from "./pages/MyBookings";
 import CompletedExperiences from "./pages/CompletedExperiences";
 import Impact from "./pages/Impact";
-import Gallery from "./pages/Gallery";
+
 import Profile from "./pages/Profile";
 import EmployeeSettingsIndex from "./pages/EmployeeSettingsIndex";
 import EmployeeSettingsPersonali from "./pages/settings/EmployeeSettingsPersonali";
