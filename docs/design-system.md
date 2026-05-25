@@ -1371,7 +1371,58 @@ Le pagine impostazioni usano componenti riutilizzabili per garantire coerenza vi
 
 ---
 
+## 🔙 Pattern pagine di dettaglio
+
+Vale per tutte le sub-pages di Impostazioni e per tutti i wrapper di dettaglio esperienza (employee `ExperienceDetail`, `HRExperienceDetail`, `AssociationExperienceDetail`, `CompletedExperiences`).
+
+### Back button standard
+
+Pulsante tondo icon-only, **niente testo accanto**. Posizionato in cima alla pagina con `mb-6`.
+
+```tsx
+<button
+  onClick={goBack}
+  aria-label="Indietro"
+  className="flex items-center justify-center h-10 w-10 rounded-full bg-muted hover:bg-muted/70 transition-colors mb-6"
+>
+  <ArrowLeft className="h-5 w-5 text-foreground" />
+</button>
+```
+
+Quando coesiste con un badge di status o altra info, va in un flex header:
+
+```tsx
+<div className="flex items-center justify-between gap-3 mb-6">
+  <button …>…</button>
+  <Badge …>…</Badge>
+</div>
+```
+
+### Mobile sticky CTA — "bottone largo sospeso"
+
+**Niente** barra bianca, niente `bg-background/95`, niente `backdrop-blur`, niente `border-t`. Il bottone galleggia con shadow sopra la `BottomNavigation` (`bottom-20`), e non blocca lo scroll del contenuto sotto grazie a `pointer-events-none` sul wrapper.
+
+```tsx
+<div className="fixed bottom-20 left-0 right-0 px-4 z-40 pointer-events-none">
+  <Button
+    onClick={…}
+    className="pointer-events-auto w-full h-12 text-base font-medium rounded-xl shadow-lg shadow-primary/25"
+  >
+    Vedi date disponibili
+  </Button>
+</div>
+```
+
+Usato per: "Vedi date disponibili" (employee), "Modifica esperienza" (association). HR detail non ha CTA mobile (read-only).
+
+### Dove vive il pattern
+
+Questi due elementi vivono nei **wrapper di pagina**, non in `ExperienceDetailContent` (componente condiviso che renderizza solo il contenuto centrale: gallery, descrizione, sidebar, recensioni). Quando si crea una nuova pagina di dettaglio, copiare back-button e CTA dai wrapper esistenti.
+
+---
+
 ## 📚 Riferimenti
+
 
 - **Tailwind Config**: `tailwind.config.ts`
 - **CSS Variables**: `src/index.css`
