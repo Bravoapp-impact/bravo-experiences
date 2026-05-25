@@ -372,7 +372,7 @@ export default function ExperienceDetail() {
 
   return (
     <AppLayout>
-      <div className="max-w-6xl mx-auto px-4 lg:px-8 pb-28 lg:pb-12">
+      <div className="max-w-6xl mx-auto pb-28 lg:pb-12">
         {/* Back button */}
         <button
           onClick={goBack}
