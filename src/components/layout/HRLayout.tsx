@@ -43,7 +43,7 @@ export function HRLayout({ children }: HRLayoutProps) {
       separatorAfterIndex={[0, 6]}
       sectionLabels={[
         { beforeIndex: 1, label: "Iniziative" },
-        { beforeIndex: 3, label: "Gestione" },
+        { beforeIndex: 2, label: "Gestione" },
       ]}
     >
       {children}
