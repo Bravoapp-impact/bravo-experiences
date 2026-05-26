@@ -20,7 +20,7 @@ const sidebarItems: SidebarItem[] = [
   // separator after index 0
   // section label "Iniziative" before index 1
   { label: "Volontariato aziendale", icon: Heart, href: "/hr/volontariato", iconColor: "text-green-500" },
-  // section label "Gestione" before index 3
+  // section label "Gestione" before index 2
   { label: "Calendario", icon: CalendarDays, href: "/hr/calendario", iconColor: "text-cyan-500" },
   { label: "Utenti", icon: Users, href: "/hr/users", iconColor: "text-blue-500" },
   { label: "Galleria", icon: Image, href: "/hr/galleria", iconColor: "text-amber-500" },
@@ -43,7 +43,7 @@ export function HRLayout({ children }: HRLayoutProps) {
       separatorAfterIndex={[0, 6]}
       sectionLabels={[
         { beforeIndex: 1, label: "Iniziative" },
-        { beforeIndex: 3, label: "Gestione" },
+        { beforeIndex: 2, label: "Gestione" },
       ]}
     >
       {children}
