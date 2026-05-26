@@ -57,9 +57,6 @@ export default function ExperienceDetail() {
           .from("experiences")
           .select(`
             *,
-            associations:association_id (
-              id, name, logo_url, description, website
-            ),
             categories:category_id (name),
             cities:city_id (name)
           `)
@@ -72,7 +69,17 @@ export default function ExperienceDetail() {
           return;
         }
 
-        const assoc = data.associations as any;
+        // Fetch association via the public view (RLS on `associations` blocks
+        // employees from joining the table directly).
+        let assoc: { id: string; name: string | null; logo_url: string | null; description: string | null; website: string | null } | null = null;
+        if (data.association_id) {
+          const { data: assocData } = await supabase
+            .from("associations_public" as any)
+            .select("id, name, logo_url, description, website")
+            .eq("id", data.association_id)
+            .maybeSingle();
+          assoc = assocData as any;
+        }
         const cat = data.categories as any;
         const city = data.cities as any;
 
@@ -99,6 +106,7 @@ export default function ExperienceDetail() {
           secondary_tags: data.secondary_tags ?? null,
           location_type: data.location_type ?? null,
         });
+
       } catch {
         setNotFound(true);
       } finally {
