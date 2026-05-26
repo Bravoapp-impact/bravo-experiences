@@ -1,17 +1,10 @@
 import { Outlet } from "react-router-dom";
-import {
-  User,
-  Shield,
-  Palette,
-  Building2,
-  Users,
-  ArrowLeft,
-} from "lucide-react";
+import { User, Shield, Palette, Building2, Users, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminLayout, SidebarItem } from "./AdminLayout";
 
 const sidebarItems: SidebarItem[] = [
-  { label: "Indietro", icon: ArrowLeft, href: "/hr", iconColor: "text-muted-foreground" },
+  { label: "Indietro", icon: ArrowLeft, href: "/hr/volontariato", iconColor: "text-muted-foreground" },
   // separator after 0, section "Personale" before 1
   { label: "Profilo", icon: User, href: "/hr/impostazioni/profilo", iconColor: "text-violet-500" },
   { label: "Password & MFA", icon: Shield, href: "/hr/impostazioni/sicurezza", iconColor: "text-emerald-500" },
@@ -44,4 +37,3 @@ export default function HRSettingsLayout() {
     </AdminLayout>
   );
 }
-
