@@ -1,6 +1,3 @@
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-
 interface AssociationProfileProps {
   id: string | null;
   name: string;
@@ -8,9 +5,7 @@ interface AssociationProfileProps {
   description: string | null;
 }
 
-export function AssociationProfile({ id, name, logoUrl, description }: AssociationProfileProps) {
-  const navigate = useNavigate();
-
+export function AssociationProfile({ name, logoUrl, description }: AssociationProfileProps) {
   return (
     <section>
       <h2 className="text-xl font-semibold text-foreground mb-6">Organizzato da</h2>
@@ -29,19 +24,9 @@ export function AssociationProfile({ id, name, logoUrl, description }: Associati
         <div className="min-w-0 flex-1 space-y-2">
           <h3 className="text-lg font-semibold text-foreground">{name}</h3>
           {description && (
-            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               {description}
             </p>
-          )}
-          {id && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate(`/associations/${id}`)}
-              className="mt-2 rounded-xl"
-            >
-              Scopri di più su {name}
-            </Button>
           )}
         </div>
       </div>
