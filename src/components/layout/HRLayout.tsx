@@ -40,10 +40,10 @@ export function HRLayout({ children }: HRLayoutProps) {
       basePath="/hr"
       entityLogoUrl={profile?.companies?.logo_url || undefined}
       entityName={profile?.companies?.name || "Azienda"}
-      separatorAfterIndex={[0, 8]}
+      separatorAfterIndex={[0, 6]}
       sectionLabels={[
-        { beforeIndex: 2, label: "Iniziative" },
-        { beforeIndex: 4, label: "Gestione" },
+        { beforeIndex: 1, label: "Iniziative" },
+        { beforeIndex: 3, label: "Gestione" },
       ]}
     >
       {children}

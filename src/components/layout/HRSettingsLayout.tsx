@@ -35,8 +35,7 @@ export default function HRSettingsLayout() {
       separatorAfterIndex={[0]}
       sectionLabels={[
         { beforeIndex: 1, label: "Personale" },
-        { beforeIndex: 6, label: "Workspace" },
-        { beforeIndex: 10, label: "Iniziative" },
+        { beforeIndex: 4, label: "Workspace" },
       ]}
     >
       <div className="max-w-4xl mx-auto">
