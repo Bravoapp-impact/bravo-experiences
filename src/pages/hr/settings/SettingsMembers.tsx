@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Mail } from "lucide-react";
+import { Mail, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -69,7 +69,7 @@ export default function SettingsMembers() {
   )}`;
 
   return (
-    <SettingsPage title="Membri e accessi" description="Gestisci chi può accedere a Bravo! nella tua azienda">
+    <SettingsPage title="Membri e accessi" icon={Users} iconColor="text-green-500">
       <SettingsSection
         title="Dominio aziendale"
         description="I dipendenti che si registrano con questo dominio email accedono automaticamente alla tua azienda."

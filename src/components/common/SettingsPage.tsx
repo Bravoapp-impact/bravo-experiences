@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/common/PageHeader";
 
 interface SettingsPageProps {
   title: string;
@@ -15,7 +15,7 @@ interface SettingsPageProps {
 export default function SettingsPage({
   title,
   description,
-  icon: Icon,
+  icon,
   iconColor,
   children,
   className,
@@ -27,21 +27,13 @@ export default function SettingsPage({
       transition={{ duration: 0.2 }}
       className={className}
     >
-      <div className="flex items-center gap-3 mb-6 min-w-0">
-        {Icon && (
-          <div className="h-7 w-7 shrink-0 flex items-center justify-center">
-            <Icon className={cn("h-5 w-5", iconColor || "text-muted-foreground")} />
-          </div>
-        )}
-        <div className="min-w-0">
-          <h2 className="text-xl font-bold tracking-tight leading-tight truncate text-foreground">
-            {title}
-          </h2>
-          {description && (
-            <p className="text-muted-foreground mt-0.5 text-[13px]">{description}</p>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title={title}
+        description={description}
+        icon={icon}
+        iconColor={iconColor}
+        className="mb-6"
+      />
       {children}
     </motion.div>
   );
