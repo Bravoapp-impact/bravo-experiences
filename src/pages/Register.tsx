@@ -1,14 +1,13 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Building2, Loader2, ArrowRight, Eye, EyeOff, ArrowLeft, CheckCircle } from "lucide-react";
+import { Mail, User, Loader2, ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthLayout } from "@/components/auth/AuthLayout";
-import { AccessRequestModal } from "@/components/auth/AccessRequestModal";
 import { PasswordStrengthInput } from "@/components/auth/PasswordStrengthInput";
-import { signUp, validateAccessCode } from "@/lib/auth";
+import { signUp } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { evaluatePassword } from "@/lib/password-policy";
@@ -19,43 +18,15 @@ export default function Register() {
     lastName: "",
     email: "",
     password: "",
-    accessCode: "",
   });
-  const [entityName, setEntityName] = useState<string | null>(null);
-  const [isValidatingCode, setIsValidatingCode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [accessRequestModalOpen, setAccessRequestModalOpen] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-
-    if (name === "accessCode") {
-      setEntityName(null);
-    }
-  };
-
-  const handleCodeBlur = async () => {
-    if (formData.accessCode.length < 3) return;
-
-    setIsValidatingCode(true);
-    try {
-      const codeInfo = await validateAccessCode(formData.accessCode);
-      if (codeInfo) {
-        setEntityName(codeInfo.entity_name);
-      } else {
-        setEntityName(null);
-      }
-    } catch {
-      setEntityName(null);
-    } finally {
-      setIsValidatingCode(false);
-    }
   };
 
   const handleResendConfirmation = async () => {
@@ -101,15 +72,25 @@ export default function Register() {
         password: formData.password,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        accessCode: formData.accessCode,
       });
 
       setRegistrationComplete(true);
     } catch (error: any) {
+      const rawMessage: string = error?.message || "";
+      // Server-side trigger (handle_new_user) rejects unknown email domains.
+      const isDomainRejection =
+        /domain/i.test(rawMessage) ||
+        /dominio/i.test(rawMessage) ||
+        /not allowed/i.test(rawMessage) ||
+        /non.*ammess/i.test(rawMessage) ||
+        /Database error saving new user/i.test(rawMessage);
+
       toast({
         variant: "destructive",
         title: "Errore di registrazione",
-        description: error.message || "Si è verificato un errore. Riprova.",
+        description: isDomainRejection
+          ? "Questa email non è ammessa alla registrazione. Contatta il team di Bravo! per maggiori informazioni — team@bravoapp.it"
+          : rawMessage || "Si è verificato un errore. Riprova.",
       });
     } finally {
       setIsLoading(false);
@@ -194,47 +175,6 @@ export default function Register() {
           transition={{ duration: 0.4, delay: 0.3 }}
           className="space-y-4"
         >
-          {/* Access Code - First! */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="accessCode">Codice di Accesso</Label>
-              <button
-                type="button"
-                onClick={() => setAccessRequestModalOpen(true)}
-                className="text-xs text-muted-foreground underline hover:text-foreground transition-colors"
-              >
-                Non hai il codice di accesso?
-              </button>
-            </div>
-            <div className="relative">
-              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="accessCode"
-                name="accessCode"
-                type="text"
-                placeholder="Inserisci il codice di accesso"
-                value={formData.accessCode}
-                onChange={handleChange}
-                onBlur={handleCodeBlur}
-                className="pl-10"
-                required
-              />
-              {isValidatingCode && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-              )}
-            </div>
-            {entityName && (
-              <motion.p
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                className="text-sm text-secondary-foreground flex items-center gap-2 bg-secondary px-3 py-2 rounded-lg"
-              >
-                <span className="text-lg">✓</span>
-                {entityName}
-              </motion.p>
-            )}
-          </div>
-
           {/* Name fields */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -305,7 +245,7 @@ export default function Register() {
           <Button
             type="submit"
             className="w-full h-12 text-base font-medium"
-            disabled={isLoading || !entityName}
+            disabled={isLoading}
           >
             {isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -333,11 +273,6 @@ export default function Register() {
           Accedi
         </Link>
       </motion.p>
-
-      <AccessRequestModal
-        open={accessRequestModalOpen}
-        onClose={() => setAccessRequestModalOpen(false)}
-      />
     </AuthLayout>
   );
 }
