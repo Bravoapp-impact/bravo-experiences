@@ -368,6 +368,7 @@ export type Database = {
       }
       companies: {
         Row: {
+          allowed_email_domains: string[] | null
           created_at: string
           gallery_visible_to_employees: boolean
           id: string
@@ -378,6 +379,7 @@ export type Database = {
           suggestion_token: string
         }
         Insert: {
+          allowed_email_domains?: string[] | null
           created_at?: string
           gallery_visible_to_employees?: boolean
           id?: string
@@ -388,6 +390,7 @@ export type Database = {
           suggestion_token?: string
         }
         Update: {
+          allowed_email_domains?: string[] | null
           created_at?: string
           gallery_visible_to_employees?: boolean
           id?: string
