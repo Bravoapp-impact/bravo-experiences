@@ -279,10 +279,7 @@ export default function HRDashboard() {
             </PageSection>
 
             {/* Soddisfazione */}
-            <PageSection
-              title="Soddisfazione"
-              description="Come i partecipanti valutano le esperienze"
-            >
+            <PageSection title="Soddisfazione">
               {impact!.reviews_count > 0 ? (
                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <StatCard
