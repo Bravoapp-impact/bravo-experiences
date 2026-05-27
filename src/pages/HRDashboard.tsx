@@ -176,10 +176,7 @@ export default function HRDashboard() {
             </PageSection>
 
             {/* Impatto sul territorio */}
-            <PageSection
-              title="Impatto sul territorio"
-              description="ETS coinvolti, territori toccati e risultati concreti generati"
-            >
+            <PageSection title="Impatto sul territorio">
               <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
                 <StatCard
                   label="ETS coinvolti"
