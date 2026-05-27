@@ -128,10 +128,7 @@ export default function HRDashboard() {
         ) : (
           <>
             {/* Coinvolgimento */}
-            <PageSection
-              title="Coinvolgimento"
-              description="Quante persone della tua azienda hanno partecipato e quanto tempo hanno donato"
-            >
+            <PageSection title="Coinvolgimento">
               <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
                 <StatCard
                   label="Persone uniche coinvolte"
@@ -179,10 +176,7 @@ export default function HRDashboard() {
             </PageSection>
 
             {/* Impatto sul territorio */}
-            <PageSection
-              title="Impatto sul territorio"
-              description="ETS coinvolti, territori toccati e risultati concreti generati"
-            >
+            <PageSection title="Impatto sul territorio">
               <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
                 <StatCard
                   label="ETS coinvolti"
@@ -245,10 +239,7 @@ export default function HRDashboard() {
             </PageSection>
 
             {/* Aree di intervento */}
-            <PageSection
-              title="Aree di intervento"
-              description="I temi dell'Agenda 2030 su cui la tua azienda ha agito"
-            >
+            <PageSection title="Aree di intervento">
               {impact!.sdgs_touched.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {impact!.sdgs_touched.map((code, index) => {
@@ -288,10 +279,7 @@ export default function HRDashboard() {
             </PageSection>
 
             {/* Soddisfazione */}
-            <PageSection
-              title="Soddisfazione"
-              description="Come i partecipanti valutano le esperienze"
-            >
+            <PageSection title="Soddisfazione">
               {impact!.reviews_count > 0 ? (
                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <StatCard

@@ -1,24 +1,10 @@
-## 1. Refactor `src/components/common/SettingsPage.tsx` per usare `PageHeader`
+## Rimozione descrizioni nelle sezioni della pagina Report
 
-Oggi `SettingsPage` ha un header costruito a mano (h2 + p, animazione `y:8`, niente `min-h-[44px]`). Le pagine HR top-level usano invece `PageHeader` (h1 `text-xl font-bold`, animazione `y:-10`, container `min-h-[44px]`). Da qui la percezione di layout diverso.
+In `src/pages/HRDashboard.tsx` rimuovere la prop `description` da tutti i `<PageSection>`:
 
-Soluzione: rendere `SettingsPage` un thin wrapper che delega l'header al componente `PageHeader` condiviso.
+1. **Coinvolgimento** — rimuovere `description="Quante persone della tua azienda hanno partecipato e quanto tempo hanno donato"`
+2. **Impatto sul territorio** — rimuovere `description="ETS coinvolti, territori toccati e risultati concreti generati"`
+3. **Aree di intervento** — rimuovere `description="I temi dell'Agenda 2030 su cui la tua azienda ha agito"`
+4. **Soddisfazione** — rimuovere `description="Come i partecipanti valutano le esperienze"`
 
-- Importare `PageHeader` da `@/components/common/PageHeader`.
-- Sostituire il blocco header interno con `<PageHeader title={...} description={...} icon={Icon} iconColor={iconColor} className="mb-6" />`.
-- Mantenere il wrapper `motion.div` per la fade-in del contenuto (animazione invariata sul body), ma l'header userà l'animazione di `PageHeader` stesso → coerente con il resto.
-- API pubblica invariata (title, description?, icon?, iconColor?, children, className).
-
-Effetto: tutte le pagine impostazioni HR avranno titolo + icona identici per tipografia, spaziatura, animazione e allineamento alle pagine `/hr/*` top-level.
-
-## 2. Pagina Membri — `src/pages/hr/settings/SettingsMembers.tsx`
-
-Modifica saltata nel passaggio precedente:
-- Importare `Users` da `lucide-react`.
-- Sostituire `<SettingsPage title="Membri e accessi" description="...">` con `<SettingsPage title="Membri e accessi" icon={Users} iconColor="text-green-500">` (rimossa la description, aggiunta icona coerente con la sidebar).
-
-## Cosa NON tocchiamo
-
-- Logica/contenuto delle pagine impostazioni (sezioni interne, domini, tabella dipendenti).
-- Le altre pagine già aggiornate (Profilo, Generali, Volontariato, Tema, Sicurezza, Report): erediteranno automaticamente il nuovo header allineato grazie al refactor di `SettingsPage`.
-- `PageHeader` resta invariato.
+I titoli delle sezioni restano invariati. Nessun'altra modifica.
