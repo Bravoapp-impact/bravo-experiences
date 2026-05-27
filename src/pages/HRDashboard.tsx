@@ -101,7 +101,6 @@ export default function HRDashboard() {
       <div className="space-y-2">
         <PageHeader
           title="Report"
-          description="L'impatto del volontariato della tua azienda"
           icon={BarChart3}
           iconColor="text-rose-500"
         />

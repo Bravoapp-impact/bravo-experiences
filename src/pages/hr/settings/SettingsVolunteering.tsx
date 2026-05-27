@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Heart } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -80,7 +80,7 @@ export default function SettingsVolunteering() {
   };
 
   return (
-    <SettingsPage title="Volontariato aziendale" description="Configurazione del programma di volontariato">
+    <SettingsPage title="Volontariato aziendale" icon={Heart} iconColor="text-green-500">
       <SettingsSection title="Budget ore">
         {loading ? (
           <Skeleton className="h-8 w-40" />

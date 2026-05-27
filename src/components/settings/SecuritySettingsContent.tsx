@@ -1,3 +1,4 @@
+import { Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import SettingsPage from "@/components/common/SettingsPage";
 import SettingsFormRow from "@/components/common/SettingsFormRow";
@@ -13,7 +14,8 @@ export default function SecuritySettingsContent() {
   return (
     <SettingsPage
       title="Sicurezza"
-      description="Gestisci la password e l'autenticazione a due fattori"
+      icon={Shield}
+      iconColor="text-emerald-500"
       className="max-w-3xl"
     >
       <div className="divide-y divide-border">
@@ -35,4 +37,3 @@ export default function SecuritySettingsContent() {
     </SettingsPage>
   );
 }
-

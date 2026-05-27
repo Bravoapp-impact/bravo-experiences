@@ -1,7 +1,7 @@
-import { motion } from "framer-motion";
-import { Sun, Moon, Monitor } from "lucide-react";
+import { Sun, Moon, Monitor, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme, type Theme } from "@/hooks/useTheme";
+import SettingsPage from "@/components/common/SettingsPage";
 
 export default function SettingsTheme() {
   const { theme, setTheme } = useTheme();
@@ -12,10 +12,7 @@ export default function SettingsTheme() {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-      <h2 className="text-lg font-semibold text-foreground">Aspetto</h2>
-      <p className="text-sm text-muted-foreground mb-6">Scegli come visualizzare Bravo!</p>
-
+    <SettingsPage title="Tema" icon={Palette} iconColor="text-amber-500">
       <div className="flex flex-wrap gap-3">
         {options.map((opt) => {
           const Icon = opt.icon;
@@ -35,6 +32,6 @@ export default function SettingsTheme() {
           );
         })}
       </div>
-    </motion.div>
+    </SettingsPage>
   );
 }

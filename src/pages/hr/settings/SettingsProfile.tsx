@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Save, Loader2 } from "lucide-react";
+import { Save, Loader2, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -130,7 +130,7 @@ export default function SettingsProfile() {
   };
 
   return (
-    <SettingsPage title="Profilo personale" description="Gestisci le tue informazioni personali">
+    <SettingsPage title="Profilo personale" icon={User} iconColor="text-violet-500">
       <AvatarUploadBlock
         imageUrl={profile?.avatar_url}
         fallbackInitials={getInitials()}
