@@ -128,10 +128,7 @@ export default function HRDashboard() {
         ) : (
           <>
             {/* Coinvolgimento */}
-            <PageSection
-              title="Coinvolgimento"
-              description="Quante persone della tua azienda hanno partecipato e quanto tempo hanno donato"
-            >
+            <PageSection title="Coinvolgimento">
               <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
                 <StatCard
                   label="Persone uniche coinvolte"
