@@ -239,10 +239,7 @@ export default function HRDashboard() {
             </PageSection>
 
             {/* Aree di intervento */}
-            <PageSection
-              title="Aree di intervento"
-              description="I temi dell'Agenda 2030 su cui la tua azienda ha agito"
-            >
+            <PageSection title="Aree di intervento">
               {impact!.sdgs_touched.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {impact!.sdgs_touched.map((code, index) => {
