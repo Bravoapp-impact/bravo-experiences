@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
+import { Mail } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,6 +31,9 @@ export default function SettingsMembers() {
   const { profile } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [domains, setDomains] = useState<string[]>([]);
+  const [companyName, setCompanyName] = useState<string>("");
+  const [domainsLoading, setDomainsLoading] = useState(true);
 
   useEffect(() => {
     if (!profile?.company_id) return;
@@ -46,7 +49,24 @@ export default function SettingsMembers() {
         setEmployees(data || []);
         setLoading(false);
       });
+
+    setDomainsLoading(true);
+    supabase
+      .from("companies")
+      .select("name, allowed_email_domains")
+      .eq("id", profile.company_id)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error) devLog.error("Error fetching company domains:", error);
+        setDomains((data?.allowed_email_domains as string[] | null) || []);
+        setCompanyName(data?.name || "");
+        setDomainsLoading(false);
+      });
   }, [profile?.company_id]);
+
+  const mailtoHref = `mailto:team@bravoapp.it?subject=${encodeURIComponent(
+    `Configurazione dominio aziendale${companyName ? ` — ${companyName}` : ""}`
+  )}`;
 
   return (
     <SettingsPage title="Membri e accessi" description="Gestisci chi può accedere a Bravo! nella tua azienda">
@@ -54,13 +74,31 @@ export default function SettingsMembers() {
         title="Dominio aziendale"
         description="I dipendenti che si registrano con questo dominio email accedono automaticamente alla tua azienda."
       >
-        <div className="mb-1">
-          <Badge variant="outline" className="text-[10px] mb-2">Presto</Badge>
-        </div>
-        <Input placeholder="@nomeazienda.com" readOnly className="bg-muted/30" />
-        <p className="text-xs text-muted-foreground mt-1.5">
-          Contatta il tuo referente Bravo! per configurare il dominio aziendale.
+        {domainsLoading ? (
+          <div className="flex flex-wrap gap-2">
+            <Skeleton className="h-7 w-40" />
+            <Skeleton className="h-7 w-32" />
+          </div>
+        ) : domains.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nessun dominio configurato.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {domains.map((d) => (
+              <Badge key={d} variant="secondary" className="text-xs font-normal py-1 px-2.5">
+                @{d.replace(/^@/, "")}
+              </Badge>
+            ))}
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground mt-3">
+          Contatta il tuo referente Bravo! per configurare o modificare il dominio aziendale.
         </p>
+        <Button asChild size="sm" variant="outline" className="mt-3 gap-2">
+          <a href={mailtoHref}>
+            <Mail className="h-4 w-4" />
+            Contatta il team Bravo!
+          </a>
+        </Button>
       </SettingsSection>
 
       <SettingsSection title="Dipendenti registrati" separator={false}>
