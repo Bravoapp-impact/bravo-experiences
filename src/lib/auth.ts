@@ -39,9 +39,29 @@ export async function incrementAccessCodeUsage(accessCode: string): Promise<bool
 }
 
 export async function signUp({ email, password, firstName, lastName, accessCode }: SignUpData) {
-  // First validate the access code
+  // Domain-based signup path: no access code provided.
+  // Do NOT pass company_id/role from the client — the server-side
+  // handle_new_user trigger resolves the company from the email domain.
+  if (!accessCode) {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+        },
+      },
+    });
+
+    if (error) throw error;
+    return data;
+  }
+
+  // Access-code signup path
   const codeInfo = await validateAccessCode(accessCode);
-  
+
   if (!codeInfo) {
     throw new Error("Codice di accesso non valido o scaduto");
   }
@@ -73,11 +93,11 @@ export async function signUp({ email, password, firstName, lastName, accessCode 
   // Increment usage counter
   await incrementAccessCodeUsage(accessCode);
 
-  return { 
-    ...data, 
+  return {
+    ...data,
     entityName: codeInfo.entity_name,
     entityType: codeInfo.entity_type,
-    role: codeInfo.assigned_role 
+    role: codeInfo.assigned_role,
   };
 }
 
