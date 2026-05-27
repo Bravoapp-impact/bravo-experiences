@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Save, Loader2 } from "lucide-react";
+import { Save, Loader2, Building2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -126,7 +126,7 @@ export default function SettingsGeneral() {
   };
 
   return (
-    <SettingsPage title="Profilo azienda" description="Informazioni sulla tua azienda su Bravo!">
+    <SettingsPage title="Profilo azienda" icon={Building2} iconColor="text-blue-500">
       <AvatarUploadBlock
         imageUrl={companyLogoUrl}
         fallbackInitials={getInitials(companyName)}
