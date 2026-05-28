@@ -95,13 +95,21 @@ export default function Register() {
         /not allowed/i.test(rawMessage) ||
         /non.*ammess/i.test(rawMessage) ||
         /Database error saving new user/i.test(rawMessage);
+      const isRateLimit = /rate.?limit/i.test(rawMessage);
+
+      let description: string;
+      if (isRateLimit) {
+        description = "In questo momento stiamo ricevendo troppe richieste. Ti preghiamo di riprovare fra un'ora";
+      } else if (isDomainRejection) {
+        description = "Questa email non è ammessa alla registrazione. Contatta il team di Bravo! per maggiori informazioni — team@bravoapp.it";
+      } else {
+        description = rawMessage || "Si è verificato un errore. Riprova.";
+      }
 
       toast({
         variant: "destructive",
         title: "Errore di registrazione",
-        description: isDomainRejection
-          ? "Questa email non è ammessa alla registrazione. Contatta il team di Bravo! per maggiori informazioni — team@bravoapp.it"
-          : rawMessage || "Si è verificato un errore. Riprova.",
+        description,
       });
     } finally {
       setIsLoading(false);
