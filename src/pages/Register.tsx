@@ -88,6 +88,7 @@ export default function Register() {
       setRegistrationComplete(true);
     } catch (error: any) {
       const rawMessage: string = error?.message || "";
+      const isAlreadyRegistered = rawMessage === "EMAIL_ALREADY_REGISTERED";
       // Server-side trigger (handle_new_user) rejects unknown email domains.
       const isDomainRejection =
         /domain/i.test(rawMessage) ||
@@ -96,6 +97,27 @@ export default function Register() {
         /non.*ammess/i.test(rawMessage) ||
         /Database error saving new user/i.test(rawMessage);
       const isRateLimit = /rate.?limit/i.test(rawMessage);
+
+      if (isAlreadyRegistered) {
+        toast({
+          variant: "destructive",
+          title: "Email già registrata",
+          description: (
+            <span className="space-y-2">
+              <span className="block">
+                Questa email è già associata a un account. Accedi oppure recupera la password se non la ricordi.
+              </span>
+              <Link
+                to="/forgot-password"
+                className="block font-medium text-destructive-foreground underline underline-offset-4"
+              >
+                Recupera password
+              </Link>
+            </span>
+          ),
+        });
+        return;
+      }
 
       let description: string;
       if (isRateLimit) {
