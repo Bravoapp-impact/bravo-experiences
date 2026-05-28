@@ -56,6 +56,15 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!formData.gender) {
+      toast({
+        variant: "destructive",
+        title: "Manca una scelta",
+        description: "Seleziona come vuoi che ti accogliamo nell'app.",
+      });
+      return;
+    }
+
     if (!evaluatePassword(formData.password).isValid) {
       toast({
         variant: "destructive",
@@ -73,6 +82,7 @@ export default function Register() {
         password: formData.password,
         firstName: formData.firstName,
         lastName: formData.lastName,
+        gender: formData.gender as "m" | "f" | "x",
       });
 
       setRegistrationComplete(true);
