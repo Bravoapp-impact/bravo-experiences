@@ -58,6 +58,7 @@ export default function ExperienceDetail() {
 
   // Success state
   const [showSuccess, setShowSuccess] = useState(false);
+  const [confirmCancellableOpen, setConfirmCancellableOpen] = useState(false);
 
   // ─── Fetch experience ───
   useEffect(() => {
