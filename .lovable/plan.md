@@ -1,29 +1,23 @@
-Aggiungere il campo "Come vuoi che ti accogliamo nell'app?" (gender m/f/x) alle pagine di modifica profilo di tutti i ruoli, con le stesse tre opzioni della registrazione (Bravo! / Brava! / Bravə!) e nessun helper sotto Bravə.
+## Problema
 
-## File da modificare
+La tabella `profiles` ha un check constraint `profiles_gender_check` legacy che consente solo i valori `'male' | 'female' | 'other'`. Il nuovo flusso (registrazione + GenderSelector) salva invece `'m' | 'f' | 'x'`, quindi ogni update fallisce con violazione del constraint.
 
-### 1. `src/components/settings/ProfileSettingsContent.tsx`
-Usato sia da super-admin che da association.
-- Aggiungere stato `gender` inizializzato da `profile?.gender || ""`.
-- Includerlo in `hasChanges` (rispetto a `profile?.gender || ""`).
-- Nella sezione "Dati personali", sotto Email, aggiungere un blocco con `<Label>Come vuoi che ti accogliamo?</Label>` e un `RadioGroup` `grid-cols-3 gap-2` con tre opzioni Bravo!/Brava!/Bravə! → valori `m`/`f`/`x`. Stile coerente con il resto del form (label `text-xs text-muted-foreground`, controlli compatti).
-- In `handleSave` includere `gender: gender || null` nell'`update` su `profiles` (consenti di lasciarlo vuoto in modifica? No — è una preferenza, ma in registrazione era obbligatoria. Per modifica manteniamo coerenza: non permettere di tornare a vuoto, almeno una scelta deve restare. Il radio non avrà opzione "nessuna", quindi se il profilo è già valorizzato non potrà essere svuotato.).
+Verificato: nessun profilo ha attualmente un valore di gender impostato (tutti `NULL`), quindi non c'è dato legacy da migrare.
 
-### 2. `src/pages/hr/settings/SettingsProfile.tsx`
-Stessa identica modifica del punto 1 (file paralleli, stessa struttura).
+## Fix
 
-### 3. `src/pages/settings/EmployeeSettingsPersonali.tsx`
-Pattern diverso (lista di `SettingsField` espandibili).
-- Aggiungere un nuovo `SettingsField label="Come ti accogliamo"` con `value` derivato dal `profile.gender` (mappa `m`→"Bravo!", `f`→"Brava!", `x`→"Bravə!", vuoto → placeholder).
-- Il render-prop apre un piccolo form `GenderForm` con `RadioGroup` (3 opzioni, stesso stile di registrazione), bottone Salva che fa `update({ gender })` su `profiles`, `refreshProfile()` e `onSaved()`.
+Migrazione che sostituisce il constraint:
 
-## Note tecniche
+```sql
+ALTER TABLE public.profiles DROP CONSTRAINT profiles_gender_check;
+ALTER TABLE public.profiles
+  ADD CONSTRAINT profiles_gender_check
+  CHECK (gender IS NULL OR gender IN ('m', 'f', 'x'));
+```
 
-- Il campo `gender` esiste già su `profiles` (vedi `handle_new_user` trigger) — nessuna migrazione DB necessaria.
-- Il tipo `Profile` in `useAuth` dovrebbe già esporre `gender`; se non lo fa, leggerlo via select esplicita o ampliare il tipo locale. Verificare a build-time.
-- Nessuna modifica a `auth.ts` o al form di registrazione.
+Nessuna modifica al codice frontend o al trigger `handle_new_user` (già allineati a `m/f/x`).
 
-## Fuori scope
+## Verifica post-migrazione
 
-- Nessun cambio a copy/comunicazioni che usano il gender (gestiti altrove).
-- Nessuna validazione "non puoi svuotare": basta il fatto che il RadioGroup non ha opzione null.
+- Aggiornare il profilo da Impostazioni → salvataggio ok.
+- Registrazione nuova utenza con scelta `Bravə!` → profilo creato con `gender = 'x'`.
