@@ -181,19 +181,39 @@ export function BookingDetailModal({ booking, onClose, onCancel, isCancelling, o
               />
             )}
 
-            {/* IN CASO DI IMPREVISTO */}
+            {/* CANCELLATION WINDOW INFO — always visible for future confirmed bookings */}
             {isConfirmedFuture && (
-              <div className="p-4 rounded-xl bg-muted/30 border border-border">
-                <div className="flex items-center gap-2 mb-2">
-                  <Info className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="text-sm font-semibold text-foreground">In caso di imprevisto</h3>
+              <section className="flex items-start gap-3 rounded-xl bg-muted/30 border border-border p-4">
+                <CalendarX className="h-4 w-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                <div className="space-y-1">
+                  <p className="text-sm text-foreground">
+                    {canCancel ? (
+                      <>
+                        Puoi annullare la prenotazione online fino a{" "}
+                        <span className="font-semibold">
+                          {format(cancellationDeadline, "EEEE d MMMM", { locale: it })}
+                        </span>{" "}
+                        (14 giorni prima dell'evento).
+                      </>
+                    ) : (
+                      <>
+                        La finestra per l'annullamento online si è chiusa: è possibile annullare
+                        autonomamente fino a 14 giorni prima dell'evento.
+                      </>
+                    )}
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Per richieste fuori tempo massimo scrivi a{" "}
+                    <a
+                      href="mailto:team@bravoapp.it"
+                      className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+                    >
+                      team@bravoapp.it
+                    </a>
+                    .
+                  </p>
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Se non puoi più partecipare, annulla la tua prenotazione con il pulsante qui sotto.
-                  Per annullamenti dell'ultimo minuto (meno di 48 ore dall'evento), contatta chi gestisce
-                  il programma di volontariato nella tua azienda.
-                </p>
-              </div>
+              </section>
             )}
           </div>
         </div>
@@ -210,14 +230,9 @@ export function BookingDetailModal({ booking, onClose, onCancel, isCancelling, o
               {isCancelling ? "Annullamento in corso..." : "Annulla prenotazione"}
             </Button>
           ) : isConfirmedFuture ? (
-            <div className="space-y-3">
-              <p className="text-xs text-muted-foreground text-center py-2 bg-muted/50 rounded-lg">
-                Non è più possibile annullare online
-              </p>
-              <Button onClick={onClose} className="w-full h-12 text-base font-medium rounded-xl">
-                Chiudi
-              </Button>
-            </div>
+            <Button onClick={onClose} className="w-full h-12 text-base font-medium rounded-xl">
+              Chiudi
+            </Button>
           ) : (
             <Button onClick={onClose} className="w-full h-12 text-base font-medium rounded-xl">
               Chiudi
