@@ -397,7 +397,7 @@ export default function ExperienceDetail() {
     loading: loadingDates,
     selectedDateId,
     onSelectDate: setSelectedDateId,
-    onBook: handleBook,
+    onBook: requestBook,
     isBooking,
     userBookedDateIds,
     remainingHours,
