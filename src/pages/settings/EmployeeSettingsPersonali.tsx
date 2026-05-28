@@ -109,6 +109,63 @@ function NameForm({
   );
 }
 
+function GenderForm({
+  profileId,
+  initialGender,
+  onSaved,
+}: {
+  profileId: string;
+  initialGender: GenderValue;
+  onSaved: () => void;
+}) {
+  const { refreshProfile } = useAuth();
+  const [gender, setGender] = useState<GenderValue>(initialGender);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setGender(initialGender);
+  }, [initialGender]);
+
+  const handleSave = async () => {
+    if (!gender) {
+      toast.error("Seleziona un'opzione");
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ gender })
+        .eq("id", profileId);
+      if (error) throw error;
+      await refreshProfile();
+      toast.success("Preferenza aggiornata");
+      onSaved();
+    } catch (err) {
+      devLog.error("Error updating gender:", err);
+      toast.error("Errore durante l'aggiornamento");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <GenderSelector value={gender} onChange={setGender} hideLabel />
+      <Button onClick={handleSave} disabled={saving || !gender} className="w-full">
+        {saving ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Salvataggio…
+          </>
+        ) : (
+          "Salva"
+        )}
+      </Button>
+    </div>
+  );
+}
+
 export default function EmployeeSettingsPersonali() {
   const { profile } = useAuth();
 
