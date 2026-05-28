@@ -20,15 +20,18 @@ const profileSchema = z.object({
 
 export default function SettingsProfile() {
   const { profile, user, refreshProfile } = useAuth();
+  const initialGender = ((profile as any)?.gender ?? "") as GenderValue;
   const [firstName, setFirstName] = useState(profile?.first_name || "");
   const [lastName, setLastName] = useState(profile?.last_name || "");
+  const [gender, setGender] = useState<GenderValue>(initialGender);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [errors, setErrors] = useState<{ firstName?: string; lastName?: string }>({});
 
   const hasChanges =
     firstName !== (profile?.first_name || "") ||
-    lastName !== (profile?.last_name || "");
+    lastName !== (profile?.last_name || "") ||
+    gender !== initialGender;
 
   const getInitials = () => {
     const first = profile?.first_name?.[0] || "";
