@@ -107,12 +107,12 @@ export default function Register() {
               <span className="block">
                 Questa email è già associata a un account. Accedi oppure recupera la password se non la ricordi.
               </span>
-              <Link
-                to="/forgot-password"
+              <a
+                href="/forgot-password"
                 className="block font-medium text-destructive-foreground underline underline-offset-4"
               >
                 Recupera password
-              </Link>
+              </a>
             </span>
           ),
         });
