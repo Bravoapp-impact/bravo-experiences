@@ -57,7 +57,12 @@ export async function signUp({ email, password, firstName, lastName, gender, acc
       },
     });
 
-    if (error) throw error;
+    if (error) {
+      if (isAlreadyRegisteredError(error)) {
+        throw new Error("EMAIL_ALREADY_REGISTERED");
+      }
+      throw error;
+    }
     if (data.user && (data.user.identities?.length ?? 0) === 0) {
       throw new Error("EMAIL_ALREADY_REGISTERED");
     }
