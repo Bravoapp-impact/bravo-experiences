@@ -16,6 +16,7 @@ export default function Register() {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
+    gender: "" as "" | "m" | "f" | "x",
     email: "",
     password: "",
   });
@@ -55,6 +56,15 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!formData.gender) {
+      toast({
+        variant: "destructive",
+        title: "Manca una scelta",
+        description: "Seleziona come vuoi che ti accogliamo nell'app.",
+      });
+      return;
+    }
+
     if (!evaluatePassword(formData.password).isValid) {
       toast({
         variant: "destructive",
@@ -72,6 +82,7 @@ export default function Register() {
         password: formData.password,
         firstName: formData.firstName,
         lastName: formData.lastName,
+        gender: formData.gender as "m" | "f" | "x",
       });
 
       setRegistrationComplete(true);
@@ -206,6 +217,41 @@ export default function Register() {
               />
             </div>
           </div>
+
+          {/* Accoglienza (genere) */}
+          <div className="space-y-2">
+            <Label>Come vuoi che ti accogliamo nell'app?</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { value: "m", label: "Bravo!", helper: "" },
+                { value: "f", label: "Brava!", helper: "" },
+                { value: "x", label: "Bravə!", helper: "Forma neutra" },
+              ] as const).map((opt) => {
+                const selected = formData.gender === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setFormData((prev) => ({ ...prev, gender: opt.value }))}
+                    aria-pressed={selected}
+                    className={`flex flex-col items-center justify-center rounded-md border px-3 py-2.5 text-sm font-medium transition-colors ${
+                      selected
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-input bg-background text-foreground hover:bg-muted/50"
+                    }`}
+                  >
+                    <span>{opt.label}</span>
+                    {opt.helper && (
+                      <span className="mt-0.5 text-[10px] font-normal text-muted-foreground">
+                        {opt.helper}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
 
           {/* Email */}
           <div className="space-y-2">
