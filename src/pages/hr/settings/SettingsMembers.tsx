@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
-import { Mail, Users } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Copy, Mail, Users } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
@@ -68,6 +70,21 @@ export default function SettingsMembers() {
     `Configurazione dominio aziendale${companyName ? ` — ${companyName}` : ""}`
   )}`;
 
+  const registrationUrl = useMemo(
+    () => `${window.location.origin}/register`,
+    [],
+  );
+
+  const handleCopyRegistrationLink = async () => {
+    try {
+      await navigator.clipboard.writeText(registrationUrl);
+      toast.success("Link copiato negli appunti");
+    } catch {
+      toast.error("Impossibile copiare il link");
+    }
+  };
+
+
   return (
     <SettingsPage title="Membri e accessi" icon={Users} iconColor="text-green-500">
       <SettingsSection
@@ -101,10 +118,26 @@ export default function SettingsMembers() {
         </Button>
       </SettingsSection>
 
-      <SettingsSection title="Dipendenti registrati" separator={false}>
-        <div className="flex items-center justify-end mb-3">
-          <Button size="sm" disabled>Invita dipendente</Button>
+      <SettingsSection
+        title="Link di registrazione"
+        description="Condividi questo link con i tuoi colleghi per invitarli a registrarsi su Bravo!. Useranno il dominio email aziendale per essere associati automaticamente."
+      >
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Input
+            readOnly
+            value={registrationUrl}
+            className="font-mono text-xs flex-1"
+            onFocus={(e) => e.currentTarget.select()}
+          />
+          <Button onClick={handleCopyRegistrationLink} className="shrink-0">
+            <Copy className="h-4 w-4 mr-2" />
+            Copia link
+          </Button>
         </div>
+      </SettingsSection>
+
+      <SettingsSection title="Dipendenti registrati" separator={false}>
+
 
         {loading ? (
           <div className="space-y-2">
