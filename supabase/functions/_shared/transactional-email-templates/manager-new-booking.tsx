@@ -1,0 +1,111 @@
+import * as React from 'npm:react@18.3.1'
+import {
+  Body,
+  Container,
+  Head,
+  Heading,
+  Html,
+  Img,
+  Preview,
+  Text,
+} from 'npm:@react-email/components@0.0.22'
+import type { TemplateEntry } from './registry.ts'
+
+interface ManagerNewBookingProps {
+  firstName?: string
+  lastName?: string
+  eventDateLong?: string
+  startTime?: string
+  endTime?: string
+  companyName?: string
+}
+
+const ManagerNewBookingEmail = ({
+  firstName = '',
+  lastName = '',
+  eventDateLong = '',
+  startTime = '',
+  endTime = '',
+  companyName = '',
+}: ManagerNewBookingProps) => {
+  const fullName = `${firstName} ${lastName}`.trim()
+  return (
+    <Html lang="it" dir="ltr">
+      <Head />
+      <Preview>
+        {fullName} parteciperà a un'attività di volontariato {eventDateLong}
+      </Preview>
+      <Body style={main}>
+        <Container style={container}>
+          <Img
+            src="https://cyazgtnjtnyxscfzsasp.supabase.co/storage/v1/object/public/email-assets/bravo-logo-icon.png"
+            alt="Bravo!"
+            height="28"
+            style={logo}
+          />
+          <Heading style={h1}>Nuova attività di volontariato</Heading>
+
+          <Text style={paragraph}>Ciao,</Text>
+          <Text style={paragraph}>
+            ti informiamo che <strong>{fullName}</strong> ha confermato la
+            partecipazione a un'attività di volontariato aziendale organizzata
+            da {companyName} tramite Bravo!
+          </Text>
+          <Text style={paragraph}>
+            L'attività si svolgerà <strong>{eventDateLong}</strong>, dalle{' '}
+            <strong>{startTime}</strong> alle <strong>{endTime}</strong>.
+          </Text>
+          <Text style={paragraph}>
+            Ti scriviamo perché {firstName} ha indicato il tuo indirizzo come
+            riferimento. Se pensi ci sia un errore, puoi contattare {firstName}{' '}
+            direttamente.
+          </Text>
+
+          <Text style={signature}>A presto,<br />Il team Bravo! 💜</Text>
+
+          <Text style={contactLine}>
+            Per supporto scrivici a{' '}
+            <a href="mailto:team@bravoapp.it" style={link}>
+              team@bravoapp.it
+            </a>
+          </Text>
+        </Container>
+      </Body>
+    </Html>
+  )
+}
+
+export const template = {
+  component: ManagerNewBookingEmail,
+  subject: (data: Record<string, any>) =>
+    `${[data?.firstName, data?.lastName].filter(Boolean).join(' ') || 'Un collaboratore'} parteciperà a un'attività di volontariato`,
+  displayName: 'Notifica al responsabile — nuova prenotazione',
+  previewData: {
+    firstName: 'Giulia',
+    lastName: 'Rossi',
+    eventDateLong: 'lunedì 15 giugno 2026',
+    startTime: '09:00',
+    endTime: '13:00',
+    companyName: 'Acme S.p.A.',
+  },
+} satisfies TemplateEntry
+
+const main = {
+  backgroundColor: '#ffffff',
+  fontFamily:
+    "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+  color: '#4F4F4F',
+  lineHeight: '1.6',
+}
+const container = { maxWidth: '560px', margin: '0 auto', padding: '20px' }
+const logo = { marginBottom: '8px' }
+const h1 = {
+  color: '#373737',
+  margin: '0 0 16px 0',
+  fontSize: '22px',
+  fontWeight: 'bold' as const,
+}
+const paragraph = { margin: '0 0 16px 0', fontSize: '14px', color: '#4F4F4F' }
+const signature = { margin: '24px 0 0 0', fontSize: '14px', color: '#4F4F4F' }
+const contactLine = { margin: '24px 0 0 0', fontSize: '13px', color: '#999999' }
+const link = { color: '#7A00FF', textDecoration: 'underline' }

@@ -286,7 +286,12 @@ export default function ExperienceDetail() {
       }
 
       if (bookingData) {
+        // Fire-and-forget: non bloccare la UI né far fallire la prenotazione
+        // se una delle notifiche email non parte.
         supabase.functions.invoke("send-booking-confirmation", {
+          body: { booking_id: bookingData.id },
+        });
+        supabase.functions.invoke("send-manager-new-booking", {
           body: { booking_id: bookingData.id },
         });
       }
