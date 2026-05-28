@@ -1,50 +1,83 @@
 ## Obiettivo
-Quando un dipendente conferma una prenotazione di volontariato, inviare in parallelo alla conferma esistente una notifica email al suo responsabile (se `profiles.manager_email` è valorizzato), senza bloccare né far fallire la prenotazione.
+
+Inviare al dipendente un reminder email 17 giorni prima dell'esperienza per ricordargli che ha tempo fino a 14 giorni prima per annullare la prenotazione online. Job batch giornaliero sullo stesso pattern di `send-manager-absence-notifications`.
 
 ## Cosa cambia
 
 ### 1. Nuovo template React Email
-`supabase/functions/_shared/transactional-email-templates/manager-new-booking.tsx`
 
-Stesso stile sobrio di `manager-absence-notification.tsx`. Mostra:
-- nome e cognome del collaboratore
-- data evento (long format)
-- orario inizio / fine
-- nome azienda
+`supabase/functions/_shared/transactional-email-templates/cancellation-deadline-reminder.tsx`
 
-NON mostra: titolo esperienza, ente, città, indirizzo.
+Stile sobrio coerente con gli altri template Bravo!. Props:
 
-Subject simile a: `"<Nome Cognome> parteciperà a un'attività di volontariato"`.
+- `firstName`
+- `eventDateLong` (data esperienza)
+- `cancellationDeadlineLong` (data esperienza − 14 giorni, formato esteso it-IT)
+- `bookingsUrl` (sempre `https://experiences.bravoapp.it/app/bookings`)
+
+Contenuto: ricorda che hai ancora 3 giorni per annullare la tua prenotazione per questa esperienza: [nome esperienza]; Trascorsi questi 3 giorni, il posto si considera confermato in via definitiva. CTA "Vai alle mie prenotazioni" → `bookingsUrl`.
+
+Subject: `"Ultimi giorni per annullare la tua prenotazione"`.
 
 ### 2. Registro template
-`supabase/functions/_shared/transactional-email-templates/registry.ts`
-Aggiungere import + voce `'manager-new-booking'` nella mappa `TEMPLATES`.
 
-### 3. Nuova wrapper edge function
-`supabase/functions/send-manager-new-booking/index.ts`
+Aggiungere import + voce `'cancellation-deadline-reminder'` in `supabase/functions/_shared/transactional-email-templates/registry.ts`.
 
-Pattern identico a `send-booking-confirmation`:
-- input: `{ booking_id }`
-- auth: Bearer token + `auth.getUser()`
-- authorization: owner del booking OR `super_admin`/`hr_admin`
-- carica `bookings` → `profiles` (email manager, first_name, last_name, company_id) → `experience_dates` (start/end) → `companies` (name)
-- **early return success** se `profile.manager_email` è null/vuoto (non è un errore)
-- **anti-duplicazione**: prima di inviare, check su `email_logs` `WHERE booking_id = ? AND email_type = 'manager_new_booking' AND status = 'sent'`; se esiste già, return success
-- **idempotency key**: `manager-new-booking-<booking_id>`
-- invoca `send-transactional-email` con `templateName: 'manager-new-booking'`, `recipientEmail: profile.manager_email`, `templateData` minimale (firstName, lastName, eventDateLong, startTime, endTime, companyName)
-- log su `email_logs` (`email_type: 'manager_new_booking'`, status sent/failed)
+### 3. Nuova wrapper edge function batch
 
-Nota: la suppression list pre-check è applicata automaticamente da `send-transactional-email` (come per le altre wrapper esistenti, che non la duplicano).
+`supabase/functions/send-cancellation-deadline-reminders/index.ts`
+
+Pattern identico a `send-manager-absence-notifications`:
+
+- Auth: service role (cron) OR super_admin user JWT.
+- Finestra: bookings con `experience_dates.start_datetime` nel giorno UTC `[oggi+17, oggi+18)` (helper `isInDayWindow(date, 17)` analogo a `isInAdvanceWindow`).
+- Query: `bookings` con `status = 'confirmed'` joinato a `experience_dates!inner` filtrato sulla finestra. Lo `status = confirmed` garantisce che le prenotazioni cancellate nel frattempo non ricevano la mail.
+- Per ogni booking:
+  - carica `profiles` (email, first_name) — skip se profilo o email mancante
+  - anti-duplicazione: skip se esiste già log su `email_logs` con `email_type = 'cancellation_deadline_reminder'` per questo booking
+  - pre-check suppression list su `recipient_email.toLowerCase()` (skip se presente)
+  - calcola `cancellationDeadlineLong` = `start_datetime − 14 giorni`
+  - invoca `send-transactional-email` con:
+    - `templateName: 'cancellation-deadline-reminder'`
+    - `recipientEmail: profile.email`
+    - `idempotencyKey: cancellation-deadline-${booking.id}`
+    - `templateData: { firstName, eventDateLong, cancellationDeadlineLong, bookingsUrl }`
+  - log su `email_logs` (`status: 'sent'` o `'failed'`)
+- Risposta JSON con contatori `emails_sent` / `emails_skipped`.
 
 ### 4. Config edge function
-`supabase/config.toml`: aggiungere blocco `[functions.send-manager-new-booking]` con `verify_jwt = false` (coerente con le altre wrapper).
 
-### 5. Trigger lato client
-`src/pages/ExperienceDetail.tsx` (intorno a riga 288-292): subito dopo la `invoke("send-booking-confirmation", ...)` esistente, aggiungere una seconda `invoke("send-manager-new-booking", { body: { booking_id: bookingData.id } })`, anch'essa **fire-and-forget** (no await), in parallelo. Nessun try/catch che possa propagare errori alla UI.
+`supabase/config.toml`: aggiungere blocco
+
+```
+[functions.send-cancellation-deadline-reminders]
+  verify_jwt = false
+```
+
+### 5. Cron schedule giornaliero
+
+Usare lo strumento `supabase--insert` (NON migration, perché contiene URL + anon key project-specific) per registrare un job `pg_cron` che invoca la funzione una volta al giorno alle 08:00 UTC (stesso slot tipico del job manager-absence):
+
+```sql
+select cron.schedule(
+  'send-cancellation-deadline-reminders-daily',
+  '0 8 * * *',
+  $$
+  select net.http_post(
+    url := 'https://cyazgtnjtnyxscfzsasp.supabase.co/functions/v1/send-cancellation-deadline-reminders',
+    headers := '{"Content-Type":"application/json","Authorization":"Bearer <ANON_KEY>"}'::jsonb,
+    body := concat('{"trigger":"cron","time":"', now(), '"}')::jsonb
+  );
+  $$
+);
+```
+
+(verifico prima che `pg_cron` e `pg_net` siano già abilitati — lo sono, dato che il job manager-absence è già schedulato.)
 
 ## Note tecniche
 
-- Nessuna migration DB: `email_logs` accetta già `email_type` arbitrario e `profiles.manager_email` esiste già.
-- Nessuna nuova GRANT/RLS necessaria.
-- Il gate company-level `email_settings.confirmation_enabled` NON si applica qui: è una notifica nuova, distinta dalla conferma al dipendente. Se in futuro servirà un opt-out dedicato, sarà un'aggiunta separata.
+- Nessuna migration DB necessaria: `email_logs` accetta `email_type` arbitrario, `suppressed_emails` esiste già.
+- Nessuna nuova RLS/GRANT.
 - L'edge function viene deployata automaticamente.
+- La finestra di 24h (giorno UTC pieno) protegge dai ritardi del cron: se il job parte tardi, intercetta comunque le date che cadono in quel giorno.
+- Niente trigger client-side: tutto è batch giornaliero.
