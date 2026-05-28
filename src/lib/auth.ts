@@ -21,6 +21,14 @@ export interface AccessCodeValidation {
   assigned_role: string;
 }
 
+function isAlreadyRegisteredError(error: unknown): boolean {
+  const e = error as { code?: string; status?: number; message?: string } | null;
+  if (!e) return false;
+  if (e.code === "user_already_exists") return true;
+  const msg = e.message || "";
+  return /already.*registered/i.test(msg) || /already.*exists/i.test(msg);
+}
+
 export async function validateAccessCode(accessCode: string): Promise<AccessCodeValidation | null> {
   const { data, error } = await supabase
     .rpc('validate_access_code', { p_code: accessCode });
