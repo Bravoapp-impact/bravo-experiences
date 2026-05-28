@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, User, Loader2, ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { PasswordStrengthInput } from "@/components/auth/PasswordStrengthInput";
 import { signUp } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { evaluatePassword } from "@/lib/password-policy";
 
 export default function Register() {
@@ -24,6 +25,7 @@ export default function Register() {
   const [registrationComplete, setRegistrationComplete] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -88,6 +90,25 @@ export default function Register() {
       setRegistrationComplete(true);
     } catch (error: any) {
       const rawMessage: string = error?.message || "";
+
+      if (rawMessage === "EMAIL_ALREADY_REGISTERED") {
+        toast({
+          variant: "destructive",
+          title: "Email già registrata",
+          description:
+            "Questa email è già associata a un account. Accedi oppure recupera la password se non la ricordi.",
+          action: (
+            <ToastAction
+              altText="Recupera password"
+              onClick={() => navigate("/forgot-password")}
+            >
+              Recupera password
+            </ToastAction>
+          ),
+        });
+        return;
+      }
+
       // Server-side trigger (handle_new_user) rejects unknown email domains.
       const isDomainRejection =
         /domain/i.test(rawMessage) ||
