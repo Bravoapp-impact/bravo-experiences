@@ -35,7 +35,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "bravo-experiences"
+const SITE_NAME = "Team Bravo!"
 const SENDER_DOMAIN = "auto.updates.bravoapp.it"
 const ROOT_DOMAIN = "updates.bravoapp.it"
 const FROM_DOMAIN = "updates.bravoapp.it" // Domain shown in From address (may be root or sender subdomain)
