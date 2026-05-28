@@ -1,24 +1,24 @@
-# Avviso di conferma per prenotazioni entro 14 giorni
+# Feedback registrazione con email già esistente
 
 ## Obiettivo
-Nel flusso di prenotazione da `ExperienceDetail.tsx`, se la data selezionata cade entro 14 giorni da oggi, mostrare un AlertDialog di conferma esplicita prima di scrivere il booking. Oltre i 14 giorni, comportamento invariato (prenotazione diretta).
+Quando un utente tenta di registrarsi con un'email già presente, mostrare un messaggio di errore chiaro invece della schermata "Controlla la tua email".
 
 ## Modifiche
 
-**File: `src/pages/ExperienceDetail.tsx`**
+**`src/lib/auth.ts` — funzione `signUp`**
+- Dopo `supabase.auth.signUp(...)` (in entrambi i path: domain-based e access-code), controllare `data.user?.identities?.length === 0`.
+- Se vero, lanciare un errore tipizzato con un marker riconoscibile, es. `const err = new Error("EMAIL_ALREADY_REGISTERED"); throw err;` (oppure aggiungere una proprietà `code`).
+- Nel path access-code, fare il check **prima** di chiamare `incrementAccessCodeUsage`, così non si consuma il codice.
 
-1. Aggiungere import di `AlertDialog` da shadcn e di `differenceInDays` da `date-fns`.
-2. Aggiungere stato `confirmCancellableOpen: boolean`.
-3. Calcolare, al click su "Conferma" nel drawer, i giorni fino alla data selezionata (usando `selectedDateId` → trovo la `experience_date` corrispondente in `dates`).
-   - Se `daysUntil < 14` → aprire l'AlertDialog invece di chiamare `handleBook` direttamente.
-   - Altrimenti → invocare direttamente `handleBook` (comportamento attuale).
-4. Nuovo AlertDialog con:
-   - Titolo: "Confermi la prenotazione?"
-   - Descrizione: "Questa esperienza si svolge entro 14 giorni. Confermando, non potrai più annullare la prenotazione online. Vuoi procedere?"
-   - Azioni: "Annulla" (chiude il dialog, resta nel drawer) / "Conferma prenotazione" (chiama `handleBook` e chiude il dialog).
-5. Nessuna modifica al backend: la regola dei 14 giorni è già enforced dalla funzione `is_booking_cancellable` lato DB.
+**`src/pages/Register.tsx` — `handleSubmit`**
+- Nel `catch`, riconoscere il marker `EMAIL_ALREADY_REGISTERED` prima degli altri pattern.
+- Mostrare un toast `destructive` con:
+  - Titolo: "Email già registrata"
+  - Descrizione: "Questa email è già associata a un account. Accedi oppure recupera la password se non la ricordi."
+  - `action`: un `ToastAction` con label "Recupera password" che naviga a `/forgot-password` (usare `useNavigate` da `react-router-dom`).
+- NON impostare `setRegistrationComplete(true)` in questo caso (garantito dal fatto che `signUp` ora lancia).
 
 ## Note tecniche
-- La costante `CANCELLATION_WINDOW_DAYS = 14` viene riusata localmente (coerente con `BookingDetailModal.tsx`).
-- Il confronto usa l'inizio del giorno dell'esperienza vs `now()` per coerenza con la logica DB (`event_start_at - interval '14 days' > now()`). Usiamo `differenceInHours` >= 14*24 per evitare ambiguità di fuso.
-- Nessun cambiamento per HR/Super Admin né per altre route.
+- Il segnale ufficiale Supabase per "email già esistente" con conferma email attiva è `data.user.identities` come array vuoto: nessun errore viene restituito per evitare user enumeration, ma a livello di UX prodotto vogliamo essere espliciti (scelta consapevole del prodotto).
+- Nessuna modifica a DB, edge functions o RLS.
+- Nessun cambiamento al flusso di successo né al messaggio "Controlla la tua email".
