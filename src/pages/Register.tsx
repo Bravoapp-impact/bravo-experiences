@@ -223,8 +223,8 @@ export default function Register() {
             <Label>Come vuoi che ti accogliamo nell'app?</Label>
             <div className="grid grid-cols-3 gap-2">
               {([
-                { value: "m", label: "Bravo!" },
-                { value: "f", label: "Brava!" },
+                { value: "m", label: "Bravo!", helper: "" },
+                { value: "f", label: "Brava!", helper: "" },
                 { value: "x", label: "Bravə!", helper: "Forma neutra" },
               ] as const).map((opt) => {
                 const selected = formData.gender === opt.value;
