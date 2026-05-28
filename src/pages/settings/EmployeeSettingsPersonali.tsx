@@ -194,7 +194,7 @@ export default function EmployeeSettingsPersonali() {
         )}
       </SettingsField>
       <SettingsField
-        label="Come ti accogliamo"
+        label="Genere"
         value={genderDisplay((profile as any).gender)}
         placeholder="Non impostato"
       >
