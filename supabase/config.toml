@@ -27,4 +27,6 @@ project_id = "cyazgtnjtnyxscfzsasp"
     verify_jwt = false
   [functions.send-manager-absence-notifications]
     verify_jwt = false
+  [functions.send-manager-new-booking]
+    verify_jwt = false
 
