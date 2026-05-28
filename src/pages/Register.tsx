@@ -223,9 +223,9 @@ export default function Register() {
             <Label>Come vuoi che ti accogliamo nell'app?</Label>
             <div className="grid grid-cols-3 gap-2">
               {([
-                { value: "m", label: "Bravo!", helper: "" },
-                { value: "f", label: "Brava!", helper: "" },
-                { value: "x", label: "Bravə!", helper: "Forma neutra" },
+                { value: "m", label: "Bravo!" },
+                { value: "f", label: "Brava!" },
+                { value: "x", label: "Bravə!" },
               ] as const).map((opt) => {
                 const selected = formData.gender === opt.value;
                 return (
@@ -241,11 +241,6 @@ export default function Register() {
                     }`}
                   >
                     <span>{opt.label}</span>
-                    {opt.helper && (
-                      <span className="mt-0.5 text-[10px] font-normal text-muted-foreground">
-                        {opt.helper}
-                      </span>
-                    )}
                   </button>
                 );
               })}
