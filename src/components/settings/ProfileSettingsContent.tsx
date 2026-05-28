@@ -59,7 +59,7 @@ export default function ProfileSettingsContent() {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ first_name: result.data.firstName, last_name: result.data.lastName })
+        .update({ first_name: result.data.firstName, last_name: result.data.lastName, gender: gender || null })
         .eq("id", profile!.id);
       if (error) throw error;
       await refreshProfile();
