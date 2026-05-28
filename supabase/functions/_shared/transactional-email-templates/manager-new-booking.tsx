@@ -56,9 +56,9 @@ const ManagerNewBookingEmail = ({
             <strong>{startTime}</strong> alle <strong>{endTime}</strong>.
           </Text>
           <Text style={paragraph}>
-            Ti scriviamo perché {firstName} ha indicato il tuo indirizzo come
-            riferimento. Se pensi ci sia un errore, puoi contattare {firstName}{' '}
-            direttamente.
+            Questo messaggio ti è stato inviato perché {firstName} ha indicato il
+            tuo indirizzo come responsabile di riferimento. Se pensi ci sia un
+            errore, puoi contattare {firstName} direttamente.
           </Text>
 
           <Text style={signature}>A presto,<br />Il team Bravo! 💜</Text>
