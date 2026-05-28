@@ -118,10 +118,26 @@ export default function SettingsMembers() {
         </Button>
       </SettingsSection>
 
-      <SettingsSection title="Dipendenti registrati" separator={false}>
-        <div className="flex items-center justify-end mb-3">
-          <Button size="sm" disabled>Invita dipendente</Button>
+      <SettingsSection
+        title="Link di registrazione"
+        description="Condividi questo link con i tuoi colleghi per invitarli a registrarsi su Bravo!. Useranno il dominio email aziendale per essere associati automaticamente."
+      >
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Input
+            readOnly
+            value={registrationUrl}
+            className="font-mono text-xs flex-1"
+            onFocus={(e) => e.currentTarget.select()}
+          />
+          <Button onClick={handleCopyRegistrationLink} className="shrink-0">
+            <Copy className="h-4 w-4 mr-2" />
+            Copia link
+          </Button>
         </div>
+      </SettingsSection>
+
+      <SettingsSection title="Dipendenti registrati" separator={false}>
+
 
         {loading ? (
           <div className="space-y-2">
