@@ -70,6 +70,21 @@ export default function SettingsMembers() {
     `Configurazione dominio aziendale${companyName ? ` — ${companyName}` : ""}`
   )}`;
 
+  const registrationUrl = useMemo(
+    () => `${window.location.origin}/register`,
+    [],
+  );
+
+  const handleCopyRegistrationLink = async () => {
+    try {
+      await navigator.clipboard.writeText(registrationUrl);
+      toast.success("Link copiato negli appunti");
+    } catch {
+      toast.error("Impossibile copiare il link");
+    }
+  };
+
+
   return (
     <SettingsPage title="Membri e accessi" icon={Users} iconColor="text-green-500">
       <SettingsSection
