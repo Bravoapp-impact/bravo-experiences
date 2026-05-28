@@ -1,36 +1,24 @@
-# Annullamento prenotazioni: da 48 ore a 14 giorni
+# Avviso di conferma per prenotazioni entro 14 giorni
 
-## 1. Database — funzione `is_booking_cancellable`
+## Obiettivo
+Nel flusso di prenotazione da `ExperienceDetail.tsx`, se la data selezionata cade entro 14 giorni da oggi, mostrare un AlertDialog di conferma esplicita prima di scrivere il booking. Oltre i 14 giorni, comportamento invariato (prenotazione diretta).
 
-Oggi la RLS `Users can cancel own bookings if allowed` su `bookings` usa la funzione SQL `public.is_booking_cancellable(uuid)` che fa:
+## Modifiche
 
-```sql
-ed.start_datetime > (now() + interval '48 hours')
-```
+**File: `src/pages/ExperienceDetail.tsx`**
 
-Migration: ridefinire la funzione con `interval '14 days'`. Stessa firma, stessa policy resta valida → nessun altro intervento RLS necessario.
-
-Nota: la RLS `users_create_bookings_v3` (INSERT) non è impattata. La policy UPDATE continua a permettere solo il cambio status → `cancelled` da parte del proprietario, ma solo se la finestra è aperta. Perfetto.
-
-## 2. Frontend — `src/components/bookings/BookingDetailModal.tsx`
-
-Cambi:
-
-- Calcolo: sostituire `hoursUntilEvent > 48` con `daysUntilEvent >= 14` (usare `differenceInDays` di date-fns, o `hoursUntilEvent >= 14*24`). Calcolare anche la **data limite di annullamento** = `startDate - 14 giorni` (per mostrarla all'utente).
-- Per **prenotazioni future confermate**, mostrare sempre (anche quando il bottone di annullamento è ancora attivo) una riga informativa chiara con la regola dei 14 giorni e la data limite, ad es.:
-  > "Puoi annullare la prenotazione fino al **{data}** (14 giorni prima dell'evento)."
-  La posizione naturale è subito sopra il box "In caso di imprevisto", così è visibile a colpo d'occhio e non solo dentro al riquadro grigio.
-- Aggiornare il testo del riquadro "In caso di imprevisto": sostituire "meno di 48 ore dall'evento" con "meno di 14 giorni dall'evento".
-- Aggiornare il blocco mostrato quando `canCancel` è false ma la prenotazione è ancora futura confermata ("Non è più possibile annullare la prenotazione"): spiegare il motivo e invitare a scrivere a [team@bravoapp.it](mailto:team@bravoapp.it). Esempio:
-  > "La finestra di annullamento online si è chiusa (è possibile fino a 14 giorni prima dell'evento). Per gestire la richiesta scrivi a [team@bravoapp.it](mailto:team@bravoapp.it)."
-
-## 3. File NON toccati
-
-- `src/lib/booking-utils.ts` → `isBookingCancellable(status)` controlla solo lo status, non il tempo. Nessuna modifica funzionale. Aggiorno solo il commento header del file ("48h cancellation" → "14 days cancellation") per coerenza documentale.
-- `src/pages/MyBookings.tsx` → nessun riferimento a 48h.
-- `send-booking-reminders` usa 48 in tutt'altro contesto (lookahead reminder), non si tocca.
+1. Aggiungere import di `AlertDialog` da shadcn e di `differenceInDays` da `date-fns`.
+2. Aggiungere stato `confirmCancellableOpen: boolean`.
+3. Calcolare, al click su "Conferma" nel drawer, i giorni fino alla data selezionata (usando `selectedDateId` → trovo la `experience_date` corrispondente in `dates`).
+   - Se `daysUntil < 14` → aprire l'AlertDialog invece di chiamare `handleBook` direttamente.
+   - Altrimenti → invocare direttamente `handleBook` (comportamento attuale).
+4. Nuovo AlertDialog con:
+   - Titolo: "Confermi la prenotazione?"
+   - Descrizione: "Questa esperienza si svolge entro 14 giorni. Confermando, non potrai più annullare la prenotazione online. Vuoi procedere?"
+   - Azioni: "Annulla" (chiude il dialog, resta nel drawer) / "Conferma prenotazione" (chiama `handleBook` e chiude il dialog).
+5. Nessuna modifica al backend: la regola dei 14 giorni è già enforced dalla funzione `is_booking_cancellable` lato DB.
 
 ## Note tecniche
-
-- Migration: `CREATE OR REPLACE FUNCTION public.is_booking_cancellable(...)` con `interval '14 days'`. Mantiene `SECURITY DEFINER`, `STABLE`, `search_path = public`.
-- Componente: nessuna modifica ai dati passati, solo logica di rendering e copy. Usare `format(deadline, "EEEE d MMMM", { locale: it })` per la data limite.
+- La costante `CANCELLATION_WINDOW_DAYS = 14` viene riusata localmente (coerente con `BookingDetailModal.tsx`).
+- Il confronto usa l'inizio del giorno dell'esperienza vs `now()` per coerenza con la logica DB (`event_start_at - interval '14 days' > now()`). Usiamo `differenceInHours` >= 14*24 per evitare ambiguità di fuso.
+- Nessun cambiamento per HR/Super Admin né per altre route.

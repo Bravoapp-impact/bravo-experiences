@@ -2,8 +2,19 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
+import { differenceInHours } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,6 +28,8 @@ import { ExperienceDetailContent } from "@/components/experience-detail/Experien
 import { ExperiencePhotosSection } from "@/components/experience-detail/ExperiencePhotosSection";
 import { DatesSidebar } from "@/components/experience-detail/DatesSidebar";
 import { MobileDateDrawer } from "@/components/experience-detail/MobileDateDrawer";
+
+const CANCELLATION_WINDOW_HOURS = 14 * 24;
 
 export default function ExperienceDetail() {
   const { id } = useParams<{ id: string }>();
@@ -45,6 +58,7 @@ export default function ExperienceDetail() {
 
   // Success state
   const [showSuccess, setShowSuccess] = useState(false);
+  const [confirmCancellableOpen, setConfirmCancellableOpen] = useState(false);
 
   // ─── Fetch experience ───
   useEffect(() => {
@@ -296,6 +310,19 @@ export default function ExperienceDetail() {
     }
   };
 
+  const requestBook = () => {
+    if (!selectedDateId) return;
+    const selected = dates.find((d) => d.id === selectedDateId);
+    if (selected) {
+      const hoursUntil = differenceInHours(new Date(selected.start_datetime), new Date());
+      if (hoursUntil < CANCELLATION_WINDOW_HOURS) {
+        setConfirmCancellableOpen(true);
+        return;
+      }
+    }
+    handleBook();
+  };
+
   const goBack = () => navigate("/app/experiences");
 
   // ─── Loading ───
@@ -370,7 +397,7 @@ export default function ExperienceDetail() {
     loading: loadingDates,
     selectedDateId,
     onSelectDate: setSelectedDateId,
-    onBook: handleBook,
+    onBook: requestBook,
     isBooking,
     userBookedDateIds,
     remainingHours,
@@ -432,6 +459,31 @@ export default function ExperienceDetail() {
           />
         </>
       )}
+
+
+      <AlertDialog open={confirmCancellableOpen} onOpenChange={setConfirmCancellableOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confermi la prenotazione?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Questa esperienza si svolge entro 14 giorni. Confermando, non potrai più annullare la prenotazione online. Vuoi procedere?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBooking}>Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isBooking}
+              onClick={(e) => {
+                e.preventDefault();
+                setConfirmCancellableOpen(false);
+                handleBook();
+              }}
+            >
+              Conferma prenotazione
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
