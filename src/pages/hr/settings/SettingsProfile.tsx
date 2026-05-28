@@ -172,6 +172,8 @@ export default function SettingsProfile() {
             <Input value={profile?.email || ""} readOnly className="bg-muted/30" />
           </div>
 
+          <GenderSelector value={gender} onChange={setGender} />
+
           {hasChanges && (
             <div className="flex justify-end">
               <Button onClick={handleSave} disabled={saving} size="sm">
