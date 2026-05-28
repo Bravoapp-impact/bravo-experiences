@@ -61,7 +61,8 @@ export function BookingDetailModal({ booking, onClose, onCancel, isCancelling, o
   const hoursUntilEvent = differenceInHours(startDate, new Date());
   const isPastEvent = hoursUntilEvent <= 0;
   const isConfirmedFuture = booking.status === "confirmed" && !isPastEvent;
-  const canCancel = isConfirmedFuture && hoursUntilEvent > 48;
+  const canCancel = isConfirmedFuture && hoursUntilEvent >= CANCELLATION_WINDOW_HOURS;
+  const cancellationDeadline = subDays(startDate, CANCELLATION_WINDOW_DAYS);
 
   const description = experience.description?.trim() || "";
   const hasDescription = description.length > 0;
