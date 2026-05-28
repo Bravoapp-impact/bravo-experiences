@@ -220,7 +220,7 @@ export default function Register() {
 
           {/* Accoglienza (genere) */}
           <div className="space-y-2">
-            <Label>Genere</Label>
+            <Label>Preferenza di accoglienza</Label>
             <div className="grid grid-cols-3 gap-2">
               {([
                 { value: "m", label: "Bravo!" },

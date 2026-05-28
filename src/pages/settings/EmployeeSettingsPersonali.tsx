@@ -194,7 +194,7 @@ export default function EmployeeSettingsPersonali() {
         )}
       </SettingsField>
       <SettingsField
-        label="Genere"
+        label="Preferenza di accoglienza"
         value={genderDisplay((profile as any).gender)}
         placeholder="Non impostato"
       >
