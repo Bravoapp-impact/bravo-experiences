@@ -459,8 +459,7 @@ export default function ExperienceDetail() {
           />
         </>
       )}
-        </>
-      )}
+
 
       <AlertDialog open={confirmCancellableOpen} onOpenChange={setConfirmCancellableOpen}>
         <AlertDialogContent>
