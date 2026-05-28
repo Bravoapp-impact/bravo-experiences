@@ -26,7 +26,7 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
       <Container style={container}>
         <Img src="https://cyazgtnjtnyxscfzsasp.supabase.co/storage/v1/object/public/email-assets/bravo-logo-icon.png" alt="Bravo!" height="28" style={logo} />
         <Heading style={h1}>Codice di verifica</Heading>
-        <Text style={text}>Usa il codice qui sotto per confermare la tua identità:</Text>
+        <Text style={text}>Usa il codice qui sotto per confermare la tua identità 👇</Text>
         <Text style={codeStyle}>{token}</Text>
         <Text style={footer}>
           Il codice scadrà tra pochi minuti. Se non hai richiesto questo codice, puoi ignorare questa email.

@@ -33,7 +33,7 @@ export const MagicLinkEmail = ({
         <Img src="https://cyazgtnjtnyxscfzsasp.supabase.co/storage/v1/object/public/email-assets/bravo-logo-icon.png" alt="Bravo!" height="28" style={logo} />
         <Heading style={h1}>Accedi a Bravo!</Heading>
         <Text style={text}>
-          Clicca il bottone qui sotto per accedere al tuo account. Il link scadrà tra pochi minuti.
+          Clicca il bottone qui sotto per accedere al tuo account. Il link scadrà tra pochi minuti ⏲️
         </Text>
         <Section style={buttonContainer}>
           <Button style={button} href={confirmationUrl}>

@@ -17,7 +17,7 @@ const corsHeaders = {
 
 const EMAIL_SUBJECTS: Record<string, string> = {
   signup: 'Conferma il tuo account Bravo!',
-  invite: 'Sei stato invitato su Bravo!',
+  invite: 'Hai ricevuto un invito su Bravo!',
   magiclink: 'Il tuo link di accesso a Bravo!',
   recovery: 'Reimposta la tua password su Bravo!',
   email_change: 'Conferma il cambio email su Bravo!',

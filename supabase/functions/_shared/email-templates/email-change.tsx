@@ -40,7 +40,7 @@ export const EmailChangeEmail = ({
           Hai richiesto di cambiare il tuo indirizzo email su Bravo! da{' '}
           <Link href={`mailto:${email}`} style={link}>{email}</Link>{' '}
           a{' '}
-          <Link href={`mailto:${newEmail}`} style={link}>{newEmail}</Link>.
+          <Link href={`mailto:${newEmail}`} style={link}>{newEmail}</Link>
         </Text>
         <Text style={text}>
           Clicca il bottone qui sotto per confermare il cambio:

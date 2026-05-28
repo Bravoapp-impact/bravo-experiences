@@ -62,7 +62,7 @@ const BookingConfirmationEmail = ({
 
         <Text style={paragraph}>
           {introText ||
-            `Ciao ${firstName || ''},\nLa tua prenotazione è stata confermata con successo!`}
+            `Ciao ${firstName || ''},\nLa tua prenotazione è stata confermata con successo! 😍`}
         </Text>
 
         <Section style={card}>
@@ -145,7 +145,7 @@ const BookingConfirmationEmail = ({
 
         <Text style={paragraph}>
           {closingText ||
-            "Ti aspettiamo! Grazie per il tuo impegno nel volontariato.\n\nIl team Bravo!"}
+            "Ti aspettiamo! Grazie per il tuo impegno nel volontariato.\n\nIl team Bravo! 💜"}
         </Text>
 
         <Text style={contactLine}>

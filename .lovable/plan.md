@@ -1,18 +1,26 @@
 ## Obiettivo
+Aggiornare i testi di 11 template email (6 auth + 1 hook + 4 transactional) rendendoli gender-neutral, aggiungendo emoji indicate e rimuovendo punti finali dalle frasi conclusive (per un tono più naturale).
 
-Nella pagina HR → Impostazioni → Membri e accessi, rimuovere il bottone "Invita dipendente" e mostrare invece un campo con il link alla pagina di registrazione, copiabile con un click — stesso pattern usato in "ETS suggeriti".
+## File coinvolti
 
-## Modifiche
+### Auth templates (`supabase/functions/_shared/email-templates/`)
+1. **signup.tsx** — Heading: "Ti diamo il benvenuto in Bravo! 💜". Testo: "Grazie per la registrazione. Conferma il tuo indirizzo email ({recipient}) cliccando il bottone qui sotto:"
+2. **invite.tsx** — Heading: "Hai ricevuto un invito!". Testo: "Hai ricevuto un invito a unirti a Bravo!, la piattaforma per il volontariato aziendale 💜 Clicca il bottone qui sotto per accettare l'invito e creare il tuo account"
+3. **magic-link.tsx** — Testo: "Clicca il bottone qui sotto per accedere al tuo account. Il link scadrà tra pochi minuti ⏲️"
+4. **recovery.tsx** — Testo: "Abbiamo ricevuto una richiesta per reimpostare la password del tuo account Bravo!. Clicca il bottone qui sotto per scegliere una nuova password 👇"
+5. **email-change.tsx** — Primo testo: "Hai richiesto di cambiare il tuo indirizzo email su Bravo! da {email} a {newEmail}" (mantieni i due link mailto). Secondo testo invariato.
+6. **reauthentication.tsx** — Testo: "Usa il codice qui sotto per confermare la tua identità 👇"
 
-**File:** `src/pages/hr/settings/SettingsMembers.tsx`
+### Auth hook
+7. **supabase/functions/auth-email-hook/index.ts** — `EMAIL_SUBJECTS.invite`: "Hai ricevuto un invito su Bravo!"
 
-1. Rimuovere il bottone "Invita dipendente" (riga 106) e il wrapper `flex` che lo conteneva.
-2. Aggiungere una nuova `SettingsSection` (o un blocco prima della sezione "Dipendenti registrati") intitolata es. "Link di registrazione" con descrizione tipo: "Condividi questo link con i tuoi colleghi per invitarli a registrarsi su Bravo!".
-3. All'interno: un `Input` readOnly che mostra l'URL di registrazione + un `Button` "Copia link" con icona `Copy` (lucide-react) che usa `navigator.clipboard.writeText` e mostra un toast (`sonner`) di conferma — stesso pattern del file `src/pages/hr/HRSuggestionsPage.tsx`.
-4. URL: `${window.location.origin}/register` (la pagina esiste già — `src/pages/Register.tsx`). Calcolato in `useMemo`.
-5. Layout responsive identico a HRSuggestionsPage: `flex flex-col sm:flex-row gap-2`, Input `flex-1` con `font-mono text-xs`, `onFocus` che seleziona tutto.
+### Transactional templates (`supabase/functions/_shared/transactional-email-templates/`)
+8. **booking-confirmation.tsx** — Intro default: "Ciao {firstName},\nLa tua prenotazione è stata confermata con successo! 😍". Closing default: "Ti aspettiamo! Grazie per il tuo impegno nel volontariato.\n\nIl team Bravo! 💜"
+9. **booking-reminder.tsx** — Closing default: "Non vediamo l'ora di vederti! Grazie per il tuo impegno.\n\nIl team Bravo! 💜"
+10. **feedback-request.tsx** — Paragrafo: "Speriamo che la tua esperienza con {experienceTitle} sia stata significativa! Il tuo feedback ci aiuta a migliorare e a creare esperienze ancora più belle 💜"
+11. **manager-absence-notification.tsx** — Primo paragrafo: "ti informiamo che {fullName} non sarà in ufficio {eventDateLong}, dalle {startTime} alle {endTime}, perché parteciperà a un'attività di volontariato aziendale organizzata da {companyName} tramite Bravo!" (grassetti esistenti mantenuti). Secondo paragrafo: "Ti scriviamo perché {firstName} ha indicato il tuo indirizzo come riferimento. Se pensi ci sia un errore, puoi contattare {firstName} direttamente". Firma: "A presto,\nIl team Bravo! 💜"
 
-## Note
-
-- Nessuna modifica al DB o alla logica di registrazione: la pagina `/register` è già pubblica e gestisce l'auto-assegnazione all'azienda tramite il dominio email aziendale (già spiegato nella sezione "Dominio aziendale" sopra).
-- Nessun token o link personalizzato — è un link statico generico alla registrazione.
+## Vincoli
+- Solo testo, nessuna modifica a struttura, variabili, stili o logica.
+- I punti finali delle frasi conclusive vengono rimossi (laddove presenti).
+- Emoji aggiunte solo dove esplicitamente richieste.
