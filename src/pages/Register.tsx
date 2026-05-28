@@ -90,6 +90,25 @@ export default function Register() {
       setRegistrationComplete(true);
     } catch (error: any) {
       const rawMessage: string = error?.message || "";
+
+      if (rawMessage === "EMAIL_ALREADY_REGISTERED") {
+        toast({
+          variant: "destructive",
+          title: "Email già registrata",
+          description:
+            "Questa email è già associata a un account. Accedi oppure recupera la password se non la ricordi.",
+          action: (
+            <ToastAction
+              altText="Recupera password"
+              onClick={() => navigate("/forgot-password")}
+            >
+              Recupera password
+            </ToastAction>
+          ),
+        });
+        return;
+      }
+
       // Server-side trigger (handle_new_user) rejects unknown email domains.
       const isDomainRejection =
         /domain/i.test(rawMessage) ||
