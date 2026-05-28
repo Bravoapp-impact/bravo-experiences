@@ -23,7 +23,7 @@ interface GenderSelectorProps {
 export default function GenderSelector({
   value,
   onChange,
-  label = "Come vuoi che ti accogliamo nell'app?",
+  label = "Genere",
   hideLabel = false,
 }: GenderSelectorProps) {
   const options = [
