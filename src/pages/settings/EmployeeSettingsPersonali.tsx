@@ -193,6 +193,19 @@ export default function EmployeeSettingsPersonali() {
           />
         )}
       </SettingsField>
+      <SettingsField
+        label="Come ti accogliamo"
+        value={genderDisplay((profile as any).gender)}
+        placeholder="Non impostato"
+      >
+        {(close) => (
+          <GenderForm
+            profileId={profile.id}
+            initialGender={((profile as any).gender ?? "") as GenderValue}
+            onSaved={close}
+          />
+        )}
+      </SettingsField>
       <SettingsField label="Email" value={profile.email} editable={false} />
       <SettingsField
         label="Azienda"
