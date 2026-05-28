@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { devLog } from "@/lib/logger";
+import GenderSelector, { GenderValue, genderDisplay } from "@/components/common/GenderSelector";
 
 const nameSchema = z.object({
   firstName: z.string().trim().min(1, "Il nome è obbligatorio").max(50, "Max 50 caratteri"),
