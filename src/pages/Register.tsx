@@ -16,6 +16,7 @@ export default function Register() {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
+    gender: "" as "" | "m" | "f" | "x",
     email: "",
     password: "",
   });
