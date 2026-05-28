@@ -459,6 +459,32 @@ export default function ExperienceDetail() {
           />
         </>
       )}
+        </>
+      )}
+
+      <AlertDialog open={confirmCancellableOpen} onOpenChange={setConfirmCancellableOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confermi la prenotazione?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Questa esperienza si svolge entro 14 giorni. Confermando, non potrai più annullare la prenotazione online. Vuoi procedere?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBooking}>Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isBooking}
+              onClick={(e) => {
+                e.preventDefault();
+                setConfirmCancellableOpen(false);
+                handleBook();
+              }}
+            >
+              Conferma prenotazione
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
