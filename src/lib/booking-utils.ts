@@ -7,6 +7,7 @@
  * - "Done" bookings count for impact: confirmed (past), completed, verified (past)
  * - Use ACTIVE_STATUSES for spot counting queries
  * - Use DONE_STATUSES for impact/stats queries
+ * - Cancellation window: 14 days before event (enforced server-side by is_booking_cancellable())
  */
 
 /** Statuses that occupy a spot (for availability checks) */
