@@ -310,6 +310,19 @@ export default function ExperienceDetail() {
     }
   };
 
+  const requestBook = () => {
+    if (!selectedDateId) return;
+    const selected = dates.find((d) => d.id === selectedDateId);
+    if (selected) {
+      const hoursUntil = differenceInHours(new Date(selected.start_datetime), new Date());
+      if (hoursUntil < CANCELLATION_WINDOW_HOURS) {
+        setConfirmCancellableOpen(true);
+        return;
+      }
+    }
+    handleBook();
+  };
+
   const goBack = () => navigate("/app/experiences");
 
   // ─── Loading ───
