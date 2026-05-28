@@ -39,7 +39,7 @@ export async function incrementAccessCodeUsage(accessCode: string): Promise<bool
   return data === true;
 }
 
-export async function signUp({ email, password, firstName, lastName, accessCode }: SignUpData) {
+export async function signUp({ email, password, firstName, lastName, gender, accessCode }: SignUpData) {
   // Domain-based signup path: no access code provided.
   // Do NOT pass company_id/role from the client — the server-side
   // handle_new_user trigger resolves the company from the email domain.
@@ -52,6 +52,7 @@ export async function signUp({ email, password, firstName, lastName, accessCode 
         data: {
           first_name: firstName,
           last_name: lastName,
+          gender,
         },
       },
     });
@@ -71,6 +72,7 @@ export async function signUp({ email, password, firstName, lastName, accessCode 
   const userMetadata: Record<string, unknown> = {
     first_name: firstName,
     last_name: lastName,
+    gender,
     role: codeInfo.assigned_role,
   };
 
