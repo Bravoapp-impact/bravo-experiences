@@ -2,8 +2,19 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
+import { differenceInHours } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,6 +28,8 @@ import { ExperienceDetailContent } from "@/components/experience-detail/Experien
 import { ExperiencePhotosSection } from "@/components/experience-detail/ExperiencePhotosSection";
 import { DatesSidebar } from "@/components/experience-detail/DatesSidebar";
 import { MobileDateDrawer } from "@/components/experience-detail/MobileDateDrawer";
+
+const CANCELLATION_WINDOW_HOURS = 14 * 24;
 
 export default function ExperienceDetail() {
   const { id } = useParams<{ id: string }>();
