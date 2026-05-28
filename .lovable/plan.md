@@ -1,23 +1,14 @@
 ## Problema
+La funzione `getGreeting` in `src/components/layout/AdminLayout.tsx` controlla i valori legacy `"male"` / `"female"` per il campo `gender`, ma il database e il resto dell'app usano `"m"` / `"f"` / `"x"`. Di conseguenza il saluto nella sidebar admin resta sempre `"Bravə"` indipendentemente dal genere scelto dall'utente.
 
-La tabella `profiles` ha un check constraint `profiles_gender_check` legacy che consente solo i valori `'male' | 'female' | 'other'`. Il nuovo flusso (registrazione + GenderSelector) salva invece `'m' | 'f' | 'x'`, quindi ogni update fallisce con violazione del constraint.
+## Soluzione
+Aggiornare `getGreeting` in `AdminLayout.tsx` per allinearsi ai valori attuali del database:
+- `"m"` → `"Bravo"`
+- `"f"` → `"Brava"`
+- `"x"` (o qualsiasi altro) → `"Bravə"`
 
-Verificato: nessun profilo ha attualmente un valore di gender impostato (tutti `NULL`), quindi non c'è dato legacy da migrare.
+## File coinvolto
+- `src/components/layout/AdminLayout.tsx` — riga 61-65
 
-## Fix
-
-Migrazione che sostituisce il constraint:
-
-```sql
-ALTER TABLE public.profiles DROP CONSTRAINT profiles_gender_check;
-ALTER TABLE public.profiles
-  ADD CONSTRAINT profiles_gender_check
-  CHECK (gender IS NULL OR gender IN ('m', 'f', 'x'));
-```
-
-Nessuna modifica al codice frontend o al trigger `handle_new_user` (già allineati a `m/f/x`).
-
-## Verifica post-migrazione
-
-- Aggiornare il profilo da Impostazioni → salvataggio ok.
-- Registrazione nuova utenza con scelta `Bravə!` → profilo creato con `gender = 'x'`.
+## Verifica
+Dopo la modifica, il saluto nella sidebar admin deve cambiare dinamicamente in base al valore `gender` salvato nel profilo.

@@ -59,8 +59,8 @@ export interface AdminLayoutProps {
 }
 
 function getGreeting(gender: string | null | undefined): string {
-  if (gender === "male") return "Bravo";
-  if (gender === "female") return "Brava";
+  if (gender === "m") return "Bravo";
+  if (gender === "f") return "Brava";
   return "Bravə";
 }
 
