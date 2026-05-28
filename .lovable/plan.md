@@ -1,24 +1,18 @@
-# Feedback registrazione con email già esistente
+# Riconoscere anche l'errore Supabase "User already registered"
 
-## Obiettivo
-Quando un utente tenta di registrarsi con un'email già presente, mostrare un messaggio di errore chiaro invece della schermata "Controlla la tua email".
+## Problema
+Dopo l'ultima modifica, l'utente vede un toast di errore generico invece del toast dedicato "Email già registrata" con il link a recupero password. Causa probabile: in alcune configurazioni Supabase restituisce direttamente un errore (`AuthApiError: User already registered`, status 422, code `user_already_exists`) invece di una response con `identities: []`. In quel caso `signUp` lancia subito sull'`if (error) throw error;` e il nostro check su `identities` non viene mai raggiunto; nel `catch` di `Register.tsx` il messaggio non corrisponde al marker `EMAIL_ALREADY_REGISTERED` e finisce nel ramo generico.
 
 ## Modifiche
 
-**`src/lib/auth.ts` — funzione `signUp`**
-- Dopo `supabase.auth.signUp(...)` (in entrambi i path: domain-based e access-code), controllare `data.user?.identities?.length === 0`.
-- Se vero, lanciare un errore tipizzato con un marker riconoscibile, es. `const err = new Error("EMAIL_ALREADY_REGISTERED"); throw err;` (oppure aggiungere una proprietà `code`).
-- Nel path access-code, fare il check **prima** di chiamare `incrementAccessCodeUsage`, così non si consuma il codice.
+**`src/lib/auth.ts` — funzione `signUp`** (entrambi i path)
+- Sostituire il `throw error;` diretto con un controllo: se l'errore è del tipo "user already exists" (riconoscibile da `error.code === "user_already_exists"`, oppure `status === 422` con messaggio che matcha `/already.*registered/i` o `/already.*exists/i`), lanciare `new Error("EMAIL_ALREADY_REGISTERED")`. Altrimenti rilanciare l'errore originale.
+- Mantenere anche il check su `data.user.identities?.length === 0` come fallback per la configurazione opposta.
 
-**`src/pages/Register.tsx` — `handleSubmit`**
-- Nel `catch`, riconoscere il marker `EMAIL_ALREADY_REGISTERED` prima degli altri pattern.
-- Mostrare un toast `destructive` con:
-  - Titolo: "Email già registrata"
-  - Descrizione: "Questa email è già associata a un account. Accedi oppure recupera la password se non la ricordi."
-  - `action`: un `ToastAction` con label "Recupera password" che naviga a `/forgot-password` (usare `useNavigate` da `react-router-dom`).
-- NON impostare `setRegistrationComplete(true)` in questo caso (garantito dal fatto che `signUp` ora lancia).
+**`src/pages/Register.tsx`**
+- Nessuna modifica necessaria: il `catch` già riconosce `EMAIL_ALREADY_REGISTERED` e mostra il toast con `ToastAction` verso `/forgot-password`.
+- Per robustezza aggiungere al riconoscimento anche un pattern fallback su `rawMessage` (`/already.*registered/i`) nel caso `signUp` non venisse normalizzato.
 
 ## Note tecniche
-- Il segnale ufficiale Supabase per "email già esistente" con conferma email attiva è `data.user.identities` come array vuoto: nessun errore viene restituito per evitare user enumeration, ma a livello di UX prodotto vogliamo essere espliciti (scelta consapevole del prodotto).
-- Nessuna modifica a DB, edge functions o RLS.
-- Nessun cambiamento al flusso di successo né al messaggio "Controlla la tua email".
+- Nessun cambiamento a DB, RLS o edge functions.
+- Nessun cambiamento ai flussi di successo.
