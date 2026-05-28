@@ -30,3 +30,5 @@ project_id = "cyazgtnjtnyxscfzsasp"
   [functions.send-manager-new-booking]
     verify_jwt = false
 
+  [functions.send-cancellation-deadline-reminders]
+    verify_jwt = false
