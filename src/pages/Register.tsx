@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, User, Loader2, ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,6 @@ import { PasswordStrengthInput } from "@/components/auth/PasswordStrengthInput";
 import { signUp } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ToastAction } from "@/components/ui/toast";
 import { evaluatePassword } from "@/lib/password-policy";
 
 export default function Register() {
@@ -25,7 +24,6 @@ export default function Register() {
   const [registrationComplete, setRegistrationComplete] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -90,25 +88,6 @@ export default function Register() {
       setRegistrationComplete(true);
     } catch (error: any) {
       const rawMessage: string = error?.message || "";
-
-      if (rawMessage === "EMAIL_ALREADY_REGISTERED") {
-        toast({
-          variant: "destructive",
-          title: "Email già registrata",
-          description:
-            "Questa email è già associata a un account. Accedi oppure recupera la password se non la ricordi.",
-          action: (
-            <ToastAction
-              altText="Recupera password"
-              onClick={() => navigate("/forgot-password")}
-            >
-              Recupera password
-            </ToastAction>
-          ),
-        });
-        return;
-      }
-
       // Server-side trigger (handle_new_user) rejects unknown email domains.
       const isDomainRejection =
         /domain/i.test(rawMessage) ||
@@ -122,7 +101,8 @@ export default function Register() {
       if (isRateLimit) {
         description = "In questo momento stiamo ricevendo troppe richieste. Ti preghiamo di riprovare fra un'ora";
       } else if (isDomainRejection) {
-        description = "Questa email non è ammessa alla registrazione. Contatta il team di Bravo! per maggiori informazioni — team@bravoapp.it";
+        description =
+          "Questa email non è ammessa alla registrazione. Contatta il team di Bravo! per maggiori informazioni — team@bravoapp.it";
       } else {
         description = rawMessage || "Si è verificato un errore. Riprova.";
       }
@@ -139,10 +119,7 @@ export default function Register() {
 
   if (registrationComplete) {
     return (
-      <AuthLayout
-        title="Controlla la tua email"
-        subtitle="Un ultimo passo per completare la registrazione"
-      >
+      <AuthLayout title="Controlla la tua email" subtitle="Un ultimo passo per completare la registrazione">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -154,8 +131,7 @@ export default function Register() {
 
           <div className="space-y-3">
             <p className="text-foreground">
-              Abbiamo inviato un link di attivazione a{" "}
-              <strong>{formData.email}</strong>.
+              Abbiamo inviato un link di attivazione a <strong>{formData.email}</strong>.
             </p>
             <p className="text-foreground">
               Clicca il link nell'email per completare la registrazione e accedere alla piattaforma.
@@ -165,33 +141,21 @@ export default function Register() {
           <div className="bg-muted rounded-lg p-4 text-sm text-muted-foreground space-y-2">
             <p className="font-medium text-foreground">Non trovi l'email?</p>
             <ul className="list-disc list-inside text-left space-y-1">
-              <li>Controlla la cartella <strong>spam</strong> o <strong>posta indesiderata</strong></li>
+              <li>
+                Controlla la cartella <strong>spam</strong> o <strong>posta indesiderata</strong>
+              </li>
               <li>Assicurati di aver inserito l'email corretta</li>
               <li>L'email potrebbe impiegare qualche minuto ad arrivare</li>
             </ul>
           </div>
 
-          <Button
-            onClick={handleResendConfirmation}
-            variant="outline"
-            className="w-full"
-            disabled={isResending}
-          >
-            {isResending ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <Mail className="h-4 w-4 mr-2" />
-            )}
+          <Button onClick={handleResendConfirmation} variant="outline" className="w-full" disabled={isResending}>
+            {isResending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Mail className="h-4 w-4 mr-2" />}
             Reinvia email di conferma
           </Button>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="mt-6"
-        >
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-6">
           <Link to="/login">
             <Button variant="ghost" className="w-full">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -204,10 +168,7 @@ export default function Register() {
   }
 
   return (
-    <AuthLayout
-      title="Crea il tuo account"
-      subtitle="Inserisci i tuoi dati per creare un account"
-    >
+    <AuthLayout title="Crea il tuo account" subtitle="Inserisci i tuoi dati per creare un account">
       <form onSubmit={handleSubmit} className="space-y-5">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -249,13 +210,15 @@ export default function Register() {
 
           {/* Accoglienza (genere) */}
           <div className="space-y-2">
-            <Label>Preferenza di accoglienza</Label>
+            <Label>Come vuoi che ti accogliamo nell'app?</Label>
             <div className="grid grid-cols-3 gap-2">
-              {([
-                { value: "m", label: "Bravo!" },
-                { value: "f", label: "Brava!" },
-                { value: "x", label: "Bravə!" },
-              ] as const).map((opt) => {
+              {(
+                [
+                  { value: "m", label: "Bravo!" },
+                  { value: "f", label: "Brava!" },
+                  { value: "x", label: "Bravə!" },
+                ] as const
+              ).map((opt) => {
                 const selected = formData.gender === opt.value;
                 return (
                   <button
@@ -275,7 +238,6 @@ export default function Register() {
               })}
             </div>
           </div>
-
 
           {/* Email */}
           <div className="space-y-2">
@@ -312,11 +274,7 @@ export default function Register() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.4 }}
         >
-          <Button
-            type="submit"
-            className="w-full h-12 text-base font-medium"
-            disabled={isLoading}
-          >
+          <Button type="submit" className="w-full h-12 text-base font-medium" disabled={isLoading}>
             {isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
@@ -336,10 +294,7 @@ export default function Register() {
         className="mt-8 text-center text-sm text-muted-foreground"
       >
         Hai già un account?{" "}
-        <Link
-          to="/login"
-          className="font-medium text-primary hover:text-primary/80 transition-colors"
-        >
+        <Link to="/login" className="font-medium text-primary hover:text-primary/80 transition-colors">
           Accedi
         </Link>
       </motion.p>
