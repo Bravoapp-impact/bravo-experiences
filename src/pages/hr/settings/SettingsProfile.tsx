@@ -10,6 +10,7 @@ import { z } from "zod";
 import SettingsPage from "@/components/common/SettingsPage";
 import SettingsSection from "@/components/common/SettingsSection";
 import AvatarUploadBlock from "@/components/common/AvatarUploadBlock";
+import GenderSelector, { GenderValue } from "@/components/common/GenderSelector";
 
 
 const profileSchema = z.object({
