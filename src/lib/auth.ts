@@ -5,6 +5,7 @@ export interface SignUpData {
   password: string;
   firstName: string;
   lastName: string;
+  gender: "m" | "f" | "x";
   accessCode?: string;
 }
 
