@@ -25,6 +25,7 @@ export default function Register() {
   const [registrationComplete, setRegistrationComplete] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
