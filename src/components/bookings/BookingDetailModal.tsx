@@ -1,7 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { Building, Info } from "lucide-react";
-import { format, differenceInHours } from "date-fns";
+import { Building, Info, CalendarX } from "lucide-react";
+import { format, differenceInHours, subDays } from "date-fns";
 import { it } from "date-fns/locale";
+
+const CANCELLATION_WINDOW_DAYS = 14;
+const CANCELLATION_WINDOW_HOURS = CANCELLATION_WINDOW_DAYS * 24;
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BaseModal, ModalCloseButton } from "@/components/common/BaseModal";
