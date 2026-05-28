@@ -10,6 +10,7 @@ import { z } from "zod";
 import SettingsPage from "@/components/common/SettingsPage";
 import SettingsSection from "@/components/common/SettingsSection";
 import AvatarUploadBlock from "@/components/common/AvatarUploadBlock";
+import GenderSelector, { GenderValue } from "@/components/common/GenderSelector";
 
 const profileSchema = z.object({
   firstName: z.string().trim().min(1, "Il nome è obbligatorio").max(50, "Max 50 caratteri"),
@@ -22,15 +23,18 @@ const profileSchema = z.object({
  */
 export default function ProfileSettingsContent() {
   const { profile, user, refreshProfile } = useAuth();
+  const initialGender = ((profile as any)?.gender ?? "") as GenderValue;
   const [firstName, setFirstName] = useState(profile?.first_name || "");
   const [lastName, setLastName] = useState(profile?.last_name || "");
+  const [gender, setGender] = useState<GenderValue>(initialGender);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [errors, setErrors] = useState<{ firstName?: string; lastName?: string }>({});
 
   const hasChanges =
     firstName !== (profile?.first_name || "") ||
-    lastName !== (profile?.last_name || "");
+    lastName !== (profile?.last_name || "") ||
+    gender !== initialGender;
 
   const getInitials = () => {
     const first = profile?.first_name?.[0] || "";
@@ -55,7 +59,7 @@ export default function ProfileSettingsContent() {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ first_name: result.data.firstName, last_name: result.data.lastName })
+        .update({ first_name: result.data.firstName, last_name: result.data.lastName, gender: gender || null })
         .eq("id", profile!.id);
       if (error) throw error;
       await refreshProfile();
@@ -170,6 +174,8 @@ export default function ProfileSettingsContent() {
             <Label className="text-xs text-muted-foreground">Email</Label>
             <Input value={profile?.email || ""} readOnly className="bg-muted/30" />
           </div>
+
+          <GenderSelector value={gender} onChange={setGender} />
 
           {hasChanges && (
             <div className="flex justify-end">

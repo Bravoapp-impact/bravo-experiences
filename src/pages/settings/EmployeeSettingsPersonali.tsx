@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { devLog } from "@/lib/logger";
+import GenderSelector, { GenderValue, genderDisplay } from "@/components/common/GenderSelector";
 
 const nameSchema = z.object({
   firstName: z.string().trim().min(1, "Il nome è obbligatorio").max(50, "Max 50 caratteri"),
@@ -108,6 +109,63 @@ function NameForm({
   );
 }
 
+function GenderForm({
+  profileId,
+  initialGender,
+  onSaved,
+}: {
+  profileId: string;
+  initialGender: GenderValue;
+  onSaved: () => void;
+}) {
+  const { refreshProfile } = useAuth();
+  const [gender, setGender] = useState<GenderValue>(initialGender);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setGender(initialGender);
+  }, [initialGender]);
+
+  const handleSave = async () => {
+    if (!gender) {
+      toast.error("Seleziona un'opzione");
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ gender })
+        .eq("id", profileId);
+      if (error) throw error;
+      await refreshProfile();
+      toast.success("Preferenza aggiornata");
+      onSaved();
+    } catch (err) {
+      devLog.error("Error updating gender:", err);
+      toast.error("Errore durante l'aggiornamento");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <GenderSelector value={gender} onChange={setGender} hideLabel />
+      <Button onClick={handleSave} disabled={saving || !gender} className="w-full">
+        {saving ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Salvataggio…
+          </>
+        ) : (
+          "Salva"
+        )}
+      </Button>
+    </div>
+  );
+}
+
 export default function EmployeeSettingsPersonali() {
   const { profile } = useAuth();
 
@@ -131,6 +189,19 @@ export default function EmployeeSettingsPersonali() {
             profileId={profile.id}
             initialFirstName={profile.first_name}
             initialLastName={profile.last_name}
+            onSaved={close}
+          />
+        )}
+      </SettingsField>
+      <SettingsField
+        label="Come ti accogliamo"
+        value={genderDisplay((profile as any).gender)}
+        placeholder="Non impostato"
+      >
+        {(close) => (
+          <GenderForm
+            profileId={profile.id}
+            initialGender={((profile as any).gender ?? "") as GenderValue}
             onSaved={close}
           />
         )}
