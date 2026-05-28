@@ -110,7 +110,7 @@ const BookingReminderEmail = ({
 
         <Text style={paragraph}>
           {closingText ||
-            "Non vediamo l'ora di vederti! Grazie per il tuo impegno.\n\nIl team Bravo!"}
+            "Non vediamo l'ora di vederti! Grazie per il tuo impegno.\n\nIl team Bravo! 💜"}
         </Text>
 
         <Text style={contactLine}>

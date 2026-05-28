@@ -42,7 +42,7 @@ const FeedbackRequestEmail = ({
         <Text style={paragraph}>
           Speriamo che la tua esperienza con <strong>{experienceTitle}</strong>{' '}
           sia stata significativa! Il tuo feedback ci aiuta a migliorare e a
-          creare esperienze ancora più belle.
+          creare esperienze ancora più belle 💜
         </Text>
 
         <Button href={feedbackUrl} style={button}>

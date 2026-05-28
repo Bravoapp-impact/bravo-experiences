@@ -47,19 +47,18 @@ const ManagerAbsenceNotificationEmail = ({
 
           <Text style={paragraph}>Ciao,</Text>
           <Text style={paragraph}>
-            ti scriviamo per informarti che <strong>{fullName}</strong> non sarà
-            presente in ufficio <strong>{eventDateLong}</strong> dalle{' '}
-            <strong>{startTime}</strong> alle <strong>{endTime}</strong> per
-            un'attività di volontariato organizzata da {companyName} tramite
-            Bravo!.
+            ti informiamo che <strong>{fullName}</strong> non sarà in ufficio{' '}
+            <strong>{eventDateLong}</strong>, dalle <strong>{startTime}</strong>{' '}
+            alle <strong>{endTime}</strong>, perché parteciperà a un'attività di
+            volontariato aziendale organizzata da {companyName} tramite Bravo!
           </Text>
           <Text style={paragraph}>
-            Questo messaggio ti è stato inviato perché {firstName} ha indicato
-            il tuo indirizzo come responsabile di riferimento. Se ritieni che ci
-            sia un errore, contatta {firstName}.
+            Ti scriviamo perché {firstName} ha indicato il tuo indirizzo come
+            riferimento. Se pensi ci sia un errore, puoi contattare {firstName}{' '}
+            direttamente
           </Text>
 
-          <Text style={signature}>A presto,<br />Il team Bravo!</Text>
+          <Text style={signature}>A presto,<br />Il team Bravo! 💜</Text>
 
           <Text style={contactLine}>
             Per supporto scrivici a{' '}

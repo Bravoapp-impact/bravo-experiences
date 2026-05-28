@@ -33,13 +33,13 @@ export const InviteEmail = ({
     <Body style={main}>
       <Container style={container}>
         <Img src="https://cyazgtnjtnyxscfzsasp.supabase.co/storage/v1/object/public/email-assets/bravo-logo-icon.png" alt="Bravo!" height="28" style={logo} />
-        <Heading style={h1}>Sei stato invitato!</Heading>
+        <Heading style={h1}>Hai ricevuto un invito!</Heading>
         <Text style={text}>
-          Sei stato invitato a unirti a{' '}
+          Hai ricevuto un invito a unirti a{' '}
           <Link href={siteUrl} style={link}>
             <strong>Bravo!</strong>
           </Link>
-          , la piattaforma per il volontariato aziendale. Clicca il bottone qui sotto per accettare l'invito e creare il tuo account.
+          , la piattaforma per il volontariato aziendale 💜 Clicca il bottone qui sotto per accettare l'invito e creare il tuo account
         </Text>
         <Section style={buttonContainer}>
           <Button style={button} href={confirmationUrl}>
