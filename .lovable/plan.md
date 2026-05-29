@@ -1,83 +1,46 @@
-## Obiettivo
+# Fix: associazione automatica azienda da dominio email
 
-Inviare al dipendente un reminder email 17 giorni prima dell'esperienza per ricordargli che ha tempo fino a 14 giorni prima per annullare la prenotazione online. Job batch giornaliero sullo stesso pattern di `send-manager-absence-notifications`.
+## Problema
 
-## Cosa cambia
+In `src/lib/auth.ts` il flow di signup senza access code non invia `company_id` nei metadata, con il commento esplicito:
 
-### 1. Nuovo template React Email
+> "the server-side handle_new_user trigger resolves the company from the email domain."
 
-`supabase/functions/_shared/transactional-email-templates/cancellation-deadline-reminder.tsx`
+Ma il trigger DB `public.handle_new_user()` **non fa questa risoluzione**: legge solo `raw_user_meta_data->>'company_id'`. Risultato: i nuovi utenti registrati via dominio aziendale (es. `@havas.com`) finiscono con `profiles.company_id = NULL` e `user_tenants.company_id = NULL`, quindi nessuna esperienza attivata per la loro company è visibile (RLS su `experiences` / `experience_companies` filtra per `get_user_company_id(auth.uid())`).
 
-Stile sobrio coerente con gli altri template Bravo!. Props:
+## Soluzione
 
-- `firstName`
-- `eventDateLong` (data esperienza)
-- `cancellationDeadlineLong` (data esperienza − 14 giorni, formato esteso it-IT)
-- `bookingsUrl` (sempre `https://experiences.bravoapp.it/app/bookings`)
+Modificare il trigger `handle_new_user()` in modo che, **se `company_id` non è nei metadata**, provi a risolverlo dal dominio dell'email contro `companies.allowed_email_domains` (lookup case-insensitive). Stessa logica applicata sia all'INSERT in `profiles` sia in `user_tenants`.
 
-Contenuto: ricorda che hai ancora 3 giorni per annullare la tua prenotazione per questa esperienza: [nome esperienza]; Trascorsi questi 3 giorni, il posto si considera confermato in via definitiva. CTA "Vai alle mie prenotazioni" → `bookingsUrl`.
+Pseudo-logica aggiunta:
 
-Subject: `"Ultimi giorni per annullare la tua prenotazione"`.
-
-### 2. Registro template
-
-Aggiungere import + voce `'cancellation-deadline-reminder'` in `supabase/functions/_shared/transactional-email-templates/registry.ts`.
-
-### 3. Nuova wrapper edge function batch
-
-`supabase/functions/send-cancellation-deadline-reminders/index.ts`
-
-Pattern identico a `send-manager-absence-notifications`:
-
-- Auth: service role (cron) OR super_admin user JWT.
-- Finestra: bookings con `experience_dates.start_datetime` nel giorno UTC `[oggi+17, oggi+18)` (helper `isInDayWindow(date, 17)` analogo a `isInAdvanceWindow`).
-- Query: `bookings` con `status = 'confirmed'` joinato a `experience_dates!inner` filtrato sulla finestra. Lo `status = confirmed` garantisce che le prenotazioni cancellate nel frattempo non ricevano la mail.
-- Per ogni booking:
-  - carica `profiles` (email, first_name) — skip se profilo o email mancante
-  - anti-duplicazione: skip se esiste già log su `email_logs` con `email_type = 'cancellation_deadline_reminder'` per questo booking
-  - pre-check suppression list su `recipient_email.toLowerCase()` (skip se presente)
-  - calcola `cancellationDeadlineLong` = `start_datetime − 14 giorni`
-  - invoca `send-transactional-email` con:
-    - `templateName: 'cancellation-deadline-reminder'`
-    - `recipientEmail: profile.email`
-    - `idempotencyKey: cancellation-deadline-${booking.id}`
-    - `templateData: { firstName, eventDateLong, cancellationDeadlineLong, bookingsUrl }`
-  - log su `email_logs` (`status: 'sent'` o `'failed'`)
-- Risposta JSON con contatori `emails_sent` / `emails_skipped`.
-
-### 4. Config edge function
-
-`supabase/config.toml`: aggiungere blocco
-
-```
-[functions.send-cancellation-deadline-reminders]
-  verify_jwt = false
+```text
+v_company_id := metadata.company_id  (come oggi)
+IF v_company_id IS NULL AND v_role = 'employee' THEN
+  v_email_domain := lower(split_part(NEW.email, '@', 2))
+  SELECT id INTO v_company_id
+    FROM companies
+   WHERE v_email_domain = ANY (
+     SELECT lower(d) FROM unnest(allowed_email_domains) d
+   )
+   LIMIT 1
+END IF
 ```
 
-### 5. Cron schedule giornaliero
+Il resto del trigger resta invariato (gender, user_roles, fallback EXCEPTION).
 
-Usare lo strumento `supabase--insert` (NON migration, perché contiene URL + anon key project-specific) per registrare un job `pg_cron` che invoca la funzione una volta al giorno alle 08:00 UTC (stesso slot tipico del job manager-absence):
+## File toccati
 
-```sql
-select cron.schedule(
-  'send-cancellation-deadline-reminders-daily',
-  '0 8 * * *',
-  $$
-  select net.http_post(
-    url := 'https://cyazgtnjtnyxscfzsasp.supabase.co/functions/v1/send-cancellation-deadline-reminders',
-    headers := '{"Content-Type":"application/json","Authorization":"Bearer <ANON_KEY>"}'::jsonb,
-    body := concat('{"trigger":"cron","time":"', now(), '"}')::jsonb
-  );
-  $$
-);
-```
+1. **Migration** — `CREATE OR REPLACE FUNCTION public.handle_new_user()` con la risoluzione domain → company aggiunta. Nessuna modifica a tabelle/policy.
+2. **`src/lib/auth.ts`** — nessuna modifica al codice, ma il commento esistente diventa accurato.
 
-(verifico prima che `pg_cron` e `pg_net` siano già abilitati — lo sono, dato che il job manager-absence è già schedulato.)
+## Backfill utenti esistenti
 
-## Note tecniche
+Query `profiles` con `company_id IS NULL` su employee: **0 utenti** attualmente. Non serve backfill (HAVAS è l'unica company con `allowed_email_domains` valorizzato e tutti i suoi iscritti hanno già un company_id, probabilmente perché entrati via access code).
 
-- Nessuna migration DB necessaria: `email_logs` accetta `email_type` arbitrario, `suppressed_emails` esiste già.
-- Nessuna nuova RLS/GRANT.
-- L'edge function viene deployata automaticamente.
-- La finestra di 24h (giorno UTC pieno) protegge dai ritardi del cron: se il job parte tardi, intercetta comunque le date che cadono in quel giorno.
-- Niente trigger client-side: tutto è batch giornaliero.
+Posso aggiungere comunque uno statement di backfill nella migration per sicurezza (UPDATE profiles + user_tenants per qualunque employee con company_id NULL il cui dominio matcha): dimmi se lo vuoi incluso.
+
+## Note
+
+- La risoluzione vale solo per `v_role = 'employee'` (i ruoli `hr_admin` / `association_admin` arrivano sempre via access code con entity_id esplicito).
+- Se il dominio matcha più di una company (caso non presente oggi), prendiamo la prima — comportamento accettabile dato che `allowed_email_domains` dovrebbe essere disgiunto tra company.
